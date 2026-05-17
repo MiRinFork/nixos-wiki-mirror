@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Build flags</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Build flags</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Build flags -->
+
+<h3 id="building-a-package-for-a-specific-cpu">Building a package for a specific CPU</h3><p>By default, packages built for, say, x86_64 do not take advantage of the feature of more recent CPUs so that the executables you compile also work on older CPUs of the same architecture. This is essential because of the <a href="https://mirror.nixoscn.org/wiki/Build%20flags/Binary_Cache" class="wikilink" title="binary cache">binary cache</a> feature of Nix: if a package is compiled on <a href="https://mirror.nixoscn.org/wiki/Build%20flags/Hydra" class="wikilink" title="Hydra">Hydra</a> for a recent CPU, older systems using Hydra may download software that they can&#39;t run.</p>
+<p>However, you can build some package or even all your system to take advantage of the specific model of your CPU. Note that you will not be able to take advantage of the binary cache (except for FODs) and thus must build everything locally from scratch. The first step is to determine the <code>-march</code> and <code>-mtune</code> arguments that you want to pass to gcc. In the following we want to target a skylake CPU so we use <code>-march=skylake -mtune=skylake</code>.</p>
+<h4 id="building-a-single-package">Building a single package</h4><p>You need to be a trusted user to override the local system feature.</p>
+<p>Then build the file: <code>nix-build optimised_openssl.nix --option system-features gccarch-skylake</code></p>
+<h4 id="adapting-a-derivation-to-specific-plaforms">Adapting a derivation to specific plaforms</h4><p>The technique above should pass the correct flags to gcc so that it uses the processor to its fullest. However, some build systems or configure scripts want to know whether to enable some processor-specific instructions, for example SSE. One way to do so is to inspect the <code>stdenv.hostPlatform.*Support</code> predicates. Here is an example from g2o: <code>cmakeFlags = [ &quot;-DDISABLE_SSE3=${ if stdenv.hostPlatform.sse3Support then &quot;OFF&quot; else &quot;ON&quot;}&quot; ]</code></p>
+<p>Available <a href="https://unix.stackexchange.com/questions/43539/what-do-the-flags-in-proc-cpuinfo-mean">flags</a> are defined in <a href="https://github.com/NixOS/nixpkgs/blob/master/lib/systems/architectures.nix">lib/systems/architectures.nix</a>.</p>
+<h4 id="building-the-whole-system-on-nixos">Building the whole system on NixOS</h4><h3 id="building-an-impure-package-with--march-native">Building an impure package with <code>-march=native</code></h3><p>To build an openssl specially tailored to the local CPU, build</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-keyword">let</span>
+  <span class="hljs-attr">pkgs</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> {
+    <span class="hljs-attr">overlays</span> <span class="hljs-operator">=</span> [
+      (<span class="hljs-params">self:</span> <span class="hljs-params">super:</span> {
+        <span class="hljs-attr">stdenv</span> <span class="hljs-operator">=</span> super.impureUseNativeOptimizations super.stdenv;
+      })
+    ];
+  };
+<span class="hljs-keyword">in</span>
+  pkgs.openssl</code></pre>
+      </div><p><a href="category:Development" class="wikilink" title="Category:Development">Category:Development</a> <a href="category:nix" class="wikilink" title="Category:nix">Category:nix</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

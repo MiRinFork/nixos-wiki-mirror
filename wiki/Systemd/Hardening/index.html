@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Systemd/Hardening</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/Systemd">Systemd</a><span aria-hidden="true"> / </span>Hardening</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Systemd/Hardening -->
+
+<p><translate> Systemd&#39;s service options are quite lax by default, and so it is often desirable to look at ways to harden systemd services. </translate> <translate> A good way to get started on a given service is to look at the output of the command <code>systemd-analyze security myService</code>. From there, you can look at the documentation for the options you see in the output, often in <code>man systemd.exec</code> or <code>man systemd.resource-control</code>, and set the appropriate options for your service. </translate> <translate></p>
+<h2 id="accessing-the-network-with-a-different-rootdirectory">Accessing the network with a different RootDirectory</h2><p></translate> <translate> To be able to access the network while having a RootDirectory specified, you need to give access to <code>/etc/ssl</code>, <code>/etc/static/ssl</code> and <code>/etc/resolv.conf</code>. The simplest way of doing this is by simply putting <code>/etc</code> in the <code>BindReadOnlyPaths</code> option. </translate> <translate> A more granular way, would be to put these 3 paths into <code>BindReadOnlyPaths</code>, and wait for the creation of <code>/etc/resolv.conf</code> through a <code>systemd.path</code> unit. </translate> <translate></p>
+<h2 id="dropping-a-shell-inside-a-systemd-service">Dropping a shell inside a systemd service</h2><p></translate> <translate> While hardening a service, it often happens that you want a shell inside a hardened systemd unit, for example to check access to files, or check the network connectivity. Since systemd v258, one may run <code>systemd-analyze unit-shell </code><service> to accomplish this. Note that this <a href="https://mastodon.social/@zihco/114823612021351075">currently</a> only works for running services. Alternatively, one might use tmux to create a session inside the service, and attaching to it outside of the service. </translate> <translate> Simple example: </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">
+{ pkgs, ... }:
+{
+  <span class="hljs-attr">systemd.services.myService</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">serviceConfig</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">ExecStart</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.tmux}</span>/bin/tmux -S /tmp/tmux.socket new-session -s my-session -d&quot;</span>;
+      <span class="hljs-attr">ExecStop</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.tmux}</span>/bin/tmux -S /tmp/tmux.socket kill-session -t my-session&quot;</span>;
+      <span class="hljs-attr">Type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;forking&quot;</span>;
+
+      <span class="hljs-comment"># ...</span>
+    };
+  };
+}</code></pre>
+      </div><p><translate> Example with a <code>RootDirectory</code> specified: </translate> <translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs }:
+{
+  <span class="hljs-attr">systemd.services.myService</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">serviceConfig</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">ExecStart</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.tmux}</span>/bin/tmux -S /run/myService/tmux.socket new-session -s my-session -d&quot;</span>;
+      <span class="hljs-attr">ExecStop</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.tmux}</span>/bin/tmux -S /run/myService/tmux.socket kill-session -t my-session&quot;</span>;
+      <span class="hljs-attr">Type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;forking&quot;</span>;
+
+      <span class="hljs-operator">&lt;</span><span class="hljs-operator">!</span><span class="hljs-operator">-</span>-T:<span class="hljs-number">1</span>1-<span class="hljs-operator">-&gt;</span>
+<span class="hljs-comment"># Used as root directory</span>
+      <span class="hljs-attr">RuntimeDirectory</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;myService&quot;</span>;
+      <span class="hljs-attr">RootDirectory</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/run/myService&quot;</span>;
+
+      <span class="hljs-operator">&lt;</span><span class="hljs-operator">!</span><span class="hljs-operator">-</span>-T:<span class="hljs-number">1</span>2-<span class="hljs-operator">-&gt;</span>
+B<span class="hljs-attr">indReadOnlyPaths</span> <span class="hljs-operator">=</span> [
+        <span class="hljs-string">&quot;/nix/store&quot;</span>
+
+        <span class="hljs-operator">&lt;</span><span class="hljs-operator">!</span><span class="hljs-operator">-</span>-T:<span class="hljs-number">1</span>3-<span class="hljs-operator">-&gt;</span>
+<span class="hljs-comment"># So tmux uses /bin/sh as shell</span>
+        <span class="hljs-string">&quot;/bin&quot;</span>
+      ];
+
+      <span class="hljs-operator">&lt;</span><span class="hljs-operator">!</span><span class="hljs-operator">-</span>-T:<span class="hljs-number">1</span>4-<span class="hljs-operator">-&gt;</span>
+<span class="hljs-comment"># This sets up a private /dev/tty</span>
+      <span class="hljs-comment"># The tmux server would crash without this</span>
+      <span class="hljs-comment"># since there would be nothing in /dev</span>
+      <span class="hljs-attr">PrivateDevices</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    };
+  };
+}</code></pre>
+      </div><p></translate> <translate> To attach to the shell, simply execute <code>tmux -S /path/to/tmux.socket attach</code>. </translate> <translate></p>
+<h2 id="hardening-examples">Hardening examples</h2><p></translate> <translate> This list contains proposed hardening options that are not yet upstreamed. Please use with caution, and please notify the author of the change if something breaks: </translate> <translate></p>
+<ul>
+<li>Chrony: <a href="https://github.com/NixOS/nixpkgs/pull/104944/files">https://github.com/NixOS/nixpkgs/pull/104944/files</a></li>
+<li>Isso: <a href="https://github.com/NixOS/nixpkgs/pull/140840/files">https://github.com/NixOS/nixpkgs/pull/140840/files</a></li>
+<li>Mautrix-based bridge: <a href="https://github.com/mautrix/docs/pull/18/files">https://github.com/mautrix/docs/pull/18/files</a></li>
+<li>Postfix: <a href="https://github.com/NixOS/nixpkgs/pull/93305/files">https://github.com/NixOS/nixpkgs/pull/93305/files</a></li>
+<li>TheLounge: <a href="https://github.com/thelounge/thelounge-deb/pull/78">https://github.com/thelounge/thelounge-deb/pull/78</a></li>
+</ul>
+<p></translate> <translate></p>
+<h2 id="related-links">Related links</h2><p></translate> <translate></p>
+<ul>
+<li>SHH, systemd hardening helper: <a href="https://www.synacktiv.com/en/publications/systemd-hardening-made-easy-with-shh">systemd hardening made easy with SHH</a></li>
+</ul>
+</translate>
+
+<p><a href="category:NixOS" class="wikilink" title="Category:NixOS">Category:NixOS</a> <a href="category:Cookbook" class="wikilink" title="Category:Cookbook">Category:Cookbook</a> <a href="category:Security" class="wikilink" title="Category:Security">Category:Security</a> <a href="category:systemd" class="wikilink" title="Category:systemd">Category:systemd</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

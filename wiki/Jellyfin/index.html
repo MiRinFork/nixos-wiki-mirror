@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jellyfin</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Jellyfin</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Jellyfin -->
+
+<languages/>
+
+<p><translate> <strong><a href="https://jellyfin.org/">Jellyfin</a></strong><sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Jellyfin#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup> is a free and open-source media server that enables users to manage and stream their personal media libraries across various devices. It consists of the Jellyfin Server and multiple client applications including Jellyfin Media Player and a web interface.</p>
+<h2 id="client-installation">Client Installation</h2><p>Jellyfin is available both via the web interface, and through a desktop application.</p>
+<p>If you would like to install the desktop application, use the following:</p>
+<p>Alternatively, you can use the Jellyfin web client by using your preferred web browser to visit the server directly. See below on how to install the Jellyfin server.</p>
+<h2 id="server-installation">Server Installation</h2><p>To enable Jellyfin on NixOS, add the service configuration to your <code>/etc/nixos/configuration.nix</code> file: </translate></p>
+<p><translate> For more advanced configuration options, refer to the <a href="https://search.nixos.org/options?query=jellyfin">NixOS options documentation</a>:<sup><a id="footnote-ref-2" href="https://mirror.nixoscn.org/wiki/Jellyfin#footnote-2" data-footnote-ref aria-describedby="footnote-label">2</a></sup> </translate></p>
+<p><translate> After configuring Jellyfin, rebuild your system for the changes to take effect: </translate></p>
+<p><translate> After the rebuild completes, verify that Jellyfin is running: </translate></p>
+<p><translate> If Jellyfin is not running, you can start it manually: </translate></p>
+<p><translate> Once Jellyfin is running, you can access the web interface:</p>
+<ul>
+<li>The Jellyfin server runs on port 8096 by default.<sup><a id="footnote-ref-3" href="https://mirror.nixoscn.org/wiki/Jellyfin#footnote-3" data-footnote-ref aria-describedby="footnote-label">3</a></sup></li>
+<li>Navigate to <a href="http://localhost:8096/"><code>http://localhost:8096</code></a> for local access.</li>
+<li>For remote access, replace <code>localhost</code> with the server&#39;s IP address.</li>
+</ul>
+<h2 id="configuration">Configuration</h2><h3 id="allowing-access-to-external-drives">Allowing access to external drives</h3><p>Desktop environments typically mount external drives for the current user, while Jellyfin runs as the system user <code>jellyfin</code> by default. This can cause permission issues when accessing external media.</p>
+<p>The simplest solution is to change the service user: </translate></p>
+<p><translate> If you change the user after Jellyfin is already installed, update the ownership of the data and cache directories: </translate></p>
+<p><translate> Then restart the service: </translate></p>
+<p><translate> Alternatively, configure explicit mounts via <a href="https://mirror.nixoscn.org/wiki/Jellyfin/Filesystems" class="wikilink" title="Filesystems">Filesystems</a>. This approach requires more setup and each drive must be declared, but provides finer control over what Jellyfin can access.</p>
+<h3 id="hardware-transcoding">Hardware transcoding</h3><p>Modern hardware often includes video acceleration capabilities that can significantly reduce CPU usage during transcoding. For detailed information, see the <a href="https://jellyfin.org/docs/general/post-install/transcoding/hardware-acceleration/">official Jellyfin documentation</a>.<sup><a id="footnote-ref-4" href="https://mirror.nixoscn.org/wiki/Jellyfin#footnote-4" data-footnote-ref aria-describedby="footnote-label">4</a></sup></p>
+<h4 id="vaapi-and-intel-qsv">VAAPI and Intel QSV</h4><p>Intel GPUs support Video Acceleration API (VAAPI) and Quick Sync Video (QSV). The required packages must be added to <code>hardware.graphics.extraPackages</code>.</p>
+<p>Choose the appropriate driver based on your CPU generation:</p>
+<ul>
+<li><code>intel-vaapi-driver</code> for pre-Broadwell CPUs</li>
+<li><code>intel-media-driver</code> for Broadwell and newer</li>
+<li><code>intel-compute-runtime</code> for newer processors</li>
+</ul>
+</translate>
+
+<translate>
+
+<h4 id="troubleshooting-vaapi-and-intel-qsv">Troubleshooting VAAPI and Intel QSV</h4><p>Check supported VAAPI profiles: </translate></p>
+<p><translate> Verify OpenCL availability: </translate></p>
+<p><translate> If <code>clinfo</code> shows <code>Number of platforms 0</code>, OpenCL is not enabled or available.</p>
+<p>Monitor Intel GPU status: </translate></p>
+<p><translate> On Intel N100 CPUs, enable firmware loading to prevent GuC errors: </translate></p>
+<p><translate> Without this option, you may see errors like: </translate></p>
+<translate>
+
+<h4 id="vaapi-and-intel-qsv-on-arc-gpu">VAAPI and Intel QSV on Arc GPU</h4><p>Arc GPUs require Jellyfin to use FFmpeg compiled with <code>vpl</code> support. Use <a href="https://mirror.nixoscn.org/wiki/Jellyfin/Overlays" class="wikilink" title="an overlay">an overlay</a> to override the FFmpeg configuration: </translate></p>
+<p><translate> This triggers a rebuild of the Jellyfin package. After applying, select &quot;Intel QuickSync (QSV)&quot; in the Jellyfin settings for hardware-accelerated transcoding with minimal CPU load.</p>
+<p>On NixOS 25.11 and newer (specifically since <a href="https://github.com/NixOS/nixpkgs/pull/424061">this PR</a>), <code>vpl</code> support in FFmpeg is enabled by default, so there is no need to use an overlay.</p>
+<p>If your system has both integrated and discrete GPUs, manually select the QSV device in the Playback settings to avoid random device selection. Use <code>intel_gpu_top -L</code> to list available devices.</p>
+<h4 id="vaapi-with-jellyfin-in-a-nixos-container">VAAPI with Jellyfin in a NixOS container</h4><p>Containers do not inherit graphics drivers from the host system. When running Jellyfin in a NixOS container, replicate the <code>hardware.graphics</code> configuration and pass through the GPU devices (typically <code>/dev/dri/card0</code> and <code>/dev/dri/renderD128</code>): </translate></p>
+<p><translate> Verify the configuration by adding <code>libva-utils</code> to the container&#39;s <code>environment.systemPackages</code>, logging in with <code>machinectl shell container-name</code>, and running <code>vainfo</code>. Successful output looks like: </translate></p>
+<p><translate> With correct configuration, FFmpeg and Jellyfin can use hardware transcoding.</p>
+<h2 id="tips-and-tricks">Tips and tricks</h2><h3 id="intro-skipper-plugin">Intro Skipper plugin</h3><p>The latest version of the Intro Skipper plugin from <a href="https://github.com/intro-skipper/intro-skipper">GitHub</a><sup><a id="footnote-ref-5" href="https://mirror.nixoscn.org/wiki/Jellyfin#footnote-5" data-footnote-ref aria-describedby="footnote-label">5</a></sup> works without manual patches on Jellyfin web, Jellyfin Media Player, and Android TV clients.</p>
+<p>If you need to manually patch the web interface for older versions, use an overlay: </translate></p>
+<translate>
+
+<h2 id="troubleshooting">Troubleshooting</h2><h3 id="service-not-starting">Service not starting</h3><p>If Jellyfin fails to start, check the service status: </translate></p>
+<p><translate> Review the service logs for error messages: </translate></p>
+<translate>
+
+<h3 id="cannot-access-media-files">Cannot access media files</h3><p>Verify that the Jellyfin user has read permissions for your media directories. Check file ownership and permissions: </translate></p>
+<p><translate> If using a custom user for the Jellyfin service, ensure the data directories have correct ownership as described in the configuration section.</p>
+<h2 id="see-also">See also</h2><ul>
+<li><a href="https://mirror.nixoscn.org/wiki/Jellyfin/Filesystems" class="wikilink" title="Filesystems">Filesystems</a> – Declarative filesystem mounting on NixOS</li>
+<li><a href="https://mirror.nixoscn.org/wiki/Jellyfin/Accelerated_Video_Playback" class="wikilink" title="Accelerated Video Playback">Accelerated Video Playback</a> – GPU acceleration configuration</li>
+<li><a href="https://mirror.nixoscn.org/wiki/Jellyfin/Intel_Graphics" class="wikilink" title="Intel Graphics">Intel Graphics</a> – Intel GPU driver setup</li>
+<li><a href="https://mirror.nixoscn.org/wiki/Jellyfin/Overlays" class="wikilink" title="Overlays">Overlays</a> – Customizing packages with overlays</li>
+<li><a href="https://search.nixos.org/options?query=jellyfin">NixOS options search</a> – Jellyfin module options</li>
+<li><a href="https://jellyfin.org/docs/">Jellyfin documentation</a> – Official Jellyfin documentation</li>
+</ul>
+<h2 id="references">References</h2></translate>
+
+<references/>
+
+<p><a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="category:Web_Applications" class="wikilink" title="Category:Web Applications">Category:Web Applications</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p>Jellyfin Project, &quot;Jellyfin: The Free Software Media System&quot;, Official Website, Accessed October 2025. <a href="https://jellyfin.org/">https://jellyfin.org/</a> <a href="https://mirror.nixoscn.org/wiki/Jellyfin#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+<li id="footnote-2">
+<p>NixOS Wiki contributors, &quot;Jellyfin NixOS module options&quot;, NixOS Search, Accessed October 2025. <a href="https://search.nixos.org/options?query=jellyfin">https://search.nixos.org/options?query=jellyfin</a> <a href="https://mirror.nixoscn.org/wiki/Jellyfin#footnote-ref-2" data-footnote-backref aria-label="Back to reference 2">↩</a></p>
+</li>
+<li id="footnote-3">
+<p>Jellyfin Documentation Team, &quot;Networking&quot;, Jellyfin Documentation, Accessed October 2025. <a href="https://jellyfin.org/docs/general/networking/">https://jellyfin.org/docs/general/networking/</a> <a href="https://mirror.nixoscn.org/wiki/Jellyfin#footnote-ref-3" data-footnote-backref aria-label="Back to reference 3">↩</a></p>
+</li>
+<li id="footnote-4">
+<p>Jellyfin Documentation Team, &quot;Hardware acceleration&quot;, Jellyfin Documentation, Accessed October 2025. <a href="https://jellyfin.org/docs/general/post-install/transcoding/hardware-acceleration/">https://jellyfin.org/docs/general/post-install/transcoding/hardware-acceleration/</a> <a href="https://mirror.nixoscn.org/wiki/Jellyfin#footnote-ref-4" data-footnote-backref aria-label="Back to reference 4">↩</a></p>
+</li>
+<li id="footnote-5">
+<p>Intro Skipper contributors, &quot;Intro Skipper Jellyfin plugin&quot;, GitHub, Accessed October 2025. <a href="https://github.com/intro-skipper/intro-skipper">https://github.com/intro-skipper/intro-skipper</a> <a href="https://mirror.nixoscn.org/wiki/Jellyfin#footnote-ref-5" data-footnote-backref aria-label="Back to reference 5">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

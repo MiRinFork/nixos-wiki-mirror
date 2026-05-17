@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NixOS on ARM/Toshiba AC100</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM">NixOS on ARM</a><span aria-hidden="true"> / </span>Toshiba AC100</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: NixOS on ARM/Toshiba AC100 -->
+
+<div class="infobox">
+
+<table>
+<thead>
+<tr>
+<th colspan="2" class="title"><p>Toshiba AC100</p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><p>Architecture</p></td>
+<td><p>ARMv7</p></td>
+</tr>
+<tr>
+<td><p>Codename</p></td>
+<td><p>Compal PAZ00</p></td>
+</tr>
+</tbody>
+</table>
+
+</div>
+
+<h2 id="status">Status</h2><p>It has been reported as working with <strong>@dezgeg</strong>&#39;s ARMv7 images by <a href="user:Roberth" class="wikilink" title="User:Roberth">User:Roberth</a> following these instructions.</p>
+<h2 id="installation-notes">Installation notes</h2><p>The Toshiba AC100 used to ship with Android 2, the fastboot bootloader and a custom partition table format. Nowadays, you can install U-boot on it. It is advisable to make a back-up (documented elsewhere; you&#39;ll need nvflash as documented below).</p>
+<p>In order to modify the operating system, you need to connect the AC100 with a mini-usb cable to an Intel system we&#39;ll call the host. On the host, build the nvflash tool:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">pkgs.stdenv.mkDerivation {
+    <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;tegra-driver-package&quot;</span>;
+    <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;r16.5.0&quot;</span>;
+    <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> pkgs.fetchurl {
+      <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> http:<span class="hljs-symbol">//developer.download.nvidia.com/mobile/tegra/l4t/r16.5.0/ventana_release_armhf/Tegra20_Linux_R16.5_armhf.tbz2</span>;
+      <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;11qmqj0yillwfapzcfjr4px4z8l7zkh0v3xrfpr9riff54xsidq2&quot;</span>;
+    };
+    <span class="hljs-attr">configurePhase</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;</span>;
+    <span class="hljs-attr">buildPhase</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;</span>;
+    <span class="hljs-attr">checkPhase</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;</span>;
+    <span class="hljs-attr">installPhase</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+      mkdir $out
+      cp -r * $out/
+    &#x27;&#x27;</span>;
+}</code></pre>
+      </div><p>Build the nvflash tool and follow the instructions for installing U-boot starting with the getbct.sh step at <a href="https://paz00.ru/index.php/Migrate_to_U-Boot#With_prebuilt_sosuboot-tegra_archive_or_sdcard_image_.28PC_not_required.29">https://paz00.ru/index.php/Migrate_to_U-Boot#With_prebuilt_sosuboot-tegra_archive_or_sdcard_image_.28PC_not_required.29</a></p>
+<p>When U-boot is installed, proceed with the sd-image-armv7l-linux.img image from <a href="https://www.cs.helsinki.fi/u/tmtynkky/nixos-arm/installer/">https://www.cs.helsinki.fi/u/tmtynkky/nixos-arm/installer/</a> and follow the general NixOS installation instructions. If the first installation attempt fails, you will need to use the U-boot command line to select an alternative installation medium, using something like (please correct):</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">setenv boot_targets=usb0
+run distro_boot</code></pre>
+      </div><h2 id="resources">Resources</h2><ul>
+<li><a href="https://elinux.org/Tegra/Boards/Toshiba_AC100">Embedded Linux Wiki article</a></li>
+</ul>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

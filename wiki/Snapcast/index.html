@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Snapcast</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Snapcast</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Snapcast -->
+
+<blockquote>
+<p>Snapcast is a multiroom client-server audio player, where all clients are time synchronized with the server to play perfectly synced audio. It&#39;s not a standalone player, but an extension that turns your existing audio player into a Sonos-like multiroom solution. Audio is captured by the server and routed to the connected clients. Several players can feed audio to the server in parallel and clients can be grouped to play the same audio stream.</p>
+</blockquote>
+<p><a href="https://github.com/badaix/snapcast">https://github.com/badaix/snapcast</a></p>
+<p>Note that MPD can directly act as a Snapcast audio source (see <a href="https://mpd.readthedocs.io/en/stable/plugins.html#snapcast">https://mpd.readthedocs.io/en/stable/plugins.html#snapcast</a>). However, it does not provide all features of a Snapcast server such as the web interface.</p>
+<h2 id="pipewire-sink">Pipewire Sink</h2><p>Both pulseaudio and pipewire can create a virtual audio sink that uses a FIFO queue to stream audio data into Snapcast.</p>
+<p>First create a local snapserver instance that creates the FIFO queue to stream into.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">services.snapserver</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">stream.source</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;pipe:///run/snapserver/pipe?name=NAME&quot;</span>;
+    };
+    <span class="hljs-attr">openFirewall</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  };</code></pre>
+      </div><p>Tell Pipewire about the sink used by Snapcast.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  services.pipewire.extraConfig.pipewire-pulse.<span class="hljs-string">&quot;40-snapcast-sink&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-string">&quot;pulse.cmd&quot;</span> <span class="hljs-operator">=</span> [
+      {
+        <span class="hljs-attr">cmd</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;load-module&quot;</span>;
+        <span class="hljs-attr">args</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;module-pipe-sink file=/run/snapserver/pipe sink_name=Snapcast format=s16le rate=48000&quot;</span>;
+      }
+    ];
+  };</code></pre>
+      </div><p>There is a new direct connection of Pipewire with Snapcast in the making. However, as of March 16, 2026, the version of Pipewire in Nixpkgs (1.4.X) does not support this new feature yet (available starting with Pipewire version 1.6.0).</p>
+<h2 id="playback">Playback</h2><p>To have local audio synced up with remote clients it needs to be routed through a local snapclient instance.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">systemd.user.services.snapclient-local</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">wantedBy</span> <span class="hljs-operator">=</span> [
+      <span class="hljs-string">&quot;pipewire.service&quot;</span>
+    ];
+    <span class="hljs-attr">after</span> <span class="hljs-operator">=</span> [
+      <span class="hljs-string">&quot;pipewire.service&quot;</span>
+    ];
+    <span class="hljs-attr">serviceConfig</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">ExecStart</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.snapcast}</span>/bin/snapclient --player pipewire tcp://localhost:1704&quot;</span>;
+    };
+  };</code></pre>
+      </div><p><a href="category:Audio" class="wikilink" title="Category:Audio">Category:Audio</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Installing Nix on Crostini</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Installing Nix on Crostini</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Installing Nix on Crostini -->
+
+<p>This Wiki page describes the process required to get up and running on Chrome OS within Crostini. This does not talk about Crouton and assumes you have already installed Nix. <a href="https://nixos.org/nix/manual/#chap-installation">Guide to Installation</a>.</p>
+<p>Once you have Nix installed, there are a few things that need to be done.</p>
+<h2 id="home-manager">Home-Manager</h2><p>Using <a href="https://github.com/rycee/home-manager/">Home-manager</a> is pretty straight-forward, and is an easy way to manage Nix and install packages. The documentation on the Github repo is sufficient.</p>
+<h2 id="registering-applications-with-chrome-os">Registering Applications with Chrome OS</h2><p>This feature of Crostini expects .desktop files to be dropped in the appropriate places. (namely somewhere under <code>$XDG_DATA</code>).</p>
+<p>Applications are registered with Chrome OS using a service running within the container called <em>cros-garcon</em>. As it is a simple systemd service, we can easily extend it to look in nix-specific locations.</p>
+<p>First we extend the service with new environment variables</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">mkdir</span> -p ~/.config/systemd/user/cros-garcon.service.d/</span></code></pre>
+      </div><p>followed by.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">cat</span> &gt; ~/.config/systemd/user/cros-garcon.service.d/override.conf &lt;&lt;<span class="hljs-string">EOF</span></span>
+[Service]
+Environment=&quot;PATH=%h/.nix-profile/bin:/usr/local/sbin:/usr/local/bin:/usr/local/games:/usr/sbin:/usr/bin:/usr/games:/sbin:/bin&quot;
+Environment=&quot;XDG_DATA_DIRS=%h/.nix-profile/share:%h/.local/share:%h/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share:/usr/local/share:/usr/share&quot;</code></pre>
+      </div><p>You can also set this inside your Home-Manager configuration:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ ... }:
+{
+    xdg.configFile.<span class="hljs-string">&quot;systemd/user/cros-garcon.service.d/override.conf&quot;</span>.text <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+      [Service]
+      Environment=&quot;PATH=%h/.nix-profile/bin:/usr/local/sbin:/usr/local/bin:/usr/local/games:/usr/sbin:/usr/bin:/usr/games:/sbin:/bin&quot;
+      Environment=&quot;XDG_DATA_DIRS=%h/.nix-profile/share:%h/.local/share:%h/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share:/usr/local/share:/usr/share&quot;
+    &#x27;&#x27;</span>;
+}</code></pre>
+      </div><p>Then we need to restart our container. I found restarting the whole laptop to be the easiest and most effective method.</p>
+<p>After this, we can simply start adding GUI packages to our home-manager configuration. Alternatively, if we are not using home-manager, then we can directly install packages:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-env -i slack</span></code></pre>
+      </div><p>Note: These instructions were adapted from the following post <a href="https://www.reddit.com/r/Crostini/comments/9lazhn/environment_variables_for_launcher_applications/e769u4y/">on Reddit</a></p>
+<h2 id="graphical-applications">Graphical applications</h2><p>Thanks to the usage of VirtGL as the GPU driver, you can easily run applications that depend on OpenGL/Vulkan by using <a href="https://github.com/nix-community/nixGL">NixGL</a>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix run --impure github:guibou/nixGL -- program</span></code></pre>
+      </div><p>If you are setting up it in your Flakes/Home-Manager configuration, you can use:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">outputs</span> <span class="hljs-operator">=</span> { nixgl, nixpkgs, home-manager, ... }:
+  <span class="hljs-keyword">let</span>
+    <span class="hljs-attr">pkgs</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> nixpkgs {
+      <span class="hljs-attr">system</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;x86_64-linux&quot;</span>; <span class="hljs-comment"># or &quot;aarch64-linux&quot;</span>
+      <span class="hljs-attr">overlays</span> <span class="hljs-operator">=</span> [ nixgl.overlay ];
+    };
+  <span class="hljs-keyword">in</span>
+  {
+    <span class="hljs-attr">homeConfigurations.penguin</span> <span class="hljs-operator">=</span> home-manager.lib.homeManagerConfiguration {
+      <span class="hljs-keyword">inherit</span> pkgs;
+      <span class="hljs-attr">modules</span> <span class="hljs-operator">=</span> [
+        ({ pkgs, ...}: {
+          <span class="hljs-attr">home.packages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [ nixgl.nixGLMesa ];
+        })
+      ];
+    };
+  }
+}</code></pre>
+      </div><p>Using <code>nixgl.nixGLMesa</code> instead of <code>nixgl.auto.nixGLDefault</code> allow usage of pure evaluation.</p>
+<p>Afterwards, you can call programs with:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nixGLMesa program</span></code></pre>
+      </div>
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

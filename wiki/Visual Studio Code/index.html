@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Visual Studio Code</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Visual Studio Code</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Visual Studio Code -->
+
+<p><strong>Visual Studio Code</strong> is a cross-platform text editor developed by Microsoft, built on the Electron framework.</p>
+<p>For the free distribution of the VS Code codebase (without MS branding, telemetry, and <a href="https://marketplace.visualstudio.com/">extension marketplace</a> replaced by <a href="https://open-vsx.org/">Open VSX</a>) see <a href="https://mirror.nixoscn.org/wiki/Visual%20Studio%20Code/VSCodium" class="wikilink" title="VSCodium">VSCodium</a>.</p>
+<h2 id="installation">Installation</h2><h3 id="nixos">NixOS</h3><div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [ vscode ];</code></pre>
+      </div><p>Extensions can be managed using :</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+  (vscode-<span class="hljs-keyword">with</span>-extensions.override {
+    <span class="hljs-attr">vscodeExtensions</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> vscode-extensions; [
+      jnoortheen.nix-ide
+      ms-python.python
+      ms-azuretools.vscode-docker
+      ms-vscode-remote.remote-ssh
+    ] <span class="hljs-operator">++</span> pkgs.vscode-utils.extensionsFromVscodeMarketplace [
+      {
+        <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;remote-ssh-edit&quot;</span>;
+        <span class="hljs-attr">publisher</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ms-vscode-remote&quot;</span>;
+        <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;0.47.2&quot;</span>;
+        <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;1hp6gjh4xp2m1xlm1jsdzxw9d8frkiidhph6nvl24d0h8z34w49g&quot;</span>;
+      }
+    ];
+  })
+];</code></pre>
+      </div><p>Some examples here: [<a href="https://github.com/search?type=code&amp;q=language:Nix+&amp;#x22;extensionFromVscodeMarketplace%22">https://github.com/search?type=code&amp;q=language:Nix+&#x22;extensionFromVscodeMarketplace%22</a>; GitHub Search - type:code language:Nix &quot;extensionFromVscodeMarketplace&quot;]</p>
+<p><code>extensionsFromVscodeMarketplace</code> is a manual way to fetch extensions. However, to keep updated from upstream, <a href="https://github.com/nix-community/nix-vscode-extensions">nix-community/nix-vscode-extensions</a> provides the Nix expressions for the majority of available extensions from Open VSX and VSCode Marketplace. A GitHub Action updates the extensions daily. Similarly, <a href="https://github.com/nix-community/nix4vscode">nix-community/nix4vscode</a> provides a Nix overlay for VSCode Marketplace and Open VSX extensions.</p>
+<h3 id="home-manager">Home Manager</h3><div class="code-container">
+        
+        <pre><code class="language-nix hljs">p<span class="hljs-attr">rograms.vscode</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">profiles.default.extensions</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs.vscode-extensions; [
+    dracula-theme.theme-dracula
+    vscodevim.vim
+    yzhang.markdown-all-<span class="hljs-keyword">in</span>-one
+  ];
+};</code></pre>
+      </div><ul>
+<li>See for more options: <a href="https://nix-community.github.io/home-manager/options.xhtml#opt-programs.vscode.enable">Home Manager Manual: Options - programs.vscode</a></li>
+<li>Search for extensions with configurations: <a href="https://search.nixos.org/packages?type=packages&amp;query=vscode-extensions">NixOS Search: vscode-extensions</a></li>
+</ul>
+<h3 id="nix-env">Nix-env</h3><div class="code-container">
+        
+        <pre><code class="language-console hljs">nix-env -iA nixos.vscode</code></pre>
+      </div><h2 id="use-vs-code-extensions-without-additional-configuration">Use VS Code extensions without additional configuration</h2><p>With , the editor launches inside a <a href="wikipedia:Filesystem_Hierarchy_Standard" class="wikilink" title="FHS">FHS</a> compliant chroot environment using . This reintroduces directories such as <code>/bin</code>, <code>/lib</code>, and <code>/usr</code>, which allows for extensions which ship pre-compiled binaries to work with little to no additional nixification.</p>
+<h3 id="nixos">NixOS</h3><div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [ vscode.fhs ];</code></pre>
+      </div><h3 id="home-manager">Home Manager</h3><div class="code-container">
+        
+        <pre><code class="language-nix hljs">p<span class="hljs-attr">rograms.vscode</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">package</span> <span class="hljs-operator">=</span> pkgs.vscode.fhs;
+};</code></pre>
+      </div><p>Adding extension-specific dependencies, these will be added to the FHS environment:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># needed for rust lang server and rust-analyzer extension</span>
+p<span class="hljs-attr">rograms.vscode.package</span> <span class="hljs-operator">=</span> pkgs.vscode.fhsWithPackages (
+  <span class="hljs-params">ps:</span> <span class="hljs-keyword">with</span> ps; [
+    rustup
+    zlib
+    openssl.dev
+    pkg-config
+  ]
+);</code></pre>
+      </div><h2 id="insiders-build">Insiders Build</h2><p>If you need to test a recent code change, you can run the insiders build. It is designed to run alongside the main build, with a separate <code>code-insiders</code> command and a different config path, so you can leave your main VS Code instance installed/running.</p>
+<p>The following derivation builds a package with the latest insiders build (on NixOS in <code>environment.systemPackages</code>, or on Home Manager in <code>home.packages</code>) :</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">(pkgs.vscode.override { <span class="hljs-attr">isInsiders</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; }).overrideAttrs (<span class="hljs-params">oldAttrs:</span> <span class="hljs-keyword">rec</span> {
+  <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> (<span class="hljs-built_in">builtins.fetchTarball</span> {
+    <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://code.visualstudio.com/sha/download?build=insider&amp;os=linux-x64&quot;</span>;
+    <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA&quot;</span>;
+  });
+  <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;latest&quot;</span>;
+
+  <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> oldAttrs.buildInputs <span class="hljs-operator">++</span> [ pkgs.krb5 ];
+});</code></pre>
+      </div><p><em><a href="https://discourse.nixos.org/t/how-to-install-latest-vscode-insiders/7895/4">credits: @jnoortheen</a></em></p>
+<h3 id="updating-insiders-placeholder-sha256">Updating insiders placeholder <code>sha256</code></h3><p>You will need to update the placeholder <code>sha256</code> value for each new Insiders build.</p>
+<p>The new value will appear in a validation error when you try to build.</p>
+<p>Put an arbitrary placeholder value in the <code>sha256</code> field, try to build and you&#39;ll get an error message regarding the sha256 value.</p>
+<h3 id="resolving-the-quot-hash-mismatch-quot-error">Resolving the &quot;hash mismatch&quot; error</h3><h4 id="for-sha256">For <code>sha256:</code></h4><p>Example:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">//-- ...
+       error: hash mismatch in file downloaded from 'https://code.visualstudio.com/sha/download?build=insider&amp;os=linux-x64':
+         specified: sha256:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+         got:       sha256:16fzxqs6ql4p2apq9aw7l10h4ag1r7jwlfvknk5rd2zmkscwhn6z
+//-- ...</code></pre>
+      </div><p>Copy the &quot;got&quot; value (while stripping out the prepended &quot;<code>sha256:</code>&quot;), and paste it in your placeholder <code>sha256</code> value</p>
+<p>Resulting: &quot;<code>16fzxqs6ql4p2apq9aw7l10h4ag1r7jwlfvknk5rd2zmkscwhn6z</code>&quot;</p>
+<h5 id="for-sha256">For <code>sha256-</code></h5><p>Example:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">//-- ...
+        error: hash mismatch in fixed-output derivation '/nix/store/path':
+         specified: sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+            got:    sha256-aQvTtZdPU2F1UjkFxiLs4A+60A4qc9bXKwKriNsCDPg=
+//-- ...</code></pre>
+      </div><p>Copy the &quot;got&quot; value (while stripping out the prepended &quot;<code>sha256-</code>&quot;)</p>
+<p>Then, run the following python script:</p>
+<div class="code-container">
+        
+        <pre><code class="language-python hljs"><span class="hljs-keyword">import</span> base64
+text = <span class="hljs-string">b&#x27;aQvTtZdPU2F1UjkFxiLs4A+60A4qc9bXKwKriNsCDPg=&#x27;</span> <span class="hljs-comment"># Replace the string in between &#x27; with the according hash</span>
+<span class="hljs-built_in">print</span>(base64.decodebytes(text).<span class="hljs-built_in">hex</span>())</code></pre>
+      </div><p>Its output should be pasted in your placeholder <code>sha256</code> value</p>
+<h2 id="creating-development-environments-using-nix-shell">Creating development environments using nix-shell</h2><p>Instead of using configuration.nix to add packages (e.g. Python or NodeJS) for developing code on VSCode, you can instead use nix-shell. This will allow you to seamlessly create development environments with the correct packages for your project, without rebuilding and restarting NixOS. See <a href="https://mirror.nixoscn.org/wiki/Visual%20Studio%20Code/Development_environment_with_nix-shell" class="wikilink" title=" this page"> this page</a> for further instructions in building nix-shell development environments.</p>
+<h3 id="automatically-switch-nix-shells-when-switching-projects">Automatically switch nix shells when switching projects</h3><p>You can do this by using <a href="https://github.com/nix-community/nix-direnv">nix-direnv</a> and <a href="https://marketplace.visualstudio.com/items?itemName=mkhl.direnv">the VSCode extension direnv</a> for integration. View the nix-direnv github page linked for a guide on setting it up.</p>
+<h3 id="alternative-for-manually-switching-shells">Alternative for manually switching shells</h3><p>The extension <a href="https://marketplace.visualstudio.com/items?itemName=arrterian.nix-env-selector">nix-env-selector</a> will make switching between different nix-shell environments within VSCode so you can switch between different coding projects easily and manually. It has a guide for setting up nix-shell environments for VSCode.</p>
+<h2 id="wayland">Wayland</h2><p>To make sure VSCode runs on Wayland native instead of Xwayland, you can make it use Ozone Wayland by setting the environment variable <code>NIXOS_OZONE_WL</code> with <code>NIXOS_OZONE_WL=1</code></p>
+<p>See <a href="https://mirror.nixoscn.org/wiki/Visual%20Studio%20Code/Wayland#Electron_and_Chromium" class="wikilink" title="Wayland#Electron and Chromium">Wayland#Electron and Chromium</a></p>
+<h2 id="updating-extension-versions">Updating extension versions</h2><p>The Nixpkgs vscode extensions directory contains <a href="https://github.com/NixOS/nixpkgs/blob/master/pkgs/applications/editors/vscode/extensions/update_installed_exts.sh">a script</a> which use <code>code --list-extensions</code> and lookup the latest versions of those extensions to outputs a nix expression with a single <code>extensions</code> attribute of the same type as <code>extensionsFromVscodeMarketplace</code> inputs.</p>
+<p>To run it in your current directory:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs">curl -fsSL https://raw.githubusercontent.com/NixOS/nixpkgs/master/pkgs/applications/editors/vscode/extensions/update_installed_exts.sh | sh</code></pre>
+      </div><h3 id="example-output">Example output</h3><div class="code-container">
+        
+        <pre><code class="language-console hljs">curl -fsSL https://raw.githubusercontent.com/NixOS/nixpkgs/master/pkgs/applications/editors/vscode/extensions/update_installed_exts.sh | sh
+{ extensions = [
+  {
+    name = &quot;project-manager&quot;;
+    publisher = &quot;alefragnani&quot;;
+    version = &quot;12.4.0&quot;;
+    sha256 = &quot;0q6zkz7pqz2prmr01h17h9a5q6cn6bjgcxggy69c84j8h2w905wy&quot;;
+  }
+  {
+    name = &quot;githistory&quot;;
+    publisher = &quot;donjayamanne&quot;;
+    version = &quot;0.6.18&quot;;
+    sha256 = &quot;01lc9gpqdjy6himn7jsfjrfz8xrk728c20903lxkxy5fliv232gz&quot;;
+  }
+];
+}</code></pre>
+      </div><h2 id="remote-ssh">Remote SSH</h2><p>The remote-ssh extension works by connecting to a remote host and downloading scripts and pre-built binaries to . When first launching remote-ssh for a NixOS host, the connection will fail due to the provided node.js not having been built for a NixOS system (the dynamic libraries aren&#39;t in the same place).</p>
+<h3 id="any-client-to-nixos-host">Any client to NixOS host</h3><p><strong>tl;dr Use <a href="https://github.com/msteen/nixos-vscode-server">nix-vscode-server</a> or <a href="https://github.com/Mic92/nix-ld">nix-ld</a> on host machines.</strong></p>
+<h4 id="nix-vscode-server">nix-vscode-server</h4><p>Note that nix-vscode-server works as of 8/21/21 but is occasionally broken (See <a href="https://github.com/msteen/nixos-vscode-server/pull/3">https://github.com/msteen/nixos-vscode-server/pull/3</a>, <a href="https://github.com/msteen/nixos-vscode-server/pull/4">https://github.com/msteen/nixos-vscode-server/pull/4</a>, <a href="https://github.com/msteen/nixos-vscode-server/pull/5">https://github.com/msteen/nixos-vscode-server/pull/5</a>). Here&#39;s a workaround: Install the <code>nodejs-16_x</code> package on the NixOS host, and then run the following nix-shell script:</p>
+<div class="code-container">
+        
+        <pre><code class="language-haskell hljs"><span class="hljs-meta">#! /usr/bin/env nix-shell</span>
+<span class="hljs-meta">#! nix-shell --pure -i runghc -p &quot;haskellPackages.ghcWithPackages (pkgs: [ pkgs.turtle ])&quot;</span>
+
+<span class="hljs-meta">{-# LANGUAGE OverloadedStrings #-}</span>
+<span class="hljs-keyword">import</span> Turtle
+
+<span class="hljs-title">main</span> = sh $ <span class="hljs-keyword">do</span>
+  homedir &lt;- home
+  subdir &lt;- ls $ homedir &lt;/&gt; <span class="hljs-string">&quot;.vscode-server/bin/&quot;</span>
+  <span class="hljs-keyword">let</span> nodepath = subdir &lt;/&gt; <span class="hljs-string">&quot;node&quot;</span>
+  badnode &lt;- isNotSymbolicLink nodepath
+  <span class="hljs-keyword">if</span> badnode
+    <span class="hljs-keyword">then</span> <span class="hljs-keyword">do</span>
+      mv nodepath (subdir &lt;/&gt; <span class="hljs-string">&quot;node_backup&quot;</span>)
+      symlink <span class="hljs-string">&quot;/run/current-system/sw/bin/node&quot;</span> nodepath
+      echo (<span class="hljs-string">&quot;Fixed &quot;</span> &lt;&gt; repr subdir)
+    <span class="hljs-keyword">else</span> <span class="hljs-keyword">do</span>
+      echo (<span class="hljs-string">&quot;Already fixed &quot;</span> &lt;&gt; repr subdir)</code></pre>
+      </div><p>If instead you&#39;d prefer to fix the binaries manually and have to do so every time that you upgrade your VS Code version, then you can install the <code>nodejs-16_x</code> package on the NixOS host and replace the VS Code provided version. This workaround is described here: <a href="https://github.com/microsoft/vscode-remote-release/issues/648#issuecomment-503148523">https://github.com/microsoft/vscode-remote-release/issues/648#issuecomment-503148523</a>. Note that NodeJS needs to be updated according to VS Code upstream requirements (NodeJS 16 required from 4/2022).</p>
+<h4 id="nix-ld">nix-ld</h4><p>Add the following settings to <code>configuration.nix</code> on the NixOS host</p>
+<p>Then run <code>nixos-rebuild switch</code> to enable <code>nix-ld</code>. Unlike the <code>nix-vscode-server</code> solution, the <code>nix-ld</code> solution also enables VSCode extensions even if they include non-Nix binaries.</p>
+<h3 id="nix-sourced-vs-code-to-nixos-host">Nix-sourced VS Code to NixOS host</h3><p>If vscode-remote is installed from nix (vscode-extensions.ms-vscode-remote as above) on the client machine, everything should &quot;just work&quot;.</p>
+<h2 id="remote-wsl">Remote WSL</h2><p>Similar to SSH hosts, both <code>nix-vscode-server</code> and <code>nix-ld</code> solution allows a VSCode Windows client to connect a <a href="https://github.com/nix-community/NixOS-WSL">NixOS-WSL</a> host. However, by default the VSCode Windows client uses <code>wsl.exe --exec</code> to start the code server, which bypasses NixOS environment variables required by <code>nix-ld</code>, resulting in failures.</p>
+<p>As a workaround, search for the following text in all files under the directory <code>$HOME\.vscode\extensions\</code></p>
+<p>Replace it with</p>
+<p>Then restart VS Code and your VS Code client should be able to connect to NixOS host</p>
+<p>See <a href="https://github.com/nix-community/NixOS-WSL/issues/222">https://github.com/nix-community/NixOS-WSL/issues/222</a> for the discussion about <code>wsl --exec</code> issue on NixOS-WSL. See <a href="https://github.com/microsoft/vscode-remote-release/issues/8305#issuecomment-1661396267">https://github.com/microsoft/vscode-remote-release/issues/8305#issuecomment-1661396267</a> about the workaround.</p>
+<h2 id="troubleshooting">Troubleshooting</h2><h3 id="writing-login-information-to-the-keychain-failed">Writing login information to the keychain failed</h3><p>If you get an error similar to the following, enable a <a href="https://mirror.nixoscn.org/wiki/Visual%20Studio%20Code/Secret_Service" class="wikilink" title="Secret Service">Secret Service</a> provider.</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">Writing login information to the keychain failed with error 'The name org.freedesktop.secret was not provided by any .service files'.</code></pre>
+      </div><h3 id="server-did-not-start-successfully">Server did not start successfully</h3><blockquote>
+<p>Server did not start successfully. Full server log at /home/user/.vscode-server/.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.log  </p>
+<p>server log:<br>/home/user/.vscode-server/bin/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/bin/code-server: line 12: /home/user/.vscode-server/bin/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/node: No such file or directory</p>
+</blockquote>
+<p>&quot;No such file or directory&quot; means that libc is not found, see</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">ldd ~/.vscode-server/bin/*/node</code></pre>
+      </div><p>try to run the node binary on the server</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">~/.vscode-server/bin/*/node</code></pre>
+      </div><p>if this fails, install node version 16, and try to patch the node binary</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">nix-env -iA nixos.nodejs-16_x</code></pre>
+      </div><div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-meta">#! /bin/sh</span>
+<span class="hljs-comment"># fix-vscode-server-node.sh</span>
+<span class="hljs-comment"># https://github.com/microsoft/vscode-remote-release/issues/648#issuecomment-503148523</span>
+<span class="hljs-built_in">cd</span> ~/.vscode-server/bin/*
+<span class="hljs-keyword">if</span> ! ./node -e <span class="hljs-string">&quot;require(&#x27;process&#x27;).exit(0)&quot;</span>
+<span class="hljs-keyword">then</span>
+  <span class="hljs-built_in">echo</span> patching node binary $(<span class="hljs-built_in">readlink</span> -f node)
+  <span class="hljs-built_in">rm</span> node
+  <span class="hljs-built_in">ln</span> -s $(<span class="hljs-built_in">which</span> node)
+<span class="hljs-keyword">else</span>
+  <span class="hljs-built_in">echo</span> node is working $(<span class="hljs-built_in">readlink</span> -f node)
+<span class="hljs-keyword">fi</span></code></pre>
+      </div><h3 id="timeout">Timeout</h3><p>If you&#39;re using fish or other shell, set this in the user settings JSON on the client machine:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-string">&quot;remote.SSH.useLocalServer&quot;</span>: <span class="hljs-literal">false</span></code></pre>
+      </div><p>See <a href="https://github.com/microsoft/vscode-remote-release/issues/2509">https://github.com/microsoft/vscode-remote-release/issues/2509</a> and <a href="https://github.com/nix-community/nixos-vscode-server/issues/18">https://github.com/nix-community/nixos-vscode-server/issues/18</a></p>
+<p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="category:IDE" class="wikilink" title="Category:IDE">Category:IDE</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

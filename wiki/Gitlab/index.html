@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gitlab</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Gitlab</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Gitlab -->
+
+<p>The <a href="https://gitlab.com/">GitLab</a> web application offers git repository management, code reviews, issue tracking, activity feeds and wikis.</p>
+<p>This article is an extension of the <a href="https://nixos.org/manual/nixos/stable/#module-services-gitlab">NixOS manual</a>.</p>
+<h2 id="installation">Installation</h2><h3 id="generate-secrets">Generate Secrets</h3><div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">sudo</span> install -d -m 0700 /var/lib/gitlab/secrets
+<span class="hljs-built_in">sudo</span> sh -c <span class="hljs-string">&#x27;openssl rand -hex 32 &gt; /var/lib/gitlab/secrets/activeRecordPrimaryKey&#x27;</span>
+<span class="hljs-built_in">sudo</span> sh -c <span class="hljs-string">&#x27;openssl rand -hex 32 &gt; /var/lib/gitlab/secrets/activeRecordDeterministicKey&#x27;</span>
+<span class="hljs-built_in">sudo</span> sh -c <span class="hljs-string">&#x27;openssl rand -hex 32 &gt; /var/lib/gitlab/secrets/activeRecordSalt&#x27;</span>
+<span class="hljs-built_in">sudo</span> <span class="hljs-built_in">chown</span> -R gitlab:gitlab /var/lib/gitlab/secrets
+<span class="hljs-built_in">sudo</span> <span class="hljs-built_in">chmod</span> 700 /var/lib/gitlab/secrets
+<span class="hljs-built_in">sudo</span> <span class="hljs-built_in">chmod</span> 0600 /var/lib/gitlab/secrets/*</code></pre>
+      </div><h3 id="nix-configuration">Nix Configuration</h3><div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.gitlab</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">databasePasswordFile</span> <span class="hljs-operator">=</span> pkgs.writeText <span class="hljs-string">&quot;dbPassword&quot;</span> <span class="hljs-string">&quot;zgvcyfwsxzcwr85l&quot;</span>;
+  <span class="hljs-attr">initialRootPasswordFile</span> <span class="hljs-operator">=</span> pkgs.writeText <span class="hljs-string">&quot;rootPassword&quot;</span> <span class="hljs-string">&quot;dakqdvp4ovhksxer&quot;</span>;
+  <span class="hljs-attr">secrets</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">secretFile</span> <span class="hljs-operator">=</span> pkgs.writeText <span class="hljs-string">&quot;secret&quot;</span> <span class="hljs-string">&quot;Aig5zaic&quot;</span>;
+    <span class="hljs-attr">otpFile</span> <span class="hljs-operator">=</span> pkgs.writeText <span class="hljs-string">&quot;otpsecret&quot;</span> <span class="hljs-string">&quot;Riew9mue&quot;</span>;
+    <span class="hljs-attr">dbFile</span> <span class="hljs-operator">=</span> pkgs.writeText <span class="hljs-string">&quot;dbsecret&quot;</span> <span class="hljs-string">&quot;we2quaeZ&quot;</span>;
+    <span class="hljs-attr">jwsFile</span> <span class="hljs-operator">=</span> pkgs.runCommand <span class="hljs-string">&quot;oidcKeyBase&quot;</span> {} <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.openssl}</span>/bin/openssl genrsa 2048 &gt; $out&quot;</span>;
+    <span class="hljs-attr">activeRecordPrimaryKeyFile</span>       <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/var/lib/gitlab/secrets/activeRecordPrimaryKey&quot;</span>;
+    <span class="hljs-attr">activeRecordDeterministicKeyFile</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/var/lib/gitlab/secrets/activeRecordDeterministicKey&quot;</span>;
+    <span class="hljs-attr">activeRecordSaltFile</span>             <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/var/lib/gitlab/secrets/activeRecordSalt&quot;</span>;
+  };
+};
+
+<span class="hljs-attr">services.nginx</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">recommendedProxySettings</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">virtualHosts</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">localhost</span> <span class="hljs-operator">=</span> {
+      locations.<span class="hljs-string">&quot;/&quot;</span>.proxyPass <span class="hljs-operator">=</span> <span class="hljs-string">&quot;http://unix:/run/gitlab/gitlab-workhorse.socket&quot;</span>;
+    };
+  };
+};
+
+<span class="hljs-attr">services.openssh.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+<span class="hljs-attr">systemd.services.gitlab-backup.environment.BACKUP</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;dump&quot;</span>;</code></pre>
+      </div><p>After applying the configuration head to <a href="http://localhost/">http://localhost</a> and login with username <code>root</code> and the password specified in <code>initialRootPasswordFile</code>.</p>
+<p>Even though it is easy to provide the secrets in the <code>configuration.nix</code> with <code>pkgs.writeText</code>, keep in mind that it might not be the best method, because they get written to the world readable <a href="https://mirror.nixoscn.org/wiki/Gitlab/Nix_package_manager#Nix_store" class="wikilink" title="nix-store">nix-store</a> this way. A safer solution is to put them somewhere in the file system with the right chmod and owner set and include them using <code>./</code><filename> or to use a <a href="https://mirror.nixoscn.org/wiki/Gitlab/Comparison_of_secret_managing_schemes" class="wikilink" title="secret managment tool">secret managment tool</a></p>
+<h2 id="maintenance">Maintenance</h2><p>Query info about your Gitlab instance</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">gitlab-rake gitlab:<span class="hljs-built_in">env</span>:info</code></pre>
+      </div><p>Check for configuration errors</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">gitlab-rake gitlab:check</code></pre>
+      </div><h2 id="tips-and-tricks">Tips and tricks</h2><h3 id="run-gitlab-behind-reverse-proxy">Run Gitlab behind reverse proxy</h3><p>In case your Gitlab instance is running behind a reverse proxy which does offer TLS encryption, you might need to adapt your configuration</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.gitlab</span> <span class="hljs-operator">=</span> {
+  [...]
+  <span class="hljs-attr">https</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">port</span> <span class="hljs-operator">=</span> <span class="hljs-number">443</span>;
+  <span class="hljs-attr">host</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;git.example.org&quot;</span>;
+};</code></pre>
+      </div><h3 id="feature-flags">Feature Flags</h3><p>You can declaratively enable <a href="https://gitlab-docs-d6a9bb.gitlab.io/ee/user/feature_flags.html">Gitlab Feature Flags</a> using <code>extraGitlabRb</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">services.gitlab</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">extraGitlabRb</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+      Feature.enable(:issue_date_filter)
+    &#x27;&#x27;</span>;
+    <span class="hljs-comment"># Other configuration...</span>
+  };
+}</code></pre>
+      </div><h3 id="migrating-an-existing-gitlab-to-a-nixos-installation">Migrating an existing Gitlab to a Nixos installation</h3><p>Make a backup on the old installation following the <a href="https://docs.gitlab.com/administration/backup_restore/backup_gitlab/">Gitlab backup guide</a>. It is important to be on the same version and edition that you want to install on your new server.</p>
+<p>Then install a Gitlab on the NixOS. Make sure you set the same secrets like on the old installation.</p>
+<p>After a successful deploy:</p>
+<ol>
+<li>Stop the Gitlab service using <code>systemctl stop gitlab.service</code>.</li>
+<li>Start Gitaly <code>systemctl start gitaly.service</code><ul>
+<li>It gets stopped when gitlab.service stops.</li>
+</ul>
+</li>
+<li>Then copy the backup *_gitlab_backup.tar to the backup folder<ul>
+<li><code>cp 1719619965_2024_06_29_16.11.4_gitlab_backup.tar /var/gitlab/state/backup</code></li>
+</ul>
+</li>
+<li>Run <code>sudo -u gitlab gitlab-rake gitlab:backup:restore BACKUP=&lt;name before the _gitlab_backup.tar&gt;</code> .<ul>
+<li>For example <code>sudo -u gitlab gitlab-rake gitlab:backup:restore BACKUP=1719619965_2024_06_29_16.11.4</code></li>
+</ul>
+</li>
+<li>You will be interactively asked what should be done.<ul>
+<li>You will most likely be saying yes hrtr</li>
+</ul>
+</li>
+<li>Start the Gitlab Service again using <code>systemctl start gitlab.service</code>.</li>
+</ol>
+<p>You may need to rebuild the system for everything to properly come up.</p>
+<h2 id="troubleshooting">Troubleshooting</h2><h3 id="error-422-the-change-you-requested-was-rejected-on-login">Error 422 The change you requested was rejected on login</h3><p>There might be different reasons for this error to show up after a failing login. One possible issue could be that your Gitlab instance is configured to be served with SSL encryption but running unencrypted behind a reverse proxy</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.gitlab</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">port</span> <span class="hljs-operator">=</span> <span class="hljs-number">443</span>;
+  <span class="hljs-attr">https</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+[...]</code></pre>
+      </div><p>To solve this, add following http headers to your upstream reverse proxy. In this example for the web server <a href="https://mirror.nixoscn.org/wiki/Gitlab/Caddy" class="wikilink" title="Caddy">Caddy</a> but it can be set for others too</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">c<span class="hljs-attr">addy</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">virtualHosts</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-string">&quot;git.example.org&quot;</span>.extraConfig <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+      reverse_proxy http://10.100.0.3 {
+        header_up X-Forwarded-Proto https
+        header_up X-Forwarded-Ssl on
+      }
+    &#x27;&#x27;</span>;
+  };
+};</code></pre>
+      </div><h3 id="login-page-accessible-but-root-login-fails-after-fresh-install">Login page accessible, but root login fails after fresh install</h3><p>Apparently, it can happen that no root user is created (or at least not fully created in the database) when building the system with a newly configured Gitlab service.</p>
+<p>In this case, it can help to stop the Gitlab service, drop the postgres database and reboot the system. This sequence instantiates the Gitlab root user. With that, it&#39;s possible to log in with user &quot;root&quot; and the password configured in &quot;initialRootPasswordFile&quot;.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-comment"># stop the gitlab stack</span>
+systemctl stop gitlab.service
+
+<span class="hljs-comment"># drop the database</span>
+<span class="hljs-built_in">sudo</span> -u postgres dropdb gitlab
+
+<span class="hljs-comment"># reboot (just starting the gitlab service again seems not to be sufficient)</span>
+<span class="hljs-built_in">sudo</span> reboot</code></pre>
+      </div><h2 id="notes">Notes</h2><p>Gitlab will add a user &quot;gitlab&quot; to your NixOS, many tutorials online point to using git over ssh with the user &quot;git&quot;, which in our case will not match since there is no user &quot;git&quot;. If you configure your SSH hosts with ~/.ssh/config this should work:</p>
+<p><code> Host your.selfhosted.com</code><br><code>   HostName your.selfhosted.com</code><br><code>   User gitlab</code><br><code>   IdentityFile /path/to/your/ssh/private/key</code><br><code>   # The following are optional:</code><br><code>   IdentitiesOnly yes</code><br><code>   PreferredAuthentications publickey</code></p>
+<p>Note: If you want to just be able to copy the url from the clone Gitlab menu consider changing the git user to the generated &quot;gitlab&quot; user or create some other user yourself. See gitlabs reference <a href="https://docs.gitlab.com/omnibus/settings/configuration/#change-the-name-of-the-git-user-or-group">Change the name of the git user or group</a></p>
+<references />
+
+<h2 id="see-also">See also</h2><ul>
+<li><a href="https://mirror.nixoscn.org/wiki/Gitlab/Gitea" class="wikilink" title="Gitea">Gitea</a>, a web app, Git development repository and project management.</li>
+<li><a href="https://mirror.nixoscn.org/wiki/Gitlab/Forgejo" class="wikilink" title="Forgejo">Forgejo</a>, a web application offers Git development repositories and project management. Community fork of Gitea.</li>
+</ul>
+<p><a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="category:Web_Applications" class="wikilink" title="Category:Web Applications">Category:Web Applications</a> <a href="category:NixOS_Manual" class="wikilink" title="Category:NixOS Manual">Category:NixOS Manual</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

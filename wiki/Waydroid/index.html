@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Waydroid</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Waydroid</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Waydroid -->
+
+<p><a href="https://waydro.id/">Waydroid</a> is an application which uses LXC containers to run Android applications on a non-Android system.</p>
+<h2 id="installation">Installation</h2><p>Enable Waydroid in your system configuration:</p>
+<p>After rebuilding and switching, finish the Waydroid install in your shell.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs">Fetch Waydroid images.
+You can add the parameters &quot;-s GAPPS -f&quot; to have GApps support.
+<span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">sudo</span> waydroid init</span></code></pre>
+      </div><p>How to certify a waydroid device for GAPPS<a href="https://github.com/waydroid/waydroid/issues/379#issuecomment-1152526650">1</a></p>
+<p>Before the following steps, you might need to do some GPU adjustments. See the troubleshooting section.</p>
+<h2 id="usage">Usage</h2><p>Start the container and userspace Wayland session. You&#39;ll know it is finished when you see the message &quot;Android with user 0 is ready&quot;.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">sudo</span> systemctl start waydroid-container</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">waydroid session start</span></code></pre>
+      </div><p>General usage</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs">Start Android UI
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">waydroid show-full-ui</span>
+
+List Android apps
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">waydroid app list</span>
+
+Start an Android app
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">waydroid app launch &lt;application name&gt;</span>
+
+Install an Android app
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">waydroid app install &lt;/path/to/app.apk&gt;</span>
+
+Enter the LXC shell
+<span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">sudo</span> waydroid shell</span>
+
+Overrides the full-ui width
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">waydroid prop <span class="hljs-built_in">set</span> persist.waydroid.width 608</span></code></pre>
+      </div><h2 id="maintenance">Maintenance</h2><h3 id="update-android">Update Android</h3><p>Use following command to upgrade Android (LineageOS) to a newer version if available</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">sudo</span> waydroid upgrade</span></code></pre>
+      </div><h3 id="resetting-android-container">Resetting Android Container</h3><div class="code-container">
+        
+        <pre><code class="language-console hljs">Stop Waydroid container
+<span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">sudo</span> systemctl stop waydroid-container</span>
+
+Removing images and user data
+<span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">sudo</span> <span class="hljs-built_in">rm</span> -r /var/lib/waydroid/* ~/.local/share/waydroid</span></code></pre>
+      </div><h2 id="tips-and-tricks">Tips and tricks</h2><h3 id="mount-host-directories">Mount host directories</h3><p>Install and configure graphical application <code>waydroid-helper</code></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span>  [ pkgs.waydroid-helper ];
+
+<span class="hljs-attr">systemd</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">packages</span> <span class="hljs-operator">=</span> [ pkgs.waydroid-helper ];
+  <span class="hljs-attr">services.waydroid-mount.wantedBy</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;multi-user.target&quot;</span> ];
+};</code></pre>
+      </div><p>Enable the user service which is also required. Note that this is not persistent and needs to get started after reboot again.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">systemctl --user start waydroid-monitor</code></pre>
+      </div><p>Now start <code>waydroid-helper</code> application and add a shared directory. As an example, source directory could be <code>/home/myuser/Public</code> and target directory <code>/home/myuser/.local/share/waydroid/data/media/0/NixOS</code>. Ensure that both directories already exist locally. After that you might need to restart the <em>Waydroid</em> container which is also possible with the graphical user interface.</p>
+<h3 id="gps-location-forwarding">GPS/Location forwarding</h3><p>First enable <em>geoclue2</em> and <em>adb</em> daemon on the host</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.geoclue2.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+<span class="hljs-attr">programs.adb.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><p>Enable location provider in your desktop environment. For Gnome Shell you can do this</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">gsettings <span class="hljs-built_in">set</span> org.gnome.system.location enabled <span class="hljs-literal">true</span></code></pre>
+      </div><p>To test and see location</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nix shell nixpkgs#geoclue2 -c $(nix <span class="hljs-built_in">eval</span> --raw nixpkgs#geoclue2)/libexec/geoclue-2.0/demos/where-am-i</code></pre>
+      </div><p>Get IP address of the Waydroid guest and connect <em>adb</em> to it</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">waydroid shell ip addr show
+adb connect &lt;IP&gt;:5555</code></pre>
+      </div><p>Download, initialize and run geobridge script</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">wget https://gitlab.com/papiris/geobridge/-/raw/main/geobridge.sh
+sh geobridge.sh --init</code></pre>
+      </div><h3 id="v4l2-camera-forwarding">V4L2 camera forwarding</h3><p>Camera forwarding using V4L2 is broken on upstream, but can be achieved by using the Waydroid images of the <a href="https://github.com/WayDroid-ATV">Waydroid-ATV project</a>. Further we also need an unstable Waydroid version (&gt;1.6.2) for running it.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">d<span class="hljs-attr">isabledModules</span> <span class="hljs-operator">=</span> [
+  <span class="hljs-string">&quot;virtualisation/waydroid.nix&quot;</span>
+];
+<span class="hljs-attr">imports</span> <span class="hljs-operator">=</span> [
+ <span class="hljs-string">&quot;<span class="hljs-subst">${inputs.nixpkgs-unstable}</span>/nixos/modules/virtualisation/waydroid.nix&quot;</span>
+];
+
+<span class="hljs-attr">nixpkgs.overlays</span> <span class="hljs-operator">=</span> [
+  (<span class="hljs-params">self:</span> <span class="hljs-params">super:</span> {
+    <span class="hljs-attr">waydroid</span> <span class="hljs-operator">=</span> (inputs.nixpkgs-unstable.legacyPackages.x86_64-linux.waydroid.overrideAttrs (<span class="hljs-params">old:</span> <span class="hljs-keyword">rec</span> {
+      <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;0-unstable-2026-04-26&quot;</span>;
+      <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> pkgs.fetchFromGitHub {
+        <span class="hljs-attr">owner</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;waydroid&quot;</span>;
+        <span class="hljs-attr">repo</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;waydroid&quot;</span>;
+        <span class="hljs-attr">rev</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;9478d59ad5c83b22478594e73d5879b93200fcb2&quot;</span>;
+        <span class="hljs-attr">hash</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sha256-L4qU5TSWavxvyPUqVV00NCd0YZqAaKPWTe3dR/q15LE=&quot;</span>;
+      };
+    }));
+  })
+];</code></pre>
+      </div><p>You might <a href="https://mirror.nixoscn.org/wiki/Waydroid/Waydroid#Resetting_Android_Container" class="wikilink" title="need to reset">need to reset</a> your existing Waydroid environment. Then stop the container and fetch the latest Waydroid-ATV images.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">systemctl stop waydroid-container
+waydroid init -f \
+  -c https://waydroid-atv.github.io/ota/a16-qpr2/system \
+  -v https://waydroid-atv.github.io/ota/a16-qpr2/vendor \
+  -r lineage \
+  -s GAPPS
+systemctl start waydroid-container
+waydroid session start</code></pre>
+      </div><p>In case the graphical interface wont show up or the setup wizard fails you can do</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">waydroid shell -- am start -a android.intent.action.MAIN -c android.intent.category.HOME  
+waydroid shell -- pm disable-user --user 0 com.google.android.setupwizard
+waydroid shell -- pm disable-user --user 0 com.google.android.gms.setup</code></pre>
+      </div><p>In case the camera access will crash the Waydroid container, there&#39;s a recent image which solves this on AMD GPUs. Download it and extract the contents to <code>/etc/waydroid-extra/images</code>. After that recreate the environment as mentioned above but only issue <code>waydroid init -f</code>.</p>
+<h3 id="footnote-ref-1">Running applications that differ from the current host architecture via libhoudini or libndk<sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Waydroid#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup></h3><p>Run <code>nix shell github:nix-community/NUR#repos.ataraxiasjel.waydroid-script -c sudo waydroid-script</code></p>
+<p>Or, alternatively, add <code>nur.repos.ataraxiasjel.waydroid-script</code> from the NUR to your flake or shell or NixOS <code>environment.systemPackages</code>, or HM <code>home.packages</code> or something like that based on <a href="https://github.com/nix-community/NUR">readme</a> and run <code>sudo waydroid-script</code></p>
+<p>In the TUI, select Android 13 &gt; Install &gt; libhoudini (or libndk, <a href="https://github.com/casualsnek/waydroid_script/blob/fcb15624db0811615ea9800837a836c4777674bf/README.md#install-libndk-arm-translation">which script author claims may be faster on AMD</a>)</p>
+<h2 id="troubleshooting">Troubleshooting</h2><h3 id="gpu-adjustments">GPU Adjustments</h3><p>In case you have an NVIDIA card or an RX 6800 series, you&#39;ll need to disable GBM and mesa-drivers:</p>
+<h2 id="see-also">See Also:</h2><ul>
+<li><a href="https://wiki.archlinux.org/title/Waydroid">Waydroid article on the Archlinux Wiki</a></li>
+</ul>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p>Need help with activating libhoudini for waydroid on NixOS</p>
+<p><a href="https://www.reddit.com/r/NixOS/comments/15k2jxc/need_help_with_activating_libhoudini_for_waydroid/">https://www.reddit.com/r/NixOS/comments/15k2jxc/need_help_with_activating_libhoudini_for_waydroid/</a> <a href="https://mirror.nixoscn.org/wiki/Waydroid#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

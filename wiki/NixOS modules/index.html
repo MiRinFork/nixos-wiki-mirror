@@ -1,0 +1,657 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NixOS modules</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / NixOS modules</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: NixOS modules -->
+
+<p>NixOS produces a full system configuration by combining smaller, more isolated and reusable components: <strong>Modules</strong>. A module is a file containing a Nix expression with a specific structure. It <em>declares</em> options for other modules to <em>define</em> (give a value). It processes them and defines options declared in other modules.<sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/NixOS%20modules#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup></p>
+<p>For example, is a module. Most other modules are in .</p>
+<h2 id="structure">Structure</h2><p>Modules have the following syntax:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">imports</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-comment"># Paths to other modules.</span>
+    <span class="hljs-comment"># Compose this module out of smaller ones.</span>
+  ];
+
+  <span class="hljs-attr">options</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-comment"># Option declarations.</span>
+    <span class="hljs-comment"># Declare what settings a user of this module can set.</span>
+    <span class="hljs-comment"># Usually this includes a global &quot;enable&quot; option which defaults to false.</span>
+  };
+
+  <span class="hljs-attr">config</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-comment"># Option definitions.</span>
+    <span class="hljs-comment"># Define what other settings, services and resources should be active.</span>
+    <span class="hljs-comment"># Usually these depend on whether a user of this module chose to &quot;enable&quot; it</span>
+    <span class="hljs-comment"># using the &quot;option&quot; above. </span>
+    <span class="hljs-comment"># Options for modules imported in &quot;imports&quot; can be set here.</span>
+  };
+
+  <span class="hljs-attr">meta</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-comment"># Meta-attributes to provide extra information like documentation or maintainers.</span>
+  };
+}</code></pre>
+      </div><p>There is a shorthand for modules without any option declarations:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">imports</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-comment"># Paths to other modules.</span>
+    <span class="hljs-symbol">./module.nix</span>
+    <span class="hljs-symbol">/path/to/absolute/module.nix</span>
+  ];
+
+  <span class="hljs-comment"># Config definitions.</span>
+  <span class="hljs-attr">services.othermodule.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-comment"># ...</span>
+  <span class="hljs-comment"># Notice that you can leave out the &quot;config { }&quot; wrapper.</span>
+}</code></pre>
+      </div><p>Note that despite the name, <code>imports = [./module.nix]</code> should not be confused with the Nix <a href="https://nixos.org/manual/nix/stable/language/builtins.html#builtins-import">builtins</a> function <code>import module.nix</code>.</p>
+<p><code>imports</code> expects a path to a file containing a NixOS module structured as described here. <code>import</code> can load arbitrary Nix expression from provided file with no expectation of structure. (no expected structure). See <a href="https://discourse.nixos.org/t/import-list-in-configuration-nix-vs-import-function/11372/8">this post</a> for more details.</p>
+<p>Note: <code>imports</code> provides the same behavior as the obsolete <code>require</code>. There is no reason to use <code>require</code> anymore, however it may still linger in some legacy code.</p>
+<h3 id="function">Function</h3><p>A module may be a function accepting an attribute set.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ config, pkgs, ... }:
+{
+  <span class="hljs-attr">imports</span> <span class="hljs-operator">=</span> [];
+  <span class="hljs-comment"># ...</span>
+}</code></pre>
+      </div><p>Following arguments are available in NixOS modules by default:</p>
+<dl>
+
+<dt>
+
+<p><a href="nixos:config_argument" class="wikilink" title="config"><code>config</code></a></p>
+</dt>
+
+<dd>
+
+<p>The configuration of the entire system.</p>
+</dd>
+
+<dt>
+
+<p><code>options</code></p>
+</dt>
+
+<dd>
+
+<p>All option declarations refined with all definition and declaration references.</p>
+</dd>
+
+<dt>
+
+<p><code>lib</code></p>
+</dt>
+
+<dd>
+
+<p>An instance of the nixpkgs &quot;standard library&quot;, providing what usually is in <code>pkgs.lib</code>.</p>
+</dd>
+
+<dt>
+
+<p><code>pkgs</code></p>
+</dt>
+
+<dd>
+
+<p>The attribute set extracted from the Nix package collection and enhanced with the <code>nixpkgs.config</code> option.</p>
+</dd>
+
+<dt>
+
+<p><code>modulesPath</code></p>
+</dt>
+
+<dd>
+
+<p>The location of the <code>module</code> directory of NixOS.</p>
+</dd>
+
+</dl>
+
+<p>The &quot;<code>...</code>&quot; part of the argument attribute set indicates that this module does not depend on the rest of the arguments. When the module is defined as a function, this pattern is typically required, otherwise the evaluation will fail citing unexpected arguments.</p>
+<h4 id="passing-custom-values-to-modules">Passing custom values to modules</h4><p>The <a href="nixos:config_argument" class="wikilink" title="config"><code>config</code></a>, <code>options</code>, <code>lib</code>, <code>pkgs</code>, and <code>modulesPath</code> arguments are passed automatically to modules, when the module is imported.</p>
+<p>For example, in the following Nix flake, the `./configuration.nix` file will be provided with the default set of arguments listed above, plus `extraArg`, which was set in the `specialArgs` argument to the `nixosGenerate` function.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">inputs</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">nixpkgs.url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:NixOS/nixpkgs/nixos-23.11&quot;</span>;
+    <span class="hljs-attr">nixos-generators</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:nix-community/nixos-generators&quot;</span>;
+      <span class="hljs-attr">inputs.nixpkgs.follows</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nixpkgs&quot;</span>;
+    };
+    <span class="hljs-attr">xc</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:joerdav/xc&quot;</span>;
+      <span class="hljs-attr">inputs.nixpkgs.follows</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nixpkgs&quot;</span>;
+    };
+  };
+
+  <span class="hljs-attr">outputs</span> <span class="hljs-operator">=</span> { nixpkgs, nixos-generators, xc, ... }:
+    <span class="hljs-keyword">let</span>
+      <span class="hljs-attr">pkgsForSystem</span> <span class="hljs-operator">=</span> <span class="hljs-params">system:</span> <span class="hljs-built_in">import</span> nixpkgs {
+        <span class="hljs-keyword">inherit</span> system;
+        <span class="hljs-attr">overlays</span> <span class="hljs-operator">=</span> [
+          (<span class="hljs-params">final:</span> <span class="hljs-params">prev:</span> { <span class="hljs-attr">xc</span> <span class="hljs-operator">=</span> xc.packages.${system}.xc; })
+        ];
+      };
+      <span class="hljs-attr">allVMs</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;x86_64-linux&quot;</span> <span class="hljs-string">&quot;aarch64-linux&quot;</span> ];
+      <span class="hljs-attr">forAllVMs</span> <span class="hljs-operator">=</span> <span class="hljs-params">f:</span> nixpkgs.lib.genAttrs allVMs (<span class="hljs-params">system:</span> f {
+        <span class="hljs-keyword">inherit</span> system;
+        <span class="hljs-attr">pkgs</span> <span class="hljs-operator">=</span> pkgsForSystem system;
+      });
+    <span class="hljs-keyword">in</span>
+    {
+      <span class="hljs-attr">packages</span> <span class="hljs-operator">=</span> forAllVMs ({ system, pkgs }: {
+        <span class="hljs-attr">vm</span> <span class="hljs-operator">=</span> nixos-generators.nixosGenerate {
+          <span class="hljs-attr">system</span> <span class="hljs-operator">=</span> system;
+          <span class="hljs-attr">specialArgs</span> <span class="hljs-operator">=</span> { 
+            <span class="hljs-attr">extraArg</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;foobar&quot;</span>;
+          };
+          <span class="hljs-attr">modules</span> <span class="hljs-operator">=</span> [
+            <span class="hljs-symbol">./configuration.nix</span>
+          ];
+          <span class="hljs-attr">format</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;raw&quot;</span>;
+        };
+      });
+    };
+}</code></pre>
+      </div><h4 id="modulespath">modulesPath</h4><p>Some modules use <code>modulesPath</code> to import nixos libraries</p>
+<p>For example <code>nixos/modules/virtualisation/digital-ocean-config.nix</code></p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">{ config, pkgs, lib, modulesPath, ... }:
+  imports = [
+    (modulesPath + &quot;/profiles/qemu-guest.nix&quot;)
+    (modulesPath + &quot;/virtualisation/digital-ocean-init.nix&quot;)
+  ];</code></pre>
+      </div><p>The Nix variable <code>modulesPath</code> is parsed from the environment variable <code>NIX_PATH</code></p>
+<p>When <code>NIX_PATH</code> is empty, Nix can throw the error <code>undefined variable &#39;modulesPath&#39;</code></p>
+<p><code>NIX_PATH</code> should look something like this:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">echo $NIX_PATH | tr : '\n' 
+nixpkgs=/nix/var/nix/profiles/per-user/root/channels/nixos
+nixos-config=/etc/nixos/configuration.nix
+/nix/var/nix/profiles/per-user/root/channels</code></pre>
+      </div><p>Here, the <code>modulesPath</code> is <code>/nix/var/nix/profiles/per-user/root/channels</code></p>
+<p>When a Nix expression calls <code>import </code><nixpkgs>,<br>then Nix will load <code>/nix/var/nix/profiles/per-user/root/channels/nixos</code></p>
+<h3 id="imports">Imports</h3><p>Imports are paths to other NixOS modules that should be included in the evaluation of the system configuration. A default set of modules is defined in . These don&#39;t need to be added in the import list.</p>
+<h3 id="option-declarations">Option Declarations</h3><p>Declarations specify a module&#39;s external interfaces.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">o<span class="hljs-attr">ptions</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">optionName</span> <span class="hljs-operator">=</span> lib.options.mkOption {
+    <span class="hljs-comment"># ...</span>
+  };
+}</code></pre>
+      </div><p>They are created with , a function in <code>lib</code>.<sup><a id="footnote-ref-2" href="https://mirror.nixoscn.org/wiki/NixOS%20modules#footnote-2" data-footnote-ref aria-describedby="footnote-label">2</a></sup><sup><a id="footnote-ref-3" href="https://mirror.nixoscn.org/wiki/NixOS%20modules#footnote-3" data-footnote-ref aria-describedby="footnote-label">3</a></sup></p>
+<h4 id="examples">Examples</h4><p><img src="https://mirror.nixoscn.org/wiki/NixOS%20modules/NixOS_Search_-_Options.png" title="For even more examples you can browse NixOS/nixpkgs: Search a similar option on NixOS Search - Options and click on the link beside &quot;Declared in&quot; and studding the option declarations." width="270" height="270" alt="For even more examples you can browse NixOS/nixpkgs: Search a similar option on NixOS Search - Options and click on the link beside &quot;Declared in&quot; and studding the option declarations." /> Some useful option examples:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs">{ lib, pkgs, ... }: {
+  <span class="hljs-attr">options.examples</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> lib.options.mkEnableOption <span class="hljs-string">&quot;showcasing of options&quot;</span>;
+    <span class="hljs-comment"># type = lib.types.bool;</span>
+
+    <span class="hljs-attr">package</span> <span class="hljs-operator">=</span> lib.options.mkPackageOption pkgs <span class="hljs-string">&quot;bash&quot;</span> { };
+    <span class="hljs-comment"># type = lib.types.package;</span>
+
+    <span class="hljs-attr">numberOfTheDay</span> <span class="hljs-operator">=</span> lib.options.mkOption {
+      <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> lib.types.ints.between <span class="hljs-number">50</span> <span class="hljs-number">100</span>;
+      <span class="hljs-attr">default</span> <span class="hljs-operator">=</span> <span class="hljs-number">61</span>;
+    };
+
+    <span class="hljs-attr">groceries</span> <span class="hljs-operator">=</span> lib.options.mkOption {
+      <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> lib.types.listOf lib.types.strMatching <span class="hljs-string">&quot;^[a-z]*{{content}}quot;</span>;
+      <span class="hljs-attr">default</span> <span class="hljs-operator">=</span> [];
+      <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Showcase `listOf` and `strMatching`&quot;</span>.
+      <span class="hljs-attr">example</span> <span class="hljs-operator">=</span> [
+        <span class="hljs-string">&quot;bananas&quot;</span>
+        <span class="hljs-string">&quot;cherrys&quot;</span>
+        <span class="hljs-string">&quot;Throws an error at evaluation beause of regex not matching.&quot;</span>
+      ];
+    };
+
+    <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> lib.options.mkOption {
+      <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> lib.types.toml;
+      <span class="hljs-attr">default</span> <span class="hljs-operator">=</span> {};
+      <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        Showcase the possible option for settings of a configuration
+        file.
+        Always document, where you can find possible options e.g.: 
+          Refer &lt;https://example.com/&gt; for possible options.
+      &#x27;&#x27;</span>;
+      <span class="hljs-attr">example</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">global</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">log_format</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;-&quot;</span>;
+          <span class="hljs-attr">log_filter</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;^{{content}}quot;</span>;
+        };
+      };
+    };
+   
+    <span class="hljs-attr">units</span> <span class="hljs-operator">=</span> lib.options.mkOption {
+      <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> lib.types.attrsOf (lib.types.submodule (
+        { name, ... }:
+        {
+          <span class="hljs-attr">options</span> <span class="hljs-operator">=</span> {
+            <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> lib.options.mkOption {
+              <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> lib.types.str;
+              <span class="hljs-attr">default</span> <span class="hljs-operator">=</span> name;
+              <span class="hljs-attr">defaultText</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&lt;name&gt;&quot;</span>;
+              <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Name of the unit&quot;</span>;
+            };
+            <span class="hljs-attr">unit</span> <span class="hljs-operator">=</span> lib.options.mkOption {
+              <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> lib.types.str;
+              <span class="hljs-attr">defaultText</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+                Default will be set in the `config` block
+                of the `submodule` (see down below)
+              &#x27;&#x27;</span>;
+              <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;A unit of measurement&quot;</span>;
+            };
+          };
+          <span class="hljs-attr">config</span> <span class="hljs-operator">=</span> {
+            <span class="hljs-attr">unit</span> <span class="hljs-operator">=</span> lib.mkDefault <span class="hljs-string">&quot;kg&quot;</span>;
+          };
+        }
+      ));
+      <span class="hljs-attr">default</span> <span class="hljs-operator">=</span> {};
+      <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Showcase the combination `attrsOf` and `submodule`&quot;</span>;
+      <span class="hljs-attr">example</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-string">&quot;unit1&quot;</span> <span class="hljs-operator">=</span> { <span class="hljs-attr">unit</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;m&quot;</span> };
+        <span class="hljs-string">&quot;unit2&quot;</span>.unit <span class="hljs-operator">=</span> <span class="hljs-string">&quot;cm&quot;</span>;
+        <span class="hljs-string">&quot;unit3&quot;</span> <span class="hljs-operator">=</span> {}; <span class="hljs-comment"># kg</span>
+      };
+    };
+  };
+}</code></pre>
+      </div><h2 id="rationale">Rationale</h2><p>Modules were introduced to allow extending NixOS without modifying its source code.<sup><a id="footnote-ref-4" href="https://mirror.nixoscn.org/wiki/NixOS%20modules#footnote-4" data-footnote-ref aria-describedby="footnote-label">4</a></sup> They also allow splitting up <code>configuration.nix</code>, making the system configuration easier to maintain and to reuse.</p>
+<h2 id="example">Example</h2><p>To see how modules are setup and reuse other modules in practice put <code>hello.nix</code> in the same folder as your <code>configuration.nix</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ lib, pkgs, config, ... }:
+<span class="hljs-keyword">with</span> lib;                      
+<span class="hljs-keyword">let</span>
+  <span class="hljs-comment"># Shorter name to access final settings a </span>
+  <span class="hljs-comment"># user of hello.nix module HAS ACTUALLY SET.</span>
+  <span class="hljs-comment"># cfg is a typical convention.</span>
+  <span class="hljs-attr">cfg</span> <span class="hljs-operator">=</span> config.services.hello;
+<span class="hljs-keyword">in</span> {
+  <span class="hljs-attr">meta.doc</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Says hello every time you login.&quot;</span>;
+
+  <span class="hljs-comment"># Declare what settings a user of this &quot;hello.nix&quot; module CAN SET.</span>
+  <span class="hljs-attr">options.services.hello</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> mkEnableOption <span class="hljs-string">&quot;hello service&quot;</span>;
+    <span class="hljs-attr">greeter</span> <span class="hljs-operator">=</span> mkOption {
+      <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> types.str;
+      <span class="hljs-attr">default</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;world&quot;</span>;
+    };
+  };
+
+  <span class="hljs-comment"># Define what other settings, services and resources should be active IF</span>
+  <span class="hljs-comment"># a user of this &quot;hello.nix&quot; module ENABLED this module </span>
+  <span class="hljs-comment"># by setting &quot;services.hello.enable = true;&quot;.</span>
+  <span class="hljs-attr">config</span> <span class="hljs-operator">=</span> mkIf cfg.enable {
+    <span class="hljs-attr">systemd.services.hello</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">wantedBy</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;multi-user.target&quot;</span> ];
+      <span class="hljs-attr">serviceConfig.ExecStart</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.hello}</span>/bin/hello -g&#x27;Hello, <span class="hljs-subst">${escapeShellArg cfg.greeter}</span>!&#x27;&quot;</span>;
+    };
+  };
+}</code></pre>
+      </div><p>The other <code>configuration.nix</code> module can then import this <code>hello.nix</code> module and decide to enable it (and optionally set other allowed settings) as follows:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">imports</span> <span class="hljs-operator">=</span> [ <span class="hljs-symbol">./hello.nix</span> ];
+  ...
+  <span class="hljs-attr">services.hello</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">greeter</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Bob&quot;</span>;
+  };
+}</code></pre>
+      </div><h2 id="advanced-use-cases">Advanced Use Cases</h2><h3 id="compatibility-issues-with-different-nixpkgs-versions">Compatibility Issues with Different Nixpkgs Versions</h3><p>Module options between Nixpkgs revisions can sometimes change in incompatible ways.</p>
+<p>For example, the option <code>services.nginx.virtualHosts.*.port</code> in nixpkgs-17.03 was replaced by <code>services.nginx.virtualHosts.*.listen</code> in nixpkgs-17.09. If configuration.nix has to accommodate both variants, <code>options</code> can be inspected:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ options, ... }: {
+  <span class="hljs-attr">services.nginx.virtualHosts.somehost</span> <span class="hljs-operator">=</span> { <span class="hljs-comment">/* common configuration */</span> }
+    <span class="hljs-operator">//</span> (<span class="hljs-keyword">if</span> <span class="hljs-built_in">builtins.hasAttr</span> <span class="hljs-string">&quot;port&quot;</span> (<span class="hljs-built_in">builtins.head</span> options.services.nginx.virtualHosts.type.getSubModules).submodule.options
+          <span class="hljs-keyword">then</span> { <span class="hljs-attr">port</span> <span class="hljs-operator">=</span> <span class="hljs-number">8000</span>; }
+          <span class="hljs-keyword">else</span> { <span class="hljs-attr">listen</span> <span class="hljs-operator">=</span> [ { <span class="hljs-attr">addr</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;0.0.0.0&quot;</span>; <span class="hljs-attr">port</span> <span class="hljs-operator">=</span> <span class="hljs-number">8000</span>; } ]; });
+}</code></pre>
+      </div><h3 id="abstract-imports">Abstract imports</h3><p>To import a module that&#39;s stored <em>somewhere</em> (but for which you have neither an absolute nor a relative path), you can use <a href="https://github.com/musnix/musnix#basic-usage">NIX_PATH elements</a> or <code>specialArgs</code> from <code>nixos/lib/eval-config.nix</code>.</p>
+<p>This is useful for e.g. pulling modules from a git repository without adding it as a channel, or if you just prefer using paths relative to a root you can change (as opposed to the current file, which could move in the future).</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-keyword">let</span>
+  <span class="hljs-keyword">inherit</span> (<span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> {}) writeShellScriptBin fetchgit;
+  <span class="hljs-attr">yourModules</span> <span class="hljs-operator">=</span> fetchgit { ... };
+<span class="hljs-keyword">in</span> <span class="hljs-keyword">rec</span> {
+  <span class="hljs-attr">nixos</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> <span class="hljs-operator">&lt;</span>nixpkgs<span class="hljs-operator">/</span>nixos<span class="hljs-operator">/</span>lib<span class="hljs-operator">/</span>eval-config.nix<span class="hljs-operator">&gt;</span> {
+    <span class="hljs-attr">modules</span> <span class="hljs-operator">=</span> [ <span class="hljs-symbol">./configuration.nix</span> ];
+    <span class="hljs-attr">specialArgs.mod</span> <span class="hljs-operator">=</span> <span class="hljs-params">name:</span> <span class="hljs-string">&quot;<span class="hljs-subst">${yourModules}</span>/<span class="hljs-subst">${name}</span>&quot;</span>;
+  };
+
+  <span class="hljs-comment">/* use nixos here, e.g. for deployment or building an image */</span>
+}</code></pre>
+      </div><div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ config, lib, pkgs, mod, ... }: {
+  <span class="hljs-attr">imports</span> <span class="hljs-operator">=</span> [
+    (mod <span class="hljs-string">&quot;foo.nix&quot;</span>)
+  ];
+
+  ...
+}</code></pre>
+      </div><h3 id="using-external-nixos-modules">Using external NixOS modules</h3><p>Some external modules provide extra functionality to the NixOS module system. You can include these modules, after making them available as a file system path (e.g. through <code>builtins.fetchTarball</code>), by using <code>imports = [ `path to module`]</code> in your <code>configuration.nix</code>.</p>
+<ul>
+<li><a href="https://github.com/ip1981/nixsap">Nixsap</a> - allows to run multiple instances of a service without containers.</li>
+<li><a href="https://github.com/musnix/musnix">musnix</a> - real-time audio in NixOS.</li>
+<li><a href="https://gitlab.com/simple-nixos-mailserver/nixos-mailserver">nixos-mailserver</a> - full-featured mail server module</li>
+<li><a href="https://github.com/xtruder/nix-profiles">X-Truder Nix-profiles</a> - modules for Nix to quickly configure your system based on application profiles.</li>
+</ul>
+<h3 id="disabling-modules">Disabling modules</h3><p>In some cases, you may wish to override or disable modules previously imported, for example by NixOS. This can be achieved using the top-level attribute <code>disabledModules</code><sup><a id="footnote-ref-5" href="https://mirror.nixoscn.org/wiki/NixOS%20modules#footnote-5" data-footnote-ref aria-describedby="footnote-label">5</a></sup>. It prevents that module, as well as any module it imports itself, from being imported into the current config scope. This means that neither the options it declares nor the configuration it might set are actually imported. This can be particularly useful to override or debug the implementation of a certain module, for example to use a module from an unstable NixOS channel while using the stable version of every other module in the system.</p>
+<p>To disable a given module, you must refer to it based on either:</p>
+<ul>
+<li>the full, absolute path of the module: <code>/mnt/dev/foo/my-modules/services/thingy.nix</code></li>
+</ul>
+<p>{ ... }: {</p>
+<p><code> imports = [ </code>&lt;jade-nur/modules&gt;<code> ];</code></p>
+<p><code> disabledModules = [</code><br><code>   # make sure that the GL module is never imported</code><br><code>   &quot;/home/xia/custom-modules/gl.nix&quot;</code></p>
+<p><code>   # prevent the tilix module from &#39;jade-nur&#39; being imported</code><br><code>   # note that this doesn&#39;t disable the rest of &#39;jade-nur/modules&#39;</code><br><code>   &lt;jade-nur/modules/programs/tilix.nix&gt;</code><br><code> ];</code></p>
+<p>}</p>
+</syntaxhighlight>
+
+<ul>
+<li>the path relative to the value of <code>modulesPath</code>: <code>&quot;programs/hello.nix&quot;</code></li>
+</ul>
+<p>{ ... }: {</p>
+<p><code> disabledModules = [</code><br><code>   # prevent NixOS&#39;s immich module from being imported</code><br><code>   &quot;services/web-apps/immich.nix&quot;</code><br><code> ];</code></p>
+<p><code> imports = [</code><br><code>   # ...and then import a replacement of it from somewhere else</code><br><code>   </code>&lt;hotnix/services/immich&gt;<br><code> ];</code></p>
+<p>}</p>
+</syntaxhighlight>
+
+<ul>
+<li>an attribute set containing a <code>key</code> attribute, which should be a unique identity declared by the module you&#39;re trying to disable: <code>{ key = &quot;my-super-unique-module&quot;; }</code>. This is most useful for modules you have control over, as modules from NixOS and home-manager do not generally have specific keys.</li>
+</ul>
+<ol>
+<li>in file foo.nix</li>
+</ol>
+<p>{ ... }: {</p>
+<p><code> disabledModules = [</code><br><code>   # disable the module with the exact</code><br><code>   # key &quot;staple-battery-horse&quot;, as well</code><br><code>   # as any module it imports itself</code><br><code>   { key = &quot;staple-battery-horse&quot;; }</code><br><code> ];</code><br><code> ...</code></p>
+<p>}</p>
+<ol>
+<li>in file horse.nix, which could be imported</li>
+<li>from somewhere else in the config</li>
+</ol>
+<p>{ ... }: {</p>
+<p><code> # this key should be globally unique, it is</code><br><code> # the unique ID by which this module is tracked</code><br><code> # by the module system, and thus how it can</code><br><code> # be precisely disabled</code><br><code> key = &quot;stable-battery-horse&quot;;</code></p>
+<p><code> imports = [ ./impl.nix ];</code><br><code> options = { ... };</code></p>
+<p>}</p>
+</syntaxhighlight>
+
+<p>Note that keys and paths (whether absolute or relative) must be exact. For example, <code>disabledModules = [ &quot;services/web-apps&quot; ]</code> won&#39;t have any effect, because the files inside that folder are imported individually; however, <code>disabledModules = [ &quot;services/web-apps/akkoma.nix&quot; &quot;services/web-apps/immich.nix&quot; ... ];</code> will disable every module specified.</p>
+<p>More examples are available in the <a href="https://nixos.org/manual/nixos/unstable/#sec-replace-modules">&quot;Replace modules&quot; section of the NixOS manual</a> .</p>
+<h2 id="under-the-hood">Under the hood</h2><p>The following was taken from a comment by Infinisil on reddit <sup><a id="footnote-ref-6" href="https://mirror.nixoscn.org/wiki/NixOS%20modules#footnote-6" data-footnote-ref aria-describedby="footnote-label">6</a></sup>.</p>
+<p>A NixOS system is described by a single system derivation. builds this derivation with and then switches to that system with .</p>
+<p>The entrypoint is the file at , which defines the attribute to be the NixOS option . This option is the topmost level of the NixOS evaluation and it&#39;s what almost all options eventually end up influencing through potentially a number of intermediate options.</p>
+<p>As an example:</p>
+<ul>
+<li>The high-level option services.nginx.enable uses the lower-level option systemd.services.nginx</li>
+<li>Which in turn uses the even-lower-level option systemd.units.&quot;nginx.service&quot;</li>
+<li>Which in turn uses environment.etc.&quot;systemd/system&quot;</li>
+<li>Which then ends up as result/etc/systemd/system/nginx.service in the toplevel derivation</li>
+</ul>
+<p>So high-level options use lower-level ones, eventually ending up at .</p>
+<p>How do these options get evaluated though? That&#39;s what the NixOS module system does, which lives in the directory (in , and ). The module system can even be used without NixOS, allowing you to use it for your own option sets. Here&#39;s a simple example of this, whose option you can evaluate with :</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-keyword">let</span>
+  <span class="hljs-attr">systemModule</span> <span class="hljs-operator">=</span> { lib, config, ... }: {
+    <span class="hljs-attr">options.toplevel</span> <span class="hljs-operator">=</span> lib.mkOption {
+      <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> lib.types.str;
+    };
+
+    <span class="hljs-attr">options.enableFoo</span> <span class="hljs-operator">=</span> lib.mkOption {
+      <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> lib.types.bool;
+      <span class="hljs-attr">default</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+    };
+
+    <span class="hljs-attr">config.toplevel</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+      Is foo enabled? <span class="hljs-subst">${lib.boolToString config.enableFoo}</span>
+    &#x27;&#x27;</span>;
+  };
+
+  <span class="hljs-attr">userModule</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enableFoo</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  };
+
+<span class="hljs-keyword">in</span> (<span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs/lib&gt;</span>).evalModules {
+  <span class="hljs-attr">modules</span> <span class="hljs-operator">=</span> [ systemModule userModule ];
+}</code></pre>
+      </div><p>The module system itself is rather complex, but here&#39;s a short overview. A module evaluation consists of a set of &quot;modules&quot;, which can do three things:</p>
+<ul>
+<li>Import other modules (through <code>imports = [ ./other-module.nix ]</code>)</li>
+<li>Declare options (through <code>options = { ... }</code>)</li>
+<li>Define option values (through <code>config = { ... }</code>, or without the config key as a shorthand if you don&#39;t have imports or options)</li>
+</ul>
+<p>To do the actual evaluation, there&#39;s these rough steps:</p>
+<ul>
+<li>Recursively collect all modules by looking at all statements</li>
+<li>Collect all option declarations (with ) of all modules and merge them together if necessary</li>
+<li>For each option, evaluate it by collecting all its definitions (with ) from all modules and merging them together according to the options type.</li>
+</ul>
+<p>Note that the last step is lazy (only the options you need are evaluated) and depends on other options itself (all the ones that influence it)</p>
+<h2 id="more-complex-usages">More complex usages</h2><p>The examples below contain:</p>
+<ul>
+<li>a child `mkOption` inherits their default from a parent `mkOption`</li>
+<li>reading default values from neighbouring `mkOption`(s) for conditional defaults</li>
+<li>passing in the config, to read the hostName from a submodule (email system)</li>
+<li>setting default values from attrset (email system)</li>
+<li>generating documentation for custom modules (outside of nixpkgs). <a href="https://discourse.nixos.org/t/franken-script-to-generate-nixos-options-docs-with-custom-modules/1674">See here</a></li>
+</ul>
+<p>Source:</p>
+<ul>
+<li><a href="https://github.com/nixcloud/nixcloud-webservices/blob/master/modules/services/reverse-proxy/default.nix">https://github.com/nixcloud/nixcloud-webservices/blob/master/modules/services/reverse-proxy/default.nix</a></li>
+<li><a href="https://github.com/nixcloud/nixcloud-webservices/blob/master/modules/services/reverse-proxy/options.nix">https://github.com/nixcloud/nixcloud-webservices/blob/master/modules/services/reverse-proxy/options.nix</a></li>
+<li><a href="https://github.com/nixcloud/nixcloud-webservices/blob/master/modules/services/TLS/default.nix">https://github.com/nixcloud/nixcloud-webservices/blob/master/modules/services/TLS/default.nix</a></li>
+<li><a href="https://github.com/nixcloud/nixcloud-webservices/blob/master/modules/services/email/nixcloud-email.nix#L114">https://github.com/nixcloud/nixcloud-webservices/blob/master/modules/services/email/nixcloud-email.nix#L114</a></li>
+</ul>
+<p>(sorry, dont&#39; have more time to make this into a nice little guide yet, but this links should be pretty good introductions into more advanced module system usages) qknight</p>
+<h2 id="developing-modules">Developing modules</h2><p>To test your module out, you can run the following from a local checkout of nixpkgs with a copy of a <code>configuration.nix</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nixos-rebuild build-vm --fast -I nixos-config=./configuration.nix -I nixpkgs=.</code></pre>
+      </div><p>If you&#39;re developing on top of master, this will potentially cause the compilation of lots of packages, since changes on master might not cached on cache.nixos.org yet. To avoid that, you can develop your module on top of the <code>nixos-unstable</code> <a href="https://mirror.nixoscn.org/wiki/NixOS%20modules/Channel_branches" class="wikilink" title="channel branch">channel branch</a>, tracked by the eponymous branch in <a href="https://github.com/NixOS/nixpkgs">https://github.com/NixOS/nixpkgs</a>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">git checkout -b mymodule upstream/nixos-unstable</code></pre>
+      </div><h3 id="with-flakes">With Flakes</h3><p>If you&#39;re developing a module from nixpkgs, you can try and follow the directions here: <a href="https://github.com/Misterio77/nix-starter-configs/issues/28">https://github.com/Misterio77/nix-starter-configs/issues/28</a>.</p>
+<p>If you want to develop a module from a git repo, you can use `--override-input`. For example, if you have an input in your flake called ,, you can use</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nixos-rebuild switch --override-input jovian &lt;path-to-url&gt; --flake &lt;uri&gt;</code></pre>
+      </div><p>Of course, it doesn&#39;t have to <a href="https://mirror.nixoscn.org/wiki/NixOS%20modules/nixos-rebuild" class="wikilink" title="nixos-rebuild"><code>nixos-rebuild</code></a> in particular.</p>
+<h2 id="references">References</h2><references />
+
+<h2 id="see-also">See also</h2><ul>
+<li><a href="nixos:extend_NixOS" class="wikilink" title="NixOS:extend_NixOS">NixOS:extend_NixOS</a></li>
+<li><a href="nixos:Properties" class="wikilink" title="NixOS:Properties">NixOS:Properties</a></li>
+<li><a href="https://discourse.nixos.org/t/best-resources-for-learning-about-the-nixos-module-system">NixOS discourse, &quot;Best resources for learning about the NixOS module system?&quot;</a></li>
+<li>Debian <a href="http://wiki.debian.org/PackageConfigUpgrade">Config::Model</a>: target configuration upgrades by abstracting the option of the configuration. Each file is a tree structure where leaves are values defined with an interpreted type. The interpreters are defined for each meta-configuration files name *.conf. Configuration files does not seems to interact with each other to make consistent configuration. They provide an UI for editing their configuration file.</li>
+</ul>
+<p><a href="category:Configuration" class="wikilink" title="Category:Configuration">Category:Configuration</a> <a href="category:Reference" class="wikilink" title="Category:Reference">Category:Reference</a> <a href="category:NixOS" class="wikilink" title="Category:NixOS">Category:NixOS</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+ <a href="https://mirror.nixoscn.org/wiki/NixOS%20modules#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a>
+</li>
+<li id="footnote-2">
+ <a href="https://mirror.nixoscn.org/wiki/NixOS%20modules#footnote-ref-2" data-footnote-backref aria-label="Back to reference 2">↩</a>
+</li>
+<li id="footnote-3">
+ <a href="https://mirror.nixoscn.org/wiki/NixOS%20modules#footnote-ref-3" data-footnote-backref aria-label="Back to reference 3">↩</a>
+</li>
+<li id="footnote-4">
+<p><a href="https://nixos.org/nix-dev/2008-November/001467.html">[Nix-dev] NixOS: New scheme</a> <a href="https://mirror.nixoscn.org/wiki/NixOS%20modules#footnote-ref-4" data-footnote-backref aria-label="Back to reference 4">↩</a></p>
+</li>
+<li id="footnote-5">
+<p><a href="https://github.com/NixOS/nixpkgs/blob/master/nixos/doc/manual/development/replace-modules.section.md">&quot;Replace Modules&quot; section, NixOS manual</a> <a href="https://mirror.nixoscn.org/wiki/NixOS%20modules#footnote-ref-5" data-footnote-backref aria-label="Back to reference 5">↩</a></p>
+</li>
+<li id="footnote-6">
+<p>Infinisil, <a href="https://www.reddit.com/r/NixOS/comments/gdnzhy/question_how_nixos_options_works_underthehood/">https://www.reddit.com/r/NixOS/comments/gdnzhy/question_how_nixos_options_works_underthehood/</a> <a href="https://mirror.nixoscn.org/wiki/NixOS%20modules#footnote-ref-6" data-footnote-backref aria-label="Back to reference 6">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

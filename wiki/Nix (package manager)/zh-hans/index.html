@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nix (package manager)/zh-hans</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/Nix%20(package%20manager)">Nix (package manager)</a><span aria-hidden="true"> / </span>zh-hans</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Nix (package manager)/zh-hans -->
+
+<p><languages/> Nix是一个包管理器和构建系统，它解析由<a href="https://mirror.nixoscn.org/wiki/Nix%20(package%20manager)/zh-hans/Nix_Expression_Language" class="wikilink" title="Nix表达式语言">Nix表达式语言</a> (一种惰性求值的纯函数式语言) 指定的可复现的构建指令。Nix表达式是纯函数<sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Nix%20(package%20manager)/zh-hans#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup>，它接受依赖作为参数，并为该软件包生成一个指定可复现构建环境的*<a href="https://mirror.nixoscn.org/wiki/Nix%20(package%20manager)/zh-hans/Derivations" class="wikilink" title="derivation">derivation</a>*。Nix把构建结果存储在由整个依赖树的哈希值指定的唯一地址，从而创建一个不可变的包存储 (即<a href="https://mirror.nixoscn.org/wiki/Nix%20(package%20manager)/zh-hans#Nix_store" class="wikilink" title="nix store">nix store</a>)，使得原子升级、回滚、同时安装同一软件包的不同版本成为可能，从根本上消除了<a href="https://en.wikipedia.org/wiki/Dependency_hell">依赖地狱</a>。</p>
+<p><span id="Usage"></span></p>
+<h2 id="用法">用法</h2><h3 id="安装">安装</h3><p>在<a href="https://mirror.nixoscn.org/wiki/Nix%20(package%20manager)/zh-hans/NixOS" class="wikilink" title="NixOS">NixOS</a>上，Nix已经被自动安装。</p>
+<p>在其他Linux发行版或macOS上，你可以按照<a href="https://nixos.org/manual/nix/stable/installation/installation">Nix手册中的安装部分</a>来安装Nix。</p>
+<p><span id="Nix_commands"></span></p>
+<h3 id="nix命令">Nix命令</h3><p><a href="https://mirror.nixoscn.org/wiki/Nix%20(package%20manager)/zh-hans/Nix_(command_line_utilities)" class="wikilink" title="Nix命令">Nix命令</a>在<a href="https://nixos.org/manual/nix/stable/command-ref/command-ref">Nix参考手册</a>中有详细说明，分为主要命令、工具命令和实验性命令。在2.0版本（发布于2018年2月）之前，命令有所不同。</p>
+<h3 id="配置">配置</h3><p>在NixOS上，Nix可通过[<a href="https://search.nixos.org/options?query=nix">https://search.nixos.org/options?query=nix</a>. <code>nix</code>选项]配置。</p>
+<p>独立的Nix通过<code>nix.conf</code>（通常在<code>/etc/nix/</code>下）配置。可用选项的细节<a href="https://nixos.org/manual/nix/stable/command-ref/conf-file">在Nix参考手册中</a>。</p>
+<p><a href="https://mirror.nixoscn.org/wiki/Nix%20(package%20manager)/zh-hans/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a>为单一用户管理声明式环境，也可用于配置Nix。对于系统级配置，可在Linux上使用System Manager，在macOS上使用nix-darwin。</p>
+<p><span id="Internals"></span></p>
+<h2 id="内部细节">内部细节</h2><p><span id="Nix_store"></span></p>
+<h3 id="nix存储-nix-store">Nix存储（Nix store）</h3><p>Nix构建得到的包放在只读的<em>Nix存储</em>，正常情况下在<code>/nix/store</code>。每个包被赋予唯一地址，该地址由加密哈希值后跟包名称和版本指定，比如<code>/nix/store/nawl092prjblbhvv16kxxbk6j9gkgcqm-git-2.14.1</code>。前缀哈希值来自对构建过程中所有输入的哈希，包括源文件、整个依赖树、编译器标志等。这让Nix能同时安装同一个包的不同版本，甚至同一版本的不同构建，比如不同编译器构建的变体。在添加、移除或更新包时，不会从存储中移除任何包，而是在<em>配置文件</em>（profiles）里添加、移除或修改指向这些包的符号链接。</p>
+<p><span id="Cleaning_the_Nix_store"></span></p>
+<h3 id="清理nix存储">清理Nix存储</h3><p>有关清理Nix存储的信息，参考。</p>
+<p><span id="Nix_store_corruption"></span></p>
+<h4 id="nix存储损坏">Nix存储损坏</h4><p>有关修复损坏的Nix存储的信息，参考。</p>
+<p><span id="Valid_Nix_store_names"></span></p>
+<h4 id="有效的nix存储名称">有效的Nix存储名称</h4><p><span id="Profiles"></span></p>
+<h3 id="配置文件-profiles">配置文件（Profiles）</h3><p>为了搭建一致的用户或系统环境，Nix将Nix存储的条目符号链接到<em>配置文件</em>。这是Nix允许回滚功能的前端：由于存储不可变，先前版本的配置文件被保留，恢复到更早的状态只需要改变符号链接到先前的配置文件。更精确地说，Nix将二进制文件符号链接到Nix存储中表示用户环境的条目。然后这些用户环境被符号链接到<code>/nix/var/nix/profiles</code>里被标记的配置文件，后者又被符号链接到该用户的<code>~/.nix-profile</code>。</p>
+<p><span id="Sandboxing"></span></p>
+<h3 id="沙盒化">沙盒化</h3><p>当启用沙盒构建时，Nix会为每个构建过程设置一个隔离的环境。它用于移除构建环境中额外的隐藏依赖，以提高可复现性。这包括在构建过程中禁止<code>fetch*</code>函数之外对网络的访问，和Nix存储之外对文件的访问。根据操作系统的不同，对其他资源的访问也会被阻止（例如，进程间通信在Linux上被隔离）。</p>
+<p>沙盒化在Linux上默认启用，在macOS上默认禁用。 Nixpkgs的拉取请求（pull requests）中，要求在沙盒化启用条件下测试构建（见拉取请求模板中的<code>Tested using sandboxing</code>），因为在<a href="https://nixos.org/hydra/">官方Hydra构建</a>中使用了沙盒化。</p>
+<p>为Nix配置沙盒化，在<code>/etc/nix/nix.conf</code>里设置<code>sandbox = true</code>。为NixOS配置沙盒化，在<code>configuration.nix</code>里设置<code>nix.useSandbox = true;</code>。从NixOS 17.09开始，<code>nix.useSandbox</code>选项默认为<code>true</code></p>
+<p><span id="Alternative_Interpreters"></span></p>
+<h3 id="可选的解释器">可选的解释器</h3><p>一项用Rust从零开始重新实现Nix的工作正在进行。</p>
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<ul>
+<li><a href="https://cs.tvl.fyi/depot/-/tree/tvix">tvix</a></li>
+</ul>
+</div>
+
+<p>Nix 2.18有一个名叫Lix的社区领导分支，专注于正确性、易用性和成长性。尽管它也将一些Nix组件移植到Rust，它不是Tvix那样从零开始的重写版本。</p>
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<ul>
+<li><a href="https://lix.systems/">lix</a></li>
+</ul>
+</div>
+
+<p>更早的尝试可在riir-nix找到</p>
+<h2 id="备注">备注</h2><references />
+
+<p><a href="category:Pedias" class="wikilink" title="Category:Pedias">Category:Pedias</a> <a href="category:Nix" class="wikilink" title="Category:Nix">Category:Nix</a> <a href="category:Incomplete" class="wikilink" title="Category:Incomplete">Category:Incomplete</a> <a href="category:Software" class="wikilink" title="Category:Software">Category:Software</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p>值在计算过程中不会改变。当输入不变时，函数总是得到相同的输出。 <a href="https://mirror.nixoscn.org/wiki/Nix%20(package%20manager)/zh-hans#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

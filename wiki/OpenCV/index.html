@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OpenCV</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / OpenCV</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: OpenCV -->
+
+<p><a href="https://opencv.org/">OpenCV</a> is the world&#39;s largest and most popular computer vision library<sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/OpenCV#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup>. It is open source under the <a href="wikipedia:Apache_License" class="wikilink" title="Apache License">Apache License</a> 2<sup><a id="footnote-ref-2" href="https://mirror.nixoscn.org/wiki/OpenCV#footnote-2" data-footnote-ref aria-describedby="footnote-label">2</a></sup>. OpenCV interfaces with many languages such as C++, Python and Java<sup><a id="footnote-ref-3" href="https://mirror.nixoscn.org/wiki/OpenCV#footnote-3" data-footnote-ref aria-describedby="footnote-label">3</a></sup>.</p>
+<p>Due to needing dynamically linked libraries and not having all necessary dependencies packaged with the base version of the OpenCV package for all uses, this page was created to help with the initial hassle of getting OpenCV to run in development environments.</p>
+<h2 id="python">Python</h2><p>To use OpenCV with Python it is generally recommended to use the Python3XXPackage package found in <a href="https://mirror.nixoscn.org/wiki/OpenCV/nixpkgs" class="wikilink" title="nixpkgs">nixpkgs</a>. Although, as OpenCV is written mainly in C++<sup><a id="footnote-ref-4" href="https://mirror.nixoscn.org/wiki/OpenCV#footnote-4" data-footnote-ref aria-describedby="footnote-label">4</a></sup>, it relies heavily on stdlibc which is a dynamically linked library. Attempting to run any OpenCV algorithms in Python may thereby lead to errors such as this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">ImportError: libstdc++.so.6: cannot open shared object file: No such file or directory</code></pre>
+      </div><p>There are two main ways of solving this issue, using a shell.nix or flakes.</p>
+<h3 id="shell-nix-example">Shell.nix Example</h3><div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs <span class="hljs-operator">?</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> {} }:
+
+<span class="hljs-keyword">let</span>
+  <span class="hljs-attr">pythonWithOpencv</span> <span class="hljs-operator">=</span> pkgs.python3.withPackages (<span class="hljs-params">ps:</span> [
+    ps.opencv4
+  ]);
+<span class="hljs-keyword">in</span>
+pkgs.mkShell {
+  <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> [
+    pythonWithOpencv
+    pkgs.pkg-config
+    pkgs.stdenv.cc.cc.lib
+  ];
+
+  <span class="hljs-attr">shellHook</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    export LD_LIBRARY_PATH=<span class="hljs-subst">${pkgs.stdenv.cc.cc.lib}</span>/lib:$LD_LIBRARY_PATH
+    echo &quot;Python with OpenCV ready (cv2 version: $(python -c &#x27;import cv2; print(cv2.__version__)&#x27;))&quot;
+  &#x27;&#x27;</span>;
+}</code></pre>
+      </div><h3 id="flake-nix-example">Flake.nix Example</h3><div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Python development environment with OpenCV&quot;</span>;
+
+  <span class="hljs-attr">inputs</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">nixpkgs.url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:NixOS/nixpkgs/nixos-unstable&quot;</span>;
+    <span class="hljs-attr">flake-utils.url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:numtide/flake-utils&quot;</span>;
+  };
+
+  <span class="hljs-attr">outputs</span> <span class="hljs-operator">=</span> { self, nixpkgs, flake-utils, ... }:
+    flake-utils.lib.eachDefaultSystem (<span class="hljs-params">system:</span>
+      <span class="hljs-keyword">let</span>
+        <span class="hljs-attr">pkgs</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> nixpkgs { <span class="hljs-keyword">inherit</span> system; };
+        <span class="hljs-attr">python-with-opencv</span> <span class="hljs-operator">=</span> pkgs.python3.withPackages (<span class="hljs-params">ps:</span> [
+          ps.opencv4
+        ]);
+      <span class="hljs-keyword">in</span> {
+        <span class="hljs-attr">devShell</span> <span class="hljs-operator">=</span> pkgs.mkShell {
+          <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> [
+            python-<span class="hljs-keyword">with</span>-opencv
+            pkgs.pkg-config
+            pkgs.stdenv.cc.cc.lib
+          ];
+
+          <span class="hljs-attr">shellHook</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+            export LD_LIBRARY_PATH=<span class="hljs-subst">${pkgs.stdenv.cc.cc.lib}</span>/lib:$LD_LIBRARY_PATH
+            echo &quot;Python environment ready with OpenCV $(python -c &#x27;import cv2; print(cv2.__version__)&#x27;)&quot;
+          &#x27;&#x27;</span>;
+        };
+      }
+    );
+}</code></pre>
+      </div><p>Both the dev shell and flake examples only allow for the base compilation of OpenCV. You can enable other flags such as gtk support to use functions like cv2.imshow() by using <a href="https://nixos.org/guides/nix-pills/17-nixpkgs-overriding-packages.html">overrides</a>. Beware, this may cause a full recompilation of OpenCV as you&#39;re changing build flags and that specific combination may not be cached for your system.</p>
+<h3 id="shell-nix-override-example">Shell.nix Override Example</h3><div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs <span class="hljs-operator">?</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> {
+    <span class="hljs-attr">overlays</span> <span class="hljs-operator">=</span> [
+      (<span class="hljs-params">self:</span> <span class="hljs-params">super:</span> {
+        <span class="hljs-attr">opencv4</span> <span class="hljs-operator">=</span> super.opencv4.override {
+          <span class="hljs-attr">enableGtk3</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+          <span class="hljs-attr">enablePython</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+        };
+      })
+    ];
+  }
+}:
+
+pkgs.mkShell {
+  <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> [
+    (pkgs.python3.withPackages (<span class="hljs-params">ps:</span> [ pkgs.opencv4 ]))
+    pkgs.stdenv.cc.cc.lib
+  ];
+  <span class="hljs-attr">LD_LIBRARY_PATH</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.stdenv.cc.cc.lib}</span>/lib&quot;</span>;
+}</code></pre>
+      </div><h3 id="flake-nix-override-example">Flake.nix Override Example</h3><div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">inputs.nixpkgs.url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:NixOS/nixpkgs/nixos-unstable&quot;</span>;
+
+  <span class="hljs-attr">outputs</span> <span class="hljs-operator">=</span> { self, nixpkgs }:
+    <span class="hljs-keyword">let</span>
+      <span class="hljs-attr">system</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;x86_64-linux&quot;</span>;
+      <span class="hljs-attr">pkgs</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> nixpkgs {
+        <span class="hljs-keyword">inherit</span> system;
+        <span class="hljs-attr">overlays</span> <span class="hljs-operator">=</span> [
+          (<span class="hljs-params">final:</span> <span class="hljs-params">prev:</span> {
+            <span class="hljs-attr">opencv4</span> <span class="hljs-operator">=</span> prev.opencv4.override {
+              <span class="hljs-attr">enableGtk3</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+              <span class="hljs-attr">enablePython</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+            };
+          })
+        ];
+      };
+    <span class="hljs-keyword">in</span> {
+      devShells.${system}.default <span class="hljs-operator">=</span> pkgs.mkShell {
+        <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> [
+          (pkgs.python3.withPackages (<span class="hljs-params">ps:</span> [ pkgs.opencv4 ]))
+          pkgs.stdenv.cc.cc.lib
+        ];
+        <span class="hljs-attr">LD_LIBRARY_PATH</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.stdenv.cc.cc.lib}</span>/lib&quot;</span>;
+      };
+    };
+}</code></pre>
+      </div><h2 id="rust">Rust</h2><p>It is important to note that the most popular OpenCV package for rust, <a href="https://github.com/twistedfall/opencv-rust">opencv-rust</a>, is just a series of bindings for the C++ version of OpenCV, and is thereby unsafe. Errors that occur while trying to use these bindings may just fail quietly or return an error from the underlying C++ code. There is an effort to implement most of the main computer vision algorithms entirely in rust called <a href="https://github.com/rust-cv/cv">rust-cv</a>. The package has not been actively maintained since July of 2023.</p>
+<p>The opencv-rust package does not include the C++ bindings, thereby requiring it to be installed alongside the package itself. Luckily, it is packaged in nixpkgs and using it is just a question of getting it on our system, the crate does the rest of the work.</p>
+<h3 id="flake-nix-example">Flake.nix Example</h3><div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">inputs</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">nixpkgs.url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:NixOS/nixpkgs/nixos-unstable&quot;</span>;
+  };
+
+  <span class="hljs-attr">outputs</span> <span class="hljs-operator">=</span> { self, nixpkgs }:
+    <span class="hljs-keyword">let</span>
+      <span class="hljs-attr">system</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;x86_64-linux&quot;</span>;
+      <span class="hljs-attr">pkgs</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> nixpkgs {
+        <span class="hljs-keyword">inherit</span> system;
+      };
+    <span class="hljs-keyword">in</span>
+    {
+      devShells.${system}.default <span class="hljs-operator">=</span> pkgs.mkShell {
+        <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+          glib
+          ffmpeg
+          libva
+          pkg-config
+          opencv
+        ];
+        <span class="hljs-attr">shellHook</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+          export LIBCLANG_PATH=&quot;<span class="hljs-subst">${pkgs.llvmPackages.libclang.lib}</span>/lib&quot;;
+        &#x27;&#x27;</span>;
+      };
+    };
+}</code></pre>
+      </div><p>You may also want to override the base package. You can do this easily with this example:</p>
+<h3 id="flake-nix-override-example">Flake.nix Override Example</h3><div class="code-container">
+        
+        <pre><code class="language-nixos hljs">{
+  <span class="hljs-attr">inputs</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">nixpkgs.url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:NixOS/nixpkgs/nixos-unstable&quot;</span>;
+  };
+
+  <span class="hljs-attr">outputs</span> <span class="hljs-operator">=</span> { self, nixpkgs }:
+    <span class="hljs-keyword">let</span>
+      <span class="hljs-attr">system</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;x86_64-linux&quot;</span>;
+      <span class="hljs-attr">pkgs</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> nixpkgs {
+        <span class="hljs-keyword">inherit</span> system;
+        <span class="hljs-attr">config.allowUnfree</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      };
+    <span class="hljs-keyword">in</span>
+    {
+      devShells.${system}.default <span class="hljs-operator">=</span> pkgs.mkShell {
+        <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+          gtk2
+          glib
+          ffmpeg
+          libva
+          pkg-config
+          (opencv.override { <span class="hljs-attr">enableGtk2</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; })
+        ];
+        <span class="hljs-attr">shellHook</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+          export LIBCLANG_PATH=&quot;<span class="hljs-subst">${pkgs.llvmPackages.libclang.lib}</span>/lib&quot;;
+        &#x27;&#x27;</span>;
+      };
+    };
+}</code></pre>
+      </div><p><a href="category:Python" class="wikilink" title="Category:Python">Category:Python</a> <a href="category:Rust" class="wikilink" title="Category:Rust">Category:Rust</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p><a href="https://opencv.org/">https://opencv.org/</a> <a href="https://mirror.nixoscn.org/wiki/OpenCV#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+<li id="footnote-2">
+<p><a href="https://github.com/opencv/opencv?tab=Apache-2.0-1-ov-file#">https://github.com/opencv/opencv?tab=Apache-2.0-1-ov-file#</a> <a href="https://mirror.nixoscn.org/wiki/OpenCV#footnote-ref-2" data-footnote-backref aria-label="Back to reference 2">↩</a></p>
+</li>
+<li id="footnote-3">
+ <a href="https://mirror.nixoscn.org/wiki/OpenCV#footnote-ref-3" data-footnote-backref aria-label="Back to reference 3">↩</a>
+</li>
+<li id="footnote-4">
+<p><a href="https://github.com/opencv/opencv">https://github.com/opencv/opencv</a> <a href="https://mirror.nixoscn.org/wiki/OpenCV#footnote-ref-4" data-footnote-backref aria-label="Back to reference 4">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

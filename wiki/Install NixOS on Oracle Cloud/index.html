@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Install NixOS on Oracle Cloud</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Install NixOS on Oracle Cloud</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Install NixOS on Oracle Cloud -->
+
+<p>This guide describes how to install NixOS on <a href="https://cloud.oracle.com/">Oracle Cloud</a>, including IPv6 configuration.</p>
+<h2 id="installation">Installation</h2><p>Create the instance with Oracle Linux 9 as base image. Then follow the steps in <a href="https://mirror.nixoscn.org/wiki/Install%20NixOS%20on%20Oracle%20Cloud/Install_NixOS_on_a_Server_With_a_Different_Filesystem" class="wikilink" title="Install NixOS on a Server With a Different Filesystem">Install NixOS on a Server With a Different Filesystem</a>.</p>
+<p>There are other methods that may also work, see <a href="https://discourse.nixos.org/t/nixos-on-free-oracle-cloud-arm-a1/17474">this Discourse thread</a>.</p>
+<h2 id="configuration">Configuration</h2><h3 id="bootloader">Bootloader</h3><p>systemd-boot works well. <code>net.ifnames=0</code> is optional, but recommended for more predictable interface names.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">b<span class="hljs-attr">oot.loader.systemd-boot.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+<span class="hljs-attr">boot.loader.efi.canTouchEfiVariables</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+<span class="hljs-attr">boot.kernelParams</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;net.ifnames=0&quot;</span> ];</code></pre>
+      </div><h3 id="networking">Networking</h3><h4 id="oracle-cloud-web-interface">Oracle Cloud web interface</h4><p>IPv4 setup is handled by the configuration wizard.</p>
+<p>To set up IPv6, your Virtual Cloud Network (VCN) must have an IPv6 prefix assigned.</p>
+<figure>
+<img src="https://mirror.nixoscn.org/wiki/Install%20NixOS%20on%20Oracle%20Cloud/Oc-vcn-cidr.png" title="Oc-vcn-cidr.png" />
+<figcaption>Oc-vcn-cidr.png</figcaption>
+</figure>
+
+<p>The VCN&#39;s Route Table(s) must have an entry for IPv6 traffic.</p>
+<figure>
+<img src="https://mirror.nixoscn.org/wiki/Install%20NixOS%20on%20Oracle%20Cloud/Oc-vcn-route-table.png" title="Oc-vcn-route-table.png" />
+<figcaption>Oc-vcn-route-table.png</figcaption>
+</figure>
+
+<p>The VCN&#39;s subnet for your instance must have an IPv6 prefix assigned. <img src="https://mirror.nixoscn.org/wiki/Install%20NixOS%20on%20Oracle%20Cloud/Oc-vcn-subnet-ipv6-prefixes.png" alt="" title="Oc-vcn-subnet-ipv6-prefixes.png"></p>
+<p>Make sure your security list has equivalent rules for IPv4 and IPv6 if you want your services to be reachable via both versions.</p>
+<h4 id="nixos-configuration-nix">NixOS configuration.nix</h4><div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">etworking</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">hostName</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;(your hostname here)&quot;</span>;
+  <span class="hljs-attr">defaultGateway</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;10.0.0.1&quot;</span>;
+  <span class="hljs-comment"># Use Quad9&#x27;s DNS (or replace by your preferred DNS provider)</span>
+  <span class="hljs-attr">nameservers</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-string">&quot;9.9.9.9&quot;</span>
+    <span class="hljs-string">&quot;149.112.112.112&quot;</span>
+    <span class="hljs-string">&quot;2620:fe::fe&quot;</span>
+    <span class="hljs-string">&quot;2620:fe::9&quot;</span>
+  ];
+  <span class="hljs-attr">interfaces.eth0</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">ipv4.addresses</span> <span class="hljs-operator">=</span> [
+      {
+        <span class="hljs-comment"># Use IP address configured in the Oracle Cloud web interface</span>
+        <span class="hljs-attr">address</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;10.0.0.90&quot;</span>;
+        <span class="hljs-attr">prefixLength</span> <span class="hljs-operator">=</span> <span class="hljs-number">24</span>;
+      }
+    ];
+    <span class="hljs-comment"># Only &quot;required&quot; for IPv6, can be false if only IPv4 is needed</span>
+    <span class="hljs-attr">useDHCP</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  };
+  <span class="hljs-comment"># Note: you also need to configure open ports in the Oracle Cloud web interface</span>
+  <span class="hljs-comment"># (Virtual Cloud Network -&gt; Security Lists -&gt; Ingress Rules)</span>
+  <span class="hljs-attr">firewall</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-comment"># (both optional)</span>
+    <span class="hljs-attr">logRefusedConnections</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+    <span class="hljs-attr">rejectPackets</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  };
+};</code></pre>
+      </div><p><a href="category:Guide" class="wikilink" title="Category:Guide">Category:Guide</a> <a href="category:Deployment" class="wikilink" title="Category:Deployment">Category:Deployment</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

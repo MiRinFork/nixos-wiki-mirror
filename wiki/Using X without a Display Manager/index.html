@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Using X without a Display Manager</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Using X without a Display Manager</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Using X without a Display Manager -->
+
+<h2 id="setting-up-xorg-without-system-wide-modifications">Setting up Xorg without system wide modifications</h2><p>To run X11 as a regular user, <em>without</em> <code>services.xserver.enable = true;</code> in configuration.nix, do the following:</p>
+<p>First, <strong>install packages</strong>:</p>
+<ul>
+<li>X11 itself:<ul>
+<li><code>xorg.xorgserver</code></li>
+</ul>
+</li>
+<li>X11 input modules<ul>
+<li><code>xorg.xf86inputevdev</code></li>
+<li><code>xorg.xf86inputsynaptics</code></li>
+<li><code>xorg.xf86inputlibinput</code></li>
+</ul>
+</li>
+<li>X11 video modules<ul>
+<li><code>xorg.xf86videointel</code></li>
+<li><code>xorg.xf86videoati</code></li>
+<li><code>xorg.xf86videonouveau</code></li>
+</ul>
+</li>
+</ul>
+<p>You probably want to use <strong>DRI acceleration</strong> for X; enable it and OpenGL in configuration.nix: <code>hardware.opengl.enable = true;</code> and <code>hardware.opengl.driSupport = true;</code>.</p>
+<p>Then, it&#39;s just necessary to <strong>gather X configuration files</strong> into one directory and create a config file that also points X at the correct module paths, by running the following script (which should be re-run each time you run <code>nixos-rebuild switch</code>), but you will need to add or remove to the <code>pkgs</code> and <code>fontpkgs</code> arrays according to your preferences:</p>
+<div class="code-container">
+        
+        <pre><code class="language-sh hljs">generateXorgConf.sh
+------------------------------------------------
+<span class="hljs-comment">#!/bin/sh</span>
+<span class="hljs-comment">#generate unprivileged user xorg.conf for nixOS</span>
+<span class="hljs-comment">#before running:</span>
+<span class="hljs-comment">#    install any desired packages by placing them in `/etc/nixos/configuration.nix`</span>
+<span class="hljs-comment">#    update by running `nix-channel --update` and `nixos-rebuild switch`</span>
+
+config_dir=<span class="hljs-variable">${XDG_CONFIG_HOME:-~/.config}</span>/xorg.conf.d
+
+<span class="hljs-built_in">mkdir</span> -p <span class="hljs-string">&quot;<span class="hljs-variable">$config_dir</span>&quot;</span>
+<span class="hljs-built_in">cd</span> <span class="hljs-string">&quot;<span class="hljs-variable">$config_dir</span>&quot;</span>
+
+<span class="hljs-comment">#failed glob expansions become empty, not literal &#x27;foo/*&#x27;</span>
+<span class="hljs-built_in">shopt</span> -s nullglob
+
+<span class="hljs-function"><span class="hljs-title">get_pkg_path</span></span>() {
+    attr=<span class="hljs-variable">$1</span>
+    nix show-derivation -f <span class="hljs-string">&#x27;&lt;nixpkgs&gt;&#x27;</span> <span class="hljs-string">&quot;<span class="hljs-variable">$attr</span>&quot;</span> | jq -r <span class="hljs-string">&#x27;.[].env.out&#x27;</span> 
+}
+
+<span class="hljs-comment">#add to this set according to your driver needs</span>
+pkgs=<span class="hljs-string">&quot;
+    xorg.xf86inputevdev
+    xorg.xf86videointel
+    xorg.xf86inputsynaptics
+    xorg.xorgserver
+&quot;</span>
+
+<span class="hljs-comment">#make the intel backlight helper setuid if it isn&#x27;t already</span>
+xf86videointel_path=$(get_pkg_path xorg.xf86videointel)
+backlight_helper_path=<span class="hljs-string">&quot;<span class="hljs-variable">${xf86_video_intel_path}</span>/libexec/xf86-video-intel-backlight-helper&quot;</span>
+<span class="hljs-keyword">if</span> [ -e <span class="hljs-string">&quot;<span class="hljs-variable">$backlight_helper_path</span>&quot;</span> -a ! -u <span class="hljs-string">&quot;<span class="hljs-variable">$backlight_helper_path</span>&quot;</span> ]; <span class="hljs-keyword">then</span>
+    <span class="hljs-built_in">sudo</span> <span class="hljs-built_in">chmod</span> +s <span class="hljs-variable">${xf86_video_intel_path}</span>/libexec/xf86-video-intel-backlight-helper
+<span class="hljs-keyword">fi</span>
+
+<span class="hljs-built_in">echo</span> <span class="hljs-string">&#x27;Section &quot;Files&quot;&#x27;</span> &gt; 00-nix-module-paths.conf
+<span class="hljs-keyword">for</span> pkg <span class="hljs-keyword">in</span> <span class="hljs-variable">$pkgs</span>; <span class="hljs-keyword">do</span>
+    pkg_path=$(get_pkg_path <span class="hljs-variable">$pkg</span>)
+    <span class="hljs-keyword">for</span> conf <span class="hljs-keyword">in</span> <span class="hljs-string">&quot;<span class="hljs-variable">$pkg_path</span>&quot;</span>/share/X11/xorg.conf.d/*; <span class="hljs-keyword">do</span> 
+        <span class="hljs-built_in">ln</span> -sf <span class="hljs-string">&quot;<span class="hljs-variable">$conf</span>&quot;</span> ./
+    <span class="hljs-keyword">done</span>
+    <span class="hljs-built_in">echo</span> <span class="hljs-string">&#x27;  ModulePath &quot;&#x27;</span><span class="hljs-string">&quot;<span class="hljs-variable">$pkg_path</span>&quot;</span><span class="hljs-string">&#x27;/lib/xorg/modules/&quot;&#x27;</span> &gt;&gt; 00-nix-module-paths.conf
+<span class="hljs-keyword">done</span>
+
+<span class="hljs-comment">#add to this set according to your font preferences</span>
+fontpkgs=<span class="hljs-string">&quot;
+    xorg.fontmiscmisc
+    ucsFonts
+&quot;</span>
+
+<span class="hljs-keyword">for</span> pkg <span class="hljs-keyword">in</span> <span class="hljs-variable">$fontpkgs</span>; <span class="hljs-keyword">do</span>
+    pkg_path=$(get_pkg_path <span class="hljs-variable">$pkg</span>)
+    path=<span class="hljs-string">&quot;<span class="hljs-variable">$pkg_path</span>&quot;</span><span class="hljs-string">&#x27;/share/fonts/&#x27;</span>
+    [ -d <span class="hljs-string">&quot;<span class="hljs-variable">$path</span>&quot;</span> ] &amp;&amp; <span class="hljs-built_in">echo</span> <span class="hljs-string">&#x27;    FontPath &quot;&#x27;</span><span class="hljs-string">&quot;<span class="hljs-variable">$path</span>&quot;</span><span class="hljs-string">&#x27;&quot;&#x27;</span> &gt;&gt; 00-nix-module-paths.conf
+    path=<span class="hljs-string">&quot;<span class="hljs-variable">$pkg_path</span>&quot;</span><span class="hljs-string">&#x27;/lib/X11/fonts/misc/&#x27;</span>
+    [ -d <span class="hljs-string">&quot;<span class="hljs-variable">$path</span>&quot;</span> ] &amp;&amp; <span class="hljs-built_in">echo</span> <span class="hljs-string">&#x27;    FontPath &quot;&#x27;</span><span class="hljs-string">&quot;<span class="hljs-variable">$path</span>&quot;</span><span class="hljs-string">&#x27;&quot;&#x27;</span> &gt;&gt; 00-nix-module-paths.conf
+<span class="hljs-keyword">done</span>
+
+<span class="hljs-built_in">echo</span> <span class="hljs-string">&#x27;EndSection&#x27;</span> &gt;&gt; 00-nix-module-paths.conf</code></pre>
+      </div><p>You can now <strong>start X11</strong> by running:</p>
+<div class="code-container">
+        
+        <pre><code class="language-sh hljs">startx -- :0 -configdir ~/.config/xorg.conf.d</code></pre>
+      </div><h2 id="setting-up-xorg-system-wide-but-without-a-display-manager">Setting up Xorg system-wide but without a Display Manager</h2><p>If you don&#39;t mind having <code>services.xserver.enable = true;</code> but you don&#39;t want a display manager, and you want only a TTY login prompt, use the following in your <code>configuration.nix</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.xserver.displayManager.startx.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><p><code>startx</code> is treated as a displayManager and therefore it is used instead of the default (<code>lightdm</code>).</p>
+<h2 id="setting-up-the-user-39-s-d-bus-daemon">Setting up the user&#39;s D-Bus Daemon</h2><p>Both of the methods above, don&#39;t start the user&#39;s dbus-daemon properly on startup. Unfortunately, it is unclear exactly why this is missing, but here&#39;s a fix for startx users:</p>
+<p>Put the following in your <code>~/.xinitrc</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-sh hljs"><span class="hljs-keyword">if</span> <span class="hljs-built_in">test</span> -z <span class="hljs-string">&quot;<span class="hljs-variable">$DBUS_SESSION_BUS_ADDRESS</span>&quot;</span>; <span class="hljs-keyword">then</span>
+    <span class="hljs-built_in">eval</span> $(dbus-launch --exit-with-session --sh-syntax)
+<span class="hljs-keyword">fi</span>
+systemctl --user import-environment DISPLAY XAUTHORITY
+
+<span class="hljs-keyword">if</span> <span class="hljs-built_in">command</span> -v dbus-update-activation-environment &gt;/dev/null 2&gt;&amp;1; <span class="hljs-keyword">then</span>
+        dbus-update-activation-environment DISPLAY XAUTHORITY
+<span class="hljs-keyword">fi</span></code></pre>
+      </div><p><a href="category:_Display_Manager" class="wikilink" title="Category: Display Manager">Category: Display Manager</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

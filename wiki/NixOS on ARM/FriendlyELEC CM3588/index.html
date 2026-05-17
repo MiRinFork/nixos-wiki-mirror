@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NixOS on ARM/FriendlyELEC CM3588</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM">NixOS on ARM</a><span aria-hidden="true"> / </span>FriendlyELEC CM3588</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: NixOS on ARM/FriendlyELEC CM3588 -->
+
+<div class="infobox">
+
+<table>
+<thead>
+<tr>
+<th colspan="2" class="title"><p>FriendlyELEC CM3588</p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td colspan="2"><figure>
+<img src="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/FriendlyELEC%20CM3588/CM3588.jpg" title="A FriendlyELEC CM3588" width="256" height="256" />
+<figcaption>A FriendlyELEC CM3588</figcaption>
+</figure></td>
+</tr>
+<tr>
+<td><p>Manufacturer</p></td>
+<td><p>FriendlyELEC</p></td>
+</tr>
+<tr>
+<td><p>Architecture</p></td>
+<td><p>AArch64</p></td>
+</tr>
+<tr>
+<td><p>Bootloader</p></td>
+<td><p>Upstream U-Boot</p></td>
+</tr>
+<tr>
+<td><p>Boot options</p></td>
+<td><p>microSD, eMMC, SPI NOR Flash, NVMe</p></td>
+</tr>
+</tbody>
+</table>
+
+</div>
+
+<p>The CM3588 is a single board computer built around the Rockchip RK3358 SoC.</p>
+<p>There are two configurations of the base version with 4GB RAM or 8GB RAM with 64GB eMMC. The CM3588 Plus variant uses LPDDR5 RAM (instead of LPDDR4) and comes in three configurations (16GB/64GB, 32GB/64GB, 32GB/256GB).</p>
+<p>Both variants are typically used with the CM3588 NAS Kit; a daughter board providing 4x NVMe PCIe 3x1 slots, as well as a wealth of other I/O.</p>
+<h2 id="status">Status</h2><p>This board has upstream U-Boot and kernel support, in part thanks to Collabora&#39;s RK3358 mainlining efforts (more features may be present in their <a href="https://gitlab.collabora.com/hardware-enablement/rockchip-3588/notes-for-rockchip-3588/-/blob/main/mainline-status.md">downstream kernel</a>). NixOS can be installed using manual partitioning and <code>nixos-install</code> or by modifying the aarch64 installation image as described in the next section.</p>
+<p>U-Boot for this board is packaged in <a href="https://github.com/NixOS/nixpkgs/blob/7f39db5bee887aeb8fad4888ffcfaba78bb47992/pkgs/misc/uboot/default.nix#L217-L223">nixpkgs</a> and builds in <a href="https://hydra.nixos.org/job/nixpkgs/trunk/ubootCM3588NAS.aarch64-linux">Hydra</a>.</p>
+<h2 id="installation">Installation</h2><p>U-Boot needs to be copied to specific sectors on the microSD card, eMMC or image with <code>dd</code>. Use <a href="https://github.com/Mic92/nixos-aarch64-images">nixos-aarch64-images</a> to build a CM3588-compatible image from the pre-built NixOS installation images: <code>$ nix-build -A cm3588NAS</code>. Mount and <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/FriendlyELEC%20CM3588/NixOS_on_ARM/Building_Images#Editing_the_image_manually" class="wikilink" title="edit image manually">edit image manually</a> to add an SSH key (see <a href="https://nixos.org/manual/nixos/stable/#sec-installation-manual-networking">networking in the installer</a>).</p>
+<p><a href="category:NixOS_on_ARM" class="wikilink" title="Category:NixOS on ARM">Category:NixOS on ARM</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

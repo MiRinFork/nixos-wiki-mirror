@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Direnv</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Direnv</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Direnv -->
+
+<p><strong><a href="https://direnv.net/">Direnv</a></strong> is an automatic environment setup utility, loading the specified project environment automatically when you enter your project directory, and reporting the loaded variables to you.</p>
+<p>After installing from Nixpkgs using your preferred method of installation, you can set up the <code>.envrc</code> file at the root of your directory. Refer to the <a href="https://github.com/direnv/direnv/wiki">Direnv Wiki</a> for some examples. For Nix projects, you will probably want to use the special <code>use_nix</code> keyword, that automatically loads the <code>shell.nix</code> file for your repository.</p>
+<p>At the root of your repository, Direnv can start by allowing the recently-created <code>.envrc</code> file to execute:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">direnv allow .</span>
+direnv: loading .envrc
+direnv: using nix
+[...]
+ +SIZE +SOURCE_DATE_EPOCH +STRINGS +STRIP +TEMP +TEMPDIR +TMP +TMPDIR +_PATH +buildInputs +builder +checkPhase +cmakeFlags +configureFlags +doCheck +enableParallelBuilding +name +nativeBuildInputs +out +postCheck +preCheck +preConfigure +propagatedBuildInputs +propagatedNativeBuildInputs +shell +src +stdenv +system +testInputs +version ~PATH</code></pre>
+      </div><p>Once Direnv detects that the current working directory is no longer inside the repository with a <code>.envrc</code> file, it will automatically unload the environment:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">cd</span> ..</span>
+direnv: unloading</code></pre>
+      </div><h2 id="state">State</h2><p>Direnv stores files in <code>$XDG_DATA_HOME/direnv</code>. It contains the information required to persist all allowed and denied <code>.envrc</code> files across the filesystem.</p>
+<p>Keeping that directory means that an <code>.envrc</code> file only needs to be allowed once in order to run automatically.</p>
+<h2 id="nix-direnv-amp-lorri"><code>nix-direnv</code> &amp; <code>lorri</code></h2><p>While Direnv has <a href="https://github.com/direnv/direnv/wiki/Nix">full support for Nix</a> development environments, third-party developers have improved upon Direnv&#39;s default implementation of the special <code>use_nix</code> keyword, resulting in the development of <a href="https://github.com/nix-community/nix-direnv"><code>nix-direnv</code></a> and <a href="https://github.com/nix-community/lorri"><code>lorri</code></a>.</p>
+<h2 id="configuring-on-nixos">Configuring on NixOS</h2><p>There is a <a href="https://mirror.nixoscn.org/wiki/Direnv/Overview_of_the_NixOS_Linux_distribution" class="wikilink" title="NixOS">NixOS</a> Module for Direnv (and <code>nix-direnv</code>) which automatically sets everything up in a given NixOS machine. The following line of code is everything that&#39;s necessary for NixOS to automatically install and hook Direnv to the available <a href="https://mirror.nixoscn.org/wiki/Direnv/Command_Shell" class="wikilink" title="shells">shells</a> in the system:</p>
+<p>For a full list of Direnv module options, see .</p>
+<p>The NixOS module uses <code>nix-direnv</code> by default when Direnv is enabled. This behavior can be overridden by setting the option.</p>
+<h2 id="troubleshooting">Troubleshooting</h2><h3 id="hooking-shells">Hooking Shells</h3><p>Depending on the shell you are using, you need to add a line in your shell configuration file. See the <a href="https://direnv.net/docs/hook.html"><em>Hook</em> section of the Direnv Documentation</a> for more information.</p>
+<p>Setting Direnv up using the NixOS module should do this by default.</p>
+<h2 id="see-also">See Also</h2><ul>
+<li><a href="https://direnv.net/">direnv.net</a>.</li>
+<li>The <a href="https://github.com/direnv/direnv/wiki/Nix">Direnv Wiki</a>.</li>
+</ul>
+<p><a href="category:Development" class="wikilink" title="Category:Development">Category:Development</a> <a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

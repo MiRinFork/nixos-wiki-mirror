@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Android</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Android</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Android -->
+
+<h2 id="using-the-android-sdk">Using the Android SDK</h2><p>NixOS uses the androidenv package for building android SDKs and manually creating emulators without the use of Android Studio. Example android sdk is <code>androidenv.androidPkgs.androidsdk</code>. They also include all of the SDK tools such as sdkmanager and avdmanager needed to create emulators.</p>
+<p>The first link provides a guide for creating a custom android SDK, using a predefined SDK, and how to nixify an emulator. The second link is an extra guide that might have some helpful tips for improving your workflow.</p>
+<ol>
+<li><a href="https://nixos.org/manual/nixpkgs/unstable/#android">Official Android SDK guide from NixOS.org</a></li>
+<li><a href="https://sandervanderburg.blogspot.de/2014/02/reproducing-android-app-deployments-or.html">Reproducing Android app deployments</a></li>
+</ol>
+<p>When creating emulators with Nix&#39;s emulateApp function as mentioned in the first link, your IDE should now be able to recognize the emulator but you won&#39;t be able to run the code. To run it, view the first link on how to run the apk file in the emulator.</p>
+<p>To run emulateApp, build it with <code>nix-build fileName.nix</code>. It&#39;ll build in the folder <code>result</code>. run it with <code>./result/bin/run-test-emulator</code></p>
+<h2 id="creating-emulators-without-nix">Creating emulators without Nix</h2><p>If you don&#39;t want to nixify your emulators, you can use Android Studio and set up emulators there like a regular system.</p>
+<p>Using <code>sdkmanager</code> and <code>avdmanager</code> from the Android SDK may not work given how Nix stores its files. You can use them from the Android Studio GUI.</p>
+<p>When using machine images from the SDK, you will need to run them with <code>steam-run</code>, and possibly pass extra flags, e.g.:</p>
+<p><code>steam-run ~/Android/Sdk/emulator/emulator -feature -Vulkan @Pixel_5_API_33</code></p>
+<h3 id="hardware-acceleration">hardware acceleration</h3><p>NOTE: Whether this here is effective needs more research and confirmation. My colleague and I have seen the emulator using around 800% CPU. So far, the following has improved that on my side.</p>
+<p>See also the <a href="https://github.com/NixOS/nixpkgs/issues/41703">nixpkgs issue</a> where people tried to trace issues.</p>
+<p>Add your user to the <code>kvm</code> group:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  users.users.<span class="hljs-symbol">&lt;your-user&gt;</span>.extraGroups <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;kvm&quot;</span> ];
+}</code></pre>
+      </div><h2 id="adb-setup">ADB setup</h2><p>To use <code>adb</code>, you can just <a href="https://mirror.nixoscn.org/wiki/Android/Adding_programs_to_PATH" class="wikilink" title="run it from">run it from</a> the <code>android-tools</code> package.</p>
+<h3 id="use-older-platform-version">Use Older Platform Version</h3><p>If you would like to get older platform version, you can write the following.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs <span class="hljs-operator">?</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> { 
+  <span class="hljs-attr">config.android_sdk.accept_license</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">overlays</span> <span class="hljs-operator">=</span> [
+    (<span class="hljs-params">self:</span> <span class="hljs-params">super:</span> {
+      <span class="hljs-attr">androidPkgs_8_0</span> <span class="hljs-operator">=</span> super.androidenv.composeAndroidPackages {
+        <span class="hljs-attr">platformVersions</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;26&quot;</span> ];
+        <span class="hljs-attr">abiVersions</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;x86&quot;</span> <span class="hljs-string">&quot;x86_64&quot;</span>];
+      };
+    })
+  ];
+} }:
+
+(pkgs.buildFHSUserEnv {
+  <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;android-sdk-env&quot;</span>;
+  <span class="hljs-attr">targetPkgs</span> <span class="hljs-operator">=</span> <span class="hljs-params">pkgs:</span> (<span class="hljs-keyword">with</span> pkgs;
+    [
+      androidPkgs_8_0.androidsdk
+      glibc
+    ]);
+  <span class="hljs-attr">runScript</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;bash&quot;</span>;
+}).env</code></pre>
+      </div><h2 id="interaction-with-your-android-device">Interaction with your Android device</h2><h3 id="adb-shell-on-device">adb shell on device</h3><p>First open a nix-shell with the platform tools and connect your device:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-comment"># For nixos &lt; 19.03</span></span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-comment"># nix-shell -p androidenv.platformTools</span></span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-comment"># for nixos &lt;= 24.05</span></span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-shell -p androidenv.androidPkgs_9_0.platform-tools</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-comment"># For nixos &gt;= 24.11</span></span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-shell -p androidenv.androidPkgs.platform-tools</span>
+<span class="hljs-meta prompt_">% </span><span class="language-bash">adb devices</span>
+List of devices attached
+* daemon not running; starting now at tcp:5037
+* daemon started successfully
+BH90272JCU  unauthorized</code></pre>
+      </div><p>Troubleshooting: <a href="https://stackoverflow.com/a/28211161">no device is listed</a></p>
+<p>A popup appears on your phone to allow your computer access to it. After allowing, you can:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">% </span><span class="language-bash">adb devices</span>
+List of devices attached
+BH90272JCU  device
+<span class="hljs-meta prompt_">% </span><span class="language-bash">adb shell</span></code></pre>
+      </div><p>You can also connect to an already-running adb server:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-shell -p androidenv.androidPkgs.platform-tools</span>
+<span class="hljs-meta prompt_">% </span><span class="language-bash">adb connect 192.168.1.10</span>
+<span class="hljs-meta prompt_">% </span><span class="language-bash">adb shell</span></code></pre>
+      </div><h3 id="transferring-files-from-to-an-android-device">Transferring files from/to an Android device</h3><p>There are two main methods for newer devices:</p>
+<ul>
+<li><code>adb push</code> and <code>adb pull</code>: see above.</li>
+<li>via <a href="https://mirror.nixoscn.org/wiki/Android/MTP" class="wikilink" title="MTP">MTP</a>, see <a href="https://mirror.nixoscn.org/wiki/Android/MTP" class="wikilink" title="the corresponding page">the corresponding page</a></li>
+</ul>
+<h2 id="android-development">Android Development</h2><h3 id="android-studio">Android Studio</h3><p>To develop apps using <a href="https://developer.android.com/studio/">Android Studio</a>, install it to your system.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> [
+  pkgs.android-studio
+]</code></pre>
+      </div><p>By default, Android Studio has a FHS environment and by using <code>pkgs.android-studio-full</code> you get the predefined Android SDK composition including (as of nixos-unstable on 2024-11-02) platforms 28-34, an emulator, many system images and the NDK.</p>
+<p>Notice: to install Android Studio, you have to indicate accepting the EULA. If you don&#39;t, the rebuild fails and prints the EULA. The simplest way to acknowledge it is to add this line to your config:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">ixpkgs.config.android_sdk.accept_license</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><p>To use the Android Emulator, you need to enable KVM virtualization (in your BIOS) and make sure your user has permission to use KVM (add yourself to the <code>kvm</code> group).</p>
+<h3 id="gradlew">gradlew</h3><p>It&#39;s possible to create a build environment (shell.nix) to use with gradlew as a FHS environment:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs <span class="hljs-operator">?</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> {<span class="hljs-attr">config.android_sdk.accept_license</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;} }:
+
+(pkgs.buildFHSUserEnv {
+  <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;android-sdk-env&quot;</span>;
+  <span class="hljs-attr">targetPkgs</span> <span class="hljs-operator">=</span> <span class="hljs-params">pkgs:</span> (<span class="hljs-keyword">with</span> pkgs;
+    [
+      androidenv.androidPkgs.androidsdk
+      glibc
+    ]);
+  <span class="hljs-attr">runScript</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;bash&quot;</span>;
+}).env</code></pre>
+      </div><p>As an alternative, it&#39;s often enough to override just the aapt2 binary for the gradle build process:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs <span class="hljs-operator">?</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> {<span class="hljs-attr">config.android_sdk.accept_license</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;} }:
+
+<span class="hljs-keyword">let</span>
+  <span class="hljs-attr">androidSdk</span> <span class="hljs-operator">=</span> pkgs.androidenv.androidPkgs.androidsdk;
+<span class="hljs-keyword">in</span>
+pkgs.mkShell {
+  <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+    androidSdk
+    glibc
+  ];
+  <span class="hljs-comment"># override the aapt2 that gradle uses with the nix-shipped version</span>
+  <span class="hljs-attr">GRADLE_OPTS</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;-Dorg.gradle.project.android.aapt2FromMavenOverride=<span class="hljs-subst">${androidSdk}</span>/libexec/android-sdk/build-tools/28.0.3/aapt2&quot;</span>;
+}</code></pre>
+      </div><p>See the <a href="https://nixos.org/manual/nixpkgs/unstable/#android">androidenv documentation</a> for full examples.</p>
+<h3 id="building-android-on-nixos">Building Android on NixOS</h3><p>It&#39;s possible to use nix-shell with buildFHSEnv to set up an environment in which it&#39;s viable to build Android without huge amounts of editing. This is an example shell.nix file.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs <span class="hljs-operator">?</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> {} }:
+ 
+<span class="hljs-keyword">let</span> fhs <span class="hljs-operator">=</span> pkgs.buildFHSEnv {
+  <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;android-env&quot;</span>;
+  <span class="hljs-attr">targetPkgs</span> <span class="hljs-operator">=</span> <span class="hljs-params">pkgs:</span> <span class="hljs-keyword">with</span> pkgs;
+    [
+      git
+      gitRepo
+      gnupg
+      python2
+      curl
+      procps
+      openssl
+      gnumake
+      nettools
+      androidenv.androidPkgs.platform-tools
+      jdk
+      schedtool
+      util-linux
+      m4
+      gperf
+      perl
+      libxml2
+      zip
+      unzip
+      bison
+      flex
+      lzop
+      python3
+    ];
+  <span class="hljs-attr">multiPkgs</span> <span class="hljs-operator">=</span> <span class="hljs-params">pkgs:</span> <span class="hljs-keyword">with</span> pkgs;
+    [ zlib
+      ncurses5
+    ];
+  <span class="hljs-attr">runScript</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;bash&quot;</span>;
+  <span class="hljs-attr">profile</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    export ALLOW_NINJA_ENV=true
+    export USE_CCACHE=1
+    export ANDROID_JAVA_HOME=<span class="hljs-subst">${pkgs.jdk.home}</span>sdkmanager install avd
+    export LD_LIBRARY_PATH=/usr/lib:/usr/lib32
+  &#x27;&#x27;</span>;
+};
+<span class="hljs-keyword">in</span> pkgs.stdenv.mkDerivation {
+  <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;android-env-shell&quot;</span>;
+  <span class="hljs-attr">nativeBuildInputs</span> <span class="hljs-operator">=</span> [ fhs ];
+  <span class="hljs-attr">shellHook</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;exec android-env&quot;</span>;
+
+}</code></pre>
+      </div><h3 id="android-debug-bridge">Android Debug Bridge</h3><p>Run <code>nix-shell -p usbutils --run &quot;lsusb&quot;</code> on your terminal to get the list of USB devices connected to your computer. Sample output:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">...
+Bus 002 Device 001: ID 1d6b:0003 Linux Foundation 3.0 root hub
+Bus 002 Device 007: ID 0fce:320d Sony Ericsson Mobile Communications AB Xperia 5 III
+Bus 003 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub
+...</code></pre>
+      </div><p><code>ID 0fce:320d</code> can be seen as: <code>idVendor = 0fce</code> and <code>idProduct = 320d</code>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">programs.adb.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">services.udev.extraRules</span> <span class="hljs-operator">=</span>
+    <span class="hljs-keyword">let</span>
+      <span class="hljs-comment"># nix-shell -p usbutils --run &quot;lsusb&quot;</span>
+      <span class="hljs-attr">idVendor</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;0fce&quot;</span>; <span class="hljs-comment"># Change according to the guide above</span>
+      <span class="hljs-attr">idProduct</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;320d&quot;</span>; <span class="hljs-comment"># Change according to the guide above</span>
+    <span class="hljs-keyword">in</span>
+    <span class="hljs-string">&#x27;&#x27;
+      SUBSYSTEM==&quot;usb&quot;, ATTR{idVendor}==&quot;<span class="hljs-subst">${idVendor}</span>&quot;, MODE=&quot;[]&quot;, GROUP=&quot;adbusers&quot;, TAG+=&quot;uaccess&quot;
+      SUBSYSTEM==&quot;usb&quot;, ATTR{idVendor}==&quot;<span class="hljs-subst">${idVendor}</span>&quot;, ATTR{idProduct}==&quot;<span class="hljs-subst">${idProduct}</span>&quot;, SYMLINK+=&quot;android_adb&quot;
+      SUBSYSTEM==&quot;usb&quot;, ATTR{idVendor}==&quot;<span class="hljs-subst">${idVendor}</span>&quot;, ATTR{idProduct}==&quot;<span class="hljs-subst">${idProduct}</span>&quot;, SYMLINK+=&quot;android_fastboot&quot;
+    &#x27;&#x27;</span>;
+
+  <span class="hljs-comment"># add user to adbusers group</span>
+  <span class="hljs-attr">users.users.myUser</span> <span class="hljs-operator">=</span> {
+   <span class="hljs-attr">isNormalUser</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+   <span class="hljs-attr">extraGroups</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;adbusers&quot;</span> ];
+  };
+}</code></pre>
+      </div><ol>
+<li><a href="https://nixos.org/nix-dev/2015-April/016881.html">more information on that snippet</a></li>
+<li><a href="https://gist.github.com/Nadrieril/d006c0d9784ba7eff0b092796d78eb2a">A shell.nix to build LineageOS</a></li>
+<li><a href="https://github.com/danielfullmer/robotnix">robotnix</a>, building aosp roms (e.g. LineageOS) with nix.</li>
+<li><a href="https://github.com/mrVanDalo/LineagoOS-build">LineageOS build setup using terranix and hcloud</a>, based on the <a href="https://gist.github.com/Nadrieril/d006c0d9784ba7eff0b092796d78eb2a">shell.nix to build LineageOS</a>. Useful if you are in a rush and don&#39;t have to much CPU power on your hand.</li>
+<li><a href="https://wiki.archlinux.org/title/Android_Debug_Bridge">Archlinux Wiki to Android_Debug_Bridge</a></li>
+</ol>
+<p><a href="category:Development" class="wikilink" title="Category:Development">Category:Development</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

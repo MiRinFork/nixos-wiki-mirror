@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NixOS as a desktop/ja</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop">NixOS as a desktop</a><span aria-hidden="true"> / </span>ja</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: NixOS as a desktop/ja -->
+
+<p><languages/> <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ja/NixOS" class="wikilink" title="NixOS">NixOSは</a>、幅広い用途に適した汎用性の高いOSです。 このページでは、NixOSをメインのデスクトップ環境として実機またはVM上で実行したいユーザーを対象としています。 また、<a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ja/NixOS_friendly_hosters" class="wikilink" title="クラウド">クラウド</a>環境やサーバーインフラとしてNixOSを導入する場合でも、より広範な<a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ja/Nix_ecosystem" class="wikilink" title="Nixエコシステム">Nixエコシステムを</a>理解するにはここで紹介する概念と実践は役立つでしょう。</p>
+<p><span id="Installation"></span></p>
+<h2 id="">インストール</h2><p>インストールするには、<a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ja/NixOS_Installation_Guide" class="wikilink" title="NixOSインストールガイド">NixOSインストールガイドを</a>参照して下さい。 デスクトップインストールをする場合は、<a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ja/:Category:Desktop_environment" class="wikilink" title="デスクトップ環境">デスクトップ環境</a>、<a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ja/:Category:Web_Browser" class="wikilink" title="ウェブブラウザ">ウェブブラウザ</a>、その他の<a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ja/:Category:Applications" class="wikilink" title="GUIアプリケーション">GUIアプリケーションなどの</a>日常的に使用するアプリケーションに必要となるディスク用量として、少なくとも30GiBの空き容量を確保しておくことを推奨します。 必要最低限の機能を備えたセットアップであれば、15GiBで十分でしょう。</p>
+<p><span id="Managing_your_configuration"></span></p>
+<h2 id="構成-管理">構成の管理</h2><div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>As described in the <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ja/Overview_of_the_NixOS_Linux_distribution#Declarative_Configuration" class="wikilink" title="Overview of the NixOS Linux distribution#Declarative Configuration">Overview of the NixOS Linux distribution#Declarative Configuration</a>, NixOS is designed to be configured declaratively. This means the entire system configuration, including installed packages, system services, kernel parameters, and user accounts is defined in configuration files, typically in <code>/etc/nixos/configuration.nix</code>. These settings can then be applied consistently and reproducibly across machines.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>The process for managing your configuration is documented in the .</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h3 id="system-configuration">System Configuration</h3></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>The primary configuration file, <code>/etc/nixos/configuration.nix</code>, defines system-wide settings. This includes options like enabling services, managing system users, setting hardware options, and specifying installed packages. Changes are applied with:</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">nixos-rebuild switch</span></code></pre>
+      </div></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h3 id="user-configuration-with-home-manager">User configuration with Home Manager</h3></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>For managing per-user configurations such as application preferences, command-line tools, and dotfiles, <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ja/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> provides a convenient, declarative approach. It allows users to define which programs should be installed and how they should be configured, without needing to include those settings in the system-wide <a href="https://nixos.org/manual/nixos/stable/#sec-changing-config">configuration.nix</a>.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Home Manager can be used independently of the system configuration and works with both traditional setups and newer <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ja/Flakes" class="wikilink" title="Flakes">Flakes</a>-based configurations.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h3 id="with-flakes">With Flakes</h3></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>For users looking for a more streamlined and reproducible way to manage NixOS configurations, the <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ja/Flakes" class="wikilink" title="Flakes">Flakes</a> feature has been gaining popularity within the community. While Flakes introduce some new concepts compared to traditional workflows, many users find them a convenient and organized approach to managing system and development configurations.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Refer to <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ja/NixOS_system_configuration#Defining_NixOS_as_a_flake" class="wikilink" title="NixOS system configuration#Defining NixOS as a flake">NixOS system configuration#Defining NixOS as a flake</a> for details on getting started.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h2 id="beyond-initial-setup">Beyond initial setup</h2></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Once your basic NixOS installation is complete and functional, you can further customize your system with a variety of optional configurations tailored for desktop use. For a list of recommended initial system configurations, see <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ja/NixOS_Installation_Guide#NixOS_configuration" class="wikilink" title="NixOS Installation Guide#NixOS configuration">NixOS Installation Guide#NixOS configuration</a>.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Common configuration areas include:</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h4 id="desktop-environments">Desktop Environments</h4></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Install and configure full-featured environments such as <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ja/GNOME" class="wikilink" title="GNOME">GNOME</a>, <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ja/KDE_Plasma" class="wikilink" title="KDE Plasma">KDE Plasma</a>, or <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ja/Xfce" class="wikilink" title="Xfce">Xfce</a>.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>See <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ja/:Category:Desktop_environment" class="wikilink" title=":Category:Desktop environment">:Category:Desktop environment</a> for a full list.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h4 id="window-managers">Window Managers</h4></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Set up lightweight or tiling window managers like <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ja/i3" class="wikilink" title="i3">i3</a>, <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ja/Sway" class="wikilink" title="Sway">Sway</a>, <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ja/Hyprland" class="wikilink" title="Hyprland">Hyprland</a>, or <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ja/xmonad" class="wikilink" title="xmonad">xmonad</a>.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>See <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ja/:Category:Window_managers" class="wikilink" title=":Category:Window managers">:Category:Window managers</a> for a full list.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h4 id="display-managers-login-managers">Display Managers (Login Managers)</h4></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Configure graphical session managers such as <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ja/Gnome" class="wikilink" title="GDM">GDM</a>, <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ja/KDE" class="wikilink" title="SDDM">SDDM</a>, or <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ja/LightDM" class="wikilink" title="LightDM">LightDM</a>.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h4 id="audio-setup">Audio Setup</h4></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Enable and configure <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ja/:Category:Audio" class="wikilink" title="audio">audio</a> systems like <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ja/PipeWire" class="wikilink" title="PipeWire">PipeWire</a>, <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ja/PulseAudio" class="wikilink" title="PulseAudio">PulseAudio</a>, or <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ja/ALSA" class="wikilink" title="ALSA">ALSA</a>.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h4 id="network-management">Network Management</h4></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Use tools such as <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ja/NetworkManager" class="wikilink" title="NetworkManager">NetworkManager</a> or <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ja/systemd-networkd" class="wikilink" title="systemd-networkd">systemd-networkd</a> for managing <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ja/Networking" class="wikilink" title="network">network</a> connections.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h4 id="bluetooth-support">Bluetooth Support</h4></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Set up <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ja/Bluetooth" class="wikilink" title="Bluetooth">Bluetooth</a> with blueman or other management tools.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h4 id="power-management">Power Management</h4></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Configure <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ja/laptop" class="wikilink" title="laptop">laptop</a> <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ja/Power_Management" class="wikilink" title="battery management">battery management</a>, suspend, and hibernation with tools like <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ja/Laptop#tlp" class="wikilink" title="tlp">tlp</a> or <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ja/systemd" class="wikilink" title="systemd">systemd</a> services.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h4 id="printing-and-scanning">Printing and Scanning</h4></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Enable <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ja/Cups" class="wikilink" title="Cups">Cups</a> for printer support and tools like Sane for <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ja/Scanners" class="wikilink" title="scanning">scanning</a> devices.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h2 id="tips-and-tricks">Tips and tricks</h2></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h3 id="modularizing-your-configuration-with-modules">Modularizing your configuration with modules</h3></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h2 id="see-also">See also</h2></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<ul>
+<li><a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ja/Overview_of_the_NixOS_Linux_distribution" class="wikilink" title="Overview of the NixOS Linux distribution">Overview of the NixOS Linux distribution</a></li>
+<li><a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ja/Comparison_of_NixOS_setups" class="wikilink" title="Comparison of NixOS setups">Comparison of NixOS setups</a> for a table comparing some popular choices.</li>
+<li><a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ja/Configuration_Collection" class="wikilink" title="Configuration Collection">Configuration Collection</a> for a long list within the wiki.</li>
+<li><a href="https://github.com/topics/nix-flake">nix-flake</a>, <a href="https://github.com/topics/nixos-configuration">nixos-configuration</a>, <a href="https://github.com/topics/nixos-dotfiles">nixos-dotfiles</a> Github topics</li>
+<li><a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ja/Wil_T_Nix_Guides" class="wikilink" title="Wil T Nix Guides">Wil T Nix Guides</a> Youtube video format guide</li>
+</ul>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+</div>
+
+<p><a href="category:Desktop" class="wikilink" title="Category:Desktop">Category:Desktop</a> <a href="category:Guide" class="wikilink" title="Category:Guide">Category:Guide</a> <a href="category:NixOS" class="wikilink" title="Category:NixOS">Category:NixOS</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

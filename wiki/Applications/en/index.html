@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Applications/en</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/Applications">Applications</a><span aria-hidden="true"> / </span>en</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Applications/en -->
+
+<languages/>
+
+<p>This article lists applications built for and with Nix; it constitutes a listing of what may be called the <em><strong>Extended Nix Ecosystem</strong></em> (see <a href="special:MyLanguage/Nix_Ecosystem" class="wikilink" title="Nix Ecosystem">Nix Ecosystem</a> for the Core Nix Ecosystem).</p>
+<p>If you are looking for Linux software/applications you should look at <a href="https://mirror.nixoscn.org/wiki/Applications/en/:Category:Software" class="wikilink" title="Software">Software</a>.</p>
+<h2 id="non-nixos-distributions">Non-NixOS Distributions</h2><p>Various applications built on top of Nix:</p>
+<ul>
+<li><a href="https://github.com/cleverca22/not-os">not-os</a> - build a system firmware for embedded devices</li>
+</ul>
+<h2 id="built-with-nix">Built with Nix</h2><p>Projects which leverage Nix.</p>
+<ul>
+<li><a href="https://github.com/styx-static/styx">styx</a> - Static site generator in Nix expression language</li>
+<li><a href="https://github.com/PapenfussLab/bionix">bionix</a> - manage and execute bioinformatics pipelines</li>
+<li><a href="https://nix-community.github.io/ethereum.nix/">ethereum.nix</a> - A collection of Nix packages and NixOS modules designed to make it easier to operate Ethereum related services and infrastructure</li>
+<li><a href="https://gitlab.com/simple-nixos-mailserver/nixos-mailserver">nixos-mailserver</a> - A complete and Simple NixOS Mailserver</li>
+</ul>
+<h2 id="nix-platform">Nix Platform</h2><p>Projects which add support (e.g. for extra platforms or major capabilities) to Nix.</p>
+<ul>
+<li><a href="https://github.com/LnL7/nix-darwin">nix-darwin</a> - NixOS modules for Darwin</li>
+<li><a href="https://github.com/musnix/musnix">musnix</a> - real-time audio modules for NixOS</li>
+<li><a href="https://github.com/guibou/nixGL">nixGl</a> - A wrapper to run OpenGL applications outside of NixOS</li>
+</ul>
+<h2 id="nix-tooling">Nix Tooling</h2><p>Various tools built for working with the Nix Ecosystem (e.g. enhancements or alternatives to core Nix tools).</p>
+<h3 id="general-configuration">General configuration</h3><ul>
+<li><a href="https://github.com/nix-community/home-manager">home-manager</a> - System for managing a user environment using Nix</li>
+<li><a href="https://github.com/nix-community/plasma-manager">plasma-manager</a> - manage KDE Plasma with Home-manager</li>
+</ul>
+<h2 id="about">About</h2><h3 id="flakes">Flakes</h3><ul>
+<li><a href="https://github.com/serokell/deploy-rs">deploy-rs</a> - Nix flake deployment tool</li>
+<li><a href="https://github.com/gytis-ivaskevicius/flake-utils-plus">flake-utils-plus</a> - Flake templates and helper library. Extension of below</li>
+<li><a href="https://github.com/numtide/flake-utils">flake-utils</a> - Set of flake-building utility functions</li>
+<li><a href="https://github.com/hercules-ci/flake-parts">flake-parts</a> - Simplify Nix Flakes with the module system</li>
+<li><a href="https://snowfall.org/">snowfall</a> - Unified configuration for systems, packages, modules, shells, templates, and more with Nix Flakes.</li>
+</ul>
+<h3 id="archives">Archives</h3><ul>
+<li><a href="https://github.com/taktoa/narfuse">narfuse</a> - FUSE filesystem for mounting Nix archive (NAR) files as a virtual Nix store</li>
+</ul>
+<h3 id="clustering">Clustering</h3><ul>
+<li><a href="https://github.com/awakesecurity/nix-delegate">nix-delegate</a> - Convenient utility for distributed Nix builds</li>
+</ul>
+<h3 id="comparison">Comparison</h3><ul>
+<li><a href="https://github.com/Gabriel439/nix-diff">nix-diff</a> - Compare Nix derivations</li>
+<li><a href="https://github.com/FRidh/niff">niff</a> - Compare two Nix expressions to determine what attributes changes</li>
+<li><a href="https://gitlab.com/khumba/nvd">nvd</a> - Nix/NixOS package version diff tool</li>
+<li><a href="https://github.com/tgirlcloud/lix-diff">lix-diff</a> - Nix/NixOS closure diffing tool</li>
+</ul>
+<h3 id="dependencies">Dependencies</h3><ul>
+<li><a href="https://github.com/utdemir/nix-tree">nix-tree</a> - Interactive dependency browser for Nix derivations</li>
+<li><a href="https://github.com/craigmbooth/nix-visualize">nix-visualize</a> - Visualize the dependencies of a given package as a graph</li>
+<li><a href="https://github.com/nmattia/niv">niv</a> - Painless dependencies for Nix projects</li>
+</ul>
+<h3 id="nix-lang-comprehension">Nix lang comprehension</h3><ul>
+<li><a href="https://github.com/astro/deadnix">deadnix</a> - Removes unused code from .nix files</li>
+</ul>
+<!-- -->
+
+<ul>
+<li><a href="https://github.com/nerdypepper/statix">statix</a> - Linter and suggestions for the nix programming language</li>
+<li><a href="https://github.com/oxalica/nil">nil</a> - Nix Language server, an incremental analysis assistant for writing in Nix.</li>
+<li><a href="https://github.com/NixOS/nixfmt">nixfmt</a> - The official formatter for Nix code</li>
+<li><a href="https://github.com/nix-community/nixpkgs-fmt">nixpkgs-fmt</a> - Alternative code formatter, originally used in <a href="https://mirror.nixoscn.org/wiki/Applications/en/Nixpkgs" class="wikilink" title="Nixpkgs">Nixpkgs</a>.</li>
+</ul>
+<h3 id="package-maintenance">Package maintenance</h3><ul>
+<li><a href="https://github.com/Mic92/nix-update/">nix-update</a> - Swiss-knife for updating nix packages.</li>
+<li><a href="https://github.com/Mic92/nixpkgs-review">nixpkgs-review</a> - Review nixpkgs pull requests</li>
+</ul>
+<h3 id="debugging">Debugging</h3><ul>
+<li><a href="https://github.com/edolstra/dwarffs">dwarffs</a> - Fetches DWARF debug info files for gdb automatically from cache.nixos.org</li>
+<li><a href="https://github.com/symphorien/nixseparatedebuginfod">nixseparatedebuginfod</a> - Fetches debug symbols and source files for debuginfod-capables tools like gdb</li>
+</ul>
+<h3 id="search">Search</h3><ul>
+<li><a href="https://github.com/bennofs/nix-index">nix-index</a> - Quickly locate nix packages with specific files</li>
+<li><a href="https://github.com/symphorien/nix-du">nix-du</a> - Find which gc-roots take disk space in a nix store</li>
+<li><a href="https://github.com/nix-hackers/nix-info">nix-info</a> - Homebrew info querying for Nix</li>
+<li><a href="https://github.com/flyingcircusio/userscan">userscan</a> - Scans directories containing manually compiled programs and registers them with the Nix garbage collector</li>
+<li><a href="https://github.com/peterldowns/nix-search-cli">nix-search-cli</a> - CLI for searching packages on search.nixos.org</li>
+</ul>
+<h3 id="shell">Shell</h3><ul>
+<li><a href="https://github.com/hedning/nix-bash-completions">nix-bash-completions</a> - Bash completion for <code>nix*</code> commands</li>
+<li><a href="https://github.com/Mic92/nixos-shell">nixos-shell (Mic92)</a> - Spawns lightweight nixos vms in a shell (like vagrant)</li>
+<li><a href="https://github.com/chrisfarms/nixos-shell">nixos-shell (chrisfarms)</a> - like nix-shell, but for NixOS modules. Buildable version can be found <a href="https://github.com/wavewave/nixos-shell/tree/submodule">in this fork</a></li>
+<li><a href="https://github.com/erikarvstedt/extra-container">extra-container</a> - Run declarative NixOS containers from the command line. Similar to nixos-shell (chrisfarms)</li>
+</ul>
+<h3 id="other">Other</h3><ul>
+<li><a href="https://github.com/matthewbauer/nix-bundle">nix-bundle</a> - package Nix attributes into single-file executables.</li>
+<li><a href="https://github.com/lethalman/nix-user-chroot">nix-user-chroot</a> - install Nix as an unpriviliged user on any system</li>
+<li><a href="https://github.com/ViperML/nh">nh</a> - a rewrite of nixos-rebuild featuring diffs with nvd and a tree of builds with nix-output-manager, as well as other quality of life features such as package searching.</li>
+<li><a href="https://github.com/nix-community/nixos-cli">nixos-cli</a> - an all-in-one tool to manage any NixOS installation with ease, combining the features of all the `nixos-*` commands.</li>
+</ul>
+<h2 id="nix-operations">Nix Operations</h2><p>Operations tools for the Nix Ecosystem:</p>
+<h3 id="official">Official</h3><ul>
+<li><a href="https://github.com/nixos/hydra">Hydra</a> - Nix&#39;s official continuous integration and build system.</li>
+<li><a href="https://github.com/NixOS/nixops">NixOps</a> - Nix&#39;s official (but unmaintained) tool for deploying to NixOS machines in a network or the cloud.</li>
+</ul>
+<h3 id="deployment">Deployment</h3><ul>
+<li><a href="https://github.com/rapenne-s/bento">Bento</a> - a NixOS fleet manager supporting remote systems not up 24/7</li>
+</ul>
+<!-- -->
+
+<ul>
+<li><a href="https://github.com/zhaofengli/colmena">colmena</a> - a NixOS deployment tool</li>
+<li>comin - A deployment tool to continuously pull from Git repositories.</li>
+<li><a href="https://github.com/serokell/deploy-rs">deploy-rs</a> - a simple multi-profile Nix-flake deploy tool</li>
+</ul>
+<!-- -->
+
+<ul>
+<li><a href="special:MyLanguage/krops" class="wikilink" title="krops">krops</a> - a lightweight toolkit to deploy NixOS systems, remotely or locally</li>
+<li><a href="https://github.com/pinpox/lollypops">lollypops</a> - a parallel and stateless NixOS deployment tool</li>
+<li><a href="https://github.com/DBCDK/morph">Morph</a> - a NixOS deployment tool</li>
+<li><a href="https://github.com/MatthewCroughan/nixinate">Nixinate</a> - A Nix flake library to provide app outputs for managing existing NixOS hosts over SSH.</li>
+<li><code>nixos-build --target-host</code></li>
+<li><a href="https://github.com/NixOS/nixops">NixOps</a> - [Not recommended for new projects] a tool for deploying to NixOS machines in a network or cloud.</li>
+<li><a href="https://github.com/Infinisil/nixus">Nixus</a> - an experimental NixOS deployment tool</li>
+</ul>
+<h3 id="docker">Docker</h3><ul>
+<li><a href="https://github.com/hercules-ci/arion">Arion</a> - configure Docker Compose with Nix modules</li>
+<li><a href="https://nixery.dev/">Nixery</a> - ad-hoc container images from Nix</li>
+</ul>
+<h3 id="kubernetes">Kubernetes</h3><ul>
+<li><a href="https://github.com/xtruder/kubenix">kubenix</a> - Kubernetes resource builder written in Nix</li>
+<li><a href="https://github.com/xtruder/nix-kubernetes">nix-kubernetes</a> - Kubernetes deployment manager written in nix</li>
+</ul>
+<h2 id="alternative-nix-implementations-amp-parser">Alternative nix implementations &amp; parser</h2><ul>
+<li><a href="https://github.com/jwiegley/hnix">hnix</a> (haskell, parser &amp; evaluator)</li>
+<li><a href="https://github.com/nix-community/rnix-parser">rnix</a> (rust, parser)</li>
+<li><a href="https://github.com/orivej/go-nix">go-nix</a> (go, parser &amp; nix-compatible file hasher)</li>
+<li><a href="https://github.com/NixOS/nix-idea/tree/master/src/main/java/org/nixos/idea/lang">nix-idea</a> (java, parser)</li>
+</ul>
+<h2 id="additional-unofficial-ecosystem">Additional unofficial ecosystem</h2><p>None of the services are required to use Nix. None of these services are affiliated with the <a href="special:MyLanguage/NixOS_Foundation" class="wikilink" title="NixOS Foundation">NixOS Foundation</a>.</p>
+<p><a href="https://cachix.org/">Cachix</a><br>binary caches as a service. Free for public caches, subscription for private token-protected caches.</p>
+<p><a href="https://hercules-ci.com/">Hercules CI</a><br>simplify your CI setup with stateless build agents. Free for open source, per-user subscription for private repositories.</p>
+<p><a href="https://garnix.io/">Garnix</a><br>nix CI, caching (open beta) and cloud hosting (private alpha) based on Nix as a service. Currently free, but offers commerical plans.</p>
+<p><a href="https://nixbuild.net/">nixbuild.net</a><br>remote Nix builders as a service for x86_64 and AArch64. Pay-per-use.</p>
+<h2 id="see-also">See also</h2><ul>
+<li><a href="https://github.com/nix-community/awesome-nix">awesome-nix</a></li>
+<li><a href="special:MyLanguage/Language-specific_package_helpers" class="wikilink" title="Language-specific package helpers">Language-specific package helpers</a></li>
+<li><a href="special:MyLanguage/Alternative_Package_Sets" class="wikilink" title="Alternative Package Sets">Alternative Package Sets</a></li>
+<li><a href="special:MyLanguage/Configuration_Collection" class="wikilink" title="Get inspiration from other peoples NixOS configuration">Get inspiration from other peoples NixOS configuration</a></li>
+<li><a href="https://search.nixos.org/packages">NixOS Packages Search</a> for searching through NixOS packages</li>
+</ul>
+<p><a href="category:Software" class="wikilink" title="Category:Software">Category:Software</a> <a href="category:Guide" class="wikilink" title="Category:Guide">Category:Guide</a> <a href="category:Nix```{{#translation:}}%60%60%60" class="wikilink" title="Category:Nix```
+{{#translation:}}
+```">Category:Nix```
+{{#translation:}}</p>
+<div class="code-container">
+        
+        <pre><code class="language-</a> hljs"></code></pre>
+      </div>
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

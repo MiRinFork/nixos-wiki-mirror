@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Seafile</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Seafile</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Seafile -->
+
+<h2 id="introduction">Introduction</h2><p><strong>Seafile</strong> is a file-hosting software system with a simple web interface and client applications for file access. Seafile&#39;s functionality is similar to file-hosting services such as Dropbox and Google Drive.</p>
+<p>As opposed to <a href="https://mirror.nixoscn.org/wiki/Seafile/Nextcloud" class="wikilink" title="Nextcloud">Nextcloud</a>, Seafile offers simpler user administration and much better file-server performance.</p>
+<h2 id="setup">Setup</h2><p>Minimal configuration of Seafile:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">services.seafile</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+    <span class="hljs-attr">adminEmail</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;admin@example.com&quot;</span>;
+    <span class="hljs-attr">initialAdminPassword</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;change this later!&quot;</span>;
+
+    <span class="hljs-attr">ccnetSettings.General.SERVICE_URL</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://seafile.example.com&quot;</span>;
+
+    <span class="hljs-attr">seafileSettings</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">fileserver</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">host</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;unix:/run/seafile/server.sock&quot;</span>;
+      };
+    };
+  };</code></pre>
+      </div><p>Use nginx to serve Seafile from a unix socket:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  services.nginx.virtualHosts.<span class="hljs-string">&quot;seafile.example.com&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">sslCertificate</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/path/to/cert.pem&quot;</span>;
+    <span class="hljs-attr">sslCertificateKey</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/path/to/key.key&quot;</span>;
+    <span class="hljs-attr">forceSSL</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">enableACME</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">locations</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-string">&quot;/&quot;</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">proxyPass</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;http://unix:/run/seahub/gunicorn.sock&quot;</span>;
+        <span class="hljs-attr">extraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+          proxy_set_header   Host $host;
+          proxy_set_header   X-Real-IP $remote_addr;
+          proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header   X-Forwarded-Host $server_name;
+          proxy_read_timeout  1200s;
+          client_max_body_size 0;
+        &#x27;&#x27;</span>;
+      };
+      <span class="hljs-string">&quot;/seafhttp&quot;</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">proxyPass</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;http://unix:/run/seafile/server.sock&quot;</span>;
+        <span class="hljs-attr">extraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+          rewrite ^/seafhttp(.*)$ $1 break;
+          client_max_body_size 0;
+          proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_connect_timeout  36000s;
+          proxy_read_timeout  36000s;
+          proxy_send_timeout  36000s;
+          send_timeout  36000s;
+        &#x27;&#x27;</span>;
+      };
+    };
+  };</code></pre>
+      </div><h2 id="additional-configuration">Additional configuration</h2><div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">services.seafile</span> <span class="hljs-operator">=</span> {
+    [...]
+    <span class="hljs-attr">seafileSettings</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">quota.default</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;50&quot;</span>; <span class="hljs-comment"># Amount of GB allotted to users</span>
+      <span class="hljs-attr">history.keep_days</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;14&quot;</span>; <span class="hljs-comment"># Remove deleted files after 14 days</span>
+
+      <span class="hljs-attr">fileserver</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">host</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;unix:/run/seafile/server.sock&quot;</span>;
+        <span class="hljs-attr">web_token_expire_time</span> <span class="hljs-operator">=</span> <span class="hljs-number">18000</span>; <span class="hljs-comment"># Expire the token in 5h to allow longer uploads</span>
+      };
+    };
+
+    <span class="hljs-comment"># Enable weekly collection of freed blocks</span>
+    <span class="hljs-attr">gc</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">dates</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;Sun 03:00:00&quot;</span> ];
+    };
+  };</code></pre>
+      </div><p>To change the directory of the database, create the directory with the appropriate permissions, <code>chown -R seafile:seafile</code> it and set:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">services.seafile</span> <span class="hljs-operator">=</span> {
+    [...]
+    <span class="hljs-attr">dataDir</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/path/seafile/data&quot;</span>;
+  };</code></pre>
+      </div><h2 id="additional-info">Additional info</h2><p>The <code>initialAdminPassword</code> is set only once when the server is first initialized. Any changes to it afterward will have no effect on it. If you cannot log in for the first time, delete <code>/var/lib/seafile/data</code>, remove the Seafile configuration from your config, rebuild, re-add it, and the password will be set in the next rebuild.</p>
+<p>Logs for Seafile and SeaHub (Seafile&#39;s web interface) are stored respectively in <code>/var/log/seafile/server.log</code> and <code>/var/log/seafile/seahub.log</code>.</p>
+<p>For additional options, refer to the <a href="https://manual.seafile.com/11.0/config/">Seafile Admin Manual</a></p>
+<p><a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="category:Web_Applications" class="wikilink" title="Category:Web Applications">Category:Web Applications</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

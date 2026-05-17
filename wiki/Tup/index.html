@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tup</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Tup</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Tup -->
+
+<p>From the tup manual: &quot;Tup is a file-based build system&quot;.</p>
+<h2 id="known-issues">Known Issues</h2><h3 id="tup-rebuilds-too-often">tup rebuilds too often</h3><p>When using <code>updater.full_dep</code>, tup rebuilds the full project every time you reboot due to mtime changes in /run/current-system.</p>
+<p>The solution is to always use tup via <code>nix-shell --pure</code> so that /run/current-system is not in PATH</p>
+<p>Github issue: <a href="https://github.com/gittup/tup/issues/397">tup/#397</a></p>
+<p>Another method that minimizes changes to PATH is to create symlinks to tools with Tup:</p>
+<div class="code-container">
+        
+        <pre><code class="language-tup hljs"># Tuprules.tup - export a bang-rule that calls the Dhall interpreter
+DHALL_LINK = $(TUP_CWD)/dhall
+!dhall = | $(DHALL_LINK) |&gt; $(DHALL_LINK)/bin/dhall |&gt;</code></pre>
+      </div><div class="code-container">
+        
+        <pre><code class="language-tup hljs"># Tupfile - build a symlink to the nixpkgs#dhall package 
+include_rules
+: |&gt; nix build nixpkgs#dhall --out-link %o |&gt; $(DHALL_LINK)</code></pre>
+      </div><h3 id="mount-does-not-unmount">mount does not unmount</h3><p>Tup can either not find fusermount OR the fusermount that tup finds is not setuid when using --pure.</p>
+<p>Github issue: <a href="https://github.com/NixOS/nixpkgs/issues/107516">nixpkgs/#107516</a></p>
+<p>There is no real solution to this other than 1. patching tup to use setuid fusermount 2. (maybe) setting tup as setuid.</p>
+<h3 id="pkg-config-can-not-find-my-packages">pkg-config can not find my packages</h3><p>When using nix-shell, pkg-config, and tup; pkg-config calls via tup do not find any packages.</p>
+<p>You must add export lines to your tupfile that correspond to the variables set by NixOS pkg-config:</p>
+<p><code>  export PKG_CONFIG_PATH</code><br><code>  export PKG_CONFIG_PATH_FOR_TARGET</code><br><code>  export PKG_CONFIG_FOR_TARGET</code></p>
+<p>You also have to export NIX_PKG_CONFIG* variables, which can change based on platform:</p>
+<p><code> export NIX_PKG_CONFIG_WRAPPER_TARGET_TARGET_x86_64_unknown_linux_gnu</code></p>
+<p>You can verify this by adding <code>: |&gt; pkg-config --list-all &gt; %o |&gt; pkg-list.txt</code> into your Tupfile and seeing which libraries are available via pkg-config.</p>
+<h3 id="flakes">Flakes</h3><p>A Tup rule must not use a flake that resides in the same tup project as the rule because the nix command can aggressively access files in the vicinity of flake.nix. The flake should be external to the tup project or it can be stored within the same repository but only on a different branch, which would then then be registered in the local nix flake registry.</p>
+<p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

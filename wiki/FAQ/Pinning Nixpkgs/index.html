@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FAQ/Pinning Nixpkgs</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/FAQ">FAQ</a><span aria-hidden="true"> / </span>Pinning Nixpkgs</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: FAQ/Pinning Nixpkgs -->
+
+<p>It is possible (and indeed, fairly easy) to pin a specific version of Nixpkgs. This can be used to upgrade individual applications separately on their own terms, and to ensure their deployability is not impacted by other systems&#39; requirements.</p>
+<p>Another reason why one would want to pin nixpkgs is to get older versions of a specific software. <a href="https://lazamar.co.uk/nix-versions/">This site</a> can show you all the versions a package went through, and what nixpkgs revision to use to get your specific version.</p>
+<p>Note: You can <code>sudo nix-channel --remove nixpkgs</code>, but you still need a nix-channel for nixos</p>
+<p>Be aware that this also pins all dependencies of the application which often causes issues for GUI applications and also brings in back outdated and potentially vulnerable dependencies.</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">sudo nix-channel --list
+nixos https://nixos.org/channels/nixos-21.05</code></pre>
+      </div><p>Nix 2.0 introduces new builtins, <code>fetchTarball</code> and <code>fetchGit</code>, which make it possible to fetch a specific version of nixpkgs without depending on an existing one:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-built_in">import</span> (<span class="hljs-built_in">builtins.fetchTarball</span> {
+  <span class="hljs-comment"># Descriptive name to make the store path easier to identify</span>
+  <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nixos-unstable-2018-09-12&quot;</span>;
+  <span class="hljs-comment"># Commit hash for nixos-unstable as of 2018-09-12</span>
+  <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://github.com/nixos/nixpkgs/archive/ca2ba44cab47767c8127d1c8633e2b581644eb8f.tar.gz&quot;</span>;
+  <span class="hljs-comment"># Hash obtained using `nix-prefetch-url --unpack &lt;url&gt;`</span>
+  <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;1jg7g6cfpw8qvma0y19kwyp549k1qyf11a5sg6hvn6awvmkny47v&quot;</span>;
+}) {}</code></pre>
+      </div><p>Or, to use git for fetching:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-built_in">import</span> (<span class="hljs-built_in">builtins.fetchGit</span> {
+  <span class="hljs-comment"># Descriptive name to make the store path easier to identify</span>
+  <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nixos-unstable-2018-09-12&quot;</span>;
+  <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://github.com/nixos/nixpkgs/&quot;</span>;
+  <span class="hljs-comment"># Commit hash for nixos-unstable as of 2018-09-12</span>
+  <span class="hljs-comment"># `git ls-remote https://github.com/nixos/nixpkgs nixos-unstable`</span>
+  <span class="hljs-attr">ref</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;refs/heads/nixos-unstable&quot;</span>;
+  <span class="hljs-attr">rev</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ca2ba44cab47767c8127d1c8633e2b581644eb8f&quot;</span>;
+}) {}</code></pre>
+      </div><p>If the <code>ref</code> attribute is omitted, we get an error like this:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">fatal: not a tree object: 3d70d4ba0b6be256974910e635fadcc0e9579b2a
+error: while evaluating the attribute 'buildInputs' of the derivation 'nix-shell' at /nix/store/b93cq865x6qxpn4dw9ivrk3yjcsm8r97-nixos-19.09/pkgs/build-support/mkshell/default.nix:28:3:
+while evaluating 'getOutput' at /nix/store/b93cq865x6qxpn4dw9ivrk3yjcsm8r97-nixos-19.09/lib/attrsets.nix:464:23, called from undefined position:
+while evaluating anonymous function at /nix/store/b93cq865x6qxpn4dw9ivrk3yjcsm8r97-nixos-19.09/pkgs/stdenv/generic/make-derivation.nix:142:17, called from undefined position:
+program 'git' failed with exit code 128</code></pre>
+      </div><h2 id="pinning-an-unstable-service">Pinning an unstable service</h2><p>How to upgrade a single package and service to an unstable version</p>
+<p>There is probably a better way, especially once flakes come around. Some packages let you specify which <code>package</code> to run as an option but most don&#39;t. The following is a generic way that also works for those which don&#39;t.</p>
+<p>add to configuration.nix a set allowing unstable packages. This assumes a channel named <code>nixpkgs-unstable</code> exists, like so:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nix-channel --add https://nixos.org/channels/nixpkgs-unstable nixpkgs-unstable
+nix-channel --update</code></pre>
+      </div><p>then in <code>configuration.nix</code> allow unstable packages:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># Allow unstable packages.</span>
+n<span class="hljs-attr">ixpkgs.config</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">allowUnfree</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">packageOverrides</span> <span class="hljs-operator">=</span> <span class="hljs-params">pkgs:</span> {
+    <span class="hljs-attr">unstable</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs-unstable&gt;</span> {
+      <span class="hljs-attr">config</span> <span class="hljs-operator">=</span> config.nixpkgs.config;
+    };
+  };
+};</code></pre>
+      </div><p>This means you can now refer to unstable packages as <code>pkgs.unstable.nameofpackage</code> which is great. For example:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+  unstable.bind
+  unstable.dnsutils
+  vim
+];</code></pre>
+      </div><p>This will use unstable bind and dnsutils, but the stable vim.</p>
+<p>Except bind is a service, and if you want a service....usually you just do something like:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.bind.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+...</code></pre>
+      </div><p>Except services will refer to <code>pkgs.bind</code>, not <code>pkgs.unstable.bind</code></p>
+<p>so disable services.bind and create your own:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">u<span class="hljs-attr">sers.users.named</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">uid</span> <span class="hljs-operator">=</span> config.ids.uids.bind;
+  <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;BIND daemon user&quot;</span>;
+};
+<span class="hljs-attr">systemd.services.mybind</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;BIND Domain Name Server&quot;</span>;
+  <span class="hljs-attr">unitConfig.Documentation</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;man:named(8)&quot;</span>;
+  <span class="hljs-attr">after</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;network.target&quot;</span> ];
+  <span class="hljs-attr">wantedBy</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;multi-user.target&quot;</span> ];
+  <span class="hljs-attr">preStart</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    mkdir -m 0755 -p /etc/bind
+    if ! [ -f &quot;/etc/bind/rndc.key&quot; ]; then
+      <span class="hljs-subst">${pkgs.unstable.bind.out}</span>/sbin/rndc-confgen -c /etc/bind/rndc.key -u named -a -A hmac-sha256 2&gt;/dev/null
+    fi
+    <span class="hljs-subst">${pkgs.coreutils}</span>/bin/mkdir -p /run/named
+    chown named /run/named
+  &#x27;&#x27;</span>;
+  <span class="hljs-attr">serviceConfig</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">ExecStart</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.unstable.bind.out}</span>/sbin/named -u named -4 -c /etc/bind/named.conf -f&quot;</span>;
+    <span class="hljs-attr">ExecReload</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.unstable.bind.out}</span>/sbin/rndc -k &#x27;/etc/bind/rndc.key&#x27; reload&quot;</span>;
+    <span class="hljs-attr">ExecStop</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.unstable.bind.out}</span>/sbin/rndc -k &#x27;/etc/bind/rndc.key&#x27; stop&quot;</span>;
+  };
+};</code></pre>
+      </div><p>where all the stuff just comes from the bind services definition(which you can get from the source link on the nixos options page.) Just replace named variables, and replace <code>${pkgs.bind.out</code> with <code>${pkgs.unstable.bind.out}</code></p>
+<h2 id="see-also">See also</h2><ul>
+<li><a href="https://nix.dev/reference/pinning-nixpkgs">Pinning Nixpkgs</a></li>
+<li><a href="https://nix.dev/tutorials/first-steps/towards-reproducibility-pinning-nixpkgs">Towards Reproducibility: Pinning Nixpkgs</a></li>
+<li><a href="https://nix.dev/guides/recipes/dependency-management.html">Dependency Management</a></li>
+</ul>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Comparison of secret managing schemes</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Comparison of secret managing schemes</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Comparison of secret managing schemes -->
+
+<h2 id="introduction">Introduction</h2><p>Some NixOS modules require the use of secret information to function correctly. This information can include user<sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Comparison%20of%20secret%20managing%20schemes#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup> and Wi-Fi passwords<sup><a id="footnote-ref-2" href="https://mirror.nixoscn.org/wiki/Comparison%20of%20secret%20managing%20schemes#footnote-2" data-footnote-ref aria-describedby="footnote-label">2</a></sup>, cryptographic private keys<sup><a id="footnote-ref-3" href="https://mirror.nixoscn.org/wiki/Comparison%20of%20secret%20managing%20schemes#footnote-3" data-footnote-ref aria-describedby="footnote-label">3</a></sup> and secret API tokens<sup><a id="footnote-ref-4" href="https://mirror.nixoscn.org/wiki/Comparison%20of%20secret%20managing%20schemes#footnote-4" data-footnote-ref aria-describedby="footnote-label">4</a></sup>, among many other examples of secret information. On a standard Linux system, one would store this kind of information in separate files with restricted access rights (only readable by some Unix user) or encrypt them on-disk.</p>
+<p>While this paradigm is still available to NixOS users, a Nix-managed system is in an unique position to leverage <b>secret managing schemes</b>: special software capable of deploying secret information securely. Instead of writing the secret information unencrypted to a NixOS configuration, the software described below can decrypt the relevant secrets and deploy them at various stages of the NixOS system deployment process. This advanced form of secrets configuration is even more important for NixOS configurations tracked with Git or <a href="https://mirror.nixoscn.org/wiki/Comparison%20of%20secret%20managing%20schemes/Flakes" class="wikilink" title="Flakes">Flakes</a>, as one will be able to store these encrypted secrets in the Git repository and still be able to upload the repository on the public Internet.</p>
+<p>The most popular options for secrets management are <a href="https://mirror.nixoscn.org/wiki/Comparison%20of%20secret%20managing%20schemes/Agenix" class="wikilink" title="Agenix">Agenix</a>, <a href="https://github.com/Mic92/sops-nix">sops-nix</a> or the secrets management solution native to the deployment tool you chose. Below follows a more in-depth comparison including less well-known solutions.</p>
+<h2 id="definitions">Definitions</h2><p>The properties of the different schemes that are listed in the table below are explained in detail here.</p>
+<p>Scheme<br>The name of the scheme; if possible also a link to the official website or source.</p>
+<p>Pre-build<br>Where does the secret reside before the configuration is built? In a file? In a Nix expression? In an external database? Is it encrypted?</p>
+<p>Build time<br>What happens at build time? Is the secret decrypted or encrypted? Which primary passwords, passphrases or helper programs are needed?</p>
+<p>In the store<br>Is the data stored in <code>/nix/store</code> after the build? Is it encrypted? This has implications for reproducibility: if a secret is not stored in the Nix store it might be more difficult to recreate an old system configuration.</p>
+<p>System activation<br>What happens to the data at system activation, that is, at boot time or when <code>nixos-rebuild switch</code> or <code>nixos-rebuild switch --rollback</code> is executed.</p>
+<p>Runtime<br>Where does the secret reside after system activation? Is it encrypted? Who can read it?</p>
+<p>Encryption technology<br>Which programs or tools are used for encryption or decryption of secrets? Is <code>ssh-agent</code> or <code>gpg-agent</code> supported?</p>
+<p>Usable project<br>Whether this is a published software project (maybe even actively developed) or just usage notes in a forum or a blog entry.</p>
+<p>Templating support<br>Whether the project supports configuration templates, a way to seamlessly embed secrets in the syntax of a specific configuration file.</p>
+<h2 id="comparison">Comparison</h2><table>
+<thead>
+<tr>
+<th>Scheme</th>
+<th>Pre-build</th>
+<th>Build time</th>
+<th>In the store</th>
+<th>System activation</th>
+<th>Runtime</th>
+<th>Encryption technology</th>
+<th>Usable project</th>
+<th>Templating support</th>
+<th>Additional notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a href="https://nixops.readthedocs.io/en/latest/overview.html#managing-keys"><code>deployment.keys.&lt;name&gt;</code></a> option in <a href="https://mirror.nixoscn.org/wiki/Comparison%20of%20secret%20managing%20schemes/NixOps" class="wikilink" title="NixOps">NixOps</a></td>
+<td>Plaintext value in a Nix expression.</td>
+<td>N/A</td>
+<td>Not stored in the Nix Store.</td>
+<td>N/A<sup><a id="footnote-ref-6" href="https://mirror.nixoscn.org/wiki/Comparison%20of%20secret%20managing%20schemes#footnote-6" data-footnote-ref aria-describedby="footnote-label">5</a></sup></td>
+<td>Unencrypted in <code>/run/keys</code> or configured path.</td>
+<td>N/A</td>
+<td>Yes</td>
+<td>No</td>
+<td>Secret management happens outside of <code>nixos-rebuild</code></td>
+</tr>
+<tr>
+<td><a href="https://mirror.nixoscn.org/wiki/Comparison%20of%20secret%20managing%20schemes/Agenix" class="wikilink" title="Agenix">Agenix</a></td>
+<td>Encrypted raw files, <code>agenix</code> CLI encrypts with the user and host ssh key</td>
+<td>N/A</td>
+<td>Encrypted</td>
+<td>Decryption with the host SSH key.</td>
+<td>Unencrypted in <code>/run/secrets</code> or configured path.</td>
+<td>Uses <a href="https://github.com/FiloSottile/age"><code>age</code></a> with SSH user and host keys; does not support <code>ssh-agent</code>.</td>
+<td>Yes</td>
+<td>No</td>
+<td></td>
+</tr>
+<tr>
+<td><a href="https://github.com/oddlama/agenix-rekey"><code>agenix-rekey</code></a></td>
+<td>Extended <code>agenix</code>.</td>
+<td>N/A</td>
+<td>Encrypted</td>
+<td>Decryption with the host SSH key.</td>
+<td>Unencrypted in <code>/run/secrets</code> or configured path.</td>
+<td>Use with <code>agenix</code>; provides more convenience.</td>
+<td>Yes</td>
+<td>No</td>
+<td></td>
+</tr>
+<tr>
+<td><a href="https://github.com/yaxitech/ragenix">ragenix</a></td>
+<td>Encrypted raw files, <code>ragenix</code> CLI encrypts with the user and host SSH keys.</td>
+<td>N/A</td>
+<td>Encrypted</td>
+<td>Decryption with the host SSH key.</td>
+<td>Unencrypted in <code>/run/secrets</code> or configured path.</td>
+<td>Drop-in replacement of <code>agenix</code>, written in Rust and based on the <code>age</code> crate.</td>
+<td>Yes</td>
+<td>No</td>
+<td></td>
+</tr>
+<tr>
+<td><a href="https://github.com/Mic92/sops-nix">sops-nix</a></td>
+<td>Encrypted file with <code>age</code>, PGP or SSH key, support yubikey when gnupg is used, can be stored in a Git repository.</td>
+<td>N/A</td>
+<td>Encrypted</td>
+<td>Decryption with GPG or <code>age</code> keys.</td>
+<td>Stored in <code>/run/secrets</code> with configurable permissions.</td>
+<td>Uses <a href="https://github.com/getsops/sops">SOPS</a>.</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Can be used with <a href="https://mirror.nixoscn.org/wiki/Comparison%20of%20secret%20managing%20schemes/NixOps" class="wikilink" title="NixOps">NixOps</a>, <code>nixos-rebuild</code>, <a href="https://github.com/krebs/krops/">krops</a>, <a href="https://github.com/DBCDK/morph">morph</a>, <a href="https://github.com/Infinisil/nixus">nixus</a> and possibly other deployment tools.</td>
+</tr>
+<tr>
+<td><a href="https://github.com/krebs/krops">krops</a></td>
+<td>Stored in <a href="https://www.passwordstore.org/">the password store</a>.</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>Uses <a href="https://www.passwordstore.org/">the password store</a> (aka <code>pass</code>) which uses GPG.</td>
+<td>Yes</td>
+<td>No</td>
+<td></td>
+</tr>
+<tr>
+<td><a href="https://github.com/tweag/terraform-nixos">terraform-nixos</a></td>
+<td>Plaintext value in a Nix expression.</td>
+<td></td>
+<td></td>
+<td></td>
+<td>Stored in <code>/var/keys</code> owned by the <code>keys</code> Unix group.</td>
+<td></td>
+<td>Yes</td>
+<td>No</td>
+<td>See the <a href="https://github.com/tweag/terraform-nixos/tree/master/deploy_nixos#inputs"><code>terraform-nixos</code></a> documentation.</td>
+</tr>
+<tr>
+<td><a href="https://github.com/platonic-systems/secrix">secrix</a></td>
+<td>Encrypted raw files, like <code>agenix</code>.</td>
+<td></td>
+<td>Encrypted</td>
+<td>Decryption with the host SSH key.</td>
+<td>Unencrypted in configured path in <code>/run</code>.</td>
+<td>Uses <a href="https://github.com/FiloSottile/age"><code>age</code></a> by default with SSH user and host keys; does not support <code>ssh-agent</code>.</td>
+<td>Yes</td>
+<td>No</td>
+<td>Focuses on trying to keep secrets decrypted for a minimal amount of time.</td>
+</tr>
+<tr>
+<td><a href="https://github.com/milieuim/vaultix">vaultix</a></td>
+<td>Encrypted raw files like agenix</td>
+<td></td>
+<td>Encrypted</td>
+<td>Decryption with the host SSH key.</td>
+<td>Unencrypted in specific paths.</td>
+<td>Powered by the <a href="https://docs.rs/age/latest/age/"><code>age</code></a> Rust crate.</td>
+<td>Yes</td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr>
+<td><a href="https://github.com/brizzbuzz/opnix">brizzbuzz/opnix</a></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>1password</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><a href="https://elvishjerricco.github.io/2018/06/24/secure-declarative-key-management.html">Blog Entry</a>: wrapper around <code>pass</code> based on <a href="https://github.com/shlevy/nix-plugins"><code>nix-plugins</code></a>.</td>
+<td>Stored in <a href="https://www.passwordstore.org/">the password store</a>.</td>
+<td>Data is retrieved/decrypted with <code>pass</code> during evaluation time.</td>
+<td>Unencrypted in the store.</td>
+<td></td>
+<td></td>
+<td>Uses <a href="https://www.passwordstore.org/">the password store</a> (aka <code>pass</code>) which uses GPG.</td>
+<td>No</td>
+<td>No</td>
+<td></td>
+</tr>
+<tr>
+<td><code>builtins.readfile</code>, <code>builtins.exec</code><sup><a id="footnote-ref-7" href="https://mirror.nixoscn.org/wiki/Comparison%20of%20secret%20managing%20schemes#footnote-7" data-footnote-ref aria-describedby="footnote-label">6</a></sup></td>
+<td><code>builtins.readfile</code> can read any file, <code>builtins.exec</code> can execute commands and thus query any kind of database or password manager.</td>
+<td>These functions return values in a Nix expression; it is up to the user what happens to these values in the NixOS configuration.</td>
+<td>See &quot;build time&quot;</td>
+<td>See &quot;build time&quot;</td>
+<td>See &quot;build time&quot;</td>
+<td>These functions just read files or execute commands, they do not provide anything inherently &quot;secure&quot; or &quot;cryptographic&quot;.</td>
+<td>No</td>
+<td>No</td>
+<td>The referenced NixOS Discourse discussion is about a signing key that is only needed during build time and should not be stored in the nix store at all.</td>
+</tr>
+<tr>
+<td><a href="https://mrvandalo.github.io/nixos-artifacts/nixos-artifacts/latest/">nixos-artifacts</a></td>
+<td>depends on backend</td>
+<td>artifacts cli is needed most of the time, but built-time depends on chosen backends</td>
+<td>depends on backend</td>
+<td>depends on backend</td>
+<td>depends on backend</td>
+<td>depends on backend</td>
+<td>Yes</td>
+<td>No (but planed)</td>
+<td>Backend agnostic secret manager. Unified secret definition and backend configuration managed differently from another.</td>
+</tr>
+<tr>
+<td>Scheme</td>
+<td>Pre-build</td>
+<td>Build time</td>
+<td>In the store</td>
+<td>System activation</td>
+<td>Runtime</td>
+<td>Encryption technology</td>
+<td>Usable project</td>
+<td>Templating support</td>
+<td>Additional notes</td>
+</tr>
+</tbody></table>
+<p>Comparison of secret managing schemes<sup><a id="footnote-ref-5" href="https://mirror.nixoscn.org/wiki/Comparison%20of%20secret%20managing%20schemes#footnote-5" data-footnote-ref aria-describedby="footnote-label">7</a></sup></p>
+<h2 id="notes">Notes</h2><references group="note" />
+
+<h2 id="references">References</h2><references />
+
+<p><a href="category:Guide" class="wikilink" title="Category:Guide">Category:Guide</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p>The <a href="http://search.nixos.org/options?show=users.users.%253Cname%253E.hashedPasswordFile"><code>users.users.&lt;name&gt;.hashedPasswordFile</code></a> option. <a href="https://mirror.nixoscn.org/wiki/Comparison%20of%20secret%20managing%20schemes#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+<li id="footnote-2">
+<p>The option. <a href="https://mirror.nixoscn.org/wiki/Comparison%20of%20secret%20managing%20schemes#footnote-ref-2" data-footnote-backref aria-label="Back to reference 2">↩</a></p>
+</li>
+<li id="footnote-3">
+<p>The option. <a href="https://mirror.nixoscn.org/wiki/Comparison%20of%20secret%20managing%20schemes#footnote-ref-3" data-footnote-backref aria-label="Back to reference 3">↩</a></p>
+</li>
+<li id="footnote-4">
+<p>The option. (among many others) <a href="https://mirror.nixoscn.org/wiki/Comparison%20of%20secret%20managing%20schemes#footnote-ref-4" data-footnote-backref aria-label="Back to reference 4">↩</a></p>
+</li>
+<li id="footnote-6">
+<p>The user has to run <code>nixops send-keys</code> to create these files after a (manual) reboot. (not required after every reboot if <code>destDir</code> is in persistent storage) <a href="https://mirror.nixoscn.org/wiki/Comparison%20of%20secret%20managing%20schemes#footnote-ref-6" data-footnote-backref aria-label="Back to reference 6">↩</a></p>
+</li>
+<li id="footnote-7">
+<p><a href="https://discourse.nixos.org/t/using-an-external-secret-file-in-a-nix-sandboxed-build/3274">Using an external secret file in a Nix sandboxed build</a> on the NixOS Discourse <a href="https://mirror.nixoscn.org/wiki/Comparison%20of%20secret%20managing%20schemes#footnote-ref-7" data-footnote-backref aria-label="Back to reference 7">↩</a></p>
+</li>
+<li id="footnote-5">
+<p><a href="https://discourse.nixos.org/t/comparison-of-different-key-secret-managing-schemes/12001/1">Comparison of different key/secret managing schemes</a> on the NixOS Discourse <a href="https://mirror.nixoscn.org/wiki/Comparison%20of%20secret%20managing%20schemes#footnote-ref-5" data-footnote-backref aria-label="Back to reference 5">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Container workgroup</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Container workgroup</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Container workgroup -->
+
+<p>We are interested in directly building (minimal) OCI containers from the nixpkgs ecosystem.</p>
+<h2 id="people">People</h2><ul>
+<li><a href="user:Profpatsch" class="wikilink" title="Profpatsch">Profpatsch</a></li>
+<li><a href="user:nlewo" class="wikilink" title="Lewo">Lewo</a></li>
+<li><a href="user:moretea" class="wikilink" title="MoreTea">MoreTea</a></li>
+</ul>
+<h2 id="tooling">Tooling</h2><ul>
+<li><a href="https://www.opencontainers.org/">opencontainers.org</a><ul>
+<li><a href="https://github.com/opencontainers/runc">runc</a>: spawn and run OCI containers (nixpkgs: <a href="https://github.com/NixOS/nixpkgs/blob/master/pkgs/applications/virtualization/runc/default.nix">runc</a>)</li>
+<li><a href="https://github.com/opencontainers/image-spec">image-spec</a>: container image specification</li>
+<li><a href="https://github.com/opencontainers/runtime-spec">runtime-spec</a>: container runtime specification</li>
+<li><a href="https://github.com/opencontainers/image-tools">image-tools</a>: tools for working with the image-spec</li>
+<li><a href="https://github.com/opencontainers/runtime-tools">runtime-tools</a>: tools for working with the runtime-spec</li>
+<li><a href="https://github.com/openSUSE/umoci">umoci</a>: intends to be a complete manipulation tool for OCI images with a rootless mode</li>
+</ul>
+</li>
+<li><a href="https://www.projectatomic.io/">projectatomic.io</a><ul>
+<li><a href="https://github.com/projectatomic/skopeo">skopeo</a>: modify and inspect images on registries (nixpkgs: <a href="https://github.com/NixOS/nixpkgs/blob/master/pkgs/development/tools/skopeo/default.nix">skopeo</a>)</li>
+<li><a href="https://github.com/projectatomic/buildah">buildah</a>: build/generate OCI images (nixpkgs: <a href="https://github.com/NixOS/nixpkgs/blob/master/pkgs/development/tools/buildah/default.nix">buildah</a>)</li>
+</ul>
+</li>
+<li><a href="https://github.com/containers">containers Github project</a>: golang libraries for interacting with containers<ul>
+<li><a href="https://github.com/containers/image">image</a>: library used by skopeo</li>
+<li><a href="https://github.com/containers/oci-fetch">oci-fetch</a>: CLI tool for fetching OCI containers over various transports</li>
+</ul>
+</li>
+<li>awakesecurity<ul>
+<li><a href="https://github.com/awakesecurity/hocker">hocker</a>: fetch from docker (v2) registry and generate nix derivations</li>
+</ul>
+</li>
+</ul>
+<h2 id="nix-images">Nix images</h2><p>There are a few images that contain Nix with various trade-offs:</p>
+<ul>
+<li><a href="https://hub.docker.com/r/nixos/nix/">nixos/nix</a> (<a href="https://github.com/NixOS/nix/blob/master/docker.nix">source</a>) - 200 MB - Official images based on <code>pkgs.dockerTools</code>, updated automatically.</li>
+<li><a href="https://hub.docker.com/u/nixpkgs">u/nixpkgs</a> - (<a href="https://github.com/nix-community/docker-nixpkgs">source</a>) - <a href="https://github.com/nix-community/docker-nixpkgs#list-of-images">various</a> docker images from nixpkgs, updated daily.</li>
+<li><a href="https://hub.docker.com/r/lnl7/nix/">lnl7/nix/</a> (<a href="https://github.com/LnL7/nix-docker">source</a>) - 57 MB - Images built out of a Nix derivation.</li>
+</ul>
+<h2 id="interesting-threads">Interesting threads</h2><ul>
+<li><a href="https://github.com/projectatomic/buildah/issues/386">https://github.com/projectatomic/buildah/issues/386</a>: about rootless support</li>
+</ul>
+<h2 id="work-in-progress">Work In Progress</h2><ul>
+<li>Improve image storage in the Nix store</li>
+</ul>
+<p><a href="https://github.com/projectatomic/skopeo/issues/481">https://github.com/projectatomic/skopeo/issues/481</a></p>
+<h2 id="projects">Projects</h2><h3 id="self-hosted-minimal-docker-osi-images">Self-Hosted, Minimal Docker/OSI Images</h3><p>For our platform at <a href="https://techcultivation.org/">Techcultivation</a> we want to generate docker images for all parts of our system. Those images should come in two flavors, development (to quickly spin up local test services, with mock data) and deployment (secure/production-ready). We chose to generate these images purely out of nixpkgs code, so no binary (base) images have to be included.</p>
+<p>The current version of the deployment code can be found <a href="https://gitlab.techcultivation.org/sangha/sangha-deployment">on our Gitlab</a>.</p>
+<p>A basic (pretty messy) <a href="https://gitlab.techcultivation.org/sangha/sangha-deployment/blob/2f3877e71ea7a9a2c3cf03d4fc88931b90cad6b7/containers/postgres.nix">postgres</a> image is already done, complete with in-build setup of a mock database. The resulting image is smaller than the “official” one in the docker registry, only uses nixpkgs-native dependencies and only contains the most minimal filetree needed to run the postgres binary.</p>
+<p>Still to do: <a href="https://gitlab.techcultivation.org/sangha/sangha-deployment/blob/master/containers/rabbitmq.nix">rabbitmq</a>, frontend code, api, refactor, various others.</p>
+<p>— <a href="user:Profpatsch" class="wikilink" title="Profpatsch">Profpatsch</a> (<a href="https://mirror.nixoscn.org/wiki/Container%20workgroup/User_talk:Profpatsch" class="wikilink" title="talk">talk</a>) 02:47, 10 February 2018 (UTC)</p>
+<p><a href="category:Container" class="wikilink" title="Category:Container">Category:Container</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

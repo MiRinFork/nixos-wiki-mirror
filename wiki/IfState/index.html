@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IfState</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / IfState</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: IfState -->
+
+<p><a href="https://ifstate.net/2.0/">IfState</a> is a python 3 utility designed for declarative management of Linux network interfaces. It acts as a frontend to the kernel&#39;s Netlink interface, using the <code>pyroute2</code> library to configure network settings such as IP addresses, bridges, traffic control, and WireGuard in an idempotent manner—much like an <code>iproute2</code>/<code>ethtool</code>/<code>tc</code>/<code>wg</code> wrapper.</p>
+<p>It is available since NixOS 25.11 (see <a href="https://github.com/NixOS/nixpkgs/pull/431047">https://github.com/NixOS/nixpkgs/pull/431047</a>).</p>
+<h3 id="examples">Examples</h3><p>You can find several examples on the <a href="https://ifstate.net/2.2/examples/">IfState website</a>. Some include NixOS configuration instructions, while the more complex examples are covered in detail here.</p>
+<h4 id="network-namespaces-netns">Network Namespaces (netns)</h4><p>Network namespaces are a powerful feature in Linux that allow you to create isolated network environments. Each namespace has its own network interfaces, IP addresses, routing tables, and firewall rules. This isolation is particularly useful for scenarios like running systemd services or NixOS containers in separate network environments, enabling better control and security.</p>
+<h5 id="to-isolate-services-nixos-containers">to isolate services / nixos-containers</h5><p>You can bind specific systemd services to a network namespace, ensuring they operate in a controlled network environment without affecting the host or other services.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs">{
+  systemd.services.<span class="hljs-string">&quot;&lt;name&gt;&quot;</span>.serviceConfig.NetworkNamespacePath <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/var/run/netns/&lt;netnsName&gt;&quot;</span>;
+}</code></pre>
+      </div><p>When using <a href="https://mirror.nixoscn.org/wiki/IfState/NixOS_Containers" class="wikilink" title="nixos-containers">nixos-containers</a>, network namespaces allow you to configure the network outside the container. This separation simplifies management and ensures the container’s network setup is independent of its internal configuration.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs">{
+  containers.<span class="hljs-string">&quot;&lt;name&gt;&quot;</span>.networkNamespace <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/var/run/netns/&lt;netnsName&gt;&quot;</span>;
+}</code></pre>
+      </div><p>Network namespaces can be connected to other namespaces or the Global Routing Table (GRT) using virtual Ethernet interfaces (veth). This enables traffic forwarding and communication between isolated environments</p>
+<p>The following example creates a pair of veth interfaces. One interface is placed inside the <code>example</code> network namespace and assigned a single IPv4 address. Its peer remains in the global routing table. The GRT is configured to reach the namespace’s IPv4 address via <a href="https://ungleich.ch/u/blog/how-to-route-ipv4-via-ipv6/">IPv6 link-local routing</a>. To make this possible, both veth interfaces are assigned specific MAC addresses chosen so that the automatically generated IPv6 link-local (EUI-64) addresses are predictable.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs"><span class="hljs-keyword">let</span>
+  <span class="hljs-attr">address</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;192.0.2.0/32&quot;</span>;
+  <span class="hljs-attr">netns</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;example&quot;</span>;
+<span class="hljs-keyword">in</span>
+{
+  <span class="hljs-attr">networking.ifstate.settings</span> <span class="hljs-operator">=</span> {
+    namespaces.<span class="hljs-string">&quot;<span class="hljs-subst">${netns}</span>&quot;</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">interfaces.veth0</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">addresses</span> <span class="hljs-operator">=</span> [ address ];
+        <span class="hljs-attr">link</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">state</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;up&quot;</span>;
+          <span class="hljs-attr">kind</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;veth&quot;</span>;
+          <span class="hljs-attr">peer</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;veth1&quot;</span>;
+          <span class="hljs-attr">peer_netns</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>; <span class="hljs-comment"># grt</span>
+          <span class="hljs-attr">address</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;12:de:ad:be:ef:00&quot;</span>;
+        };
+      };
+    };
+    <span class="hljs-attr">interfaces.veth1</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">link</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">state</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;up&quot;</span>;
+        <span class="hljs-attr">kind</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;veth&quot;</span>;
+        <span class="hljs-attr">peer</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;veth0&quot;</span>;
+        <span class="hljs-attr">peer_netns</span> <span class="hljs-operator">=</span> netns;
+        <span class="hljs-attr">address</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;12:de:ad:be:ef:10&quot;</span>;
+      };
+    };
+    <span class="hljs-attr">routing.routes</span> <span class="hljs-operator">=</span> [
+      {
+        <span class="hljs-attr">to</span> <span class="hljs-operator">=</span> address;
+        <span class="hljs-comment"># generated eui64 local link address for mac address of container</span>
+        <span class="hljs-attr">via</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;fe80::10de:adff:febe:ef00&quot;</span>;
+        <span class="hljs-attr">dev</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;veth1&quot;</span>;
+      }
+    ];
+  };
+}</code></pre>
+      </div><h5 id="to-separate-provider-network-from-grt">to separate provider network from GRT</h5><p>Another practical application could involve setting up a VPN gateway on a virtual server hosted by a provider. Imagine you’re using a WireGuard tunnel (<code>wg0</code>) to connect to a network that provides internet access, alongside a client peer WireGuard endpoint (<code>wg1</code>) that allows your personal devices to connect.</p>
+<p>In this setup, you’d need to configure a default route through <code>wg0</code> to forward internet traffic via the first WireGuard tunnel. At the same time, you’d also require a default route to your provider’s network to ensure your server remains accessible from the internet—essential for your devices to connect to <code>wg1</code> and for <code>wg0</code> to maintain its peer connection.</p>
+<p>To achieve this, you might want to isolate the provider network from your Global Routing Table (GRT) and bind the WireGuard endpoints. The <code>IfState</code> tool offers a link configuration option called <code>bind_netns</code>, which can be used with tunnel links (such as WireGuard, GRE, SIT, etc.) to implement this separation. <img src="https://mirror.nixoscn.org/wiki/IfState/Ifstate-vpn-gw.png" alt="" title="Ifstate-vpn-gw.png"></p>
+<p><strong>Important Note:</strong> If <code>enp0s3</code> is your provider interface, this configuration will move it into an external network namespace that contains nothing except the bound WireGuard endpoint. As a result, you won’t be able to access systemd services like your SSH server without an active WireGuard connection. Plan accordingly to avoid losing access to critical services.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs">{
+  <span class="hljs-attr">networking.ifstate</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">namespaces.outside</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">interfaces.enp0s3</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-comment"># public ip addresses from your upstream provider</span>
+          <span class="hljs-attr">addresses</span> <span class="hljs-operator">=</span> [
+            <span class="hljs-string">&quot;198.51.100.10/26&quot;</span>
+            <span class="hljs-string">&quot;2001:db8::10/64&quot;</span>
+          ];
+          <span class="hljs-attr">link</span> <span class="hljs-operator">=</span> {
+            <span class="hljs-attr">state</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;up&quot;</span>;
+            <span class="hljs-attr">kind</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;physical&quot;</span>;
+          };
+          <span class="hljs-attr">identify.perm_address</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;00:00:5e:00:53:00&quot;</span>;
+        };
+        <span class="hljs-attr">routing.routes</span> <span class="hljs-operator">=</span> [
+          {
+            <span class="hljs-attr">to</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;0.0.0.0/0&quot;</span>;
+            <span class="hljs-attr">via</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;198.51.100.62&quot;</span>;
+          }
+          {
+            <span class="hljs-attr">to</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;::/0&quot;</span>;
+            <span class="hljs-attr">dev</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;enp3s0&quot;</span>;
+            <span class="hljs-attr">via</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;fe80::1&quot;</span>;
+          }
+        ];
+      };
+    };
+    <span class="hljs-attr">interfaces</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">wg0</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">link</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">state</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;up&quot;</span>;
+          <span class="hljs-attr">kind</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;wireguard&quot;</span>;
+
+          <span class="hljs-comment"># the connection to the peer will be established via the netns</span>
+          <span class="hljs-attr">bind_netns</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;outside&quot;</span>;
+        };
+        <span class="hljs-comment"># the tunnel addresses for your upstream wireguard</span>
+        <span class="hljs-attr">addresses</span> <span class="hljs-operator">=</span> [
+          <span class="hljs-string">&quot;203.0.113.100/25&quot;</span>
+          <span class="hljs-string">&quot;2001:db8:bad:c0de::100/128&quot;</span>
+        ];
+        <span class="hljs-attr">wireguard</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">listen_port</span> <span class="hljs-operator">=</span> <span class="hljs-number">40608</span>;
+          <span class="hljs-attr">private_key</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;!include /keys/wg0.priv&quot;</span>;
+          peers.<span class="hljs-string">&quot;4PG5bt3cXacnjKolLFYHDon5NIPmaBL/CNFUjOUUEGQ=&quot;</span> <span class="hljs-operator">=</span> {
+            <span class="hljs-attr">allowedips</span> <span class="hljs-operator">=</span> [
+              <span class="hljs-string">&quot;0.0.0.0/0&quot;</span>
+              <span class="hljs-string">&quot;::/0&quot;</span>
+            ];
+            <span class="hljs-attr">endpoint</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;10.10.10.10:51820&quot;</span>;
+          };
+        };
+      };
+      <span class="hljs-attr">wg1</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">link</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">state</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;up&quot;</span>;
+          <span class="hljs-attr">kind</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;wireguard&quot;</span>;
+
+          <span class="hljs-comment"># the wireguard listener will be bound in the netns</span>
+          <span class="hljs-attr">bind_netns</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;outside&quot;</span>;
+        };
+        <span class="hljs-comment"># the tunnel addresses for your own clients</span>
+        <span class="hljs-attr">addresses</span> <span class="hljs-operator">=</span> [
+          <span class="hljs-string">&quot;203.0.113.129/25&quot;</span>
+          <span class="hljs-string">&quot;2001:db8:dead:beef::1/128&quot;</span>
+        ];
+        <span class="hljs-attr">wireguard</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">listen_port</span> <span class="hljs-operator">=</span> <span class="hljs-number">20406</span>;
+          <span class="hljs-attr">private_key</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;!include /keys/wg1.priv&quot;</span>;
+          peers.<span class="hljs-string">&quot;GGavg2J9HdumqCgfpFXD85GYb6T0vWmtXBVQmlj9d0w=&quot;</span> <span class="hljs-operator">=</span> {
+            <span class="hljs-attr">allowedips</span> <span class="hljs-operator">=</span> [
+              <span class="hljs-string">&quot;203.0.113.130/32&quot;</span>
+              <span class="hljs-string">&quot;2001:db8:dead:beef::2/128&quot;</span>
+            ];
+          };
+        };
+      };
+    };
+    <span class="hljs-attr">routing.routes</span> <span class="hljs-operator">=</span> [
+      {
+        <span class="hljs-attr">to</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;0.0.0.0/0&quot;</span>;
+        <span class="hljs-attr">via</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;203.0.113.1&quot;</span>;
+      }
+      {
+        <span class="hljs-attr">to</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;::/0&quot;</span>;
+        <span class="hljs-attr">via</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;2001:db8:bad:c0de::1&quot;</span>;
+      }
+    ];
+  };
+}</code></pre>
+      </div><h4 id="dhcpv4">DHCPv4</h4><div class="code-container">
+        
+        <pre><code class="language-nixos hljs">{ lib, pkgs, ... }:
+{
+  <span class="hljs-attr">networking.ifstate</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">parameters.hooks.dhcp.script</span> <span class="hljs-operator">=</span> pkgs.writeScript <span class="hljs-string">&quot;ifstate-udhcp-wrapper-script.sh&quot;</span> <span class="hljs-string">&#x27;&#x27;
+        <span class="hljs-subst">${lib.getExe&#x27; pkgs.busybox <span class="hljs-string">&quot;udhcpc&quot;</span>}</span> --quit --now -i $IFS_IFNAME -b --script <span class="hljs-subst">${pkgs.busybox}</span>/default.script
+      &#x27;&#x27;</span>;
+      <span class="hljs-attr">interfaces.eth1</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">addresses</span> <span class="hljs-operator">=</span> [ ];
+        <span class="hljs-attr">hooks</span> <span class="hljs-operator">=</span> [
+          { <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;dhcp&quot;</span>; }
+        ];
+        <span class="hljs-attr">link</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">state</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;up&quot;</span>;
+          <span class="hljs-attr">kind</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;physical&quot;</span>;
+        };
+      };
+    };
+  };
+}</code></pre>
+      </div><h3 id="known-issues">Known Issues</h3><h4 id="firewall-for-netns">Firewall for netns</h4><p>Currently the nixos modules for firewall configuration are not capable of configuring a firewall for a network namespace (see <a href="https://github.com/NixOS/nixpkgs/issues/372414">github:nixpkgs/nixos#372414</a>).</p>
+<p>It&#39;s possible to apply the nftables firewall ruleset in all network namespaces by adding the following nix configuration, but this comes with the limitation, that interface names have to be unique across all network namespaces.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs"><span class="hljs-comment"># stolen from https://github.com/secshellnet/nixos/blob/main/modules/firewall.nix</span>
+{
+  lib,
+  pkgs,
+  config,
+  ...
+}:
+<span class="hljs-keyword">let</span>
+  <span class="hljs-attr">netns</span> <span class="hljs-operator">=</span> [ ]; <span class="hljs-comment"># TODO add the network namespaces to apply the firewall ruleset to here</span>
+<span class="hljs-keyword">in</span>
+{
+  <span class="hljs-attr">systemd.services</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">builtins.listToAttrs</span> (
+    <span class="hljs-built_in">map</span> (<span class="hljs-params">key:</span> {
+      <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nftables@<span class="hljs-subst">${key}</span>&quot;</span>;
+      <span class="hljs-attr">value</span> <span class="hljs-operator">=</span>
+        <span class="hljs-keyword">let</span>
+          <span class="hljs-attr">cfg</span> <span class="hljs-operator">=</span> config.systemd.services.nftables;
+          <span class="hljs-attr">map&#x27;</span> <span class="hljs-operator">=</span> <span class="hljs-params">f:</span> <span class="hljs-params">x:</span> <span class="hljs-keyword">if</span> lib.isList x <span class="hljs-keyword">then</span> <span class="hljs-built_in">map</span> f x <span class="hljs-keyword">else</span> f x;
+          <span class="hljs-attr">mapFunc</span> <span class="hljs-operator">=</span> <span class="hljs-params">file:</span> <span class="hljs-string">&quot;<span class="hljs-subst">${lib.getExe&#x27; pkgs.iproute2 <span class="hljs-string">&quot;ip&quot;</span>}</span> netns exec %i <span class="hljs-subst">${file}</span>&quot;</span>;
+        <span class="hljs-keyword">in</span>
+        {
+          <span class="hljs-keyword">inherit</span> (cfg)
+            conflicts
+            wants
+            wantedBy
+            reloadIfChanged
+            ;
+          <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nftables firewall for network namespace %i&quot;</span>;
+          <span class="hljs-attr">before</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;network.target&quot;</span> ];
+          <span class="hljs-attr">after</span> <span class="hljs-operator">=</span> [
+            <span class="hljs-string">&quot;network-setup.service&quot;</span>
+            <span class="hljs-string">&quot;network-pre.target&quot;</span>
+            <span class="hljs-comment"># netns must exist, before firewall rules can be applied</span>
+            <span class="hljs-string">&quot;ifstate.service&quot;</span>
+          ];
+          <span class="hljs-attr">serviceConfig</span> <span class="hljs-operator">=</span> {
+            <span class="hljs-keyword">inherit</span> (cfg.serviceConfig) Type RemainAfterExit StateDirectory;
+          }
+          <span class="hljs-operator">//</span> <span class="hljs-built_in">builtins.listToAttrs</span> (
+            <span class="hljs-built_in">map</span>
+              (<span class="hljs-params">key:</span> {
+                <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> key;
+                <span class="hljs-attr">value</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">map</span>&#x27; mapFunc cfg.serviceConfig.${key};
+              })
+              [
+                <span class="hljs-string">&quot;ExecStart&quot;</span>
+                <span class="hljs-string">&quot;ExecStartPost&quot;</span>
+                <span class="hljs-string">&quot;ExecStop&quot;</span>
+                <span class="hljs-string">&quot;ExecReload&quot;</span>
+              ]
+          );
+          <span class="hljs-attr">unitConfig.DefaultDependencies</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+        };
+    }) netns
+  );
+}</code></pre>
+      </div><p><a href="category:Networking" class="wikilink" title="Category:Networking">Category:Networking</a> <a href="category:Python" class="wikilink" title="Category:Python">Category:Python</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pi-Hole</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Pi-Hole</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Pi-Hole -->
+
+<p><a href="https://pi-hole.net/">Pi-Hole</a> is a DNS service that functions as network ad-blocker.</p>
+<h2 id="minimal-configuration-example">Minimal Configuration Example</h2><div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.pihole-ftl</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-comment"># See &lt;https://docs.pi-hole.net/ftldns/configfile/&gt;</span>
+
+    <span class="hljs-comment"># External DNS Servers quad9 and cloudflare</span>
+    <span class="hljs-attr">dns.upstreams</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;9.9.9.9&quot;</span> <span class="hljs-string">&quot;1.1.1.1&quot;</span> ];
+
+    <span class="hljs-comment"># Optionally resolve local hosts (domain is optional)</span>
+    <span class="hljs-attr">dns.hosts</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;192.168.1.188 hostname.domain&quot;</span> ];
+  };
+};</code></pre>
+      </div><p>Test if it&#39;s working</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">$ systemctl status pihole-ftl.service
+$ nslookup nixos.org localhost
+$ nslookup hostname.domain localhost</code></pre>
+      </div><h2 id="adding-lists-and-enabling-web-interface">Adding lists and enabling web interface</h2><div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.pihole-ftl</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-comment"># See &lt;https://docs.pi-hole.net/ftldns/configfile/&gt;</span>
+
+    <span class="hljs-comment"># External DNS Servers quad9 and cloudflare</span>
+    <span class="hljs-attr">dns.upstreams</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;9.9.9.9&quot;</span> <span class="hljs-string">&quot;1.1.1.1&quot;</span> ];
+
+    <span class="hljs-comment"># Optionally resolve local hosts (domain is optional)</span>
+    <span class="hljs-attr">dns.hosts</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;192.168.1.188 hostname.domain&quot;</span> ];
+  };
+
+  <span class="hljs-attr">lists</span> <span class="hljs-operator">=</span> [    <span class="hljs-comment"># Lists can be added via URL</span>
+    {
+      <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/pro.txt&quot;</span>;
+      <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;block&quot;</span>;
+      <span class="hljs-attr">enabled</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;hagezi blocklist&quot;</span>;
+    }
+  ];
+};
+
+<span class="hljs-attr">services.pihole-web</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">ports</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;443s&quot;</span> ];
+};</code></pre>
+      </div><p>Test pihole web interface at <a href="https://localhost/">https://localhost:443</a></p>
+<p>Now you can set your router&#39;s DNS server to the IP of the host running pihole and blocked domains should not be resolved.</p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

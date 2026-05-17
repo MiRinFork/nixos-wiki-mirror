@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Packaging/Tutorial</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/Packaging">Packaging</a><span aria-hidden="true"> / </span>Tutorial</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Packaging/Tutorial -->
+
+<div class="code-container">
+        
+        <pre><code class="language- hljs">{{ outdated \| This page has duplicate info from &lt;a href=&quot;Create_and_debug_nix_packages&quot; class=&quot;wikilink&quot; title=&quot;with this other wiki page here&quot;&gt;with this other wiki page here&lt;/a&gt;. That page has much more info that might be of more help for you. This page currently has a discussion if it should be deprecated, but at the meantime it still might be useful until a decision is made to migrate over. }}</code></pre>
+      </div><p>If you are a new Nix adept and want to package some new software, you will benefit from reading existing Nix package descriptions. The more you read, the faster you&#39;ll be able to build your package. I&#39;ve even based a &quot;Generic Algorithm on Doing Packaging Using Existing Knowledge&quot; on this fact.</p>
+<p>The nixpkgs manual describes the <a href="https://nixos.org/nixpkgs/manual/#chap-quick-start">standard workflow to adding packages to nixpkgs</a>. Be sure to read this one first.</p>
+<p>NOTE 0: If you have time, read <a href="https://unix.stackexchange.com/questions/717168/how-to-package-my-software-in-nix-or-write-my-own-package-derivation-for-nixpkgs">this tutorial</a> first</p>
+<p>NOTE 1: If you have time, <a href="https://nixos.org/nixos/nix-pills/">read Nix Pills</a> first</p>
+<p>NOTE 2: If you have even more time, <a href="https://nixos.org/nix/manual/#chap-writing-nix-expressions">read Nix manual</a> to get familiar with Nix syntax</p>
+<p>NOTE 3: If you definitely have lots of time, then <a href="https://nixos.org/nixpkgs/manual">read Nixpkgs manual</a></p>
+<ol>
+<li><p>Detect package building category. It may be something simple, that requires <code>gcc</code> and <code>make</code> only, or it may be a python library, or it may be a python application, or it may be <a href="https://nixos.org/nixpkgs/manual/#chap-language-support">any other LANGUAGE library/application</a>, or it may be Qt applications, or it may be a Gnome application, or it does uses Mono/wine under a hood, or it vendors it&#39;s dependencies, or it is closed source/binary redistributable, or it uses CMake/any other alternative build tool, or it actually is a compiler, ... There are lots of such build categories, and it often isn&#39;t reflected at hierarchy level in Nixpkgs source tree.</p>
+</li>
+<li><p>Try <code>grep</code>ping for building category keywords in Nixpkgs source. Find some example packages, review them and copy one of them as a new expression for your package. Too bad if you didn&#39;t find anything, then you should read Nix Pills first and skim through several package expressions in Nixpkgs source to be able to write your own.</p>
+</li>
+<li><p>Build it without changes, just to test if it builds</p>
+</li>
+<li><p>Modify source URL and sha256. Don&#39;t forget about that sha256 stuff! What I do, I change the last symbol of the sha256, let the package fail, and then paste the correct sha256 again into expression. There are also various prefetch techniques</p>
+</li>
+<li><p>Run <code>nix-shell</code> on this expression (for example:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nix-shell <span class="hljs-string">&#x27;&lt;nixpkgs&gt;&#x27;</span> -A hello</code></pre>
+      </div><p>). Then run in order:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">unpackPhase</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">cd</span> <span class="hljs-variable">$sourceRoot</span> <span class="hljs-comment"># $sourceRoot is created in unpack phase, see https://nixos.org/manual/nixpkgs/stable/#ssec-unpack-phase for details.</span></span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">patchPhase</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">configurePhase</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">buildPhase</span></code></pre>
+      </div><p>(visit <a href="https://nixos.org/nixpkgs/manual/#sec-stdenv-phases">stdenv-phases</a> chapter to learn more about phases)</p>
+<p>You may need to run</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">eval</span> <span class="hljs-string">&quot;<span class="hljs-variable">$configurePhase</span>&quot;</span></span></code></pre>
+      </div><p>sometimes if the build expression overrides that phase.</p>
+<p>It most likely will fail.</p>
+<p>NOTE: You can use the <a href="https://nixos.org/manual/nixpkgs/stable/#breakpointhook">breakpointHook</a> to attach into the build environment when an error happens.</p>
+</li>
+</ol>
+<!-- -->
+
+<ol start="6">
+<li><p>Try to find the failure category. It may be headers not found, library not found, executable not found, compiler not found, wrong build system, empty result, and many many more... But solutions to these problems are a bit more controllable:</p>
+<ol>
+<li><code>buildInput</code> dependency missing</li>
+<li>source requires patching</li>
+<li>you should enter a subdir first</li>
+<li>you should specify correct build parameters</li>
+<li><code>patchShebangs</code> should be run first</li>
+<li>....</li>
+</ol>
+<p>Don&#39;t hesitate to learn from other package manager expressions, like AUR.</p>
+</li>
+<li><p>Apply a fix, <a href="https://unix.stackexchange.com/questions/191885/quickly-reload-nix-expression-in-nix-shell">exit nix-shell and enter it again</a>. Do steps 6-7 while there are problems.</p>
+</li>
+<li><p>After you get the <code>buildPhase</code> to pass and produce correct binaries/libraries, it&#39;s time for the<code>installPhase</code>. There are two ways: either you do package development under root and have write access to Nix store inside nix-shell, or you simply run <code>nix-build</code> on you expression, so Nix will perform it&#39;s <code>installPhase</code>.
+In the first case, you can run</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">installPhase</span></code></pre>
+      </div><p>directly and examine using <code>tree $out</code> in your package files. If something is missing or too many, fix the <code>postInstallPhase</code> or <code>preInstallPhase</code> or <code>installPhase</code> in your expression.</p>
+</li>
+</ol>
+<!-- -->
+
+<ol start="9">
+<li>At this point you should have something that is both buildable and packageable. It still may not be runnable. Run the binaries to find any hidden dependencies, or patches required, or wrapper required, or patchelf required, or ... In general, I use Google and search in Nixpkgs issue tracker related problems.</li>
+<li>After all the modifications, package should be buildable, runnable and should be self-sufficient. You may add <code>meta</code> section, but it isn&#39;t strictly required if you don&#39;t plan to publish your result.</li>
+</ol>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

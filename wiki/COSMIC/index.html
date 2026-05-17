@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>COSMIC</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / COSMIC</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: COSMIC -->
+
+<p>COSMIC is a <a href="https://mirror.nixoscn.org/wiki/COSMIC/:Category:Desktop_environment" class="wikilink" title="desktop environment">desktop environment</a> developed in the <a href="https://mirror.nixoscn.org/wiki/COSMIC/Rust" class="wikilink" title="Rust">Rust</a> programming language, using the iced cross platform GUI library for Rust, and Smithay as building blocks for its compositor, cosmic-comp. Cosmic-comp is comparable to smithay&#39;s own anvil compositor demonstration, just like the Wayland project uses Weston as demo compositor.</p>
+<p>COSMIC was primarily developed for use in the <a href="https://pop.system76.com/">Pop!_OS</a> distribution.</p>
+<h2 id="installation-starting-with-nixos-25-05">Installation (starting with NixOS 25.05)</h2><p>COSMIC support in nixpkgs is still in development. You can follow progress via <a href="https://github.com/NixOS/nixpkgs/issues/259641">the tracking issue</a>.</p>
+<p>You can enable COSMIC on your NixOS system by setting the following configuration options:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-comment"># Enable the COSMIC login manager</span>
+  <span class="hljs-attr">services.displayManager.cosmic-greeter.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+  <span class="hljs-comment"># Enable the COSMIC desktop environment</span>
+  <span class="hljs-attr">services.desktopManager.cosmic.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+}</code></pre>
+      </div><p>Support for automatic logins is present when using the `cosmic-greeter` login manager. All you need is the following configuration:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">services.displayManager.autoLogin</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-comment"># Replace `yourUserName` with the actual username of user who should be automatically logged in</span>
+    <span class="hljs-attr">user</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;yourUserName&quot;</span>;
+  };
+}</code></pre>
+      </div><p>Alternatively, there is a <a href="https://github.com/lilyinstarlight/nixos-cosmic">flake</a> to setup COSMIC on NixOS.</p>
+<h3 id="excluding-cosmic-applications">Excluding COSMIC applications</h3><p>To exclude certain applications that are installed by default with COSMIC, set the module option (only available in 25.11):</p>
+<h2 id="tips-and-tricks">Tips and tricks</h2><p>Since COSMIC is a new desktop environment and only has a beta release, there are some nuances that not everyone is familiar with. This section will contain as many as the maintainers are aware of.</p>
+<h3 id="optimization">Optimization</h3><p>You can slightly improve the performance of your Cosmic installation by enabling <a href="https://github.com/pop-os/system76-scheduler">system76&#39;s own scheduler</a> using this code block inside of your NixOS configuration file:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs">{
+  <span class="hljs-attr">services.system76-scheduler.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+}</code></pre>
+      </div><h3 id="clipboard">Clipboard</h3><p>Due to the security concerns, Wayland defaults to the behavior where only the focused client (window) can set the clipboard. Clipboard ownership is tied tightly to the focused client so that a background application cannot replace the clipboard contents. The intention from Wayland protocols is to improve security. But that can be an issue if you are either using a clipboard manager or perform rapid copy pasting in the terminal (like using macros in vi).</p>
+<p>This security measure can be <strong>bypassed</strong>. by enabling the <strong>unstable</strong> <a href="https://wayland.app/protocols/wlr-data-control-unstable-v1#zwlr_data_control_manager_v1">zwlr_data_control_manager_v1</a> protocol. But please note that bypassing this security measure means that <strong>all windows now have access to the clipboard, globally</strong>. If that is a sacrifice you are willing to make, add the following to your NixOS configuration file:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">environment.sessionVariables.COSMIC_DATA_CONTROL_ENABLED</span> <span class="hljs-operator">=</span> <span class="hljs-number">1</span>;
+}</code></pre>
+      </div><h3 id="theming-and-firefox">Theming and Firefox</h3><p>If you have attempted theming the appearance of the COSMIC DE but don&#39;t see it reflected in Firefox, that is because Firefox is using the libadwaita theme. That behaviour needs to be disabled. It can be achieved by setting the Firefox configuration option `widget.gtk.libadwaita-colors.enabled` to `false`. On NixOS, the declarative method to do that is the following:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">programs.firefox.preferences</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-comment"># disable libadwaita theming for Firefox</span>
+    <span class="hljs-string">&quot;widget.gtk.libadwaita-colors.enabled&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+  };
+}</code></pre>
+      </div><h2 id="configuration">Configuration</h2><p>COSMIC stores its configuration in <a href="https://github.com/ron-rs/ron">Rusty Object Notation (RON)</a> files. By default, the system-wide configuration is used unless user-specific files are present. Currently, NixOS does not provide declarative options for configuring COSMIC through the NixOS module system.</p>
+<h3 id="system-wide-configuration">System-wide configuration</h3><p>If no user configuration exists, COSMIC falls back to system-wide defaults. These configuration files are bundled with each cosmic package and are located in their respective <code>[package]/share/cosmic/</code> directories.</p>
+<p>When COSMIC is enabled using the NixOS option <code>services.desktopManager.cosmic.enable = true;</code>, the <code>/share/cosmic</code> directories from the relevant packages are symlinked into <code>/run/current-system/sw</code>.</p>
+<p>This allows COSMIC to locate and apply the default configurations at runtime.</p>
+<h3 id="user-configuration">User configuration</h3><p>User configuration files are located in <code>~/.config/cosmic/</code>.</p>
+<p>They override the system defaults when present, and are automatically created or updated when using the COSMIC Settings application.</p>
+<h3 id="component-specific-configuration">Component-specific configuration</h3><p>Each COSMIC component maintains its own configuration files. For example, the COSMIC Panel reads and stores its configuration at <code>~/.config/cosmic/com.system76.CosmicPanel.Panel</code> Components can be configured by modifying these files directly. For instance, to place the Time and Notifications applets in the center of the COSMIC panel, create the following file:</p>
+<p>Most configuration changes are applied immediately without needing to restart the session.</p>
+<p><a href="category:Desktop_environment" class="wikilink" title="Category:Desktop environment">Category:Desktop environment</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

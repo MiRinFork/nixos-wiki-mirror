@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NixOS on ARM/Raspberry Pi 3</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM">NixOS on ARM</a><span aria-hidden="true"> / </span>Raspberry Pi 3</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: NixOS on ARM/Raspberry Pi 3 -->
+
+<div class="infobox">
+
+<table>
+<thead>
+<tr>
+<th colspan="2" class="title"><p>Raspberry Pi 3 Family</p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td colspan="2"><figure>
+<img src="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/Raspberry%20Pi%203/raspberry_pi_3_glamour.jpg" title="A Raspberry Pi 3 with enclosure." width="256" />
+<figcaption>A Raspberry Pi 3 with enclosure.</figcaption>
+</figure></td>
+</tr>
+<tr>
+<td><p>Manufacturer</p></td>
+<td><p>Raspberry Pi Foundation</p></td>
+</tr>
+<tr>
+<td><p>Architecture</p></td>
+<td><p>AArch64</p></td>
+</tr>
+<tr>
+<td><p>Bootloader</p></td>
+<td><p>Custom or U-Boot</p></td>
+</tr>
+<tr>
+<td><p>Boot order</p></td>
+<td><p>SD, USB*</p></td>
+</tr>
+<tr>
+<td><p>Maintainer</p></td>
+<td></td>
+</tr>
+<tr>
+<td colspan="2" class="title"><p>Raspberry Pi 3B</p></td>
+</tr>
+<tr>
+<td><p>SoC</p></td>
+<td><p>BCM2837</p></td>
+</tr>
+<tr>
+<td colspan="2" class="title"><p>Raspberry Pi 3B+</p></td>
+</tr>
+<tr>
+<td><p>SoC</p></td>
+<td><p>BCM2837B0</p></td>
+</tr>
+</tbody>
+</table>
+
+</div>
+
+<p>The Raspberry Pi family of devices is a series of single-board computers made by the Raspberry Pi Foundation. They are all based on Broadcom System-on-a-chip (SOCs).</p>
+<h2 id="status">Status</h2><p>The default Linux kernel in use, is the mainline Linux kernel, and not the Raspberry Pi Foundation&#39;s fork. This could reduce compatibility with some add-on boards or third-party libraries<sup>[expanded explanation needed]</sup>.</p>
+<p>The Raspberry Pi 3 Family is only supported as <strong>AArch64</strong>. Use as armv7 is community supported.</p>
+<h2 id="board-specific-installation-notes">Board-specific installation notes</h2><p>First follow the <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/Raspberry%20Pi%203/NixOS_on_ARM#Installation" class="wikilink" title="generic installation steps">generic installation steps</a> to get the installer image and install using the <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/Raspberry%20Pi%203/NixOS_on_ARM#NixOS_installation_.26_configuration" class="wikilink" title="installation and configuration steps">installation and configuration steps</a>.</p>
+<h3 id="raspberry-pi-3b-and-3b">Raspberry Pi 3B and 3B+</h3><p>Both the AArch64 and ARMv7 images boot out-of-the-box. Using the 64-bit AArch64 image is highly recommended, as the availability of binaries is much better and allows the use of the 64-bit instruction set.</p>
+<p>For the UART console, edit <code>/extlinux/extlinux.conf</code> on the main partition of the SD card to set <code>console=ttyS1,115200n8</code> in the kernel boot parameters, making sure to replace the existing <code>console=ttyS0,115200n8</code> parameter. Use the following GPIO Pins with an USB-TTL connector:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">GND         - 3rd in top row, black cable
+GPIO 14 TXD - 4th in top row, white cable
+GPIO 15 RXD - 5th in top row, green cable</code></pre>
+      </div><p>Use <code>nix-shell -p screen --run &quot;screen /dev/ttyUSB0 115200&quot;</code> (or <code>nix run nixpkgs#screen -- /dev/ttyUSB0 115200</code> if you&#39;re using nix flakes) to connect to the console.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">hardware.enableRedistributableFirmware</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">networking.wireless.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+}</code></pre>
+      </div><h2 id="tools">Tools</h2><p>The raspberry tools are available in the <code>libraspberrypi</code> package and include commands like <code>vcgencmd</code> to measure temperature and CPU frequency.</p>
+<h2 id="audio">Audio</h2><p>In addition to the usual config, you will need to enable audio support explicitly in the firmwareConfig.</p>
+<h2 id="serial-console">Serial console</h2><p>Your <code>configuration.nix</code> will need to add <code>console=ttyS1,115200n8</code> to the <code>boot.kernelParams</code> configuration to use the serial console.</p>
+<p>If the Raspberry Pi downstream kernel is used the serial interface is named <code>serial0</code> instead.</p>
+<h3 id="early-boot">Early boot</h3><p>Raspberry Pi 3&#39;s UART rate is tied to the GPU core frequency, set by default to 400MHz on Raspberry Pi 3 and later. This results in garbled serial output in bootloaders. Setting <code>core_freq=250</code> in <code>config.txt</code> solves this issue (as per <a href="https://forums.raspberrypi.com/viewtopic.php?p=942203#p942203">thread on the Raspberry Pi forum</a>).</p>
+<p>It can be done declaratively as such:</p>
+<p>Note that this <a href="https://github.com/RealVNC/raspi-documentation/blob/fc6b4711f91791db7acd19ae743fcfddc9c89546/configuration/config-txt/overclocking.md#overclocking-options">may have a negative impact on performance</a>:</p>
+<blockquote>
+<p>Frequency of the GPU processor core in MHz. It has an impact on CPU performance because it drives the L2 cache and memory bus.</p>
+</blockquote>
+<h2 id="bluetooth">Bluetooth</h2><p>The bluetooth controller is by default connected to the UART device at <code>/dev/ttyAMA0</code> and needs to be enabled through <code>btattach</code>:</p>
+<h2 id="camera">Camera</h2><p>For the camera to work, you will need to add the following code to your configuration.nix:</p>
+<p>To make the camera available as v4l device under <code>/dev/video0</code> the <code>bcm2835-v4l2</code> kernel module need to be loaded. This can be done by adding the following code to your configuration.nix:</p>
+<h2 id="notes-about-the-boot-process">Notes about the boot process</h2><p>It takes approximately 1 minute to boot a Pi 3B.</p>
+<p>USB keyboards and HDMI displays should work, though some issues have been reported (see Troubleshooting below).</p>
+<p>Using the 3.3v serial port via the pin headers (exact location depends on hardware version) will get u-boot output and, when configured, a Linux kernel console.</p>
+<h3 id="updating-u-boot">Updating U-Boot</h3><p><a href="https://github.com/NixOS/nixpkgs/issues/82455#issuecomment-959797355">These steps can be followed to update the platform firmware.</a></p>
+<h2 id="troubleshooting">Troubleshooting</h2><h3 id="power-issues">Power issues</h3><p>Especially with the power-hungry Raspberry Pi 3, it is important to have a <a href="https://www.raspberrypi.org/documentation/hardware/raspberrypi/power/README.md">sufficient enough power supply</a> or <em>weirdness</em> may happen. Weirdness may include:</p>
+<ul>
+<li>Lightning bolt on HDMI output &quot;breaking&quot; the display.</li>
+<li>Screen switching back to u-boot text<ul>
+<li>Fixable temporarily when power is sufficient by switching VT (alt+F2 / alt+F1)</li>
+</ul>
+</li>
+<li>Random hangs</li>
+</ul>
+<p>This problem is a hard problem. It is caused by the Raspberry Pi warning about power issues, but the current drivers (as of Linux 4.14) have a hard time dealing with it properly. If the power supply is rated properly AND the cable is not incurring too much power losses, it may be required to disable the lightning bolt indicator so the display driver isn&#39;t messed up.<sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/Raspberry%20Pi%203#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup> The lightning bolt indicator can be disabled by adding the line <code>avoid_warnings=1</code> in config.txt<sup><a id="footnote-ref-2" href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/Raspberry%20Pi%203#footnote-2" data-footnote-ref aria-describedby="footnote-label">2</a></sup></p>
+<h3 id="wifi-wlan">WiFi / WLAN</h3><p>For a possible solution to 802.11 wireless connectivity issues, see: <a href="https://github.com/NixOS/nixpkgs/issues/82462#issuecomment-604634627">https://github.com/NixOS/nixpkgs/issues/82462#issuecomment-604634627</a></p>
+<p>In case <code>wlan0</code> is missing, try overlaying an older <code>firmwareLinuxNonfree</code> confirmed to be working:</p>
+<h3 id="hdmi">HDMI</h3><p>HDMI issues have been observed on the 18.09 AArch64 image. The display would hang on &quot;Starting Kernel...&quot;, then act as if the HDMI cable was unplugged. Re-plugging the HDMI cable after boot fixed the issue, as did a different monitor and HDMI cable.</p>
+<h4 id="early-boot-messages">Early boot messages</h4><p>To show boot messages from initrd with the mainline kernel, add this to <code>configuration.nix</code>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">boot.initrd.kernelModules</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;vc4&quot;</span> <span class="hljs-string">&quot;bcm2835_dma&quot;</span> <span class="hljs-string">&quot;i2c_bcm2835&quot;</span> ];
+}</code></pre>
+      </div><h3 id="raspberry-pi-3b-hdmi-output-issues">Raspberry Pi 3B+ HDMI output issues</h3><p>As of 2019/08/19, the u-boot build and kernel build can disagree about the name of the dtb file for the Raspberry Pi 3B+. This happens because the upstream filename has changed, and the built u-boot has hardcoded expectations for the filename to load.</p>
+<p>For now, do not use <code>linuxPackages_latest</code>, use the default <code>linuxPackages</code> which is the latest LTS, 4.19, which is known to be compatible.</p>
+<p>See .</p>
+<h3 id="hdmi-output-issue-with-kernel-6-1-nixos-23-05-or-nixos-unstable">HDMI output issue with kernel ~6.1 (NixOS 23.05 or NixOS unstable)</h3><p>When using HDMI and hardware acceleration (e.g. Kodi), an application may fail to start and/or crash with a dmesg like:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">[232195.380745] [drm:vc4_bo_create [vc4]] *ERROR* Failed to allocate from CMA:
+[232195.380751] [drm]                         kernel:    432kb BOs (1)
+[232195.380755] [drm]                           dumb:  69064kb BOs (14)
+
+[306160.152488] cma: cma_alloc: alloc failed, req-size: 142 pages, ret: -16
+[306160.152498] [vc_sm_cma_ioctl_alloc]: dma_alloc_coherent alloc of 581632 bytes failed
+[306160.152501] [vc_sm_cma_ioctl_alloc]: something failed - cleanup. ret -12
+[317686.623989] [drm:vc4_bo_create [vc4]] *ERROR* Failed to allocate from CMA:
+[317686.623998] [drm]                           dumb:  74752kb BOs (16)</code></pre>
+      </div><p>A workaround is to increase the pre-allocated CMA space (which, as of writing, defaults to 65M):</p>
+<p>For more information see a post in raspberry pi forum<sup><a id="footnote-ref-3" href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/Raspberry%20Pi%203#footnote-3" data-footnote-ref aria-describedby="footnote-label">3</a></sup> and thios github issue<sup><a id="footnote-ref-4" href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/Raspberry%20Pi%203#footnote-4" data-footnote-ref aria-describedby="footnote-label">4</a></sup>.</p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p><a href="https://logs.nix.samueldr.com/nixos/2017-12-20#1513784657-1513784714">https://logs.nix.samueldr.com/nixos/2017-12-20#1513784657-1513784714</a>; <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/Raspberry%20Pi%203#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+<li id="footnote-2">
+<p><a href="https://www.raspberrypi.org/documentation/configuration/config-txt/README.md">https://www.raspberrypi.org/documentation/configuration/config-txt/README.md</a> <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/Raspberry%20Pi%203#footnote-ref-2" data-footnote-backref aria-label="Back to reference 2">↩</a></p>
+</li>
+<li id="footnote-3">
+<p><a href="https://forums.raspberrypi.com/viewtopic.php?t=285068">https://forums.raspberrypi.com/viewtopic.php?t=285068</a> <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/Raspberry%20Pi%203#footnote-ref-3" data-footnote-backref aria-label="Back to reference 3">↩</a></p>
+</li>
+<li id="footnote-4">
+<p><a href="https://github.com/raspberrypi/linux/issues/3861">https://github.com/raspberrypi/linux/issues/3861</a> <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/Raspberry%20Pi%203#footnote-ref-4" data-footnote-backref aria-label="Back to reference 4">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

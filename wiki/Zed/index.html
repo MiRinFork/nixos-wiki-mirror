@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Zed</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Zed</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Zed -->
+
+<p><languages/> <translate> <a href="https://zed.dev/">Zed</a><sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Zed#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup> is a collaborative, GPU-accelerated text editor developed by Zed Industries. It combines fast local editing with real-time multiplayer features and ships with batteries-included tooling for popular programming languages.</p>
+<p>The editor provides native builds for Linux, including Nixpkgs packages and a reproducible flake. Hardware acceleration requires a GPU with Vulkan support; systems without Vulkan can fall back to emulation via tools such as <a href="https://github.com/nix-community/nixGL">nixGL</a>.<sup><a id="footnote-ref-2" href="https://mirror.nixoscn.org/wiki/Zed#footnote-2" data-footnote-ref aria-describedby="footnote-label">2</a></sup></p>
+<p>is available in Nixpkgs since 24.11; However, Zed provides <a href="https://github.com/zed-industries/zed/blob/main/flake.nix">an official nix flake</a> which might be useful if you need features that have not yet reached unstable Nixpkgs.</p>
+<h2 id="installation">Installation</h2><p>The package installs both desktop launchers and a CLI entry point aliased to <code>zeditor</code>, mirroring the upstream binary name</p>
+<h3 id="imperative">Imperative</h3><h4 id="zed-39-s-flake">Zed&#39;s Flake</h4></translate>
+
+<div class="code-container">
+        
+        <pre><code class="language-console hljs">nix run github:zed-industries/zed</code></pre>
+      </div><h4 id="nixpkgs">Nixpkgs</h4><div class="code-container">
+        
+        <pre><code class="language-console hljs">nix run nixpkgs#zed-editor</code></pre>
+      </div><translate>
+
+<h3 id="declarative">Declarative</h3></translate>
+
+<h4 id="nixos">NixOS</h4><div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> [
+  pkgs.zed-editor
+];</code></pre>
+      </div><h4 id="home-manager">Home Manager</h4><div class="code-container">
+        
+        <pre><code class="language-nix hljs">h<span class="hljs-attr">ome.packages</span> <span class="hljs-operator">=</span> [
+  pkgs.zed-editor
+];</code></pre>
+      </div><div class="code-container">
+        
+        <pre><code class="language-console hljs">home-manager switch</code></pre>
+      </div><translate>
+
+<h4 id="zed-39-s-flake">Zed&#39;s Flake</h4></translate>
+
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">inputs.zed.url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:zed-industries/zed&quot;</span>;
+
+  <span class="hljs-attr">outputs</span> <span class="hljs-operator">=</span>
+    {
+      self,
+      nixpkgs,
+      zed,
+      ...
+    }@<span class="hljs-params">inputs:</span>
+    <span class="hljs-keyword">let</span>
+      <span class="hljs-attr">system</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;x86_64-linux&quot;</span>;
+      <span class="hljs-attr">pkgs</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> nixpkgs { <span class="hljs-keyword">inherit</span> system; };
+    <span class="hljs-keyword">in</span>
+    {
+      packages.${system}.zed-latest <span class="hljs-operator">=</span> zed.packages.${system}.default;
+    };
+}</code></pre>
+      </div><p><translate> Build the flake package with <code>nix build .#zed-latest</code> or expose it in your configuration with the appropriate overlay.</p>
+<p>true;</code> to provide the necessary libraries. Providing Vulkan through <code>nixGL</code> can be more consistent than relying on host distribution packages, especially on non-NixOS systems where Wayland and X11 stacks differ in their Vulkan capabilities.}}</p>
+<h2 id="configuration">Configuration</h2><p>Zed stores its configuration in JSON files under <code>~/.config/zed</code>. Home Manager can manage these settings declaratively.</p>
+<h4 id="basic">Basic</h4></translate>
+
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">p<span class="hljs-attr">rograms.zed-editor</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">extensions</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;nix&quot;</span> <span class="hljs-string">&quot;toml&quot;</span> <span class="hljs-string">&quot;rust&quot;</span> ];
+  <span class="hljs-attr">userSettings</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">theme</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">mode</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;system&quot;</span>;
+      <span class="hljs-attr">dark</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;One Dark&quot;</span>;
+      <span class="hljs-attr">light</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;One Light&quot;</span>;
+    };
+    <span class="hljs-attr">hour_format</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;hour24&quot;</span>;
+    <span class="hljs-attr">vim_mode</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  };
+};</code></pre>
+      </div><p><translate> The configuration above enables Zed via Home Manager, installs a small set of extensions, and synchronises the theme with the desktop appearance.</p>
+<h4 id="advanced">Advanced</h4></translate>
+
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">p<span class="hljs-attr">rograms.zed-editor</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+  <span class="hljs-comment"># This populates the userSettings &quot;auto_install_extensions&quot;</span>
+  <span class="hljs-attr">extensions</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;nix&quot;</span> <span class="hljs-string">&quot;toml&quot;</span> <span class="hljs-string">&quot;elixir&quot;</span> <span class="hljs-string">&quot;make&quot;</span> ];
+
+  <span class="hljs-comment"># Everything inside of these brackets are Zed options</span>
+  <span class="hljs-attr">userSettings</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">assistant</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">enabled</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;2&quot;</span>;
+      <span class="hljs-attr">default_open_ai_model</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;
+
+      <span class="hljs-comment"># Provider options:</span>
+      <span class="hljs-comment"># - zed.dev models (claude-3-5-sonnet-latest) requires GitHub connected</span>
+      <span class="hljs-comment"># - anthropic models (claude-3-5-sonnet-latest, claude-3-haiku-latest, claude-3-opus-latest) requires API_KEY</span>
+      <span class="hljs-comment"># - copilot_chat models (gpt-4o, gpt-4, gpt-3.5-turbo, o1-preview) requires GitHub connected</span>
+      <span class="hljs-attr">default_model</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">provider</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;zed.dev&quot;</span>;
+        <span class="hljs-attr">model</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;claude-3-5-sonnet-latest&quot;</span>;
+      };
+
+      <span class="hljs-comment"># inline_alternatives = [</span>
+      <span class="hljs-comment">#   {</span>
+      <span class="hljs-comment">#     provider = &quot;copilot_chat&quot;;</span>
+      <span class="hljs-comment">#     model = &quot;gpt-3.5-turbo&quot;;</span>
+      <span class="hljs-comment">#   }</span>
+      <span class="hljs-comment"># ];</span>
+    };
+
+    <span class="hljs-attr">node</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">path</span> <span class="hljs-operator">=</span> lib.getExe pkgs.nodejs;
+      <span class="hljs-attr">npm_path</span> <span class="hljs-operator">=</span> lib.getExe&#x27; pkgs.nodejs <span class="hljs-string">&quot;npm&quot;</span>;
+    };
+
+    <span class="hljs-attr">hour_format</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;hour24&quot;</span>;
+    <span class="hljs-attr">auto_update</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+
+    <span class="hljs-attr">terminal</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">alternate_scroll</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;off&quot;</span>;
+      <span class="hljs-attr">blinking</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;off&quot;</span>;
+      <span class="hljs-attr">copy_on_select</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+      <span class="hljs-attr">dock</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;bottom&quot;</span>;
+      <span class="hljs-attr">detect_venv</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">on</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">directories</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;.env&quot;</span> <span class="hljs-string">&quot;env&quot;</span> <span class="hljs-string">&quot;.venv&quot;</span> <span class="hljs-string">&quot;venv&quot;</span> ];
+          <span class="hljs-attr">activate_script</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;default&quot;</span>;
+        };
+      };
+      <span class="hljs-attr">env</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">TERM</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;alacritty&quot;</span>;
+      };
+      <span class="hljs-attr">font_family</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;FiraCode Nerd Font&quot;</span>;
+      <span class="hljs-attr">font_features</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;
+      <span class="hljs-attr">font_size</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;
+      <span class="hljs-attr">line_height</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;comfortable&quot;</span>;
+      <span class="hljs-attr">option_as_meta</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+      <span class="hljs-attr">button</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+      <span class="hljs-attr">shell</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;system&quot;</span>;
+      <span class="hljs-comment"># shell = {</span>
+      <span class="hljs-comment">#   program = &quot;zsh&quot;;</span>
+      <span class="hljs-comment"># };</span>
+      <span class="hljs-attr">toolbar</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">title</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      };
+      <span class="hljs-attr">working_directory</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;current_project_directory&quot;</span>;
+    };
+
+    <span class="hljs-attr">lsp</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">rust-analyzer</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">binary</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-comment"># path = lib.getExe pkgs.rust-analyzer;</span>
+          <span class="hljs-attr">path_lookup</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+        };
+      };
+
+      <span class="hljs-attr">nix</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">binary</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">path_lookup</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+        };
+      };
+
+      <span class="hljs-attr">elixir-ls</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">binary</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">path_lookup</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+        };
+        <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">dialyzerEnabled</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+        };
+      };
+    };
+
+    <span class="hljs-attr">languages</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-string">&quot;Elixir&quot;</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">language_servers</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;!lexical&quot;</span> <span class="hljs-string">&quot;elixir-ls&quot;</span> <span class="hljs-string">&quot;!next-ls&quot;</span> ];
+        <span class="hljs-attr">format_on_save</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">external</span> <span class="hljs-operator">=</span> {
+            <span class="hljs-attr">command</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;mix&quot;</span>;
+            <span class="hljs-attr">arguments</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;format&quot;</span> <span class="hljs-string">&quot;--stdin-filename&quot;</span> <span class="hljs-string">&quot;{buffer_path}&quot;</span> <span class="hljs-string">&quot;-&quot;</span> ];
+          };
+        };
+      };
+
+      <span class="hljs-string">&quot;HEEX&quot;</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">language_servers</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;!lexical&quot;</span> <span class="hljs-string">&quot;elixir-ls&quot;</span> <span class="hljs-string">&quot;!next-ls&quot;</span> ];
+        <span class="hljs-attr">format_on_save</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">external</span> <span class="hljs-operator">=</span> {
+            <span class="hljs-attr">command</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;mix&quot;</span>;
+            <span class="hljs-attr">arguments</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;format&quot;</span> <span class="hljs-string">&quot;--stdin-filename&quot;</span> <span class="hljs-string">&quot;{buffer_path}&quot;</span> <span class="hljs-string">&quot;-&quot;</span> ];
+          };
+        };
+      };
+    };
+
+    <span class="hljs-attr">vim_mode</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+    <span class="hljs-comment"># Tell Zed to use direnv and direnv can use a flake.nix environment</span>
+    <span class="hljs-attr">load_direnv</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;shell_hook&quot;</span>;
+    <span class="hljs-attr">base_keymap</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;VSCode&quot;</span>;
+
+    <span class="hljs-attr">theme</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">mode</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;system&quot;</span>;
+      <span class="hljs-attr">light</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;One Light&quot;</span>;
+      <span class="hljs-attr">dark</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;One Dark&quot;</span>;
+    };
+
+    <span class="hljs-attr">show_whitespaces</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;all&quot;</span>;
+    <span class="hljs-attr">ui_font_size</span> <span class="hljs-operator">=</span> <span class="hljs-number">16</span>;
+    <span class="hljs-attr">buffer_font_size</span> <span class="hljs-operator">=</span> <span class="hljs-number">16</span>;
+  };
+};</code></pre>
+      </div><p><translate> This example adds language servers to the FHS sandbox, enables the bundled assistant, configures the terminal, and ensures remote server binaries are provided declaratively.</p>
+<p>The <code>userSettings</code> and <code>userKeymaps</code> options translate directly into JSON. The <code>extraPackages</code> option includes additional Nixpkgs in the FHS environment, useful for LSP servers (e.g., <code>pkgs.nixd</code>) or optional tools (e.g., <code>pkgs.shellcheck</code> for the Basher LSP).</p>
+<p>Home Manager renders <code>settings.json</code> as read-only, which prevents Zed&#39;s GUI from saving most preference changes, including AI provider selection. Plan to manage long-term settings declaratively or temporarily disable the module when editing interactively.</p>
+<p>Only the initial extension list can be defined declaratively; additional extensions installed through the GUI are stored within Zed&#39;s writable data directories and do not appear in <code>userSettings</code>. This follows a similar model to VSCode, where extensions require external binaries downloaded at runtime. </translate></p>
+<h2 id="lsp-support">LSP support</h2><p><translate> Zed downloads LSP servers into <code>~/.local/share/zed/languages/</code>. These binaries most likely will not work because of linking issues. You can workaround this with the following methods or bring your own LSP servers. </translate> <translate> Check <strong>LSP Logs → Server Info</strong> to confirm which binaries are running. </translate></p>
+<h4 id="nix-ld-recommended">Nix-ld (recommended)</h4><p><translate> Enable <a href="https://mirror.nixoscn.org/wiki/Zed/FAQ#I've_downloaded_a_binary,_but_I_can't_run_it,_what_can_I_do?" class="wikilink" title="programs.nix-ld"><code>programs.nix-ld</code></a> so language servers downloaded by Zed can resolve dynamic libraries without wrapping and work out of the box. </translate></p>
+<h4 id="fhs-wrapper">FHS wrapper</h4><p><translate> Use <code>pkgs.zed-editor.fhsWithPackages</code> to extend the FHS environment with additional system libraries when a language server requires them. </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">pkgs.zed-editor.fhsWithPackages(
+  <span class="hljs-params">pkgs:</span> <span class="hljs-keyword">with</span> pkgs; [
+    openssl
+    zlib
+  ]
+)</code></pre>
+      </div><p><translate> Remember that language servers started inside the wrapper do not inherit tools and libraries from nix shell. This is usually not desired because LSP may need project-level dependencies provided by nix-shell to compile and analyze the code. </translate></p>
+<h4 id="bring-your-own-lsp-servers">Bring your own LSP servers</h4><p><translate> Newer versions of Zed can detect LSP servers installed in <code>PATH</code> and prefer local versions over automatically downloaded ones. Install LSP servers globally or provide them through nix shell. </translate> <translate> Nixpkgs versions of tools may be required for development on NixOS, especially for the C/C++ ecosystem. Check <strong>LSP Logs → Server Info</strong> to see which binaries are running. </translate> <translate> If automatic detection doesn&#39;t work, specify the path manually in your Zed configuration: </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-json hljs"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;lsp&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;rust-analyzer&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+      <span class="hljs-attr">&quot;binary&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+        <span class="hljs-attr">&quot;path&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;/run/current-system/sw/bin/rust-analyzer&quot;</span>
+      <span class="hljs-punctuation">}</span>
+    <span class="hljs-punctuation">}</span>
+  <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span></code></pre>
+      </div><p><translate> Adjust the path for each language server you manage. The example above assumes rust-analyzer is installed in your system profile. </translate></p>
+<h2 id="remote-server">Remote server</h2><p><translate> Zed uploads a versioned remote server binary to <code>~/.zed_server</code> on the target host. The Nixpkgs package exposes the matching binary via the <code>remote_server</code> output. </translate> <translate> When you connect to a remote machine, the client either downloads a matching server binary from upstream or pushes a local copy if <code>&quot;upload_binary_over_ssh&quot;: true</code> is enabled. Connections fail if the versions diverge. </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">home.file.<span class="hljs-string">&quot;.zed_server&quot;</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">source</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.zed-editor.remote_server}</span>/bin&quot;</span>;
+  <span class="hljs-attr">recursive</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+};</code></pre>
+      </div><p><translate> The <code>recursive = true;</code> setting keeps the directory writable while symlinking individual binaries, allowing Zed to add new versions when needed. This is necessary because the <code>~/.zed_server</code> folder is also used when external clients connect to the current system as a remote. </translate> <translate> Alternatively, use Home Manager&#39;s built-in option for simpler setup: </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">p<span class="hljs-attr">rograms.zed-editor</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">installRemoteServer</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+};</code></pre>
+      </div><p><translate> To restrict remote clients to a specific server version, set <code>recursive = false;</code> to make the entire folder read-only. Zed refuses to connect if it cannot provision the required binary, so document the restriction for collaborators. </translate></p>
+<h2 id="tips-and-tricks">Tips and tricks</h2><h4 id="vulkan-diagnostics">Vulkan diagnostics</h4><p><translate> Run the command above to check your Vulkan support before launching Zed. Install <code>vulkan-tools</code> if the command is not available. On non-NixOS systems, you may need to wrap Zed with <code>nixGLVulkan</code> from the nixGL package. </translate></p>
+<h4 id="preinstall-extensions">Preinstall extensions</h4><div class="code-container">
+        
+        <pre><code class="language-json hljs"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;extensions&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+    <span class="hljs-string">&quot;nix&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-string">&quot;toml&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-string">&quot;elixir&quot;</span>
+  <span class="hljs-punctuation">]</span>
+<span class="hljs-punctuation">}</span></code></pre>
+      </div><p><translate> Declaratively listing extensions ensures they are installed automatically on new systems while still allowing additional extensions to be added interactively. </translate></p>
+<h4 id="synchronise-settings-across-machines">Synchronise settings across machines</h4><p><translate> Store the entire <code>~/.config/zed</code> directory in a version-controlled dotfiles repo or manage it with Home Manager to keep settings consistent across hosts. </translate></p>
+<h2 id="troubleshooting">Troubleshooting</h2><h4 id="zed-fails-to-start-without-vulkan">Zed fails to start without Vulkan</h4><p><translate> If the GUI refuses to launch, confirm that <code>vulkan-tools</code> reports a working ICD. Use <code>nixGL</code> or vendor packages that supply Vulkan drivers for your GPU. </translate></p>
+<h4 id="remote-collaboration-disconnects">Remote collaboration disconnects</h4><p><translate> Ensure the remote server binary matches the client version. Re-run <code>home-manager switch</code> or update the symlink in <code>~/.zed_server</code> if the versions diverge after an update. </translate></p>
+<h4 id="language-server-missing-binaries">Language server missing binaries</h4><p><translate> When Zed reports missing tools, add the required executables to <code>programs.zed-editor.extraPackages</code> or wrap the server using <code>pkgs.writeShellApplication</code>. </translate></p>
+<h2 id="see-also">See also</h2><ul>
+<li><translate></li>
+</ul>
+<p><a href="https://mirror.nixoscn.org/wiki/Zed/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> – Manage Zed configuration declaratively </translate></p>
+<ul>
+<li><translate></li>
+</ul>
+<p><a href="https://mirror.nixoscn.org/wiki/Zed/Graphics#Vulkan" class="wikilink" title="Graphics#Vulkan">Graphics#Vulkan</a> – Set up Vulkan on NixOS systems </translate></p>
+<ul>
+<li><translate></li>
+</ul>
+<p><a href="https://search.nixos.org/options?query=zed-editor">NixOS options search for Zed</a> </translate></p>
+<h2 id="references">References</h2><references/>
+
+<p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="category:Text_Editor" class="wikilink" title="Category:Text Editor">Category:Text Editor</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p>Zed Industries, &quot;Zed&quot;, Official Website, Accessed October 2025. <a href="https://zed.dev/">https://zed.dev</a> <a href="https://mirror.nixoscn.org/wiki/Zed#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+<li id="footnote-2">
+<p>Zed Industries, &quot;Linux&quot;, Zed Documentation, Accessed October 2025. <a href="https://zed.dev/docs/linux">https://zed.dev/docs/linux</a> <a href="https://mirror.nixoscn.org/wiki/Zed#footnote-ref-2" data-footnote-backref aria-label="Back to reference 2">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

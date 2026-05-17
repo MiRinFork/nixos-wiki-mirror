@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PostgreSQL</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / PostgreSQL</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: PostgreSQL -->
+
+<p><a href="https://www.postgresql.org/">PostgreSQL</a> also known as Postgres, is a free and open-source relational database management system (RDBMS) emphasizing extensibility and SQL compliance.</p>
+<p>This article extends the documentation in the <a href="https://nixos.org/manual/nixos/stable/#module-postgresql">NixOS manual</a>.</p>
+<h3 id="getting-started">Getting started</h3><p>To try out Postgresql add the following minimal example to your <a href="https://mirror.nixoscn.org/wiki/PostgreSQL/NixOS_modules" class="wikilink" title=" NixOS module"> NixOS module</a>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-comment"># ...</span>
+  <span class="hljs-attr">config.services.postgresql</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">ensureDatabases</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;mydatabase&quot;</span> ];
+    <span class="hljs-attr">authentication</span> <span class="hljs-operator">=</span> pkgs.lib.mkOverride <span class="hljs-number">10</span> <span class="hljs-string">&#x27;&#x27;
+      #type database  DBuser  auth-method
+      local all       all     trust
+    &#x27;&#x27;</span>;
+  };
+}  </code></pre>
+      </div><p>This will setup Postgresql with a default DB superuser/admin &quot;postgres&quot;, a database &quot;mydatabase&quot; and let every DB user have access to it without a password through a &quot;local&quot; Unix socket &quot;/var/run/postgresql&quot; (TCP/IP is disabled by default because it&#39;s less performant and less secure).</p>
+<ul>
+<li><a href="https://search.nixos.org/options?query=services.postgresql">Available NixOS Postgresql service options</a></li>
+</ul>
+<p>It&#39;s also possible to setup PostgreSQL with <a href="https://mirror.nixoscn.org/wiki/PostgreSQL/Nix_Darwin" class="wikilink" title="Nix Darwin">Nix Darwin</a> similar to how you would on NixOS, see the <a href="https://daiderd.com/nix-darwin/manual/index.html#opt-services.postgresql.enable">options</a>.</p>
+<h6 id="beginner-39-s-note">Beginner&#39;s Note:</h6><p>If you are studying Postgres by following its <a href="https://www.postgresql.org/docs/current/tutorial.html">official tutorial</a>, you would find that the <code>pg_config</code> executable is missing <a href="https://github.com/NixOS/nixpkgs/issues/408785">1</a>. To obtain <code>pg_config</code>, use the <code>pg_config</code> attribute of the <code>postgresql</code> package as in:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-comment"># ...</span>
+  <span class="hljs-attr">config.services.postgresql.package</span> <span class="hljs-operator">=</span> pkgs.postgresql.pg_config;
+}  </code></pre>
+      </div><h3 id="verify-setup">Verify setup</h3><p>You can use <code>psql</code> that comes with Postgres in the terminal to verify that the DB setup is as expected:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"> $ <span class="hljs-built_in">sudo</span> -u postgres psql
+psql
+Type <span class="hljs-string">&quot;help&quot;</span> <span class="hljs-keyword">for</span> <span class="hljs-built_in">help</span>.
+
+postgres=# </code></pre>
+      </div><p>We have to switch to a system user like &quot;postgres&quot; with <code>sudo -u postgres</code>, because by default <code>psql</code> logs you into the DB user of the same name as the current Linux/system user. By default, NixOS creates a system and DB user names &quot;postgres&quot;. So the line <code>postgres=#</code> shows that we are now logged-in as DB user &quot;postgres&quot;.</p>
+<p>Inside <code>psql</code> here the most frequent commands are:</p>
+<p>List all databases running on this Postgres instance with <code>\l</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">postgres=# \l
+                                   List of databases
+    Name    |  Owner   | Encoding |   Collate   |    Ctype    |   Access privileges    
+------------+----------+----------+-------------+-------------+------------------------
+ mydatabase | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 | =Tc/postgres          +
+            |          |          |             |             | postgres=CTc/postgres +
+            |          |          |             |             | rustnixos=CTc/postgres
+ postgres   | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 | 
+ template0  | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 | =c/postgres           +
+            |          |          |             |             | postgres=CTc/postgres
+ template1  | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 | =c/postgres           +
+            |          |          |             |             | postgres=CTc/postgres
+(4 rows)</code></pre>
+      </div><p>List all DB users (also called &quot;roles&quot; in Postgres) with <code>\du</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">postgres=# \<span class="hljs-built_in">du</span>
+                                   List of roles
+ Role name |                         Attributes                         | Member of 
+-----------+------------------------------------------------------------+-----------
+ postgres  | Superuser, Create role, Create DB, Replication, Bypass RLS | {}</code></pre>
+      </div><p>List all authentication rules (called an &quot;pg_hba.conf&quot; file in Postgres ) with <code>table pg_hba_file_rules;</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">postgres=# table pg_hba_file_rules;
+ line_number | <span class="hljs-built_in">type</span>  | database | user_name | address | netmask | auth_method | options | error 
+-------------+-------+----------+-----------+---------+---------+-------------+---------+-------
+           1 | <span class="hljs-built_in">local</span> | {all}    | {all}     |         |         | peer        |         | 
+(1 row)</code></pre>
+      </div><ul>
+<li><a href="https://www.postgresql.org/docs/current/auth-pg-hba-conf.html">Official Postgres authentication pg_hba.conf documentation</a></li>
+</ul>
+<h3 id="allow-tcp-ip-connections">Allow TCP/IP connections</h3><p>This example shows how to roll out a database with a default user and password:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.postgresql</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">ensureDatabases</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;mydatabase&quot;</span> ];
+  <span class="hljs-attr">enableTCPIP</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-comment"># port = 5432;</span>
+  <span class="hljs-attr">authentication</span> <span class="hljs-operator">=</span> pkgs.lib.mkOverride <span class="hljs-number">10</span> <span class="hljs-string">&#x27;&#x27;
+    #type database DBuser origin-address auth-method
+    local all      all     trust
+    # ... other auth rules ...
+
+    # ipv4
+    host  all      all     127.0.0.1/32   trust
+    # ipv6
+    host  all      all     ::1/128        trust
+  &#x27;&#x27;</span>;
+  <span class="hljs-attr">initialScript</span> <span class="hljs-operator">=</span> pkgs.writeText <span class="hljs-string">&quot;backend-initScript&quot;</span> <span class="hljs-string">&#x27;&#x27;
+    CREATE ROLE nixcloud WITH LOGIN PASSWORD &#x27;nixcloud&#x27; CREATEDB;
+    CREATE DATABASE nixcloud;
+    GRANT ALL PRIVILEGES ON DATABASE nixcloud TO nixcloud;
+  &#x27;&#x27;</span>;
+};</code></pre>
+      </div><p>This will allow &quot;host&quot; based authentification only from other webservices on the same computer (&quot;127.0.0.1&quot;), although any DB user will have access to any database.</p>
+<h3 id="set-the-postgresql-versions">Set the Postgresql versions</h3><p>By default, NixOS uses whatever Postgres version shipped as default for your <a href="https://search.nixos.org/options?show=system.stateVersion">system.stateVersion</a>.</p>
+<p>To use a different or more recent version, you can manually set one of the <a href="https://search.nixos.org/packages?query=postgresql_">available Nixpkgs Postgresql versions</a>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.postgresql</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">package</span> <span class="hljs-operator">=</span> pkgs.postgresql_15;
+  <span class="hljs-comment"># ...</span>
+};</code></pre>
+      </div><p>Note that changing the package version does not trigger any automatic migrations of your existing databases — follow <a href="https://mirror.nixoscn.org/wiki/PostgreSQL#Major_upgrades" class="wikilink" title="#Major upgrades">#Major upgrades</a> to migrate existing databases.</p>
+<h3 id="security">Security</h3><p>Letting every system and DB user have access to all data is dangerous. Postgres supports several layers of protection. One is to <strong>prefer &quot;local&quot; connections using Unix sockets</strong>, that aren&#39;t accessible from the internet, whenever Postgres and your client app run on the same server.</p>
+<h4 id="harden-authentication">Harden authentication</h4><p>We can <strong>limit what system user can connect</strong>.</p>
+<p>Postgres supports <a href="https://www.postgresql.org/docs/current/auth-username-maps.html">&quot;user name maps&quot;</a>, which limit which system users can log in as which DB user:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.postgresql</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">ensureDatabases</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;mydatabase&quot;</span> ];
+ 
+  <span class="hljs-attr">identMap</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    # ArbitraryMapName systemUser DBUser
+       superuser_map      root      postgres
+       superuser_map      postgres  postgres
+       # Let other names login as themselves
+       superuser_map      /^(.*)$   <span class="hljs-char escape_">\1</span>
+  &#x27;&#x27;</span>;
+};</code></pre>
+      </div><p>This map can have an arbitrary name and defines which system user can login as which DB user. Every other user and combination is rejected. For example, with the above mapping if we are logged-in as system user &quot;root&quot; but want enter the DB as DB user &quot;postgres&quot; we would be allowed:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">root$ psql <span class="hljs-operator">-</span>U postgres
+<span class="hljs-comment"># ok</span></code></pre>
+      </div><h4 id="limit-access">Limit Access</h4><p>Once logged-in we can <strong>limit what DB users can access</strong>. With the <code>authentication</code> we can limit what DB user can access which databases. A good default setting is as follows:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.postgresql</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">ensureDatabases</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;mydatabase&quot;</span> ];
+  <span class="hljs-attr">authentication</span> <span class="hljs-operator">=</span> pkgs.lib.mkOverride <span class="hljs-number">10</span> <span class="hljs-string">&#x27;&#x27;
+    #type database  DBuser  auth-method optional_ident_map
+    local sameuser  all     peer        map=superuser_map
+  &#x27;&#x27;</span>;
+};</code></pre>
+      </div><p>With &quot;sameuser&quot; Postgres will allow DB user access only to databases of the same name. E.g. DB user &quot;mydatabase&quot; will get access to database &quot;mydatabase&quot; and nothing else. The part <code>map=superuser_map</code> is optional. One exception is the DB user &quot;postgres&quot;, which by default is a superuser/admin with access to everything.</p>
+<h3 id="monitoring">Monitoring</h3><p>A <a href="https://mirror.nixoscn.org/wiki/PostgreSQL/Prometheus" class="wikilink" title="Prometheus">Prometheus</a> exporter is available to export metrics to Prometheus-compatible storage.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.prometheus.exporters.postgres</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">listenAddress</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;0.0.0.0&quot;</span>;
+    <span class="hljs-attr">port</span> <span class="hljs-operator">=</span> <span class="hljs-number">9187</span>;
+};</code></pre>
+      </div><p><a href="https://search.nixos.org/options?show=services.prometheus.exporters.postgres.dataSourceName&amp;from=0&amp;size=50&amp;sort=relevance&amp;type=packages&amp;query=services.prometheus.exporters.postgres">See all available options for services.prometheus.exporters.postgres</a></p>
+<h2 id="remote-access">Remote Access</h2><h3 id="tls">TLS</h3><p>To turn TLS on in recent versions of postgres it&#39;s pretty easy. Their <a href="https://www.postgresql.org/docs/current/ssl-tcp.html">docs</a> are pretty good.</p>
+<p>Create a simple cert just to make it work. If you are doing this in production, you need to provide your own server.crt and server.key in the main PGDATA dir (~postgres).</p>
+<p>In a shell:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">cd ~postgres
+sudo <span class="hljs-operator">-</span>u postgres openssl req <span class="hljs-operator">-</span>new <span class="hljs-operator">-</span>x509 <span class="hljs-operator">-</span>days <span class="hljs-number">365</span> <span class="hljs-operator">-</span>nodes <span class="hljs-operator">-</span>text <span class="hljs-operator">-</span>out server.crt  <span class="hljs-operator">-</span>keyout server.key <span class="hljs-operator">-</span>subj <span class="hljs-string">&quot;/CN=dbhost.yourdomain.com&quot;</span>
+chmod og-rwx server.key</code></pre>
+      </div><p>Then in your nix configuration:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.postgresql</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">package</span> <span class="hljs-operator">=</span> pkgs.postgresql_16;
+    <span class="hljs-attr">enableTCPIP</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">ensureDatabases</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;tootieapp&quot;</span> ];
+    <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">ssl</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    };
+    <span class="hljs-attr">authentication</span> <span class="hljs-operator">=</span> pkgs.lib.mkOverride <span class="hljs-number">10</span> <span class="hljs-string">&#x27;&#x27;
+      #type database  DBuser  auth-method
+      local all       all     trust
+      host  sameuser    all     127.0.0.1/32 scram-sha-256
+      host  sameuser    all     ::1/128 scram-sha-256
+    &#x27;&#x27;</span>;
+  };</code></pre>
+      </div><p>the `sameuser` mentioned in the authentication section requires the database name be the same as the username, which you may not want, you can change that to `all` to allow an authenticated user the ability to connect to any database.</p>
+<p>`scram-sha-256` is the require a password option, but you can authenticate a variety of different ways, see the official docs for other options as part of pg_hba.conf.</p>
+<h3 id="user-creation">User creation</h3><p>NixOS can declaratively create or manage Postgres users with passwords.</p>
+<p>Postgres allows specifying the password as plaintext, MD5 hash or SCRAM-SHA-256 hash. For declarative configuration, the recommended format is SCRAM-SHA-256 and a hash can be obtained from a valid password for example using the following script:</p>
+<div class="code-container">
+        
+        <pre><code class="language-python3 hljs">#!/usr/bin/env nix-shell
+#! nix-shell -i python3 -p &quot;python3.withPackages (ps: [ps.scramp])&quot;
+import scramp, base64
+
+PASSWORD = 'secure_password123!'
+
+m = scramp.ScramMechanism()
+salt, stored_key, server_key, iteration_count = m.make_auth_info(PASSWORD)
+print(f&quot;SCRAM-SHA-256${iteration_count}:{base64.b64encode(salt).decode()}${base64.b64encode(stored_key).decode()}:{base64.b64encode(server_key).decode()}&quot;)</code></pre>
+      </div><p>Using this hash, we can then extend the above configuration as follows:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.postgresql</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">package</span> <span class="hljs-operator">=</span> pkgs.postgresql_16;
+  <span class="hljs-attr">enableTCPIP</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">ensureDatabases</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;tootieapp&quot;</span> ];
+  <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">ssl</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  };
+  <span class="hljs-attr">authentication</span> <span class="hljs-operator">=</span> pkgs.lib.mkOverride <span class="hljs-number">10</span> <span class="hljs-string">&#x27;&#x27;
+    #type database  DBuser  auth-method
+    local all       all     trust
+    host  sameuser    all     127.0.0.1/32 scram-sha-256
+    host  sameuser    all     ::1/128 scram-sha-256
+  &#x27;&#x27;</span>;
+  <span class="hljs-attr">ensureUsers</span> <span class="hljs-operator">=</span> [
+    {
+      <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;tootieapp&quot;</span>;
+      <span class="hljs-attr">ensureDBOwnership</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">ensureClauses</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">login</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+        <span class="hljs-attr">password</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;SCRAM-SHA-256$4096:lB4tguN+gvNVSqk0zGRPHQ==$zh48o1bb9tuRjvGQHh/CeobEyUI4u91rp0K9who8m3I=:mHxc6obGad8/g65+V3C84UQGHIK41Gfx32+xXSZiOss=&quot;</span>;
+      };
+    }
+  ];
+};</code></pre>
+      </div><p>For more details on how to create hashes from valid passwords also refer to <a href="https://gist.github.com/jkatz/e0a1f52f66fa03b732945f6eb94d9c21">https://gist.github.com/jkatz/e0a1f52f66fa03b732945f6eb94d9c21</a></p>
+<h2 id="debugging-with-psql">Debugging with <code>psql</code></h2><p>To debug the SQL statements futher, one can use <strong>systemctl cat postgresql</strong> and see the <strong>ExecStartPost=/nix/store/rnv1v95bbf2lsy9ncwg7jdwj2s71sqra-unit-script/bin/postgresql-post-start</strong> line. Then open it with `cat` on the shell and see the <strong>psql</strong> command.</p>
+<p>Then execute the complete statement on the shell, as:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">/nix/store/3mqha1naji34i6iv78i90hc20dx0hld9-sudo-1.8.20p2/bin/sudo -u postgres psql -f &quot;/nix/store/az5nglyw7j94blxwkn2rmpi2p6z9fbmy-backend-initScript&quot; --port=5432 -d postgres
+psql:/nix/store/az5nglyw7j94blxwkn2rmpi2p6z9fbmy-backend-initScript:1: ERROR:  syntax error at or near &quot;-&quot;
+LINE 1: CREATE ROLE nixcloud-admin WITH LOGIN PASSWORD 'nixcloud' CR...
+                            ^
+psql:/nix/store/az5nglyw7j94blxwkn2rmpi2p6z9fbmy-backend-initScript:2: ERROR:  database &quot;nixcloud-db1&quot; already exists
+psql:/nix/store/az5nglyw7j94blxwkn2rmpi2p6z9fbmy-backend-initScript:3: ERROR:  syntax error at or near &quot;-&quot;
+LINE 1: ...ALL PRIVILEGES ON DATABASE &quot;nixcloud-db1&quot; TO nixcloud-admin;
+                                                                ^</code></pre>
+      </div><h2 id="troubleshooting">Troubleshooting</h2><h3 id="connection-rejected-with-quot-role-does-not-exist-quot">Connection rejected with &quot;Role does not exist&quot;</h3><div class="code-container">
+        
+        <pre><code class="language-nix hljs">$ psql
+<span class="hljs-params">psql:</span> <span class="hljs-params">error:</span> connection to server on socket <span class="hljs-string">&quot;/run/postgresql/.s.PGSQL.5432&quot;</span> <span class="hljs-params">failed:</span> <span class="hljs-params">FATAL:</span>  role <span class="hljs-string">&quot;root&quot;</span> does not exist</code></pre>
+      </div><p>You are trying to login as a system user (&quot;root&quot; in this example) that has no DB user of the same name. Try <code>psql -U postgres</code> or <code>sudo -u postgres psql</code> to log in as a different DB user.</p>
+<h3 id="connection-rejected-with-quot-peer-authentication-failed-quot">Connection rejected with &quot;Peer authentication failed&quot;</h3><div class="code-container">
+        
+        <pre><code class="language-nix hljs">root$ psql <span class="hljs-operator">-</span>U postgres
+<span class="hljs-params">psql:</span> <span class="hljs-params">error:</span> connection to server on socket <span class="hljs-string">&quot;/run/postgresql/.s.PGSQL.5432&quot;</span> <span class="hljs-params">failed:</span> <span class="hljs-params">FATAL:</span>  Peer authentication failed for user <span class="hljs-string">&quot;postgres&quot;</span></code></pre>
+      </div><p>You are trying to login as a DB user (&quot;postgres&quot; in this example) for which your current system user (&quot;root&quot; in this example) has no permission to switch to. Check your &quot;user name map&quot; in the <code>identMap</code> section.</p>
+<h3 id="warning-database-quot-xxx-quot-has-a-collation-version-mismatch">WARNING: database &quot;XXX&quot; has a collation version mismatch</h3><p>The complete error which appears in the system log might look similar to this</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">WARNING:  database &quot;outline&quot; has a collation version mismatch
+DETAIL:  The database was created using collation version 2.35, but the operating system provides version 2.38.
+HINT:  Rebuild all objects in this database that use the default collation and run ALTER DATABASE outline REFRESH COLLATION VERSION, or build PostgreSQL with the right library version.</code></pre>
+      </div><p>To fix it, run following commands in the psql console. Replace the database name <code>outline</code> with the name of the database which you want to migrate</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">sudo -u postgres psql
+postgres=# \c outline;
+outline=# REINDEX DATABASE outline;
+outline=# ALTER DATABASE outline REFRESH COLLATION VERSION;</code></pre>
+      </div><h2 id="major-upgrades">Major upgrades</h2><p>If you&#39;re using NixOS&#39; modules for PostgreSQL and find yourself in a boot/switch after a major bump of it, you&#39;ll need to upgrade your cluster.</p>
+<p>Let the service successfully start once, and then stop it. Upon completion, proceed with the following command, substituting the numbers 15 and 16 with the respective versions you previously used and the more recent one:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">sudo -u postgres pg_upgrade -b &quot;$(nix build --no-link --print-out-paths nixpkgs#postgresql_15.out)/bin&quot; -B /run/current-system/sw/bin -d /var/lib/postgresql/15 -D /var/lib/postgresql/16</code></pre>
+      </div><p>If this fails with the <code>Only the install user can be defined in the new cluster</code> message, you might have some luck using <code>initdb</code> to create the data directory by hand instead of relying on the <code>postgresql</code> systemd service to do that.</p>
+<p>Following the example above - upgrading to Postgresql 16 - you&#39;d do:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">rm -rf /var/lib/postgresql/16  
+sudo -u postgres initdb -D /var/lib/postgresql/16
+sudo -u postgres pg_upgrade ...</code></pre>
+      </div><p>Triple check you&#39;re not actually <code>rm -rf</code>&#39;ing your actual (previous) database! This is meant to remove only the empty database created by the newer Postgresql version, so that <code>initdb</code> starts with a clean slate.</p>
+<p><a href="https://nixos.org/manual/nixos/stable/#module-postgresql">NixOS manual</a> also contains useful information about this kind of upgrades.</p>
+<p>=== Upgrading versions &lt;18 to &gt;=18 === Starting with v18, <code>initdb</code> defaults to enabling data checksums. This will prevent you from being able to upgrade from previous versions that did not have checksumming enabled, as <code>pg_upgrade</code> requires matching cluster checksum settings<sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/PostgreSQL#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup>.</p>
+<p>To maintain compatibility with a previous database, you may disable checksumming when creating the new database by using the appropriate option, <code>initdb --no-data-checksums ...</code>.</p>
+<p>Alternatively, you can enable checksumming on the previous database with relatively little effort using <code>pg_checksums --pgdata={OLD_DATA_DIR} --enable --progress</code>. This must be done using the binary from the current postgres version, not from the version you wish to upgrade to.</p>
+<h2 id="see-also">See also</h2><ul>
+<li><a href="https://search.nixos.org/options?query=services.postgresql">Available NixOS service options</a></li>
+</ul>
+<p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="category:Database" class="wikilink" title="Category:Database">Category:Database</a> <a href="category:NixOS_Manual" class="wikilink" title="Category:NixOS Manual">Category:NixOS Manual</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p><a href="https://www.postgresql.org/docs/release/18.0/">https://www.postgresql.org/docs/release/18.0/</a> <a href="https://mirror.nixoscn.org/wiki/PostgreSQL#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

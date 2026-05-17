@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nix Community</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Nix Community</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Nix Community -->
+
+<p>This article provides an overview of the Nix Community, to give an idea of who we — the users and maintainers of the Nix Ecosystem — are. To find the various ways to reach us, see <a href="https://mirror.nixoscn.org/wiki/Nix%20Community/Get_In_Touch" class="wikilink" title="get in touch">get in touch</a>.</p>
+<h2 id="people">People</h2><p>Nix Ecosystem users and contributors are a mixed bunch, ranging from hobbyist to professional, from industry to academia. Typical user groups include:</p>
+<ul>
+<li><strong>desktop users</strong> using Nix and NixOS to make life on their personal machines easier;</li>
+<li><strong>power users</strong> duplicating their environment across their personal and work machines;</li>
+<li><strong>gamers</strong> using NixOS to declaratively configure unbreakable and sharable gaming setups;</li>
+<li><strong>developers</strong> using Nix to reproducibly build their software, and to manage various development environments;</li>
+<li><strong>system administrators</strong> declaratively configuring servers and clusters with NixOS and NixOps;</li>
+<li><strong>researchers</strong> interested in making the computation in their research reproducible.</li>
+</ul>
+<h2 id="institutions">Institutions</h2><h3 id="nixos-foundation">NixOS Foundation</h3><p>The <a href="https://nixos.org/community/teams/foundation-board">NixOS Foundation</a> is responsible for providing operational and organizational support to the <a href="https://mirror.nixoscn.org/wiki/Nix%20Community/Nix_Ecosystem" class="wikilink" title="Nix Ecosystem">Nix Ecosystem</a> and community. It also funds the <a href="https://hydra.nixos.org/">official Hydra instance</a> which builds the Nixpkgs collection.</p>
+<p>The ecosystem is developed and maintained by many individuals and self-organised <a href="https://nixos.org/community/#governance-teams">community teams</a>.</p>
+<h3 id="consultants">Consultants</h3><p>There are several qualified consultants that can provide support for Nix-based systems:</p>
+<ul>
+<li><a href="https://determinate.systems/">Determinate Systems</a></li>
+<li><a href="https://nixcademy.com/">Nixcademy</a></li>
+<li><a href="https://numtide.com/">Numtide</a></li>
+<li><a href="https://obsidian.systems/">Obsidian Systems</a></li>
+<li><a href="https://serokell.io/">Serokell</a></li>
+<li><a href="https://www.tweag.io/">Tweag I/O</a></li>
+</ul>
+<h3 id="industry">Industry</h3><p>Many companies utilize Nix-based systems for various purposes. Prominent examples include:</p>
+<ul>
+<li><a href="https://skillsmatter.com/skillscasts/9473-london-nixos-january-meetup">Mozilla</a> (see also <a href="https://github.com/mozilla/nixpkgs-mozilla">nixpkgs-mozilla</a>)</li>
+<li><a href="https://www.youtube.com/watch?v=6VH945-AaRY">Tumblr</a></li>
+<li><a href="https://shopify.engineering/shipit-presents-how-shopify-uses-nix">Shopify</a> also <a href="https://www.youtube.com/playlist?list=PLRGI9KQ3_HP_OFRG6R-p4iFgMSK1t5BHs">youtube playlist</a> by @burke</li>
+<li><a href="https://www.youtube.com/watch?v=J4DgATIjx9E">LumiGuide</a></li>
+<li><a href="https://rhodecode.com/">RhodeCode</a></li>
+<li><a href="https://awakesecurity.com/">Awake Security</a></li>
+<li><a href="https://www.atlassian.com/">Atlassian</a></li>
+<li><a href="https://www.replit.com/">Replit</a></li>
+<li><a href="https://www.magneticinsight.com/">Magnetic Insight</a>, a medical imaging company.</li>
+</ul>
+<h3 id="academia">Academia</h3><p>Nix has its roots in academia; Nix was the result of <a href="https://nixos.org/~eelco/pubs/phd-thesis.pdf">Eelco Dolstra&#39;s PhD thesis</a> in the University of Utrecht, and Hydra was developed at the Technical University of Delft. Some academic research continues to develop the Nix Ecosystem further - notably some work is planned on <a href="https://www.youtube.com/watch?v=AED-dgCa9GU">incremental builds</a> by Guillaume Maudoux as part of his PhD.</p>
+<p>Nix is also being extensively used to manage powerful computing clusters, since its resolution of dependency problems allows letting users install packages ad-hoc with greatly reduced risk of breaking things. Academic clusters utilizing Nix-based software include some of the biggest clusters in the world:</p>
+<ul>
+<li><a href="https://www.humanbrainproject.eu/en/">Human Brain Project</a></li>
+<li><a href="https://bluebrain.epfl.ch/">Blue Brain Project</a></li>
+</ul>
+<h3 id="podcasts">Podcasts</h3><p>- <a href="https://fulltimenix.com/">Full Time Nix</a></p>
+<h2 id="contribute">Contribute</h2><p><a href="category:Pedias" class="wikilink" title="Category:Pedias">Category:Pedias</a> <a href="category:Community" class="wikilink" title="Category:Community">Category:Community</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

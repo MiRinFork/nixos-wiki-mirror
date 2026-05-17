@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sway</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Sway</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Sway -->
+
+<p><a href="https://swaywm.org/">Sway</a> is a tiling <a href="https://mirror.nixoscn.org/wiki/Sway/Wayland" class="wikilink" title="Wayland">Wayland</a> compositor and a drop-in replacement for the <a href="https://mirror.nixoscn.org/wiki/Sway/i3" class="wikilink" title="i3">i3</a> window manager for X11. It can work with an existing i3 configuration and supports most of i3&#39;s features, plus a few extras. For users migrating from i3, see the <a href="https://github.com/swaywm/sway/wiki/i3-Migration-Guide">i3 migration guide</a>.</p>
+<h2 id="setup">Setup</h2><p>You can install Sway by enabling it in NixOS directly, or by using <a href="https://mirror.nixoscn.org/wiki/Sway/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a>, or both.</p>
+<h3 id="using-nixos">Using NixOS</h3><p>Here is a minimal configuration:</p>
+<p>By default, the Sway module in NixOS comes with a set of extra packages, including <a href="https://codeberg.org/dnkl/foot/">Foot</a> terminal, <a href="https://mirror.nixoscn.org/wiki/Sway/Swayidle" class="wikilink" title="Swayidle">Swayidle</a>, <a href="https://mirror.nixoscn.org/wiki/Sway/Swaylock" class="wikilink" title="Swaylock">Swaylock</a>, and <a href="https://codeberg.org/adnano/wmenu/">wmenu</a>, which may be configured under the <a href="https://search.nixos.org/options?show=programs.sway.extraPackages"><code>programs.sway.extraPackages</code></a> option. You may also want to include <code>wl-clipboard</code> for clipboard functionality, as well as a screenshot utility such as <a href="https://github.com/emersion/slurp">Slurp</a> or <a href="https://mirror.nixoscn.org/wiki/Sway/Flameshot" class="wikilink" title="Flameshot">Flameshot</a> for screenshot region selection.</p>
+<p>Additionally, for a more customizable bar implementation than <code>sway-bar</code>, <a href="https://mirror.nixoscn.org/wiki/Sway/Waybar" class="wikilink" title="Waybar">Waybar</a> may be enabled with <code>programs.waybar.enable</code>.</p>
+<p>The default Sway configuration is symlinked to <code>/etc/sway/config</code> and <code>/etc/sway/config.d/nixos.conf</code>. The latter file contains dbus and systemd configuration that is critical to using apps that depend on XDG desktop portals with Sway, and should be included in any custom configuration files.</p>
+<p>A few general comments:</p>
+<ul>
+<li>There is some friction between GTK theming and Sway. Currently the Sway developers suggest using gsettings to set gtk theme attributes as described here <a href="https://github.com/swaywm/sway/wiki/GTK-3-settings-on-Wayland">1</a>. There is currently a plan to allow GTK theme attributes to be set directly in the Sway config.</li>
+<li>Running Sway as a systemd user service is not recommended <a href="https://github.com/swaywm/sway/wiki/Systemd-integration#running-sway-itself-as-a---user-service">2</a> <a href="https://github.com/swaywm/sway/issues/5160">3</a></li>
+</ul>
+<h3 id="using-home-manager">Using Home Manager</h3><p>To set up Sway using <a href="https://mirror.nixoscn.org/wiki/Sway/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a>, you must first enable <a href="https://mirror.nixoscn.org/wiki/Sway/Polkit" class="wikilink" title="Polkit">Polkit</a> in your NixOS configuration.</p>
+<p>Then you may enable Sway in your Home Manager configuration. Here is a minimal example:</p>
+<p>See <a href="https://nix-community.github.io/home-manager/options.xhtml#opt-wayland.windowManager.sway.enable">Home Manager&#39;s Options for Sway</a> for a complete list of configuration options.</p>
+<p>You may need to activate dbus manually from .zshrc to use i.e: dunst, see <a href="https://discourse.nixos.org/t/dunst-crashes-if-run-as-service/27671/2">Dunst crashes if run as service</a></p>
+<h3 id="systemd-services">Systemd services</h3><p>Kanshi is an output configuration daemon. As explained above, we don&#39;t run Sway itself as a systemd service. There are auxiliary daemons that we do want to run as systemd services, for example Kanshi <a href="https://gitlab.freedesktop.org/emersion/kanshi">4</a>, which implements monitor hot swapping. It would be enabled as follows:</p>
+<p>When you launch Sway, the systemd service is started.</p>
+<h3 id="using-a-greeter">Using a greeter</h3><p>Installing a greeter based on <a href="https://mirror.nixoscn.org/wiki/Sway/greetd" class="wikilink" title="greetd">greetd</a> is the most straightforward way to launch Sway.</p>
+<h4 id="tuigreet">TUIGreet</h4><p>Tuigreet is a simple and lightweight option that does not require a separate compositor to launch.</p>
+<h4 id="regreet">Regreet</h4><p><a href="https://github.com/rharish101/ReGreet">Regreet</a> is a clean and customizable GTK-based greeter written in Rust. It will automatically find Sway and remembers the last picked option. Additional configuration options may be found under <a href="https://search.nixos.org/options?&amp;query=regreet">programs.regreet</a>.</p>
+<h3 id="automatic-startup-on-boot">Automatic startup on boot</h3><p>The snippet below will start Sway immediately on startup, without a greeter and <strong>without a login prompt</strong>. Only consider using this in conjunction with <a href="https://mirror.nixoscn.org/wiki/Sway/Full_Disk_Encryption" class="wikilink" title="Full Disk Encryption">Full Disk Encryption</a>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.getty</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">autologinUser</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;your_username&quot;</span>;
+  <span class="hljs-attr">autologinOnce</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+};
+<span class="hljs-attr">environment.loginShellInit</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    [[ &quot;$(tty)&quot; == /dev/tty1 ]] &amp;&amp; sway
+&#x27;&#x27;</span>;</code></pre>
+      </div><p>When launched directly from the TTY, Sway will not inherit the user environment. This may cause issues with systemd user services such as application launchers or <a href="https://mirror.nixoscn.org/wiki/Sway/Swayidle" class="wikilink" title="Swayidle">Swayidle</a>. To fix this, add the following to your Home Manager configuration:</p>
+<h3 id="secret-service">Secret Service</h3><p>It is recommended to enable a secret service provider such as <a href="https://wiki.gnome.org/Projects/GnomeKeyring">Gnome Keyring</a>. For more information on secret services check the <a href="https://mirror.nixoscn.org/wiki/Sway/Secret_Service" class="wikilink" title="Secret Service">Secret Service</a> page.</p>
+<p>Install and enable: In order to unlock the keyring through logins from greeters and screen locking utilities you will need to enable them through PAM.</p>
+<h2 id="configuration">Configuration</h2><p>Sway may be configured for specific users using Home Manager or manually through configuration files. The default location is <code>/etc/sway/config</code>, and custom user configuration in <code>~/.config/sway/config</code>.</p>
+<h3 id="keyboard-layout">Keyboard layout</h3><p>Changing layout for all keyboards to German (de):</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs">input * xkb_layout &quot;de&quot;</code></pre>
+      </div><p>The same thing accomplished in Home Manager:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">wayland.windowManager.sway.input.<span class="hljs-string">&quot;*&quot;</span>.xkb_layout <span class="hljs-operator">=</span> <span class="hljs-string">&quot;de&quot;</span>;</code></pre>
+      </div><h3 id="high-dpi-scaling">High-DPI scaling</h3><p>Changing scale for all screens to factor 1.5:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs">output * scale 1.5</code></pre>
+      </div><h3 id="brightness-and-volume">Brightness and volume</h3><p>You may set the brightness and volume function keys by binding the key codes to their corresponding commands within your sway config. The following configurations accomplish this using <code>light</code> and <code>pulseaudio</code>:</p>
+<p>Or alternatively in Home Manager: For an on screen display for audio and brightness, check <a href="https://mirror.nixoscn.org/wiki/Sway/swayosd" class="wikilink" title="swayosd">swayosd</a>.</p>
+<h3 id="input">Input</h3><h4 id="touchpad">Touchpad</h4><p>See the <a href="https://www.mankier.com/5/sway-input">sway-input man page</a> for options.</p>
+<h2 id="troubleshooting">Troubleshooting</h2><h3 id="cursor-is-missing-icons-or-too-tiny-on-hidpi-displays">Cursor is missing icons or too tiny on HiDPI displays</h3><h4 id="with-programs-sway">With programs.sway</h4><p>&lt;syntaxhighlight lang=&quot;nix&gt; {</p>
+<p><code> programs.sway.extraPackages = with pkgs; [</code><br><code>   adwaita-icon-theme # mouse cursor and icons</code><br><code>   gnome-themes-extra # dark adwaita theme</code><br><code>   ...</code><br><code> ];</code></p>
+<p>}</p>
+</syntaxhighlight>
+
+<p>In ~/.config/sway/config</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">seat &quot;*&quot; xcursor_theme Adwaita 32</code></pre>
+      </div><h4 id="with-home-manager">With Home Manager</h4><p>Using <a href="https://mirror.nixoscn.org/wiki/Sway/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> you may configure the mouse cursor size and theme. The reason that your cursor might be missing in some applications, is because <code>XCURSOR_THEME</code> is missing, which will cause applications relying on <code>XWAYLAND</code> to misbehave. Setting <code>sway.enable = true</code>, combined with the <code>name</code>, <code>package</code> and size will set the correct environment variables, which sway will then use.</p>
+<h3 id="missing-fonts-in-xorg-applications">Missing fonts in Xorg applications</h3><p>If fonts for certain languages are missing in Xorg applications (e.g. Japanese fonts don&#39;t appear in Discord) even though they&#39;re in the system, you can set them as default fonts in your configuration file.</p>
+<p>&lt;syntaxhighlight lang=&quot;nix&gt;</p>
+<p><code> fonts = {</code><br><code>   packages = with pkgs; [</code><br><code>     noto-fonts</code><br><code>     noto-fonts-cjk</code><br><code>     noto-fonts-emoji</code><br><code>     font-awesome</code><br><code>     source-han-sans</code><br><code>     source-han-sans-japanese</code><br><code>     source-han-serif-japanese</code><br><code>   ];</code><br><code>   fontconfig.defaultFonts = {</code><br><code>     serif = [ &quot;Noto Serif&quot; &quot;Source Han Serif&quot; ];</code><br><code>     sansSerif = [ &quot;Noto Sans&quot; &quot;Source Han Sans&quot; ];</code><br><code>   };</code><br><code> };</code></p>
+</syntaxhighlight>
+
+<h3 id="swaylock-cannot-be-unlocked-with-the-correct-password">Swaylock cannot be unlocked with the correct password</h3><p>Add the following to your NixOS configuration.</p>
+<p>&lt;syntaxhighlight lang=&quot;nix&gt;</p>
+<p><code> security.pam.services.swaylock = {};</code></p>
+</syntaxhighlight>
+
+<p>The <code>programs.sway.enable</code> option does this automatically.</p>
+<h3 id="inferior-performance-compared-to-other-distributions">Inferior performance compared to other distributions</h3><p>Enabling realtime may improve latency and reduce stuttering, specially in high load scenarios.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ecurity.pam.loginLimits</span> <span class="hljs-operator">=</span> [
+  { <span class="hljs-attr">domain</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;@users&quot;</span>; <span class="hljs-attr">item</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;rtprio&quot;</span>; <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;-&quot;</span>; <span class="hljs-attr">value</span> <span class="hljs-operator">=</span> <span class="hljs-number">1</span>; }
+];</code></pre>
+      </div><p>Enabling this option allows any program run by the &quot;users&quot; group to request real-time priority.</p>
+<h3 id="wlr-error-when-trying-to-launch-sway">WLR Error when trying to launch Sway</h3><p>When this happens on a new NixOS system, enabling OpenGL in configuration.nix may fix this issue.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">h<span class="hljs-attr">ardware.graphics.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><h3 id="systemd-user-services-missing-environment-variables-path-etc">Systemd user services missing environment variables (PATH, etc)</h3><p>When sway is launched with out display manager systemd won&#39;t inherit the users environment variables. To fix this add the following to your home-manager configuration:</p>
+<h3 id="touchscreen-input-bound-to-the-wrong-monitor-in-multi-monitor-setups">Touchscreen input bound to the wrong monitor in multi-monitor setups</h3><p>See this <a href="https://github.com/swaywm/sway/issues/6590#issue-1021207180">GitHub issue for Sway</a> and the solution give in <a href="https://github.com/swaywm/sway/issues/6590#issuecomment-938724355">this response</a>.</p>
+<p>Using <a href="https://mirror.nixoscn.org/wiki/Sway/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> add the following to your Sway configuration:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">   <span class="hljs-attr">wayland.windowManager.sway</span> <span class="hljs-operator">=</span> {
+     [...]
+     <span class="hljs-attr">config</span> <span class="hljs-operator">=</span> {
+       [...]
+       <span class="hljs-attr">input</span> <span class="hljs-operator">=</span> {
+         [...]
+         <span class="hljs-string">&quot;type:touch&quot;</span> <span class="hljs-operator">=</span> {
+           <span class="hljs-comment"># Replace touchscreen_output_identifier with the identifier of your touchscreen.</span>
+           <span class="hljs-attr">map_to_output</span> <span class="hljs-operator">=</span> touchscreen_output_identifier;
+         };
+       };
+     };
+   };</code></pre>
+      </div><h3 id="gtk-apps-take-an-exceptionally-long-time-to-start">GTK apps take an exceptionally long time to start</h3><p>This occurs because GTK apps make blocking calls to freedesktop portals to be displayed. If Sway is not integrated with dbus and systemd, it will not be able to communicate via the <code>org.freedesktop.portal.Desktop</code> portal. To fix this, see the <a href="https://mirror.nixoscn.org/wiki/Sway/Sway#Using_NixOS" class="wikilink" title="description">description</a> of default Sway configurations earlier. Adding the following to your sway configuration, if it is not already present, may resolve the issue:</p>
+<p><code>include /etc/sway/config.d/*</code></p>
+<h3 id="dbus-issues-no-icons-in-tray-can-39-t-open-files-from-nautilus-with-the-right-program">dbus-issues: no icons in tray, can&#39;t open files from Nautilus with the right program</h3><p>If you&#39;re using Gnome-Apps like Nautilus on NixOS with Sway, you might run into issue with settings standard applications to open files from Nautilus (e.g. there being no way of linking PDF to your preferred PDF-reader). You might also experience tray icons not showing up in your bar.</p>
+<p>This is fixed by running <code>dbus-update-activation-environment --all</code> after starting your session. Make it permanent by adding <code>exec dbus-update-activation-environment --all</code> to your sway config file.</p>
+<h2 id="tips-and-tricks">Tips and tricks</h2><h3 id="toggle-monitor-modes-script">Toggle monitor modes script</h3><p>Following script toggles screen / monitor modes if executed. It can also be mapped to a specific key in Sway.</p>
+<p>First add the Flake input required for the script</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">inputs</span> <span class="hljs-operator">=</span> {
+    [...]
+    <span class="hljs-attr">wl-togglescreens.url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;git+https://git.project-insanity.org/onny/wl-togglescreens.git?ref=main&quot;</span>;
+  };
+
+  <span class="hljs-attr">outputs</span> <span class="hljs-operator">=</span> {self, nixpkgs, ...}@<span class="hljs-params">inputs:</span> {
+    <span class="hljs-attr">nixosConfigurations.myhost</span> <span class="hljs-operator">=</span> inputs.nixpkgs.lib.nixosSystem {
+      <span class="hljs-attr">system</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;x86_64-linux&quot;</span>;
+      <span class="hljs-attr">specialArgs.inputs</span> <span class="hljs-operator">=</span> inputs;
+      [...]</code></pre>
+      </div><p>Map the script binary to a specific key</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ config, pkgs, lib, inputs, ... }:{
+  <span class="hljs-attr">home-manager.users.onny</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">programs</span> <span class="hljs-operator">=</span> {
+      [...]
+      <span class="hljs-attr">wayland.windowManager.sway</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+        <span class="hljs-attr">config</span> <span class="hljs-operator">=</span> {
+          [...]
+          <span class="hljs-attr">keybindings</span> <span class="hljs-operator">=</span> lib.mkOptionDefault{
+            [...]
+            <span class="hljs-string">&quot;XF86Display&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;exec <span class="hljs-subst">${inputs.wl-togglescreens.packages.x86_64-linux.wl-togglescreens}</span>/bin/wl-togglescreens&quot;</span>;
+          };
+        };
+      };
+    };</code></pre>
+      </div><h3 id="screenshots">Screenshots</h3><p>Screenshots using grim, slurp, and <a href="https://github.com/XodTech/grimshot">grimshot</a> for selection screenshots/full screen screenshots.</p>
+<p>Install tools Example Home Manager configuration. tee ~/Screenshots/$(date +%Y-%m-%d_%H-%M-%S).png ```
+{{!}}</p>
+<div class="code-container">
+        
+        <pre><code class="language-wl-copy"; hljs">
+`     # Print Screen Button`  
+`     # Screenshot the currently focused screen, save to ~/Screenshots and copy to clipboard.`  
+`     &quot;Print&quot; = &quot;exec grimshot save output - {{!}} tee ~/Screenshots/$(date +%Y-%m-%d_%H-%M-%S).png {{!}} wl-copy&quot;;`
+
+`   };`  
+` };`
+
+};\|name=/etc/nixos/home.nix\|lang=nix}}
+
+### Screen sharing
+
+### Auto mounting
+
+#### USB storage devices (e.g. Flash Drives)
+
+You can use [udiskie](https://github.com/coldfix/udiskie) to automatically mount external storage medias.
+
+You will need to install and enable [udisks2](https://www.freedesktop.org/wiki/Software/udisks/). Then, in Home Manager you can enable udiskie. Udiskie will automatically mount attached USB storage media.
+
+See related info on &lt;a href=&quot;USB_storage_devices&quot; class=&quot;wikilink&quot; title=&quot;USB storage devices&quot;&gt;USB storage devices&lt;/a&gt;.
+
+#### MTP (Android Phone Storage)
+
+File managers that support [GVfs](https://wiki.gnome.org/Projects/gvfs), such as &lt;a href=&quot;Thunar&quot; class=&quot;wikilink&quot; title=&quot;Thunar&quot;&gt;Thunar&lt;/a&gt;, can mount MTP devices using GVfs. See the page on &lt;a href=&quot;MTP&quot; class=&quot;wikilink&quot; title=&quot;MTP&quot;&gt;MTP&lt;/a&gt; for related information.
+
+### SwayFX
+
+[SwayFX](https://github.com/WillPower3309/swayfx) is a fork of Sway that adds eye-candy effects, installing it is as simple as replacing your Sway package with SwayFX. Check the &lt;a href=&quot;SwayFX&quot; class=&quot;wikilink&quot; title=&quot;SwayFX&quot;&gt;SwayFX&lt;/a&gt; page on the wiki for additional details.
+
+### Screen dimming with wl-gammarelay-rs
+
+Add `wl-gammarelay-rs` to programs.sway.extraPackages, then add the following to sway config:
+
+    # start daemon
+    exec wl-gammarelay-rs
+
+    # bind shortcut to reset brightness
+    bindsym $mod+Control+0 exec busctl --user set-property rs.wl-gammarelay / rs.wl.gammarelay Brightness d 1
+
+    # bind shortcut to dim screen for a particular output
+    bindsym $mod+Control+Underscore exec busctl --user set-property rs.wl-gammarelay /outputs/DP_1 rs.wl.gammarelay Brightness d 0.5
+
+### Inhibit swayidle/suspend when fullscreen
+
+Add to sway config:
+
+    # When you use `for_window` the command you give is not executed
+    # immediately. It is stored in a list and the command is executed
+    # every time a window opens or changes (eg. title) in a way that
+    # matches the criteria.
+
+    # inhibit idle for fullscreen apps
+    for_window [app_id=&quot;^.*&quot;] inhibit_idle fullscreen
+
+&lt;a href=&quot;Category:Window_managers&quot; class=&quot;wikilink&quot; title=&quot;Category:Window managers&quot;&gt;Category:Window managers&lt;/a&gt; &lt;a href=&quot;Category:Applications&quot; class=&quot;wikilink&quot; title=&quot;Category:Applications&quot;&gt;Category:Applications&lt;/a&gt;</code></pre>
+      </div>
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

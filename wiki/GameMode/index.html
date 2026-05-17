@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GameMode</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / GameMode</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: GameMode -->
+
+<p><a href="https://github.com/FeralInteractive/gamemode">GameMode</a> is a daemon/lib combo for Linux that allows games to request a set of optimisations be temporarily applied to the host OS and/or a game process.</p>
+<h2 id="installation">Installation</h2><p>GameMode depends on root-level capabilities that aren&#39;t available in a user-level Nix package installation. The easiest way to set this up is to use the NixOS module:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">p<span class="hljs-attr">rograms.gamemode.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><h2 id="running">Running</h2><p>To run games with GameMode start it like this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">gamemoderun ./game</span></code></pre>
+      </div><p>When you have started your game you can verify that GameMode is running with the command:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">gamemoded -s</span></code></pre>
+      </div><h3 id="steam">Steam</h3><p>To make sure Steam starts a game with GameMode, right click the game, select Properties..., then Launch Options and enter:</p>
+<div class="code-container">
+        
+        <pre><code class="language-text hljs">gamemoderun %command%</code></pre>
+      </div><h2 id="verifying-optimisations">Verifying Optimisations</h2><p><code>gamemoded -t</code> can be used to verify that the optimisations for your configuration get applied:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">gamemoded -t</span>
+: Loading config
+Loading config file [/nix/store/p8dbmpdak57psrb5c0mz7crsc95nfzs6-gamemode-1.6.1/share/gamemode/gamemode.ini]
+Loading config file [/etc/gamemode.ini]
+: Running tests
+
+:: Basic client tests
+:: Passed
+
+:: Dual client tests
+gamemode request succeeded and is active
+Quitting by request...
+:: Passed
+
+:: Gamemoderun and reaper thread tests
+...Waiting for child to quit...
+...Waiting for reaper thread (reaper_frequency set to 5 seconds)...
+:: Passed
+
+:: Supervisor tests
+:: Passed
+
+:: Feature tests
+::: Verifying CPU governor setting
+::: Passed
+::: Verifying Scripts
+:::: Running start script [/nix/store/ig8aqj0973jgn6mhnr7smmqb6p7alrz4-libnotify-0.7.9/bin/notify-send &#x27;GameMode started&#x27;]
+:::: Passed
+:::: Running end script [/nix/store/ig8aqj0973jgn6mhnr7smmqb6p7alrz4-libnotify-0.7.9/bin/notify-send &#x27;GameMode ended&#x27;]
+:::: Passed
+::: Passed
+::: Verifying GPU Optimisations
+::: Passed
+::: Verifying renice
+::: Passed
+::: Verifying ioprio
+::: Passed
+:: Passed
+
+: All Tests Passed!</code></pre>
+      </div><h2 id="known-errors">Known Errors</h2><p>Renice &amp; ioprio optimisations sometimes fail. This is caused by GameMode trying to apply optimisations on processes that exit before the optimisations can be applied. See <a href="https://github.com/FeralInteractive/gamemode/issues/167#issuecomment-524277666">FeralInteractive/gamemode#167 (comment)</a>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-text hljs">ERROR: Could not inspect tasks for client [329118]! Skipping ioprio optimisation.
+ERROR: Refused to renice client [31477,31477]: prio was (-10) but we expected (0)</code></pre>
+      </div><p>If you don&#39;t have an Intel CPU, you will get errors about failing to read the energy levels. This isn&#39;t a real problem. It just means that optimizations for integrated graphics cards won&#39;t be enabled:</p>
+<div class="code-container">
+        
+        <pre><code class="language-text hljs">ERROR: Failed to open file for read /sys/class/powercap/intel-rapl/intel-rapl:0/intel-rapl:0:0/energy_uj</code></pre>
+      </div><p>If you don&#39;t have a screensaver installed, you will get the following error:</p>
+<div class="code-container">
+        
+        <pre><code class="language-text hljs">ERROR: Could not call Inhibit on org.freedesktop.ScreenSaver: No route to host
+        org.freedesktop.DBus.Error.ServiceUnknown
+        The name org.freedesktop.ScreenSaver was not provided by any .service files</code></pre>
+      </div><p>You can disable the screensaver inhibiter to get rid of those errors:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">p<span class="hljs-attr">rograms.gamemode.settings.general.inhibit_screensaver</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>;</code></pre>
+      </div><p>Setting the power scheme might result in the following error:</p>
+<div class="code-container">
+        
+        <pre><code class="language-text hljs">::: Verifying CPU governor setting
+ERROR: Governor was not set to performance (was actually schedutil)!
+::: Failed!</code></pre>
+      </div><p>Adding the the user to the gamemode group resolves this error.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">xtraGroups</span> <span class="hljs-operator">=</span> [<span class="hljs-string">&quot;gamemode&quot;</span>];</code></pre>
+      </div><p><a href="category:Gaming" class="wikilink" title="Category:Gaming">Category:Gaming</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Packaging/Quirks and Caveats</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/Packaging">Packaging</a><span aria-hidden="true"> / </span>Quirks and Caveats</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Packaging/Quirks and Caveats -->
+
+<p>This article is about the quirks on how to package software where the source code is available.</p>
+<p>A good start for packaging your first piece if software is the <a href="http://nixos.org/nixpkgs/manual/#chap-quick-start">Quickstart Chapter in the nixpkgs manual</a> Also see the <a href="https://mirror.nixoscn.org/wiki/Packaging/Quirks%20and%20Caveats/Generic_Algorithm_on_Doing_Packaging" class="wikilink" title="Generic Algorithm on doing Packaging">Generic Algorithm on doing Packaging</a></p>
+<p>For packaging executable without building them from source check out the article <a href="https://mirror.nixoscn.org/wiki/Packaging/Quirks%20and%20Caveats/Packaging_Binaries" class="wikilink" title="Packaging Binaries">Packaging Binaries</a>.</p>
+<h2 id="build-software-with-autotools">Build software with Autotools</h2><p>Add <code>autoreconfHook</code> to <code>nativeBuildInputs</code> to automatically build software which uses <code>automake</code> and <code>autoconf</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">ativeBuildInputs</span> <span class="hljs-operator">=</span> [ ...  autoreconfHook ];</code></pre>
+      </div><p>Examples in nixpkgs:</p>
+<ul>
+<li><a href="https://github.com/NixOS/nixpkgs/blob/f4c253ff2f68fbe3e302f944e8347233d9dc8c9d/pkgs/tools/networking/samplicator/default.nix">samplicator</a></li>
+</ul>
+<h2 id="configure-scripts-that-are-using-pkg-config">Configure Scripts that are using pkg-config</h2><p>Some configure scripts are using <code>pkg-config</code> to determine the location of libraries and headers. Nixpkgs supports this by adding <code>pkg-config</code> to <code>nativeBuildInputs</code></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">ativeBuildInputs</span> <span class="hljs-operator">=</span> [ ...  pkg-config ];</code></pre>
+      </div><p>Examples in nixpkgs:</p>
+<ul>
+<li><a href="https://github.com/NixOS/nixpkgs/blob/96d41e393da3ca27fbcc7c82b7221a5c923460c0/pkgs/development/libraries/libmms/default.nix#L13">libmms</a></li>
+</ul>
+<p>One typical error when <code>pkg-config</code> is required but not in the <code>nativeBuildInputs</code> is the following during the configure phase:</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs">./configure: line 20832: syntax error near unexpected token `nss,&#x27;
+./configure: line 20832: `                      PKG_CHECK_MODULES(nss, nss)&#x27;</code></pre>
+      </div><h2 id="package-simple-python-scripts">Package simple python scripts</h2><p>For scripts like a single Python file, it is not necessary to specify <code>src</code> in <code>mkDerivation</code>. When you want to use <code>buildPythonPackage</code> the sources need to provide a <code>setup.py</code> file which also is overkill for a lot of projects. The default <code>mkDerivation</code> will attempt to unpack your source code. This can be prevented by applying <code>unpackPhase = &quot;:&quot;;</code> (<code>:</code> is a no-op in shell scripts).</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">m<span class="hljs-attr">yscript-package</span> <span class="hljs-operator">=</span> pkgs.stdenv.mkDerivation {
+  <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;myscript&quot;</span>;
+  <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> [
+    (pkgs.python36.withPackages (<span class="hljs-params">pythonPackages:</span> <span class="hljs-keyword">with</span> pythonPackages; [
+      consul
+      six
+      requests
+    ]))
+  ];
+  <span class="hljs-attr">unpackPhase</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;:&quot;</span>;
+  <span class="hljs-attr">installPhase</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;install -m755 -D <span class="hljs-subst">${.<span class="hljs-operator">/</span>myscript.py}</span> $out/bin/myscript&quot;</span>;
+};</code></pre>
+      </div><p><code>stdenv</code>&#39;s <code>patchShebangs</code> will automatically replace shebangs in the fixup phase, for ex. <code>#!/usr/bin/env python3</code> with dependencies given in <code>buildInputs</code>. As the derivation got <code>pkgs.python36.withPackages (...)</code> in <code>buildInputs</code>, it will create a <a href="https://virtualenv.pypa.io/en/stable/">virtualenv</a>-like python wrapper. The python wrapper will have all specified dependencies and will be used to call the script.</p>
+<p>In NixOS, the package can be put into <code>environment.systemPackages</code>, and <code>myscript</code> will be available as a global command.</p>
+<p>Source: <a href="http://stackoverflow.com/questions/43837691/how-to-package-a-single-python-script-with-nix/43837692#43837692">nh2 @ StackOverflow</a></p>
+<p>A more lightweight alternative is to use <code>nix-shell</code> in the shebang line as described in this <a href="https://web.archive.org/web/20230330010914/http://iam.travishartwell.net/2015/06/17/nix-shell-shebang/">blog post</a>. This causes the expression to be evaluated and built every time the script is run; this means that the dependencies will always be kept up to date, but since nix-shell only creates a temporary GC root the dependencies may be removed by a garbage collection, so this approach is not advisable for users who don&#39;t have an internet connection available all the time.</p>
+<h2 id="caveats">Caveats</h2><p>After packaging software and successfully generating an executable some functions of the package might still not work. This is a collection of error and how to fix them:</p>
+<h3 id="glib-gio-message-using-the-39-memory-39-gsettings-backend-your-settings-will-not-be-saved-or-shared-with">GLib-GIO-Message: Using the &#39;memory&#39; GSettings backend. Your settings will not be saved or shared with</h3><p>Sometime the error mesage might be also:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">GLib-GIO-ERROR <span class="hljs-operator">*</span><span class="hljs-operator">*</span>: No GSettings schemas are installed on the system </code></pre>
+      </div><p>Fixed by adding <code>wrapGAppsHook</code> to buildInputs:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">ativeBuildInputs</span> <span class="hljs-operator">=</span> [ ...  wrapGAppsHook ];</code></pre>
+      </div><p>Sample PR in nixpkgs:</p>
+<ul>
+<li><a href="https://github.com/NixOS/nixpkgs/pull/24617/files">networkmanagerapplet</a></li>
+</ul>
+<h3 id="namespace-gdk-not-available">Namespace Gdk not available</h3><p>You will need <code>/nix/store/*-gtk+3-*/lib/girepository-1.0</code> in <code>GI_TYPELIB_PATH</code>.</p>
+<p>Similar solution as above, solved by:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">nativeBuildInputs</span> <span class="hljs-operator">=</span> [ ...  wrapGAppsHook ];
+  <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> [ gtk3 ];</code></pre>
+      </div><h3 id="importerror-libstdc-so-6-cannot-open-shared-object-file-no-such-file">ImportError: libstdc++.so.6: cannot open shared object file: No such file</h3><p>This can happen when importing python libraries: Solution: add <code>${stdenv.cc.cc.lib}/lib/libstdc++.so.6</code> to the <code>LD_LIBRARY_PATH</code>.</p>
+<p>A sample <code>shell.nix</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs <span class="hljs-operator">?</span> (<span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> {}).pkgs }:
+<span class="hljs-keyword">with</span> pkgs;
+mkShell {
+  <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> [
+    python3Packages.virtualenv <span class="hljs-comment"># run virtualenv .</span>
+    python3Packages.pyqt5 <span class="hljs-comment"># avoid installing via pip</span>
+    python3Packages.pyusb <span class="hljs-comment"># fixes the pyusb &#x27;No backend available&#x27; when installed directly via pip</span>
+  ];
+  <span class="hljs-attr">shellHook</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    # fixes libstdc++ issues and libgl.so issues
+    LD_LIBRARY_PATH=<span class="hljs-subst">${stdenv.cc.cc.lib}</span>/lib/:/run/opengl-driver/lib/
+    # fixes xcb issues :
+    QT_PLUGIN_PATH=<span class="hljs-subst">${qt5.qtbase}</span>/<span class="hljs-subst">${qt5.qtbase.qtPluginPrefix}</span>
+  &#x27;&#x27;</span>;
+}</code></pre>
+      </div><h3 id="test-cannot-access-etc-protocols-etc-services-or-expects-a-special-etc-passwd-when-building-in-sandbox">Test cannot access <code>/etc/protocols</code>, <code>/etc/services</code> or expects a special <code>/etc/passwd</code> when building in sandbox</h3><p>Sometimes libraries try to fetch protocol specs via <code>socket.getprotobyname(&#39;tcp&#39;)</code> which fails in sandboxes because /etc/protocols is unaccessible. Override pre- and postCheck phases with this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">     <span class="hljs-attr">preCheck</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+       export NIX_REDIRECTS=/etc/protocols=<span class="hljs-subst">${pkgs.iana-etc}</span>/etc/protocols \
+         LD_PRELOAD=<span class="hljs-subst">${pkgs.libredirect}</span>/lib/libredirect.so
+     &#x27;&#x27;</span>;
+     <span class="hljs-attr">postCheck</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+       unset NIX_REDIRECTS LD_PRELOAD
+     &#x27;&#x27;</span>; </code></pre>
+      </div><p><a href="category:Cookbook" class="wikilink" title="Category:Cookbook">Category:Cookbook</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Xfce</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Xfce</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Xfce -->
+
+<p><a href="http://www.xfce.org/">Xfce</a> is a lightweight desktop environment based on GTK+. It includes a window manager, a file manager, desktop and panel.</p>
+<p>This article is an extension of the documentation in the <a href="https://nixos.org/manual/nixos/stable/#sec-xfce">NixOS manual</a>.</p>
+<h2 id="enabling">Enabling</h2><p>To use xfce set <code>services.xserver.desktopManager.xfce.enable</code> to <code>true</code>. For example:</p>
+<h3 id="excluding-xfce-applications">Excluding xfce applications</h3><p>Xfce does not include as many applications by default as some other desktop environments. Still, those can be excluded as demonstrated in the example below. Place this before the <code>services.xserver</code> snippet from above.</p>
+<h3 id="using-as-a-desktop-manager-and-not-a-window-manager">Using as a desktop manager and not a window manager</h3><p>You can use xfce purely as a desktop manager, leaving window management to another window manager like <a href="https://mirror.nixoscn.org/wiki/Xfce/i3" class="wikilink" title="i3">i3</a> for example. In this scenario, xfce&#39;s role is to answer to media keys, prompt when plugging a new monitor and so on.</p>
+<p>Example config:</p>
+<p>On first login, make sure to choose the session <code>xfce+i3</code> in your display manager. If you choose <code>xfce</code> you will end up in xfce without panels nor window manager, which is unusable.</p>
+<p>Note that xfce manages your session instead of i3: exiting i3 will blank your screen but not terminate your session. In your i3 config, replace <code>i3-msg exit</code> with <code>xfce4-session-logout</code>.</p>
+<h4 id="with-xmonad-as-the-window-manager">With xmonad as the window manager</h4><p>One of the possibilities is to use <code>xmonad</code> as a window manager in a <code>Xfce</code> desktop environment.</p>
+<h5 id="without-xfce-desktop">Without xfce desktop</h5><p>The previously described configuration is extended with the part that configures xmonad:</p>
+<p>Xmonad&#39;s contrib package comes with a config to integrate seamlessly into Xfce, like connecting workspaces to xfce&#39;s top panel&#39;s preview of workspaces. To enable this config, put the following into the user&#39;s xmonad config file: Since Xfce uses Alt for a lot of keybindings, using the Win key for xmonad hotkeys may be preferred.</p>
+<p>After choosing the <code>xfce+xmonad</code> session in your display manager, you will be taken to a clean screen, where you can open a terminal with <code>MOD+Shift+Enter</code> or launch an application with <code>MOD(+SHIFT)+p</code>.</p>
+<h5 id="with-xfce-desktop">With xfce desktop</h5><p>If you instead prefer to have panels (like the top panel) in addition to the main clean display area managed by xmonad, you can remove the <code>xfce.noDesktop = true;</code> option from the configuration. After switching to your new configuration, reboot and clean your sessions with <code>rm -rf ~/.cache/sessions/*</code> before logging in to a graphical session.</p>
+<p>After logging in you will be greeted by xfce&#39;s desktop which interferes with xmonad. To solve this issue you have to remove the <code>xfdesktop</code> process from being started in the session. Open the session manager in the application launcher with <code>MOD(+SHIFT)+p</code> and then typing in &quot;Session and Startup&quot;. Go to tab &quot;Session&quot; and set the restart style of <code>xfdesktop</code> to &quot;Never&quot;. Kill the process with &quot;Quit program&quot;, then &quot;Save session.&quot; After this, xfce4 and xmonad will work together nicely.</p>
+<h5 id="java-based-gui-applications">Java-based GUI applications</h5><p>Java-based applications may not work properly with xmonad. The applications main window may stay blank or gray on startup. This is a known issue with some versions of Java, where xmonad is not recognized as a &quot;non-reparenting&quot; window manager. There are multiple solutions to this problem as described on xmonad&#39;s FAQ page.</p>
+<p>One alternative is to fake xmonad&#39;s window manager name, after running the EMWH initialization. This particular approach works well when running xmonad alongside the xfce-based desktop (described above).</p>
+<h5 id="additional-resources">Additional resources</h5><p>Note that, unlike suggested in additional resources, the xmonad packages should not be installed in the environment (neither as systemPackages nor user packages), since that leads to errors when (re)compiling xmonad&#39;s config file.</p>
+<p>Additional resources:</p>
+<p><a href="https://wiki.haskell.org/Xmonad/Installing_xmonad#NixOS">Haskell Wiki: Installing xmonad on NixOS</a></p>
+<p><a href="https://wiki.haskell.org/Xmonad/Using_xmonad_in_XFCE">Haskell Wiki: Using xmonad in Xfce</a></p>
+<p><a href="https://wiki.haskell.org/File:Xmbindings.png">Haskell Wiki: Xmonad default key bindings</a></p>
+<p><a href="https://wiki.haskell.org/Xmonad/Frequently_asked_questions#Problems_with_Java_applications.2C_Applet_java_console">Haskell Wiki FAQ: Problems with Java applications</a></p>
+<h2 id="customizing-xfce-declaratively">Customizing xfce declaratively</h2><p>Xfce adheres to <a href="https://en.wikipedia.org/wiki/Freedesktop.org">XDG</a> desktop configuration, making it easy to declare user home directory configurations via <a href="https://mirror.nixoscn.org/wiki/Xfce/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a>. xfce-specific configurations are stored in an <a href="https://docs.xfce.org/xfce/xfconf/start">xfconf database</a>.</p>
+<h3 id="defining-xfconf-value">Defining xfconf value</h3><p>Below assumes you have already enabled Home Manager in your NixOS configuration.</p>
+<p>Launching <code>xfce4-settings-editor</code> you can view xfce personalizations already applied to the system. They&#39;re displayed in a tree view, but stored in a flat string format. You can query these same values from the command line with <code>xfconf-query</code> to quickly get the full key and value in a friendlier format. For instance:</p>
+<p>Can be translated like so:</p>
+<h3 id="using-built-in-wallpapers">Using built-in wallpapers</h3><p>Similarly, if you wish to use a built-in wallpaper declaratively you could follow this same pattern:</p>
+<p>However, the xfce settings seem to persist across system rebuilds which can lead to the wallpaper being set to a nix store that is cleaned up when older system generations are cleaned up. In other words, the wallpaper may be replaced by a blank screen upon reboot seemingly randomly. One workaround for this is to set a static directory path for the images via a symlink and using that within xfconf.</p>
+<h2 id="troubleshooting">Troubleshooting</h2><h3 id="pulseaudio">Pulseaudio</h3><p>If you use pulse audio, set <code>nixpkgs.config.pulseaudio = true</code> as shown above. Otherwise, you may experience glitches like being able to mute the sound card but not unmute it.</p>
+<p><a href="category:Desktop_environment" class="wikilink" title="Category:Desktop environment">Category:Desktop environment</a> <a href="category:NixOS_Manual" class="wikilink" title="Category:NixOS Manual">Category:NixOS Manual</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

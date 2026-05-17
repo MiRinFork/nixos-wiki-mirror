@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PGP</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / PGP</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: PGP -->
+
+<p>From <a href="wikipedia:Pretty_Good_Privacy" class="wikilink" title="its dedicated Wikipedia article">its dedicated Wikipedia article</a> :</p>
+<blockquote>
+<p><strong>Pretty Good Privacy</strong> (<strong>PGP</strong>) is an <a href="wikipedia:Encryption_software" class="wikilink" title="encryption program">encryption program</a> that provides <a href="wikipedia:Cryptographic" class="wikilink" title="cryptographic">cryptographic</a> <a href="wikipedia:Privacy" class="wikilink" title="privacy">privacy</a> and <a href="wikipedia:Authentication" class="wikilink" title="authentication">authentication</a> for <a href="wikipedia:Data_communication" class="wikilink" title="data communication">data communication</a>. PGP is used for <a href="wikipedia:Digital_signature" class="wikilink" title="signing">signing</a>, encrypting, and decrypting texts, <a href="wikipedia:Email" class="wikilink" title="e-mails">e-mails</a>, files, directories, and whole disk partitions and to increase the <a href="wikipedia:Security" class="wikilink" title="security">security</a> of e-mail communications. <a href="wikipedia:Phil_Zimmermann" class="wikilink" title="Phil Zimmermann">Phil Zimmermann</a> developed PGP in 1991.<sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/PGP#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup></p>
+<p>PGP and similar software follow the OpenPGP standard (<a href="wikipedia:Request_for_Comments" class="wikilink" title="RFC">RFC</a> 4880), an <a href="wikipedia:Open_standard" class="wikilink" title="open standard">open standard</a> for <a href="wikipedia:Encryption" class="wikilink" title="encrypting">encrypting</a> and decrypting <a href="wikipedia:Data" class="wikilink" title="data">data</a>. Modern versions of PGP are <a href="wikipedia:Interoperability" class="wikilink" title="interoperable">interoperable</a> with <a href="wikipedia:GnuPG" class="wikilink" title="GnuPG">GnuPG</a> and other OpenPGP-compliant systems.<sup><a id="footnote-ref-2" href="https://mirror.nixoscn.org/wiki/PGP#footnote-2" data-footnote-ref aria-describedby="footnote-label">2</a></sup></p>
+<p>The OpenPGP standard has received criticism for its long-lived keys and the difficulty in learning it,<sup><a id="footnote-ref-3" href="https://mirror.nixoscn.org/wiki/PGP#footnote-3" data-footnote-ref aria-describedby="footnote-label">3</a></sup> as well as the <a href="wikipedia:EFAIL" class="wikilink" title="Efail">Efail</a> security vulnerability that previously arose when select e-mail programs used OpenPGP with S/MIME.<sup><a id="footnote-ref-4" href="https://mirror.nixoscn.org/wiki/PGP#footnote-4" data-footnote-ref aria-describedby="footnote-label">4</a></sup><sup><a id="footnote-ref-5" href="https://mirror.nixoscn.org/wiki/PGP#footnote-5" data-footnote-ref aria-describedby="footnote-label">5</a></sup> The new OpenPGP standard (<a href="wikipedia:Request_for_Comments" class="wikilink" title="RFC">RFC</a> 9580) has also been criticised by the maintainer of <a href="wikipedia:GnuPG" class="wikilink" title="GnuPG">GnuPG</a> <a href="wikipedia:Werner_Koch" class="wikilink" title="Werner Koch">Werner Koch</a>, who in response created his own specification LibrePGP.<sup><a id="footnote-ref-6" href="https://mirror.nixoscn.org/wiki/PGP#footnote-6" data-footnote-ref aria-describedby="footnote-label">6</a></sup> This response was dividing, with some embracing his alternative specification,<sup><a id="footnote-ref-7" href="https://mirror.nixoscn.org/wiki/PGP#footnote-7" data-footnote-ref aria-describedby="footnote-label">7</a></sup> and others considering it to be insecure.<sup><a id="footnote-ref-8" href="https://mirror.nixoscn.org/wiki/PGP#footnote-8" data-footnote-ref aria-describedby="footnote-label">8</a></sup></p>
+</blockquote>
+<h2 id="sequoia-pgp">Sequoia PGP</h2><p>From <a href="https://sequoia-pgp.org/">its official website and code repository</a> :</p>
+<blockquote>
+<p>Sequoia is a complete implementation of OpenPGP as defined by <a href="https://www.rfc-editor.org/rfc/rfc9580.html">RFC 9580</a> as well as the deprecated OpenPGP as defined by <a href="rfc:4880" class="wikilink" title="RFC 4880">RFC 4880</a>, and various related standards.</p>
+<p>OpenPGP is a standard by the IETF. It was derived from the PGP software, which was created by Phil Zimmermann in 1991.</p>
+<p>Sequoia consists of several crates, providing both a low-level and a high-level API for dealing with OpenPGP data.</p>
+</blockquote>
+<h3 id="nixpkgs">Nixpkgs</h3><p>- </p>
+<p>- </p>
+<p>- </p>
+<p>- </p>
+<p>- </p>
+<h3 id="nixos">NixOS</h3><p>There is no Nixpkgs module for Sequoia PGP yet</p>
+<h3 id="home-manager">Home Manager</h3><p>There is no <a href="https://mirror.nixoscn.org/wiki/PGP/Home_Manager" class="wikilink" title="home manager">home manager</a> module for Sequoia PGP yet</p>
+<p>A GitHub issue is opened about its featuring :</p>
+<h4 id="git-integration">Git Integration</h4><p>Git having hardcoded the <a href="https://mirror.nixoscn.org/wiki/PGP/PGP#GNU_Privacy_Guard" class="wikilink" title="GNU Privacy Guard">GNU Privacy Guard</a> command interface, you will need to use (also see <a href="https://discourse.nixos.org/t/sequoia-pgp-on-home-manager/72938/9?u=malix">the discourse post about this</a>)</p>
+<p>To do this using home manager :</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  ...
+
+  lib,
+  pkgs,
+
+  ...
+}:
+{
+  ...
+
+  <span class="hljs-attr">home</span> <span class="hljs-operator">=</span> {
+    ...
+
+    <span class="hljs-attr">packages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+      ...
+
+      sequoia-chameleon-gnupg
+
+      ...
+    ];
+  };
+
+  <span class="hljs-attr">programs</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">home-manager.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+    ...
+
+    <span class="hljs-attr">git</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      
+      ...
+
+      <span class="hljs-attr">signing</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">signByDefault</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+        <span class="hljs-attr">format</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;openpgp&quot;</span>;
+        <span class="hljs-attr">signer</span> <span class="hljs-operator">=</span> lib.getExe pkgs.sequoia-chameleon-gnupg;
+        <span class="hljs-attr">key</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&lt;REPLACE_THIS_WITH_YOUR_KEY_FINGERPRINT&gt;&quot;</span>; <span class="hljs-comment"># Replace `&lt;REPLACE_THIS_WITH_YOUR_KEY_FINGERPRINT&gt;` with your key fingerprint</span>
+      };
+
+      ...
+    };
+  };
+
+  ...
+
+  <span class="hljs-attr">services</span> <span class="hljs-operator">=</span> {
+    ...
+
+    <span class="hljs-attr">gpg-agent</span> <span class="hljs-operator">=</span> { <span class="hljs-comment"># Dependency of `pkgs.sequoia-chameleon-gnupg`</span>
+      <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+      ...
+    };
+
+    ...
+  };
+
+  ...
+}</code></pre>
+      </div><h2 id="gnu-privacy-guard">GNU Privacy Guard</h2><p>From <a href="wikipedia:GNU_Privacy_Guard" class="wikilink" title="its dedicated Wikipedia article">its dedicated Wikipedia article</a> :</p>
+<blockquote>
+<p><strong>GNU Privacy Guard</strong> (<strong>GnuPG</strong> or <strong>GPG</strong>) is a <a href="wikipedia:Free-software" class="wikilink" title="free-software">free-software</a> replacement for <a href="wikipedia:Symantec_Corporation" class="wikilink" title="Symantec">Symantec</a>&#39;s <a href="wikipedia:Cryptography" class="wikilink" title="cryptographic">cryptographic</a> software suite <a href="wikipedia:Pretty_Good_Privacy" class="wikilink" title="PGP">PGP</a>. The software is compliant with the now obsoleted<sup><a id="footnote-ref-9" href="https://mirror.nixoscn.org/wiki/PGP#footnote-9" data-footnote-ref aria-describedby="footnote-label">9</a></sup> <a href="wikipedia:RFC_(identifier)" class="wikilink" title="RFC">RFC</a> <a href="https://www.rfc-editor.org/rfc/rfc4880">4880</a>, the <a href="wikipedia:Internet_Engineering_Task_Force" class="wikilink" title="IETF">IETF</a> standards-track specification of <a href="wikipedia:OpenPGP" class="wikilink" title="OpenPGP">OpenPGP</a>. Modern versions of PGP are <a href="wikipedia:Interoperability" class="wikilink" title="interoperable">interoperable</a> with GnuPG and other OpenPGP v4-compliant systems.<sup><a id="footnote-ref-10" href="https://mirror.nixoscn.org/wiki/PGP#footnote-10" data-footnote-ref aria-describedby="footnote-label">10</a></sup></p>
+<p>November 2023 saw two drafts aiming to update the 2007 OpenPGP v4 specification (RFC4880), ultimately resulting in the RFC 9580 standard in July 2024. The proposal from the GnuPG developers, which is called LibrePGP, was not taken up by the OpenPGP Working Group and future versions of GnuPG will not support the current version of OpenPGP.<sup><a id="footnote-ref-11" href="https://mirror.nixoscn.org/wiki/PGP#footnote-11" data-footnote-ref aria-describedby="footnote-label">11</a></sup></p>
+<p>GnuPG is part of the <a href="wikipedia:GNU_Project" class="wikilink" title="GNU Project">GNU Project</a> and received major funding from the <a href="wikipedia:Politics_of_Germany" class="wikilink" title="German government">German government</a> in 1999.<sup><a id="footnote-ref-12" href="https://mirror.nixoscn.org/wiki/PGP#footnote-12" data-footnote-ref aria-describedby="footnote-label">12</a></sup></p>
+</blockquote>
+<h3 id="nixpkgs">Nixpkgs</h3><p>- </p>
+<h3 id="nixos">NixOS</h3><p>Other modules have integrations for the GNU Privacy Guard</p>
+<h3 id="home-manager">Home Manager</h3><p>Other modules have integrations for the GNU Privacy Guard</p>
+<hr>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p><cite id="CITEREFZimmermann1999" class="citation web cs1" data-ve-ignore=""><a href="https://mirror.nixoscn.org/wiki/PGP/Phil_Zimmermann" class="wikilink" title="Zimmermann, Philip R.">Zimmermann, Philip R.</a> (1999). <a href="https://www.philzimmermann.com/EN/essays/WhyIWrotePGP.html">&quot;Why I Wrote PGP&quot;</a>. <em>Essays on PGP</em>. Phil Zimmermann &amp; Associates LLC. <a href="https://web.archive.org/web/20180624122110/https://philzimmermann.com/EN/essays/WhyIWrotePGP.html">Archived</a> from the original on June 24, 2018<span class="reference-accessdate">. Retrieved <span class="nowrap">July 6,</span> 2014</span>.</cite><span title="ctx_ver=Z39.88-2004&rft_val_fmt=info%3Aofi%2Ffmt%3Akev%3Amtx%3Ajournal&rft.genre=unknown&rft.jtitle=Essays+on+PGP&rft.atitle=Why+I+Wrote+PGP&rft.date=1999&rft.aulast=Zimmermann&rft.aufirst=Philip+R.&rft_id=https%3A%2F%2Fwww.philzimmermann.com%2FEN%2Fessays%2FWhyIWrotePGP.html&rfr_id=info%3Asid%2Fen.wikipedia.org%3APretty+Good+Privacy" class="Z3988" data-ve-ignore=""></span> <a href="https://mirror.nixoscn.org/wiki/PGP#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+<li id="footnote-2">
+<p><cite class="citation web cs1" data-ve-ignore=""><a href="https://www.gnupg.org/faq/gnupg-faq.html#compatible">&quot;Gnu Privacy Guard&quot;</a>. GnuPG.org. <a href="https://web.archive.org/web/20150429192132/https://www.gnupg.org/faq/gnupg-faq.html#compatible">Archived</a> from the original on April 29, 2015<span class="reference-accessdate">. Retrieved <span class="nowrap">May 26,</span> 2015</span>.</cite><span title="ctx_ver=Z39.88-2004&rft_val_fmt=info%3Aofi%2Ffmt%3Akev%3Amtx%3Abook&rft.genre=unknown&rft.btitle=Gnu+Privacy+Guard&rft.pub=GnuPG.org&rft_id=https%3A%2F%2Fwww.gnupg.org%2Ffaq%2Fgnupg-faq.html%23compatible&rfr_id=info%3Asid%2Fen.wikipedia.org%3APretty+Good+Privacy" class="Z3988" data-ve-ignore=""></span> <a href="https://mirror.nixoscn.org/wiki/PGP#footnote-ref-2" data-footnote-backref aria-label="Back to reference 2">↩</a></p>
+</li>
+<li id="footnote-3">
+<p><cite id="CITEREFLatacora2019" class="citation web cs1" data-ve-ignore="">Latacora (July 16, 2019). <a href="https://www.latacora.com/blog/2019/07/16/the-pgp-problem">&quot;The PGP Problem&quot;</a><span class="reference-accessdate">. Retrieved <span class="nowrap">November 22,</span> 2024</span>.</cite><span title="ctx_ver=Z39.88-2004&rft_val_fmt=info%3Aofi%2Ffmt%3Akev%3Amtx%3Abook&rft.genre=unknown&rft.btitle=The+PGP+Problem&rft.date=2019-07-16&rft.au=Latacora&rft_id=https%3A%2F%2Fwww.latacora.com%2Fblog%2F2019%2F07%2F16%2Fthe-pgp-problem&rfr_id=info%3Asid%2Fen.wikipedia.org%3APretty+Good+Privacy" class="Z3988" data-ve-ignore=""></span> <a href="https://mirror.nixoscn.org/wiki/PGP#footnote-ref-3" data-footnote-backref aria-label="Back to reference 3">↩</a></p>
+</li>
+<li id="footnote-4">
+<p><cite class="citation web cs1" data-ve-ignore=""><a href="https://www.usenix.org/system/files/conference/usenixsecurity18/sec18-poddebniak.pdf">&quot;Efail: Breaking S/MIME and OpenPGP Email Encryption using Exfiltration Channels&quot;</a> <span class="cs1-format">(PDF)</span>.</cite><span title="ctx_ver=Z39.88-2004&rft_val_fmt=info%3Aofi%2Ffmt%3Akev%3Amtx%3Abook&rft.genre=unknown&rft.btitle=Efail%3A+Breaking+S%2FMIME+and+OpenPGP+Email+Encryption+using+Exfiltration+Channels&rft_id=https%3A%2F%2Fwww.usenix.org%2Fsystem%2Ffiles%2Fconference%2Fusenixsecurity18%2Fsec18-poddebniak.pdf&rfr_id=info%3Asid%2Fen.wikipedia.org%3APretty+Good+Privacy" class="Z3988" data-ve-ignore=""></span> <a href="https://mirror.nixoscn.org/wiki/PGP#footnote-ref-4" data-footnote-backref aria-label="Back to reference 4">↩</a></p>
+</li>
+<li id="footnote-5">
+<p><cite id="CITEREFYen2018" class="citation web cs1" data-ve-ignore="">Yen, Andy (May 15, 2018). <a href="https://proton.me/blog/pgp-vulnerability-efail">&quot;No, PGP is not broken, not even with the Efail vulnerabilities&quot;</a>. <em>Proton</em><span class="reference-accessdate">. Retrieved <span class="nowrap">January 22,</span> 2025</span>.</cite><span title="ctx_ver=Z39.88-2004&rft_val_fmt=info%3Aofi%2Ffmt%3Akev%3Amtx%3Ajournal&rft.genre=unknown&rft.jtitle=Proton&rft.atitle=No%2C+PGP+is+not+broken%2C+not+even+with+the+Efail+vulnerabilities&rft.date=2018-05-15&rft.aulast=Yen&rft.aufirst=Andy&rft_id=https%3A%2F%2Fproton.me%2Fblog%2Fpgp-vulnerability-efail&rfr_id=info%3Asid%2Fen.wikipedia.org%3APretty+Good+Privacy" class="Z3988" data-ve-ignore=""></span> <a href="https://mirror.nixoscn.org/wiki/PGP#footnote-ref-5" data-footnote-backref aria-label="Back to reference 5">↩</a></p>
+</li>
+<li id="footnote-6">
+<p><cite id="CITEREFEdge2023" class="citation web cs1" data-ve-ignore="">Edge, Jake (December 6, 2023). <a href="https://lwn.net/Articles/953797/">&quot;A schism in the OpenPGP world [LWN.net]&quot;</a>. <em>lwn.net</em>. <a href="https://web.archive.org/web/20240222124116/https://lwn.net/Articles/953797/">Archived</a> from the original on February 22, 2024<span class="reference-accessdate">. Retrieved <span class="nowrap">February 14,</span> 2024</span>.</cite><span title="ctx_ver=Z39.88-2004&rft_val_fmt=info%3Aofi%2Ffmt%3Akev%3Amtx%3Ajournal&rft.genre=unknown&rft.jtitle=lwn.net&rft.atitle=A+schism+in+the+OpenPGP+world+%5BLWN.net%5D&rft.date=2023-12-06&rft.aulast=Edge&rft.aufirst=Jake&rft_id=https%3A%2F%2Flwn.net%2FArticles%2F953797%2F&rfr_id=info%3Asid%2Fen.wikipedia.org%3APretty+Good+Privacy" class="Z3988" data-ve-ignore=""></span> <a href="https://mirror.nixoscn.org/wiki/PGP#footnote-ref-6" data-footnote-backref aria-label="Back to reference 6">↩</a></p>
+</li>
+<li id="footnote-7">
+<p><cite id="CITEREFTseOlshevsky2024" class="citation web cs1" data-ve-ignore="">Tse, Ronald; Olshevsky, Nickolay (July 22, 2024). <a href="https://www.rnpgp.org/blog/2024-07-22-rnp-and-librepgp">&quot;RNP proudly supports LibrePGP&quot;</a>. <em>RNP</em><span class="reference-accessdate">. Retrieved <span class="nowrap">January 22,</span> 2025</span>.</cite><span title="ctx_ver=Z39.88-2004&rft_val_fmt=info%3Aofi%2Ffmt%3Akev%3Amtx%3Ajournal&rft.genre=unknown&rft.jtitle=RNP&rft.atitle=RNP+proudly+supports+LibrePGP&rft.date=2024-07-22&rft.aulast=Tse&rft.aufirst=Ronald&rft.au=Olshevsky%2C+Nickolay&rft_id=https%3A%2F%2Fwww.rnpgp.org%2Fblog%2F2024-07-22-rnp-and-librepgp&rfr_id=info%3Asid%2Fen.wikipedia.org%3APretty+Good+Privacy" class="Z3988" data-ve-ignore=""></span> <a href="https://mirror.nixoscn.org/wiki/PGP#footnote-ref-7" data-footnote-backref aria-label="Back to reference 7">↩</a></p>
+</li>
+<li id="footnote-8">
+<p><cite id="CITEREFGallagher2024" class="citation web cs1" data-ve-ignore="">Gallagher, Andrew (September 11, 2024). <a href="https://blog.pgpkeys.eu/security-issues-librepgp-2024-08.html">&quot;A Summary of Known Security Issues in LibrePGP&quot;</a><span class="reference-accessdate">. Retrieved <span class="nowrap">January 22,</span> 2025</span>.</cite><span title="ctx_ver=Z39.88-2004&rft_val_fmt=info%3Aofi%2Ffmt%3Akev%3Amtx%3Abook&rft.genre=unknown&rft.btitle=A+Summary+of+Known+Security+Issues+in+LibrePGP&rft.date=2024-09-11&rft.aulast=Gallagher&rft.aufirst=Andrew&rft_id=https%3A%2F%2Fblog.pgpkeys.eu%2Fsecurity-issues-librepgp-2024-08.html&rfr_id=info%3Asid%2Fen.wikipedia.org%3APretty+Good+Privacy" class="Z3988" data-ve-ignore=""></span> <a href="https://mirror.nixoscn.org/wiki/PGP#footnote-ref-8" data-footnote-backref aria-label="Back to reference 8">↩</a></p>
+</li>
+<li id="footnote-9">
+<p><cite id="CITEREFWoutersHuigensWinterYutaka2024" class="citation web cs1" data-ve-ignore="">Wouters, Paul; Huigens, Daniel; Winter, Justus; Yutaka, Niibe (July 2024). <a href="https://www.rfc-editor.org/rfc/rfc9580.html">&quot;RFC 9580 OpenPGP&quot;</a>. <em>RFC Editor</em>. IETF<span class="reference-accessdate">. Retrieved <span class="nowrap">2024-12-19</span></span>.</cite><span title="ctx_ver=Z39.88-2004&rft_val_fmt=info%3Aofi%2Ffmt%3Akev%3Amtx%3Ajournal&rft.genre=unknown&rft.jtitle=RFC+Editor&rft.atitle=RFC+9580+OpenPGP&rft.date=2024-07&rft.aulast=Wouters&rft.aufirst=Paul&rft.au=Huigens%2C+Daniel&rft.au=Winter%2C+Justus&rft.au=Yutaka%2C+Niibe&rft_id=https%3A%2F%2Fwww.rfc-editor.org%2Frfc%2Frfc9580.html&rfr_id=info%3Asid%2Fen.wikipedia.org%3AGNU+Privacy+Guard" class="Z3988" data-ve-ignore=""></span> <a href="https://mirror.nixoscn.org/wiki/PGP#footnote-ref-9" data-footnote-backref aria-label="Back to reference 9">↩</a></p>
+</li>
+<li id="footnote-10">
+<p><cite class="citation web cs1" data-ve-ignore=""><a href="https://www.gnupg.org/faq/gnupg-faq.html#compatible">&quot;GnuPG Frequently Asked Questions&quot;</a>. The GNU Privacy Guard. <a href="https://web.archive.org/web/20150429192132/https://www.gnupg.org/faq/gnupg-faq.html#compatible">Archived</a> from the original on 2015-04-29<span class="reference-accessdate">. Retrieved <span class="nowrap">2015-05-26</span></span>.</cite><span title="ctx_ver=Z39.88-2004&rft_val_fmt=info%3Aofi%2Ffmt%3Akev%3Amtx%3Abook&rft.genre=unknown&rft.btitle=GnuPG+Frequently+Asked+Questions&rft.pub=The+GNU+Privacy+Guard&rft_id=https%3A%2F%2Fwww.gnupg.org%2Ffaq%2Fgnupg-faq.html%23compatible&rfr_id=info%3Asid%2Fen.wikipedia.org%3AGNU+Privacy+Guard" class="Z3988" data-ve-ignore=""></span> <a href="https://mirror.nixoscn.org/wiki/PGP#footnote-ref-10" data-footnote-backref aria-label="Back to reference 10">↩</a></p>
+</li>
+<li id="footnote-11">
+<p><cite id="CITEREFEdge2023" class="citation web cs1" data-ve-ignore="">Edge, Jake (December 6, 2023). <a href="https://lwn.net/Articles/953797/">&quot;A schism in the OpenPGP world&quot;</a>. Linux Weekly News<span class="reference-accessdate">. Retrieved <span class="nowrap">2023-12-09</span></span>.</cite><span title="ctx_ver=Z39.88-2004&rft_val_fmt=info%3Aofi%2Ffmt%3Akev%3Amtx%3Abook&rft.genre=unknown&rft.btitle=A+schism+in+the+OpenPGP+world&rft.pub=Linux+Weekly+News&rft.date=2023-12-06&rft.aulast=Edge&rft.aufirst=Jake&rft_id=https%3A%2F%2Flwn.net%2FArticles%2F953797%2F&rfr_id=info%3Asid%2Fen.wikipedia.org%3AGNU+Privacy+Guard" class="Z3988" data-ve-ignore=""></span> <a href="https://mirror.nixoscn.org/wiki/PGP#footnote-ref-11" data-footnote-backref aria-label="Back to reference 11">↩</a></p>
+</li>
+<li id="footnote-12">
+<p><cite class="citation web cs1 cs1-prop-foreign-lang-source" data-ve-ignore=""><a href="http://www.heise.de/newsticker/meldung/Bundesregierung-foerdert-Open-Source-24110.html">&quot;Bundesregierung fördert Open Source&quot;</a> (in German). Heise Online. 1999-11-15. <a href="https://web.archive.org/web/20131012024601/http://www.heise.de/newsticker/meldung/Bundesregierung-foerdert-Open-Source-24110.html">Archived</a> from the original on October 12, 2013<span class="reference-accessdate">. Retrieved <span class="nowrap">July 24,</span> 2013</span>.</cite><span title="ctx_ver=Z39.88-2004&rft_val_fmt=info%3Aofi%2Ffmt%3Akev%3Amtx%3Abook&rft.genre=unknown&rft.btitle=Bundesregierung+f%C3%B6rdert+Open+Source&rft.pub=Heise+Online&rft.date=1999-11-15&rft_id=http%3A%2F%2Fwww.heise.de%2Fnewsticker%2Fmeldung%2FBundesregierung-foerdert-Open-Source-24110.html&rfr_id=info%3Asid%2Fen.wikipedia.org%3AGNU+Privacy+Guard" class="Z3988" data-ve-ignore=""></span> <a href="https://mirror.nixoscn.org/wiki/PGP#footnote-ref-12" data-footnote-backref aria-label="Back to reference 12">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Printing</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Printing</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Printing -->
+
+<p>Printing in NixOS is done via the module, to configure the local printing services which is provided by the software <a href="https://openprinting.github.io/projects/00-cups">CUPS</a>. Setting up physical printer devices is done using option.</p>
+<h2 id="installation">Installation</h2><p>To enable the local print service on your machine, simply add following lines to your configuration</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.printing.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><h2 id="configuration">Configuration</h2><h3 id="enable-auto-discovery-of-network-printers">Enable auto-discovery of network printers</h3><p>Most printers manufactured after 2013 support the <a href="https://www.pwg.org/ipp/everywhere.html">IPP Everywhere</a> protocol, i.e. printing without installing drivers. This is notably the case of all WiFi printers marketed as Apple AirPrint-compatible (<a href="https://support.apple.com/en-ca/HT201311">list</a>).</p>
+<p>To detect these printers, add the following to your system configuration:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.avahi</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">nssmdns4</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">openFirewall</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+};
+
+<span class="hljs-attr">services.printing</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">drivers</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+    cups-filters
+    cups-browsed
+  ];
+};</code></pre>
+      </div><p>Discovery is done via the opened UDP port <code>5353</code>. Printers should get automatically detected and visible in your printer configuration client.</p>
+<h3 id="enable-auto-discovery-of-usb-printers">Enable auto-discovery of USB printers</h3><p>Some printers can be automatically discovered with IPP-over-USB. To discover these printers as a locally accessible network printer/scanner, add the following to your system configuration:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.ipp-usb.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><h3 id="adding-printers">Adding printers</h3><p>Beside manually adding printers with client tools, it is possible to permanently add printers to your system configuration (but be aware of <a href="https://github.com/NixOS/nixpkgs/issues/78535">this bug</a> that sometimes expect the printer to be plugged in your system). The following example configures a network printer called <code>Dell_1250c</code> to your local system, reachable via IPP at <code>http://192.168.178.2:631/printers/Dell_1250c</code></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">h<span class="hljs-attr">ardware.printers</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">ensurePrinters</span> <span class="hljs-operator">=</span> [
+    {
+      <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Dell_1250c&quot;</span>;
+      <span class="hljs-attr">location</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Home&quot;</span>;
+      <span class="hljs-attr">deviceUri</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;http://192.168.178.2:631/printers/Dell_1250c&quot;</span>;
+      <span class="hljs-attr">model</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;drv:///sample.drv/generic.ppd&quot;</span>;
+      <span class="hljs-attr">ppdOptions</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">PageSize</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;A4&quot;</span>;
+      };
+    }
+  ];
+  <span class="hljs-attr">ensureDefaultPrinter</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Dell_1250c&quot;</span>;
+};</code></pre>
+      </div><p>A similar network based, driverless approach using the very widely supported <a href="https://www.pwg.org/ipp/everywhere.html">IPP Everywhere</a> protocol (thanks to <a href="https://discourse.nixos.org/t/brother-dcp-572dw-wrapper/8113/3">this</a> Discourse post), would look something like:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">h<span class="hljs-attr">ardware.printers</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">ensureDefaultPrinter</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Brother_HL-L2340D&quot;</span>;
+  <span class="hljs-attr">ensurePrinters</span> <span class="hljs-operator">=</span> [
+    {
+      <span class="hljs-attr">deviceUri</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ipp://192.168.1.20/ipp&quot;</span>;
+      <span class="hljs-attr">location</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;home&quot;</span>;
+      <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Brother_HL-L2340D&quot;</span>;
+      <span class="hljs-attr">model</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;everywhere&quot;</span>;
+    }
+  ];
+};</code></pre>
+      </div><p>You can run <code>lpinfo -m</code> to ensure you have the <code>everywhere</code> driver currently available.</p>
+<p>To add a local printer, connected via USB, change the <code>deviceUri</code> to a USB address and optionally define which driver to use by adding the <code>model</code> option.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">h<span class="hljs-attr">ardware.printers.ensurePrinters</span> <span class="hljs-operator">=</span> [
+  {
+    <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Dell_1250c&quot;</span>;
+    <span class="hljs-attr">location</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Home&quot;</span>;
+    <span class="hljs-attr">deviceUri</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;usb://Dell/1250c%20Color%20Printer?serial=YNP023240&quot;</span>;
+    <span class="hljs-attr">model</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Dell-1250c.ppd.gz&quot;</span>;
+    <span class="hljs-attr">ppdOptions</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">PageSize</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;A4&quot;</span>;
+    };
+  }
+];</code></pre>
+      </div><p>To add a printer over the smb protocol, <a href="https://mirror.nixoscn.org/wiki/Printing/Samba" class="wikilink" title="Samba">Samba</a> needs to be enabled:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">h<span class="hljs-attr">ardware.printers.ensurePrinters</span> <span class="hljs-operator">=</span> [
+  {
+    <span class="hljs-comment"># (other stuff...)</span>
+    <span class="hljs-attr">deviceUri</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;smb://print-server.com/printername&quot;</span>;
+  }
+];
+
+<span class="hljs-attr">services.samba.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><p>Some local or network printers might need additional drivers. You can add them using the <code>drivers</code> option:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.printing.drivers</span> <span class="hljs-operator">=</span> [ YOUR_DRIVER ];</code></pre>
+      </div><p>where <code>YOUR_DRIVER</code> is the driver package appropriate for your printer. Commonly used driver packages include:</p>
+<ul>
+<li><code>pkgs.gutenprint</code> — Drivers for many different printers from many different vendors.</li>
+<li><code>pkgs.gutenprintBin</code> — Additional, binary-only drivers for some printers.</li>
+<li><code>pkgs.hplip</code> — Drivers for HP printers.</li>
+<li><code>pkgs.hplipWithPlugin</code> — Drivers for HP printers, with the proprietary plugin, see also <a href="https://mirror.nixoscn.org/wiki/Printing/Printing#Setting_up_HP_printers_with_proprietary_drivers" class="wikilink" title="Setting up HP printers with proprietary drivers">Setting up HP printers with proprietary drivers</a>.</li>
+<li><code>pkgs.postscript-lexmark</code> — Postscript drivers for Lexmark</li>
+<li><code>pkgs.samsung-unified-linux-driver</code> — Proprietary Samsung Drivers</li>
+<li><code>pkgs.splix</code> — Drivers for printers supporting SPL (Samsung Printer Language).</li>
+<li><code>pkgs.brlaser</code> — Drivers for some Brother printers</li>
+<li><code>pkgs.brgenml1lpr</code> and <code>pkgs.brgenml1cupswrapper</code> — Generic drivers for more Brother printers (Proprietary drivers) <a href="https://support.brother.com/g/s/id/linux/en/instruction_prn1a.html">1</a></li>
+<li><code>pkgs.cnijfilter2</code> — Drivers for some Canon Pixma devices (Proprietary driver)</li>
+<li><code>pkgs.epson-escpr2</code> — Drivers for newer Epson devices.</li>
+<li><code>pkgs.epson-escpr</code> — Drivers for some other Epson devices.</li>
+</ul>
+<p>Search for other printer drivers in the NixOS package directory: the official list of packages is <a href="https://search.nixos.org/packages">here</a>. Add the driver to , <strong>not</strong> .</p>
+<p>To get the specific string for <code>model</code>, run <code>lpinfo -m</code> which will produce output similar to</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">...
+samsung/SCX-3200.ppd Samsung SCX-3200 Series
+samsung/SCX-3400.ppd Samsung SCX-3400 Series
+samsung/SCX-4100.ppd Samsung SCX-4100 Series
+samsung/SCX-4200.ppd Samsung SCX-4200 Series
+samsung/SCX-4300.ppd Samsung SCX-4300 Series
+samsung/SCX-4500.ppd Samsung SCX-4500 Series
+samsung/SCX-4500W.ppd Samsung SCX-4500W Series
+samsung/SCX-4600.ppd Samsung SCX-4600 Series
+samsung/SCX-4623.ppd Samsung SCX-4623 Series
+...</code></pre>
+      </div><p>The <code>model</code> string is the first column. For example, for the Samsung SCX-4300 series, set</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">m<span class="hljs-attr">odel</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;samsung/SCX-4300.ppd&quot;</span>;</code></pre>
+      </div><p>.</p>
+<h3 id="allowing-printer-administration-for-users">Allowing printer administration for users</h3><p>Users in <strong>wheel</strong> or <strong>lpadmin</strong> group can administer printers. This can be useful to allow non-admin users access to modify printers in their desktop environment settings. To allow user <strong>snowflake</strong> to administer printers you would doː</p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs">  <span class="hljs-attr">users.users.snowflake</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">isNormalUser</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">extraGroups</span> <span class="hljs-operator">=</span> [
+      <span class="hljs-string">&quot;lpadmin&quot;</span>    
+    ];
+    ...
+  };</code></pre>
+      </div><h3 id="printer-sharing">Printer sharing</h3><p>Enable network sharing of the default local printer, also known as &quot;AirPrinting&quot;. Note that</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">l<span class="hljs-attr">istenAddresses</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;*:631&quot;</span> ];</code></pre>
+      </div><p>,</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">a<span class="hljs-attr">llowFrom</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;all&quot;</span> ];</code></pre>
+      </div><p>and</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">o<span class="hljs-attr">penFirewall</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><p>will enable anonymous access to your printer on all interfaces, you might want to restrict this.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.avahi</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">nssmdns</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">openFirewall</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">publish</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">userServices</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  };
+};
+<span class="hljs-attr">services.printing</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">listenAddresses</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;*:631&quot;</span> ];
+  <span class="hljs-attr">allowFrom</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;all&quot;</span> ];
+  <span class="hljs-attr">browsing</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">defaultShared</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">openFirewall</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+};</code></pre>
+      </div><p>Once printer sharing is enabled, it could be additionally advertised in the home network via the Samba protocol, see <a href="https://mirror.nixoscn.org/wiki/Printing/Samba#Printer_sharing" class="wikilink" title="Samba#Printer_sharing">Samba#Printer_sharing</a>.</p>
+<h2 id="usage">Usage</h2><p>After enabling the printing service you&#39;ll be able to configure and add network printers via <a href="http://localhost:631/">http://localhost:631</a>. You may need to authenticate with your local user when you add the printer.</p>
+<p>Depending on your desktop environment, there are several graphical tools available which will connect to this backend service and allow you a more convenient printer management, for example .</p>
+<h3 id="command-line">Command line</h3><p>List printers</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">lpstat -p</code></pre>
+      </div><p>Print test page for printer called <code>HP-LaserJet-1020</code></p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">lp -o job-sheets=standard,none -d HP-LaserJet-1020 /dev/null</code></pre>
+      </div><p>List jobs</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">lpstat</code></pre>
+      </div><p>Cancel job</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">cancel 1</code></pre>
+      </div><h2 id="tips-and-tricks">Tips and tricks</h2><h4 id="manually-supplying-printer-driver">Manually supplying printer driver</h4><h5 id="provide-the-ppd-imperatively">Provide the PPD imperatively</h5><p>If no driver is found for your printer, even when is correctly populated (see above), you can try to give cups a PPD file.</p>
+<ul>
+<li>Download the required PPD file, for example from <a href="https://openprinting.org/printers">openprinting.org</a></li>
+<li>Open the PPD as a text file, and check that it does not mention FHS paths like <code>/usr/bin</code>. If it does, this method is unlikely to work, as the PPD file depends on executables not present on your system. You can certainly install the binaries yourself and point to the new binary, but it is certainly easier to patch the executables in a derivation (see below) to avoid garbage collection of your binaries.</li>
+<li>add the printer with <code>system-config-printer</code> (for example) and at the &#39;choose driver&#39; screen choose &#39;provide PPD file&#39;</li>
+</ul>
+<h5 id="provide-the-ppd-declaratively">Provide the PPD declaratively</h5><p>You can also declaratively add the PPD as a new driver by creating a simple derivation. You just need to create a derivation that puts the PPD file in <code>$out/share/cups/model/yourfile.ppd</code> (you can also put it in a subfolder like <code>$out/share/cups/model/HP/yourfile.ppd</code> to limit conflicts between ppd having the same name). Note that the name of the file does not change the way cups will list it as the model/manufacturer is written inside the (text) ppd.</p>
+<p>As in the imperative method, first check that your file does not contain any reference to binaries outside the store like <code>/bin/</code> or <code>/usr/</code>. If it does not contain any reference then you should be able to simply do this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  ...
+  <span class="hljs-attr">services.printing.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">services.printing.drivers</span> <span class="hljs-operator">=</span> [
+    (writeTextDir <span class="hljs-string">&quot;share/cups/model/yourppd.ppd&quot;</span> (<span class="hljs-built_in">builtins.readFile</span> .<span class="hljs-operator">/</span>yourppd.ppd))
+  ];
+  ...
+}</code></pre>
+      </div><p>If your ppd contains links to external binaries, you can instead patch the file using for instance <code>substituteInPlace</code>. For that, create a file, say, <code>myPrinter.nix</code> containing something like:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ stdenv }:
+stdenv.mkDerivation <span class="hljs-keyword">rec</span> {
+  <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;myprinter-<span class="hljs-subst">${version}</span>&quot;</span>;
+  <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;1.0&quot;</span>;
+
+  <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> <span class="hljs-symbol">./.</span>;
+
+  <span class="hljs-attr">installPhase</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    mkdir -p $out/share/cups/model/
+    cp myprinter.ppd $out/share/cups/model/
+    # If you need to patch the path to files outside the nix store, you can do it this way
+    # (if the ppd also comes with executables you may need to also patch the executables)
+    substituteInPlace $out/share/cups/model/myprinter.ppd \
+      --replace &quot;/usr/yourProgram/&quot; &quot;<span class="hljs-subst">${yourProgram}</span>/bin/yourProgram&quot;
+  &#x27;&#x27;</span>;
+}</code></pre>
+      </div><p>Of course update the name of the files and adapt the substituteInPlace command to your needs. Then add your driver as:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  ...
+  <span class="hljs-attr">services.printing.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">services.printing.drivers</span> <span class="hljs-operator">=</span> [
+    (pkgs.callPackage <span class="hljs-symbol">./myPrinter.nix</span> {})
+  ];
+  ...
+}</code></pre>
+      </div><p>Your PPD file should now appear next to the other PPD files installed on your system when you add a new printer.</p>
+<p>For debugging purpose, it may be interesting to note that the data folder used by cups (containing the drivers and more) can be obtained by looking in the environment <code>$CUPS_DATADIR</code> (the contents of <code>$out/share/cups/</code> contained in your drivers are linked in this folder).</p>
+<h2 id="troubleshooting">Troubleshooting</h2><h3 id="upgrade-required">Upgrade required</h3><p>Described in: <a href="https://github.com/NixOS/nixpkgs/issues/23993">Github issue 23993</a></p>
+<p><strong>Problem</strong><br>Using the cups web interface, the page tells you &quot;Upgrade Required&quot; and then redirects you to a page that fails to load.<br><strong>Cause</strong><br>When you are using http and cups wants authentication it will redirect you to a https version by default.<br>In order to use https it needs ssl keys. However it is possible that cups fails to generate these keys, and then the page will fail to load.<br><strong>Solution</strong><br>Either we can help cups to get ssl keys, or we can tell it to not use https at all.</p>
+<p><em>Generating ssl keys:</em><br>First make sure the directory <code>/etc/cups/ssl</code> exists:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">sudo</span> <span class="hljs-built_in">mkdir</span> -p /etc/cups/ssl</code></pre>
+      </div><p>Try restarting cups and using the web interface again. This might be enough to get it working. If this didn&#39;t help, then check if cups has generated ssl keys in <code>/etc/cups/ssl</code>.</p>
+<p><em>Disabling ssl:</em><br>Edit your <code>/etc/nixos/configuration.nix</code> and add the following lines:  </p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.printing.extraConf</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+  DefaultEncryption Never
+&#x27;&#x27;</span>;</code></pre>
+      </div><h3 id="unable-to-launch-ghostscript-gs-no-such-file-or-directory">Unable to launch Ghostscript: gs: No such file or directory</h3><p>Described in: <a href="https://github.com/NixOS/nixpkgs/issues/20806">Github issue 20806</a> and <a href="https://github.com/NixOS/nixpkgs/issues/22062">issues 22062</a><br><strong>Problem</strong><br>When printing, cups will report an error: <code>Unable to launch Ghostscript: gs: No such file or directory</code><br><strong>Cause</strong><br>Some drivers use the ghostscript binary.<br>Cups will look for the binary path in it&#39;s config file: <code>cupsd.conf</code><br>This file is normally a link. But it can be overwritten, and consequentially become outdated.<br><strong>Solution</strong><br>You could try to manually fix the path variable in <code>/var/lib/cups/cupsd.conf</code><br>Alternatively you could try to delete the file and run <code>sudo nixos-rebuild switch</code></p>
+<h3 id="file-is-missing-gnome-3">File is missing (Gnome 3)</h3><p>When you add an printer in Gnome (using <code>gnome-control-center printers</code>) you create a profile for your printer.</p>
+<p><strong>Problem</strong><br>But, later you may experience an error like <code>/nix/store/.../lib/cups/filter/pstospl not available: No such file or directory</code>.</p>
+<p><strong>Cause</strong><br>When you create a printer profile you get a freeze version of cups filter and when cups is updated, because you have upgraded your system, and garbage collected this version is gone.</p>
+<p><strong>Solution</strong><br>Go into the <code>gnome-control-center printers</code> settings, remove the printer and recreate it.</p>
+<h3 id="debugging-a-broken-printer-driver">Debugging a broken printer driver</h3><p>Add to <code>/etc/nixos/configuration.nix</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.printing.logLevel</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;debug&quot;</span>;</code></pre>
+      </div><p>Rebuild</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">sudo</span> nixos-rebuild switch</code></pre>
+      </div><p>Watch the cups logs</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">journalctl --follow --unit=cups</code></pre>
+      </div><p>or</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">journalctl --follow --unit=cups | grep -C10 --color=always -i -e <span class="hljs-string">&#x27;No such file or directory&#x27;</span> -e <span class="hljs-string">&#x27;error:&#x27;</span></code></pre>
+      </div><p>Start a print job</p>
+<p>Now watch the cups logs for errors like <code>No such file or directory</code></p>
+<h3 id="setting-up-panasonic-printers">Setting up Panasonic printers</h3><p>See <a href="https://prince213.top/blog/2025/01/16/nixos-mccgdi/">this blog post</a>.</p>
+<h3 id="setting-up-hp-printers-with-proprietary-drivers">Setting up HP printers with proprietary drivers</h3><p><strong>Problem</strong><br>Regular CUPS UI may not be able to add HP printers with proprietary drivers.</p>
+<p><strong>Solution</strong><br>Use</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">NIXPKGS_ALLOW_UNFREE=1 nix-shell -p hplipWithPlugin --run <span class="hljs-string">&#x27;sudo -E hp-setup&#x27;</span></code></pre>
+      </div><p>to add the printer.</p>
+<h3 id="setting-up-brother-hl-1212w-laser-printer-over-the-network">Setting up Brother HL-1212W laser printer over the network</h3><p>Install the cups-brother-hl1210w package.</p>
+<p>Enable auto discovery as <a href="https://mirror.nixoscn.org/wiki/Printing/Printing#Enable_auto-discovery_of_network_printers" class="wikilink" title="above">above</a></p>
+<p>Now you should be able to add the printer to your system. If asked to select make and model or PPD, use the PPD for the HL-1250 from <a href="https://www.openprinting.org/driver/hl1250">https://www.openprinting.org/driver/hl1250</a></p>
+<p><a href="category:Hardware" class="wikilink" title="Category:Hardware">Category:Hardware</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

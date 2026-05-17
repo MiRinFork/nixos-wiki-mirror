@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NixOS on ARM/ODROID-C2</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM">NixOS on ARM</a><span aria-hidden="true"> / </span>ODROID-C2</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: NixOS on ARM/ODROID-C2 -->
+
+<div class="infobox">
+
+<table>
+<thead>
+<tr>
+<th colspan="2" class="title"><p>Hardkernel ODROID-C2</p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td colspan="2"><figure>
+<img src="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/ODROID-C2/ODROID-C2.jpg" title="An ODROID-C2." width="256" />
+<figcaption>An ODROID-C2.</figcaption>
+</figure></td>
+</tr>
+<tr>
+<td><p>Manufacturer</p></td>
+<td><p>Hardkernel</p></td>
+</tr>
+<tr>
+<td><p>Architecture</p></td>
+<td><p>AArch64</p></td>
+</tr>
+<tr>
+<td><p>Bootloader</p></td>
+<td><p>Upstream U-Boot</p></td>
+</tr>
+<tr>
+<td><p>Boot options</p></td>
+<td><p>SD, eMMC</p></td>
+</tr>
+</tbody>
+</table>
+
+</div>
+
+<h2 id="status">Status</h2><p>Mainline kernel from NixOS has been reported as working<sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/ODROID-C2#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup>. A non-specified build from mainline u-boot also has been reported to work.</p>
+<h2 id="board-specific-installation-notes">Board-specific installation notes</h2><p>Note this assumes u-boot is in partition 1 of your board&#39;s connected eMMC. If you haven&#39;t done that yet, you can build it with nix and then write it this fusing script (using an emmc/usb adapter) <a href="http://mirror.archlinuxarm.org/aarch64/alarm/uboot-odroid-c2-mainline-2019.07-1-aarch64.pkg.tar.xz">download and extract</a> (replace /dev/sdX with the device for the eMMC):</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nix-build <span class="hljs-string">&#x27;&lt;nixpkgs&gt;&#x27;</span> -A pkgsCross.aarch64-multiplatform.ubootOdroidC2
+<span class="hljs-built_in">cd</span> result
+bash /path/to/extracted/boot/sd_fusing.sh /dev/sdX</code></pre>
+      </div><ol>
+<li>Download the sd-image from Hydra at <a href="https://hydra.nixos.org/job/nixos/release-22.05-aarch64/nixos.sd_image.aarch64-linux/latest">https://hydra.nixos.org/job/nixos/release-22.05-aarch64/nixos.sd_image.aarch64-linux/latest</a></li>
+<li>Copy it to the SD card</li>
+<li>Mount first partition to /mnt with <code>sudo mount /dev/mmcblk0p1 /mnt</code></li>
+<li>Edit /mnt/extlinux/extlinux.conf and delete all the console=tty.... arguments in the APPEND line</li>
+<li>Add <code>console=ttyAML0,115200n8</code> to the end of the APPEND line</li>
+</ol>
+<p>it will look something like this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">$ <span class="hljs-built_in">cat</span>  /mnt/extlinux/extlinux.conf
+<span class="hljs-comment"># Generated file, all changes will be lost on nixos-rebuild!</span>
+
+<span class="hljs-comment"># Change this to e.g. nixos-42 to temporarily boot to an older configuration.</span>
+DEFAULT nixos-default
+
+MENU TITLE ------------------------------------------------------------
+TIMEOUT 30
+
+LABEL nixos-default
+  MENU LABEL NixOS - Default
+  LINUX ../nixos/gz1chw67hj8fj2b3xdrkv1nxrv8jvdzv-linux-4.19.13-Image
+  INITRD ../nixos/4gifkl2yv2g58nxmf6z68y42s70xrsg0-initrd-initrd
+  FDTDIR ../nixos/gz1chw67hj8fj2b3xdrkv1nxrv8jvdzv-linux-4.19.13-dtbs
+  APPEND systemConfig=/nix/store/...-nixos-system-nixos-xxx.xxx.xxx.xxx init=/nix/store/...-nixos-system-nixos-xx.xx.xxxx.xxx init loglevel=7 cma=32M console=ttyAML0,115200n8</code></pre>
+      </div><p>and then boot the sdcard.</p>
+<p>Once booted, partition your on-board emmc like:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">Device         Boot    Start      End  Sectors  Size Id Type
+/dev/mmcblk0p1          2048   264191   262144  128M  c W95 FAT32 (LBA)
+/dev/mmcblk0p2 *      264192 50595839 50331648   24G 83 Linux
+/dev/mmcblk0p3      50595840 61071359 10475520    5G 83 Linux</code></pre>
+      </div><p>note **p2** is bootable.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">mkfs.ext4 /dev/mmcblk0p2</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">mkswap /dev/mmcblk0p3</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">swapon /dev/mmcblk0p3</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">mount /dev/mmcblk0p2 /mnt</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">nixos-generate-config /mnt</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">nixos-install</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">reboot</span></code></pre>
+      </div><h2 id="serial-console">Serial console</h2><p>I used minicom to access the serial console:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">$ cat /etc/minirc.odroid-c2 
+# Machine-generated file - use &quot;minicom -s&quot; to change parameters.
+pu port             /dev/ttyUSB0
+pu lock             /var/lock
+pu rtscts           No</code></pre>
+      </div><p>then run <code>sudo minicom</code> to access the console.</p>
+<h2 id="xorg">Xorg</h2><p>Nixos 20.03 should install all modules needed for this to work but at least two changes should be made to the xorg configuration:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">services.xserver.videoDrivers = [ &quot;modesetting&quot;  ];
+  services.xserver.extraConfig = ''
+    Section &quot;OutputClass&quot;
+        Identifier &quot;Meson&quot;
+        MatchDriver &quot;meson&quot;
+        Driver &quot;modesetting&quot;
+        Option &quot;PrimaryGPU&quot; &quot;true&quot;
+    EndSection
+  '';</code></pre>
+      </div><p>The HW cursor support was very laggy when tried on 20.03 so enabling the software cursor may be desired:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">services.xserver.deviceSection = &quot;Option \&quot;SWcursor\&quot; \&quot;on\&quot;&quot;;</code></pre>
+      </div><h2 id="resources">Resources</h2><ul>
+<li><a href="https://www.hardkernel.com/shop/odroid-c2/">Official product page</a></li>
+<li>NixOS Image Build for <a href="https://github.com/georgewhewell/nixos-nanopim3/blob/master/hardware/boards/odroid-c2.nix">Odroid-C2 by George Whewell</a></li>
+</ul>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p><a href="https://logs.nix.samueldr.com/nixos-aarch64/2018-01-25#863144">https://logs.nix.samueldr.com/nixos-aarch64/2018-01-25#863144</a>; <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/ODROID-C2#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

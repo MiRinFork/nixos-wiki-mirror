@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Prosody</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Prosody</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Prosody -->
+
+<p><a href="https://prosody.im/">Prosody</a> is an open-source, modern XMPP server.</p>
+<p>It is documented in the <a href="https://nixos.org/manual/nixos/stable/#module-services-prosody">NixOS manual</a>.</p>
+<p>This page describes how to setup a walled-off Prosody instance for your organisation or family, with STUN/TURN support and http upload. This setup has server-to-server communication disabled.</p>
+<h1 id="set-up-dns-records-for-prosody">Set up DNS records for Prosody</h1><p>See official Prosody documentation here <a href="https://prosody.im/doc/dns">1</a>.</p>
+<ul>
+<li>Domain of the xmpp address is the bare top level domain example.org. The bare top level domain has SRV records pointing to XMPP server xmpp.example.org.</li>
+</ul>
+<!-- -->
+
+<ul>
+<li>XMPP server is hosted on xmpp.example.org.</li>
+</ul>
+<!-- -->
+
+<ul>
+<li>XMPP services, such as STUN/TURN server, Multi-User Chat and HTTP upload are hosted at *.xmpp.example.org. As *.xmpp.example.org is not a direct subdomain of example.org, we need to set mod_disco to let XMPP client to discover the services.</li>
+</ul>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">services.prosody.disco_items</span> <span class="hljs-operator">=</span> [
+    {
+      <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;http upload&quot;</span>;
+      <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;upload.xmpp.<span class="hljs-subst">${domainName}</span>&quot;</span>;
+    }
+  ];</code></pre>
+      </div><ul>
+<li>STUN/TURN server is hosted on turn.xmpp.example.org.</li>
+<li>Multi-User Chat is hosted on muc.xmpp.example.org.</li>
+<li>HTTP upload server is hosted on upload.xmpp.example.org.</li>
+</ul>
+<h1 id="ssl-certificate-with-acme">SSL Certificate with ACME</h1><p>This article assumes a working <a href="https://mirror.nixoscn.org/wiki/Prosody/ACME" class="wikilink" title="ACME">ACME</a> configuration for certificate renewal.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  config,
+  ...
+}:
+<span class="hljs-keyword">let</span>
+  <span class="hljs-attr">sslCertDir</span> <span class="hljs-operator">=</span> config.security.acme.certs.<span class="hljs-string">&quot;example.org&quot;</span>.directory;
+  <span class="hljs-attr">domainName</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;example.org&quot;</span>;
+<span class="hljs-keyword">in</span>
+{
+  <span class="hljs-comment"># further prosody &amp; coturn configuration goes here</span>
+  ...
+}</code></pre>
+      </div><h1 id="set-up-prosody">Set up Prosody</h1><h2 id="open-firewall-for-client-to-server-c2s">Open firewall for client to server c2s</h2><div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">networking.firewall</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">allowedTCPPorts</span> <span class="hljs-operator">=</span> [
+      <span class="hljs-comment"># prosody client to server</span>
+      <span class="hljs-number">5222</span>
+      <span class="hljs-number">5223</span>
+    ];
+  };</code></pre>
+      </div><h2 id="authentication-and-xmpp-modules">Authentication and XMPP modules</h2><div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">services.prosody</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-comment"># this is a minimal server config with turn and http upload</span>
+    <span class="hljs-comment"># all server to server connection are blocked</span>
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">admins</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;admin@<span class="hljs-subst">${domainName}</span>&quot;</span> ];
+    <span class="hljs-attr">allowRegistration</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+    <span class="hljs-attr">authentication</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;internal_plain&quot;</span>;
+    <span class="hljs-attr">s2sSecureAuth</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">c2sRequireEncryption</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">modules</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">admin_adhoc</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+      <span class="hljs-attr">cloud_notify</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+      <span class="hljs-attr">pep</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+      <span class="hljs-attr">blocklist</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+      <span class="hljs-attr">bookmarks</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+      <span class="hljs-attr">dialback</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+      <span class="hljs-attr">ping</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+      <span class="hljs-attr">private</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+      <span class="hljs-attr">register</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+      <span class="hljs-attr">vcard_legacy</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+    };
+    <span class="hljs-attr">xmppComplianceSuite</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+  };</code></pre>
+      </div><h2 id="setup-multi-user-conference-module">Setup Multi User Conference module</h2><div class="code-container">
+        
+        <pre><code class="language-nix hljs">
+  <span class="hljs-attr">services.prosody</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">muc</span> <span class="hljs-operator">=</span> [
+      {
+        <span class="hljs-attr">domain</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;muc.xmpp.<span class="hljs-subst">${domainName}</span>&quot;</span>;
+        <span class="hljs-attr">restrictRoomCreation</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+      }
+    ];
+  }</code></pre>
+      </div><h2 id="setup-virtual-host-and-ssl">Setup virtual host and ssl</h2><div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">services.prosody</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">ssl</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">cert</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${sslCertDir}</span>/fullchain.pem&quot;</span>;
+      <span class="hljs-attr">key</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${sslCertDir}</span>/key.pem&quot;</span>;
+    };
+
+    <span class="hljs-attr">virtualHosts</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-comment"># xmpp server for &quot;@example.org&quot; is hosted on &quot;xmpp.example.org&quot;</span>
+      <span class="hljs-comment"># use SRV records.</span>
+      <span class="hljs-string">&quot;myvhost0&quot;</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">domain</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${domainName}</span>&quot;</span>;
+        <span class="hljs-attr">enabled</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      };
+    };
+  };</code></pre>
+      </div><p>You also need to set proper file permissions on the cert directory and key files. See <a href="https://mirror.nixoscn.org/wiki/Prosody/ACME#Integration_with_service_modules" class="wikilink" title="ACME#Integration_with_service_modules">ACME#Integration_with_service_modules</a>.</p>
+<h2 id="optional-use-sqlite">Optional: use sqlite</h2><div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">services.prosody</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">extraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+      storage = &quot;sql&quot;
+      sql = {
+        driver = &quot;SQLite3&quot;;
+        database = &quot;prosody.sqlite&quot;; -- The database name to use. For SQLite3 this the database filename (relative to the data storage directory).
+      }
+    &#x27;&#x27;</span>;
+  };</code></pre>
+      </div><p>sqlite seems to be more performant than the default file-backed storage driver.</p>
+<h1 id="set-up-coturn">Set up coturn</h1><h2 id="open-firewall-ports">Open firewall ports</h2><div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">networking.firewall</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">allowedTCPPorts</span> <span class="hljs-operator">=</span> [
+      <span class="hljs-comment"># prosody turn/stun with coturn</span>
+      <span class="hljs-comment"># see /run/coturn/turnserver.cfg</span>
+      <span class="hljs-number">3478</span>
+      <span class="hljs-number">3479</span>
+      <span class="hljs-number">5349</span>
+      <span class="hljs-number">5350</span>
+    ];
+    <span class="hljs-attr">allowedUDPPorts</span> <span class="hljs-operator">=</span> [
+      <span class="hljs-comment"># prosody turn/stun with coturn</span>
+      <span class="hljs-number">3478</span>
+      <span class="hljs-number">3479</span>
+      <span class="hljs-number">5349</span>
+      <span class="hljs-number">5350</span>
+    ];
+    <span class="hljs-attr">allowedUDPPortRanges</span> <span class="hljs-operator">=</span> [
+      <span class="hljs-comment"># coturn</span>
+      {
+        <span class="hljs-attr">from</span> <span class="hljs-operator">=</span> <span class="hljs-number">49152</span>;
+        <span class="hljs-attr">to</span> <span class="hljs-operator">=</span> <span class="hljs-number">65535</span>;
+      }
+    ];
+  };</code></pre>
+      </div><h2 id="set-up-coturn">Set up coturn</h2><div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">age.secrets.prosody-coturn</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">file</span> <span class="hljs-operator">=</span> <span class="hljs-symbol">./prosody-coturn.age</span>;
+    <span class="hljs-comment"># -rw-r--r--</span>
+    <span class="hljs-attr">mode</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;644&quot;</span>;
+  };
+
+  <span class="hljs-attr">services.coturn</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-comment"># https://prosody.im/doc/coturn</span>
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">listening-port</span> <span class="hljs-operator">=</span> <span class="hljs-number">3478</span>;
+    <span class="hljs-attr">pkey</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${sslCertDir}</span>/key.pem&quot;</span>;
+    <span class="hljs-attr">cert</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${sslCertDir}</span>/fullchain.pem&quot;</span>;
+    <span class="hljs-attr">realm</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;turn.xmpp.<span class="hljs-subst">${domainName}</span>&quot;</span>;
+    <span class="hljs-attr">static-auth-secret-file</span> <span class="hljs-operator">=</span> config.age.secrets.prosody-coturn.path;
+    <span class="hljs-attr">use-auth-secret</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  };</code></pre>
+      </div><h2 id="connect-to-prosody">Connect to prosody</h2><div class="code-container">
+        
+        <pre><code class="language-nix hljs">  services.prosody.virtualHosts.<span class="hljs-string">&quot;myvhost0&quot;</span>.extraConfig <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    turn_external_host = &quot;turn.xmpp.<span class="hljs-subst">${domainName}</span>&quot;
+    turn_external_secret = &quot;unfortunately this is a inline password&quot;
+  &#x27;&#x27;</span>;
+  <span class="hljs-attr">services.prosody.extraModules</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;turn_external&quot;</span> ];</code></pre>
+      </div><h1 id="http-upload-with-prosody-filer-and-nginx">http upload with prosody-filer and nginx</h1><p>Although newer prosody versions does not require external http upload to run, prosody-filer is still more performant than the built-in server. <a href="https://github.com/ThomasLeister/prosody-filer/issues/39">2</a></p>
+<h2 id="open-firewall-ports">Open firewall ports</h2><div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">networking.firewall</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">allowedTCPPorts</span> <span class="hljs-operator">=</span> [
+      <span class="hljs-comment"># prosody https upload</span>
+      <span class="hljs-number">443</span>
+    ];
+  };</code></pre>
+      </div><h2 id="setup-prosody-filer-service">Setup prosody-filer service</h2><div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-comment"># set up directory for storing uploaded file</span>
+  <span class="hljs-attr">systemd.services.prosody-filer.serviceConfig</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">StateDirectory</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;prosody-filer&quot;</span>;
+    <span class="hljs-attr">RuntimeDirectory</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;prosody-filer&quot;</span>;
+    <span class="hljs-attr">RuntimeDirectoryMode</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;0750&quot;</span>;
+  };
+
+  <span class="hljs-attr">services.prosody-filer</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">secret</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;plain in line password&quot;</span>;
+      <span class="hljs-attr">storeDir</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/var/lib/prosody-filer/uploads/&quot;</span>;
+
+      <span class="hljs-comment"># this option refers to the upload url</span>
+      <span class="hljs-comment"># https://upload.xmpp.${domainName}/upload/</span>
+      <span class="hljs-comment">#                                  &lt;-------&gt;</span>
+      <span class="hljs-comment"># do not change this, else 404</span>
+      <span class="hljs-attr">uploadSubDir</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;upload/&quot;</span>;
+    };
+  };</code></pre>
+      </div><h2 id="set-up-nginx-virtual-host">Set up nginx virtual host</h2><div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">services.nginx</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">clientMaxBodySize</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;50m&quot;</span>;
+    virtualHosts.<span class="hljs-string">&quot;upload.xmpp.<span class="hljs-subst">${domainName}</span>&quot;</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">forceSSL</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">useACMEHost</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${domainName}</span>&quot;</span>;
+      locations.<span class="hljs-string">&quot;/upload/&quot;</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">proxyPass</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;http://localhost:5050/upload/&quot;</span>;
+        <span class="hljs-comment"># config copied from https://github.com/ThomasLeister/prosody-filer/blob/develop/README.md</span>
+        <span class="hljs-attr">extraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+            proxy_request_buffering off;
+
+          if ( $request_method = OPTIONS ) {
+                  add_header Access-Control-Allow-Origin &#x27;*&#x27;;
+                  add_header Access-Control-Allow-Methods &#x27;PUT, GET, OPTIONS, HEAD&#x27;;
+                  add_header Access-Control-Allow-Headers &#x27;Authorization, Content-Type&#x27;;
+                  add_header Access-Control-Allow-Credentials &#x27;true&#x27;;
+                  add_header Content-Length 0;
+                  add_header Content-Type text/plain;
+                  return 200;
+          }
+        &#x27;&#x27;</span>;
+      };
+    };
+  };</code></pre>
+      </div><h2 id="connect-filer-to-prosody">Connect filer to Prosody</h2><div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">services.prosody.extraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    Component &quot;upload.xmpp.<span class="hljs-subst">${domainName}</span>&quot; &quot;http_upload_external&quot;
+    http_upload_external_secret = &quot;should be the same pwd as above&quot;;
+    http_upload_external_base_url = &quot;https://upload.xmpp.<span class="hljs-subst">${domainName}</span>/upload/&quot;
+    http_upload_external_file_size_limit = 52428800
+  &#x27;&#x27;</span>;
+  <span class="hljs-attr">services.prosody.disco_items</span> <span class="hljs-operator">=</span> [
+    {
+      <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;http upload&quot;</span>;
+      <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;upload.xmpp.<span class="hljs-subst">${domainName}</span>&quot;</span>;
+    }
+  ];
+
+  <span class="hljs-comment"># mod_http_upload_external is a community module</span>
+  <span class="hljs-comment"># has to be installed via</span>
+  <span class="hljs-comment"># https://modules.prosody.im/mod_http_upload_external.html#installation</span>
+
+  <span class="hljs-comment">## Clone Prosody Community Modules Repo</span>
+  <span class="hljs-comment"># cd /var/lib/prosody</span>
+  <span class="hljs-comment"># hg clone https://hg.prosody.im/prosody-modules/ prosody-modules</span>
+  <span class="hljs-comment"># update plugins via hg pull --update</span>
+  <span class="hljs-attr">services.prosody.extraPluginPaths</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-string">&quot;/var/lib/prosody/prosody-modules/mod_http_upload_external&quot;</span>
+  ];</code></pre>
+      </div><h1 id="final-checkup">Final Checkup</h1><p>Run prosodyctl check to check for local configuration and DNS setup errors.</p>
+<p><a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="category:NixOS_Manual" class="wikilink" title="Category:NixOS Manual">Category:NixOS Manual</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

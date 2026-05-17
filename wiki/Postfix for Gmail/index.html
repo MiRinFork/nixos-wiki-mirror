@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Postfix for Gmail</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Postfix for Gmail</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Postfix for Gmail -->
+
+<p>This is how to setup Postfix to use Gmail as a relay host, so it can send email via Gmail, e.g. for output of cronjobs etc.</p>
+<h2 id="option-use-msmtp-instead-of-postfix">Option: use msmtp instead of postfix</h2><p>Msmtp seems to be easier to configure, see <a href="https://mirror.nixoscn.org/wiki/Postfix%20for%20Gmail/ZFS#Mail_notifications_(ZFS_Event_Daemon)" class="wikilink" title="ZFS#Mail_notifications_(ZFS_Event_Daemon)">ZFS#Mail_notifications_(ZFS_Event_Daemon)</a></p>
+<h2 id="secrets-configuration">Secrets Configuration</h2><p>This page follows the configuration defined in <a href="https://github.com/Mic92/sops-nix"><code>sops-nix</code></a>, but you can use any <a href="https://mirror.nixoscn.org/wiki/Postfix%20for%20Gmail/Comparison_of_secret_managing_schemes" class="wikilink" title="secret managing scheme">secret managing scheme</a>.</p>
+<h2 id="add-a-quot-postfix-sasl_passwd-quot-secret">Add a &quot;postfix/sasl_passwd&quot; secret</h2><p>Create an app password specifically for this postfix installation at <a href="https://myaccount.google.com/apppasswords">https://myaccount.google.com/apppasswords</a> (logged in as you).</p>
+<p>You end up with a 16 character string separated by spaces. Put that in a sops secret:</p>
+<p><code> nix-shell -p sops --run &quot;sops /etc/nixos/sops-secrets.yaml&quot;</code></p>
+<p>Create this entry, using the 16 character string without spaces (<em>Don&#39;t use the &quot;abcdefghjklmnopq&quot; string below. It won&#39;t work :-)</em> ):</p>
+<p><code> postfix:</code><br><code>     sasl_passwd: &#39;[smtp.gmail.com]:587 you@gmail.com:abcdefghjklmnopq&#39;</code></p>
+<h2 id="configure-postfix">Configure Postfix</h2><p><code> sops.secrets.&quot;postfix/sasl_passwd&quot;.owner = config.services.postfix.user;</code></p>
+<p><code> services.postfix = {</code><br><code>   enable = true;</code><br><code>   relayHost = &quot;smtp.gmail.com&quot;;</code><br><code>   relayPort = 587;</code><br><code>   config = {</code><br><code>     smtp_use_tls = &quot;yes&quot;;</code><br><code>     smtp_sasl_auth_enable = &quot;yes&quot;;</code><br><code>     smtp_sasl_security_options = &quot;&quot;;</code><br><code>     smtp_sasl_password_maps = &quot;texthash:${config.sops.secrets.&quot;postfix/sasl_passwd&quot;.path}&quot;;</code><br><code>     # optional: Forward mails to root (e.g. from cron jobs, smartd)</code><br><code>     # to me privately and to my work email:</code><br><code>     virtual_alias_maps = &quot;inline:{ {root=you@work.example, you@home.example} }&quot;;</code><br><code>   };</code><br><code> };</code></p>
+<h2 id="profit">Profit</h2><p><code> sudo nixos-rebuild switch</code></p>
+<p>Send an email explicitly to <a href="mailto:you@gmail.com">you@gmail.com</a></p>
+<p><code> nix-shell -p mailutils --run \</code><br><code>   &#39;echo &quot;This is a test email.&quot; | mail -s &quot;Test Email from NixOS&quot; you@gmail.com&#39;</code></p>
+<p>Send an email explicitly to root that gets sent to <a href="mailto:you@gmail.com">you@gmail.com</a> and <a href="mailto:you@work.com">you@work.com</a> (if you opted in for virtual_alias_maps)</p>
+<p><code> nix-shell -p mailutils --run \</code><br><code>   &#39;echo &quot;This is a test email.&quot; | mail -s &quot;Test Email from NixOS to root&quot; root&#39;</code></p>
+<h2 id="references">References</h2><p><a href="https://discourse.nixos.org/t/porting-my-postfix-gmail-smtp-to-nixos/30286">Porting my postfix gmail smtp to nixos</a> on the NixOS Discourse.</p>
+<p><a href="category:Mail_Server" class="wikilink" title="Category:Mail Server">Category:Mail Server</a> <a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

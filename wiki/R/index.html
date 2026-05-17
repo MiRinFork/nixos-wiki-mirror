@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>R</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / R</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: R -->
+
+<p><a href="https://www.r-project.org/">R</a> comes with a very large number of packages, many of which available through nixpkgs. In particular, any package available through <a href="https://cran.r-project.org/">CRAN</a>.</p>
+<p>Similarly to <a href="https://mirror.nixoscn.org/wiki/R/Python" class="wikilink" title="Python">Python</a>, your packages must be declared when installing R. Commands such as <code>install.packages(&quot;ggplot2&quot;)</code> will not work.</p>
+<p>To install R with a collection of packages, a new nix package must be defined, for instance &lt;syntaxhighlight lang=&quot;nix&gt; with pkgs; let</p>
+<p><code> R-with-my-packages = rWrapper.override{ packages = with rPackages; [ ggplot2 dplyr xts ]; };</code></p>
+<p>in ...</p>
+</syntaxhighlight>
+
+<p>and then you can put <code>R-with-my-packages</code> into your <code>environment.systemPackages</code> for a system-wide installation, for instance.</p>
+<p>If you with to use `nix-shell` to generate an on-the-fly environment with some R packages, the command is similar:</p>
+<div class="code-container">
+        
+        <pre><code class="language-sh hljs">nix-shell --packages <span class="hljs-string">&#x27;rWrapper.override{packages = [ rPackages.ggplot2 ];}&#x27;</span></code></pre>
+      </div><h2 id="rstudio">RStudio</h2><p>RStudio uses a standard set of packages and ignores any custom R environments, like the one set up above. To install it you can use <code>rstudioWrapper</code> just as we used <code>rWrapper</code> earlier. &lt;syntaxhighlight lang=&quot;nix&gt; RStudio-with-my-packages = rstudioWrapper.override{ packages = with rPackages; [ ggplot2 dplyr xts ]; };</p>
+</syntaxhighlight>
+
+<h2 id="positron">Positron</h2><p>Currently, the easiest way to use positron with nix is with mkShell:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-keyword">let</span>
+  <span class="hljs-attr">pkgs</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> { };
+<span class="hljs-keyword">in</span>
+pkgs.mkShell {
+  <span class="hljs-attr">packages</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-comment"># Positron</span>
+    pkgs.positron-bin
+
+    <span class="hljs-comment"># R &amp; packages.</span>
+    pkgs.R
+    pkgs.rPackages.httr
+    pkgs.rPackages.ggplot2
+
+    <span class="hljs-comment"># Python, ipykernel &amp; packages.</span>
+    <span class="hljs-comment"># pkgs.python313</span>
+    <span class="hljs-comment"># pkgs.python313Packages.ipykernel # <span class="hljs-doctag">NOTE:</span> Required for python.</span>
+    <span class="hljs-comment"># pkgs.python313Packages.pandas</span>
+    <span class="hljs-comment"># pkgs.python313Packages.requests</span>
+  ];
+}</code></pre>
+      </div><p>Other utilities like rWrapper are not compatible.</p>
+<h2 id="jupyter-notebook">Jupyter Notebook</h2><p>Use <a href="https://github.com/tweag/jupyterWith">jupyterWith</a></p>
+<p>This <strong>shell.nix</strong> file creates a jupyter environment with the IRKernel available.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs <span class="hljs-operator">?</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> {} }:                                                 
+<span class="hljs-keyword">let</span>                                                             
+  <span class="hljs-attr">jupyter</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> (pkgs.fetchFromGitHub {                                      
+    <span class="hljs-attr">owner</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;tweag&quot;</span>;                                                            
+    <span class="hljs-attr">repo</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;jupyterWith&quot;</span>;                         
+    <span class="hljs-comment"># Replace this with current revision.                              </span>
+    <span class="hljs-attr">rev</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;269999caa8d506e93ff56c8643cecb91ded2fdef&quot;</span>;                           
+    <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;08iig872ay8d711n2gbfzrf496m9x9a9xwr0xca9hn7j61c3xr43&quot;</span>;            
+    <span class="hljs-attr">fetchSubmodules</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;                                                     
+  }) {};                                                                        
+                                                                                
+  <span class="hljs-attr">kernels</span> <span class="hljs-operator">=</span> jupyter.kernels;                                                    
+                                                                                
+  <span class="hljs-attr">irkernel</span> <span class="hljs-operator">=</span> kernels.iRWith {                
+      <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nixpkgs&quot;</span>;                                                         
+      <span class="hljs-comment"># Libraries to be available to the kernel.                                </span>
+      <span class="hljs-attr">packages</span> <span class="hljs-operator">=</span> <span class="hljs-params">p:</span> <span class="hljs-keyword">with</span> p; [                                                   
+        ggplot2                                                          
+      ];                                           
+    };                                                                          
+                                                                                
+  <span class="hljs-attr">jupyterEnvironment</span> <span class="hljs-operator">=</span> (jupyter.jupyterlabWith {                                
+      <span class="hljs-attr">kernels</span> <span class="hljs-operator">=</span> [ irkernel ];                                                   
+    });                                                                         
+<span class="hljs-keyword">in</span>                                                                              
+  jupyterEnvironment.env                 </code></pre>
+      </div><h2 id="r-with-lorri">R with Lorri</h2><p>An example of a <strong>shell.nix</strong> for usage with <a href="https://github.com/nix-community/lorri">lorri</a> is shown below:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-keyword">let</span>
+  <span class="hljs-attr">pkgs</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> {};
+<span class="hljs-keyword">in</span>
+  pkgs.mkShell {
+    <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+      R
+      rPackages.rmarkdown
+      rPackages.knitr
+    ];
+  }</code></pre>
+      </div><h2 id="r-with-flakes-and-nix-direnv">R with Flakes and nix-direnv</h2><p>R and accompanying R-packages can be installed using a <a href="https://mirror.nixoscn.org/wiki/R/Flakes" class="wikilink" title=" Flake"> Flake</a> and then managed/activated with <a href="https://github.com/nix-community/nix-direnv">nix-direnv</a> to create a reproducible development environment. After the initial setup of nix-direnv (instructions provided on the GitHub README), there is a <a href="https://github.com/nix-community/nix-direnv/blob/master/templates/flake/flake.nix">flake template</a> provided by the nix-direnv maintainers to get started. Run <code>nix flake new -t github:nix-community/nix-direnv .</code> to initialize the flake template in your current directory. This will create a `flake.nix` file that can be edited to setup the R-environment:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;A basic flake with a shell&quot;</span>;
+  <span class="hljs-attr">inputs.nixpkgs.url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:NixOS/nixpkgs/nixpkgs-unstable&quot;</span>;
+  <span class="hljs-attr">inputs.flake-utils.url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:numtide/flake-utils&quot;</span>;
+
+  <span class="hljs-attr">outputs</span> <span class="hljs-operator">=</span> { self, nixpkgs, flake-utils }:
+    flake-utils.lib.eachDefaultSystem (<span class="hljs-params">system:</span> <span class="hljs-keyword">let</span>
+      <span class="hljs-attr">pkgs</span> <span class="hljs-operator">=</span> nixpkgs.legacyPackages.${system};
+    <span class="hljs-keyword">in</span> {
+      <span class="hljs-attr">devShells.default</span> <span class="hljs-operator">=</span> pkgs.mkShell {
+        <span class="hljs-attr">nativeBuildInputs</span> <span class="hljs-operator">=</span> [ pkgs.bashInteractive ];
+        <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [ R rPackages.pagedown chromium pandoc ];
+       };
+    });
+}</code></pre>
+      </div><p>Saving the file and then running <code>direnv allow</code> in the terminal of the project directory will execute the `flake.lock` and build the shell. This will install the current version of R and the R-package {pagedown} that is in <nixpkgs>. Note additional system dependencies may need installed for certain packages to work such as pandoc for document conversion with {rmarkdown}. Here, chromium is installed in the `buildInputs` so the <code>chrome_print</code> function can be used from {pagedown}.</p>
+<p><a href="https://github.com/wbolster/emacs-direnv">Emacs has support for direnv</a> which can be setup to use R with ESS. Direnv functionality can also be set in Doom Emacs under :tools in the `init.el` file in `.doom.d` folder.</p>
+<h2 id="install-an-r-package-from-github">Install an R-package from GitHub</h2><p>The R-packages available in <nixpkgs> are generated from a recent snapshot of CRAN. You may find certain packages a version behind or want to install a package not on CRAN/Bioconducter. R-packages can be installed from GitHub using `buildRPackage` and `fetchFromGitHub`. An example of installing {rmarkdown} from GitHub using a Flake:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;A basic flake with a shell&quot;</span>;
+  <span class="hljs-attr">inputs.nixpkgs.url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:NixOS/nixpkgs/nixpkgs-unstable&quot;</span>;
+  <span class="hljs-attr">inputs.flake-utils.url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:numtide/flake-utils&quot;</span>;
+
+  <span class="hljs-attr">outputs</span> <span class="hljs-operator">=</span> { self, nixpkgs, flake-utils }:
+    flake-utils.lib.eachDefaultSystem (<span class="hljs-params">system:</span> <span class="hljs-keyword">let</span>
+      <span class="hljs-attr">pkgs</span> <span class="hljs-operator">=</span> nixpkgs.legacyPackages.${system};
+      <span class="hljs-attr">rmark</span> <span class="hljs-operator">=</span> pkgs.rPackages.buildRPackage {
+        <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;rmarkdown&quot;</span>;
+        <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> pkgs.fetchFromGitHub{
+          <span class="hljs-attr">owner</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;rstudio&quot;</span>;
+          <span class="hljs-attr">repo</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;rmarkdown&quot;</span>;
+          <span class="hljs-attr">rev</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;b87ca50c8c4d5a5876333b598aed4eb84de925a3&quot;</span>;
+          <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;12mhmmibizbxgmsns80c8h97rr7rclv9hz98zpgsl26hw3s4l0vm&quot;</span>;
+        };
+   <span class="hljs-attr">propagatedBuildInputs</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs.rPackages; [bslib evaluate jsonlite knitr stringr tinytex yaml xfun];
+      };
+    <span class="hljs-keyword">in</span> {
+      <span class="hljs-attr">devShells.default</span> <span class="hljs-operator">=</span> pkgs.mkShell {
+        <span class="hljs-attr">nativeBuildInputs</span> <span class="hljs-operator">=</span> [ pkgs.bashInteractive ];
+        <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [ R rmark pandoc ];
+      };
+    });
+}</code></pre>
+      </div><p>You will need to obtain the `rev` and `sha256` for the package on github <a href="https://search.nixos.org/packages?show=nix-prefetch-git&amp;type=packages&amp;query=nix-prefetch-git">which can be found by using the `nix-prefetch-git` command line tool.</a> For the above example, running <code>nix-prefetch-git </code><a href="https://github.com/rstudio/rmarkdown"><code>https://github.com/rstudio/rmarkdown</code></a> from a terminal will generate the information. You may need to manually specify other R-package/system dependencies for the specific package in the `propagatedBuildInputs`. This information can be found in the `DESCRIPTION` file of the R-package source directory.</p>
+<h2 id="install-an-r-package-from-source">Install an R package from source</h2><p>If you need a specific version of a package or find one that is not available in Nixpkgs, you can use `rPackages.buildRPackage` to build from source. The example below builds S4Arrays from BioConductor.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-keyword">let</span>
+  <span class="hljs-attr">pkgs</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> { };
+  <span class="hljs-attr">customPackage</span> <span class="hljs-operator">=</span> pkgs.rPackages.buildRPackage {
+    <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;S4Arrays&quot;</span>;
+    <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> pkgs.fetchurl {
+      <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://www.bioconductor.org/packages/release/bioc/src/contrib/S4Arrays_1.8.1.tar.gz&quot;</span>;
+      <span class="hljs-attr">hash</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sha256-8f2oA0xgwI6CucXbMU1yJC4W6tiVMcDAk8D3Ur3zxw8=&quot;</span>;
+    };
+    <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs.rPackages; [
+      pkgs.R
+      Matrix
+      abind
+      BiocGenerics
+      S4Vectors
+      IRanges
+      crayon
+    ];
+  };
+<span class="hljs-keyword">in</span>
+pkgs.mkShell {
+  <span class="hljs-attr">packages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs.rPackages; [
+    pkgs.R
+    Matrix
+    abind
+    BiocGenerics
+    S4Vectors
+    IRanges
+    crayon
+    customPackage <span class="hljs-comment"># the package we built from source.</span>
+  ];
+}</code></pre>
+      </div><h2 id="a-note-on-knitr">A note on knitr</h2><p>To knit a .Rmd file to a pdf (or .Rnw), you need to have included in your envronment <code>pkgs.texlive.combined.scheme-full</code>as well as <code>pandoc</code> or it will fail to knit. None of the other texlive packages contain the proper &quot;frame&quot; package. Note there are likely other workarounds but this requires the least effort.</p>
+<p>If <code>R</code> is included (using wrapper) but <code>pandoc</code> is not wanted in the user environment, one can expose it just for the R with</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">(rWrapper.override{
+  <span class="hljs-attr">packages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> rPackages; [
+    markdown
+    <span class="hljs-comment"># other plugins go also here</span>
+  ];
+}).overrideAttrs (<span class="hljs-params">old:</span> {
+  <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> (old.buildInputs <span class="hljs-keyword">or</span> []) <span class="hljs-operator">++</span> [
+    pkgs.pandoc
+  ];
+});</code></pre>
+      </div><h2 id="other-editors">Other Editors</h2><p><strong>with vim</strong> - <a href="https://mirror.nixoscn.org/wiki/R/Nvim-r" class="wikilink" title=" nvim-r"> nvim-r</a></p>
+<p><strong>with emacs</strong> - <a href="http://ess.r-project.org/">emacs speaks statistics</a></p>
+<h2 id="external-documentation">External Documentation</h2><ul>
+<li><a href="https://nixos.org/manual/nixpkgs/stable/#r">R user guide in nixpkgs manual</a></li>
+</ul>
+<h2 id="officer-package">Officer package</h2><p>When the R package &quot;officer&quot; has been installed from the Nix package manager, &quot;save_as_docx&quot; does not work:</p>
+<p>Error in write_xml.xml_document(private$doc, file = private$filename) : Error closing file Calls: save_as_docx ... print.rdocx -&gt; <Anonymous> -&gt; write_xml -&gt; write_xml.xml_document In addition: Warning messages: 1: In write_xml.xml_document(private$doc, file = private$filename) : Permission denie [1501] 2: In write_xml.xml_document(private$doc, file = private$filename) : Permission denie [1501]</p>
+<p>However officer does work if installed using the conventional install.packages() which can be enabled as discussed in <a href="https://churchman.nl/tag/r/">https://churchman.nl/tag/r/</a></p>
+<p><a href="category:Languages" class="wikilink" title="Category:Languages">Category:Languages</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NixOS on ARM/Radxa ROCK 5 ITX</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM">NixOS on ARM</a><span aria-hidden="true"> / </span>Radxa ROCK 5 ITX</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: NixOS on ARM/Radxa ROCK 5 ITX -->
+
+<div class="infobox">
+
+<table>
+<thead>
+<tr>
+<th colspan="2" class="title"><p><a href="https://radxa.com/products/rock5/5itx">Radxa ROCK 5 ITX</a></p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td colspan="2"><figure>
+<img src="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/Radxa%20ROCK%205%20ITX/Radxa_Rock_5_ITX.webp" title="Radxa R SBC" width="280" height="280" />
+<figcaption>Radxa R SBC</figcaption>
+</figure></td>
+</tr>
+<tr>
+<td><p>Manufacturer</p></td>
+<td><p><a href="https://radxa.com/">Radxa</a></p></td>
+</tr>
+<tr>
+<td><p>Architecture</p></td>
+<td><p>AArch64</p></td>
+</tr>
+<tr>
+<td><p>Bootloader</p></td>
+<td><p>Vendor BSP</p></td>
+</tr>
+<tr>
+<td><p>Boot order</p></td>
+<td><p>SPI NOR Flash, eMMC, SD</p></td>
+</tr>
+</tbody>
+</table>
+
+</div>
+
+<p>The <a href="https://docs.radxa.com/en/rock5/rock5itx">Radxa ROCK 5 ITX</a> is a Single-Board Computer with a Rockchip RK3588 SoC.</p>
+<ul>
+<li><strong>CPU</strong>: ARM Cortex-A76 and Cortex-A55</li>
+<li><strong>GPU</strong>: Mali-G610MC4</li>
+<li><strong>RAM</strong>: 4GB/8GB/16GB/32GB LPDDR5</li>
+<li><strong>MMC</strong>: eMMC Connector</li>
+<li><strong>Storage</strong>: 4x SATA Ports with Power Header</li>
+<li><strong>NET</strong>: 2x 2.5 Gigabit Ethernet</li>
+<li><strong>USB</strong>: 1x USB3.0 Type-C, 4x USB 3.0 Type-A, 2x USB 2.0 Type-A, 2x USB 2.0 Interface via Front USB header</li>
+<li><strong>PCIe</strong>: M.2 Key M connector with PCIe 3.0 x2</li>
+</ul>
+<h2 id="status">Status</h2><p>Support of this system is YMMV (your mileage may vary), and depends on vendor-provided BSP (Board Support Package) based components.</p>
+<p>Two kinds of bootloaders are available in different variants:</p>
+<ul>
+<li>U-Boot<ul>
+<li><a href="https://github.com/u-boot/u-boot/">Mainline</a></li>
+<li><a href="https://dl.radxa.com/rock5/5itx/images/">Vendor</a></li>
+</ul>
+</li>
+<li>EDK2/TianoCore<ul>
+<li><a href="https://github.com/edk2-porting/edk2-rk3588">EDK2 UEFI Firmware</a> - Recommended. Supports all storage boot options, including NVMe.</li>
+</ul>
+</li>
+</ul>
+<p>The official hardware documentation can be found <a href="https://docs.radxa.com/en/rock5/rock5itx">on the Radxa website</a>.</p>
+<h3 id="hardware-status">Hardware status</h3><ul>
+<li>Video output is not supported by mainline kernel 6.12 or older when the device tree is loaded. USB to TTL serial cable is recommended for debugging purposes.</li>
+</ul>
+<h2 id="bootloader-firmware">Bootloader Firmware</h2><h3 id="community-uefi-firmware">Community UEFI Firmware</h3><p>The best available bootloader is <a href="https://github.com/edk2-porting/edk2-rk3588">EDK2 UEFI firmware for Rockchip RK3588 platforms</a>. The <a href="https://github.com/edk2-porting/edk2-rk3588/releases/tag/v0.11.2">v0.11.2</a> release is confirmed working.</p>
+<p>In order to flash this bootloader we&#39;ll need to download two files:</p>
+<ul>
+<li><a href="https://dl.radxa.com/rock5/sw/images/loader/rk3588_spl_loader_v1.15.113.bin"><code>rk3588_spl_loader_v1.15.113.bin</code></a> - SPI bootloader image.</li>
+<li><a href="https://github.com/edk2-porting/edk2-rk3588/releases/download/v0.11.2/rock-5-itx_UEFI_Release_v0.11.2.img"><code>rock-5itx_UEFI_Release_v0.11.2.img</code></a> - UEFI bootloader image.</li>
+</ul>
+<p>Then use the <code>rkdeveloptool</code> tool in as described in <a href="https://docs.radxa.com/en/rock5/rock5itx/low-level-dev/maskrom/linux">SPI flashing documentation</a>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"> &gt; nix-shell -p rkdeveloptool
+
+[nix-shell:~/rk3588]$ <span class="hljs-built_in">sudo</span> rkdeveloptool db rk3588_spl_loader_v1.15.113.bin
+Downloading bootloader succeeded.
+
+[nix-shell:~/rk3588]$ <span class="hljs-built_in">sudo</span> rkdeveloptool wl 0 rock-5itx_UEFI_Release_v0.11.2.img
+Write LBA from file (100%)
+
+[nix-shell:~/rk3588]$ <span class="hljs-built_in">sudo</span> rkdeveloptool rd</code></pre>
+      </div><p>Now the device has a graphical bootloader available when pressing <code>Escape</code> at boot time:</p>
+<h2 id="system-configuration">System configuration</h2><h3 id="installer-iso">Installer ISO</h3><p>A custom installer ISO is required to get video output for installation.</p>
+<p>configuration.nix on x86 system:</p>
+<p><code>boot.binfmt.emulatedSystems = [ &quot;aarch64-linux&quot; ];</code></p>
+<p>iso.nix:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs, modulesPath, lib, ... }: {
+  <span class="hljs-attr">imports</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-string">&quot;<span class="hljs-subst">${modulesPath}</span>/installer/cd-dvd/installation-cd-minimal.nix&quot;</span>
+  ];
+
+  <span class="hljs-comment"># use the latest Linux kernel</span>
+  <span class="hljs-attr">boot.kernelPackages</span> <span class="hljs-operator">=</span> pkgs.linuxPackages_latest;
+
+  <span class="hljs-attr">boot.initrd.kernelModules</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-comment"># Rockchip modules</span>
+    <span class="hljs-string">&quot;rockchip_rga&quot;</span>
+    <span class="hljs-string">&quot;rockchip_saradc&quot;</span>
+    <span class="hljs-string">&quot;rockchip_thermal&quot;</span>
+    <span class="hljs-string">&quot;rockchipdrm&quot;</span>
+
+    <span class="hljs-comment"># GPU/Display modules</span>
+    <span class="hljs-string">&quot;analogix_dp&quot;</span>
+    <span class="hljs-string">&quot;cec&quot;</span>
+    <span class="hljs-string">&quot;drm&quot;</span>
+    <span class="hljs-string">&quot;drm_kms_helper&quot;</span>
+    <span class="hljs-string">&quot;dw_hdmi&quot;</span>
+    <span class="hljs-string">&quot;dw_mipi_dsi&quot;</span>
+    <span class="hljs-string">&quot;gpu_sched&quot;</span>
+    <span class="hljs-string">&quot;panel_edp&quot;</span>
+    <span class="hljs-string">&quot;panel_simple&quot;</span>
+    <span class="hljs-string">&quot;panfrost&quot;</span>
+    <span class="hljs-string">&quot;pwm_bl&quot;</span>
+
+    <span class="hljs-comment"># USB / Type-C related modules</span>
+    <span class="hljs-string">&quot;fusb302&quot;</span>
+    <span class="hljs-string">&quot;tcpm&quot;</span>
+    <span class="hljs-string">&quot;typec&quot;</span>
+
+    <span class="hljs-comment"># Misc. modules</span>
+    <span class="hljs-string">&quot;cw2015_battery&quot;</span>
+    <span class="hljs-string">&quot;gpio_charger&quot;</span>
+    <span class="hljs-string">&quot;rtc_rk808&quot;</span>
+  ];
+
+  <span class="hljs-comment"># kernelParams copy from Armbian&#x27;s /boot/armbianEnv.txt &amp; /boot/boot.cmd</span>
+  <span class="hljs-attr">boot.kernelParams</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-string">&quot;rootwait&quot;</span>
+
+    <span class="hljs-string">&quot;earlycon&quot;</span> <span class="hljs-comment"># enable early console, so we can see the boot messages via serial port / HDMI</span>
+    <span class="hljs-string">&quot;consoleblank=0&quot;</span> <span class="hljs-comment"># disable console blanking(screen saver)</span>
+    <span class="hljs-string">&quot;console=ttyS2,1500000&quot;</span> <span class="hljs-comment"># serial port</span>
+    <span class="hljs-string">&quot;console=tty1&quot;</span> <span class="hljs-comment"># HDMI</span>
+  ];
+
+  <span class="hljs-comment"># Needed for https://github.com/NixOS/nixpkgs/issues/58959</span>
+  <span class="hljs-attr">boot.supportedFilesystems</span> <span class="hljs-operator">=</span> lib.mkForce [ <span class="hljs-string">&quot;btrfs&quot;</span> <span class="hljs-string">&quot;reiserfs&quot;</span> <span class="hljs-string">&quot;vfat&quot;</span> <span class="hljs-string">&quot;f2fs&quot;</span> <span class="hljs-string">&quot;xfs&quot;</span> <span class="hljs-string">&quot;ntfs&quot;</span> <span class="hljs-string">&quot;cifs&quot;</span> ];
+}</code></pre>
+      </div><p>Generate ISO:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nix-shell -p nixos-generators --run <span class="hljs-string">&quot;nixos-generate --format iso --system aarch64-linux --configuration ./iso.nix -o result&quot;</span></code></pre>
+      </div><h3 id="edk2-settings">EDK2 settings</h3><p>Enable Custom Device Tree mode by going to the configuration menu -&gt; <code>ACPI / Device Tree</code> and setting <code>Support DTB override &amp; overlays</code> to <code>Enabled</code>.</p>
+<h3 id="configuration-nix">configuration.nix</h3><div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># Rock 5 ITX requires 6.12 or newer kernel</span>
+b<span class="hljs-attr">oot.kernelPackages</span> <span class="hljs-operator">=</span> pkgs.linuxPackages_latest;
+<span class="hljs-comment"># Generate device tree into EFI partition</span>
+boot.loader.systemd-boot.extraFiles.${config.hardware.deviceTree.name} <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${config.hardware.deviceTree.package}</span>/<span class="hljs-subst">${config.hardware.deviceTree.name}</span>&quot;</span>;
+<span class="hljs-attr">hardware.deviceTree.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+<span class="hljs-attr">hardware.deviceTree.name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;rockchip/rk3588-rock-5-itx.dtb&quot;</span>;
+<span class="hljs-attr">hardware.deviceTree.filter</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;*-rock-5-itx*.dtb&quot;</span>;
+<span class="hljs-attr">boot.kernelParams</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;dtb=/<span class="hljs-subst">${config.hardware.deviceTree.name}</span>&quot;</span> ];</code></pre>
+      </div><p><a href="category:NixOS_on_ARM" class="wikilink" title="Category:NixOS on ARM">Category:NixOS on ARM</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

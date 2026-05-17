@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Resources</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Resources</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Resources -->
+
+<p>This article is an overview of resources available both within the NixOS Wiki and elsewhere. For communication channels, support and information of contributing, see the community menu.</p>
+<h3 id="searching-by-topic">Searching by topic</h3><p>While most people just search for the article they want to read, there is also a way to reach almost all arcticles via 2 to 3 clicks from the starting page via the main 5 topic categories:</p>
+<ol>
+<li>&lt;a href=&quot;:```
+{{ns:14}}</li>
+</ol>
+<div class="code-container">
+        
+        <pre><code class="language-:Software" class="wikilink" title="Software">Software</a> hljs">2.  &lt;a href=&quot;:```
+{{ns:14}}
+```:Hardware&quot; class=&quot;wikilink&quot; title=&quot;Hardware&quot;&gt;Hardware&lt;/a&gt;
+3.  &lt;a href=&quot;:```
+{{ns:14}}
+```:Desktop&quot; class=&quot;wikilink&quot; title=&quot;Desktop&quot;&gt;Desktop&lt;/a&gt; - how to setup PCs
+4.  &lt;a href=&quot;:```
+{{ns:14}}
+```:Server&quot; class=&quot;wikilink&quot; title=&quot;Server&quot;&gt;Server&lt;/a&gt; - how to setup servers
+5.  &lt;a href=&quot;:```
+{{ns:14}}
+```:Community&quot; class=&quot;wikilink&quot; title=&quot;Community&quot;&gt;Community&lt;/a&gt; - people, communication, work on NixOS
+
+### Searching by article type
+
+The NixOS Wiki's core articles are divided into &lt;a href=&quot;:Category:Resource&quot; class=&quot;wikilink&quot; title=&quot;five type categories&quot;&gt;five type categories&lt;/a&gt;. Each category link will list all pages in that category:
+
+1.  &lt;a href=&quot;:Category:Pedias&quot; class=&quot;wikilink&quot; title=&quot;Pedias&quot;&gt;Pedias&lt;/a&gt;, for encyclopedic description
+2.  &lt;a href=&quot;:Category:Guide&quot; class=&quot;wikilink&quot; title=&quot;Guides&quot;&gt;Guides&lt;/a&gt;, for broad hands-on understanding and connections to other learning resources
+3.  &lt;a href=&quot;:Category:Tutorial&quot; class=&quot;wikilink&quot; title=&quot;Tutorials&quot;&gt;Tutorials&lt;/a&gt;, intended to teach a particular process or project
+4.  &lt;a href=&quot;:Category:Cookbook&quot; class=&quot;wikilink&quot; title=&quot;Cookbooks&quot;&gt;Cookbooks&lt;/a&gt;, collections of tips and tricks
+5.  &lt;a href=&quot;:Category:Reference&quot; class=&quot;wikilink&quot; title=&quot;Reference&quot;&gt;Reference&lt;/a&gt;, full manuals and technical coverage
+
+Pages are also organized by the six most prominent components of the &lt;a href=&quot;Nix_Ecosystem&quot; class=&quot;wikilink&quot; title=&quot;Nix Ecosystem&quot;&gt;Nix Ecosystem&lt;/a&gt; — NixOS, &lt;a href=&quot;Nix_package_manager&quot; class=&quot;wikilink&quot; title=&quot; Nix: the package manager&quot;&gt; Nix: the package manager&lt;/a&gt;, &lt;a href=&quot;Nix_Expression_Language&quot; class=&quot;wikilink&quot; title=&quot; Nix: the language (Nix Expressions)&quot;&gt; Nix: the language (Nix Expressions)&lt;/a&gt;, Nixpkgs, NixOps and Hydra.
+
+| NixOS Wiki Resources |
+|----|
+| Category |
+| &lt;a href=&quot;:Category:Pedias&quot; class=&quot;wikilink&quot; title=&quot;Pedia&quot;&gt;Pedia&lt;/a&gt; |
+| &lt;a href=&quot;:Category:Cookbook&quot; class=&quot;wikilink&quot; title=&quot;Cookbook&quot;&gt;Cookbook&lt;/a&gt; |
+|  |
+| NixOS Official Resources |
+| Category |
+| &lt;a href=&quot;:Category:Reference&quot; class=&quot;wikilink&quot; title=&quot;Reference&quot;&gt;Reference&lt;/a&gt; |
+
+Also, see &lt;a href=&quot;Applications&quot; class=&quot;wikilink&quot; title=&quot;Applications&quot;&gt;Applications&lt;/a&gt; for an overview of tools in the extended ecosystem.
+
+### More documentation
+
+- [awesome-nix](https://github.com/nix-community/awesome-nix) - community-curated list of Nix learning resources and tools
+- &lt;a href=&quot;Nixpkgs/Manuals&quot; class=&quot;wikilink&quot; title=&quot;Nixpkgs/Manuals&quot;&gt;Nixpkgs/Manuals&lt;/a&gt; - Links to all the manuals.
+
+### News
+
+- [planet.nixos.org](http://planet.nixos.org/) - Aggregator for blogs related to nix/nixOS
+- [NixOS Discourse](https://discourse.nixos.org/) - Official forum
+- [nixpkgs.news](https://nixpkgs.news) - news feed for nixpkgs, Inactive since July 7 2024
+
+### Interactive websites
+
+- [NixOS Packages Search](https://search.nixos.org/packages) - full-text search through all packages of NixOS
+- [NixOS Option Search](https://search.nixos.org/options) - full-text search through all options of NixOS
+- [Home Manager Option Search](https://home-manager-options.extranix.com/) - full-text search through all options of home-manager
+- &lt;a href=&quot;Noogle&quot; class=&quot;wikilink&quot; title=&quot;Noogle&quot;&gt;Noogle&lt;/a&gt; - Nix API search engine that lets you search nix functions
+- [A tour of nix](https://nixcloud.io/tour/?id=1) - interactive Nix tutorial
+- [Nix Channel Status](https://status.nixos.org/) - when nixpkgs/nixos channels were updated last
+- [Hydra](https://hydra.nixos.org/) - official Nixpkgs CI/CD
+- [Nix Review Tools Reports](https://malob.github.io/nix-review-tools-reports/) - reports showing problematic dependencies for major Hydra jobsets
+
+\- [mynixos](https://mynixos.com) - full-text search through packages in nixpkgs and all options of NixOS, home-manager, nix-darwin
+
+### Tutorials
+
+- [How to learn Nix](https://ianthehenry.com/posts/how-to-learn-nix/) - A set of over 40 posts from 2021, looking at — as the author describes — not just what Nix does, but what it ***does***. It is their notes from reading the manual, doing experiments, and trying to deeply understand Nix.
+- [Tutorial Introduction to Nix](https://rgoswami.me/posts/ccon-tut-nix/) - An introduction focused on the use of shell environments, for Python and with links to R versions as well
+- [Interactive Tour of Nix](https://nixcloud.io/tour) - An interactive tutorial of the Nix Expression Language by Joachim Schiele and Paul Seitz
+- [Nix shell workshop](https://github.com/nixcloud/nix-shell-workshop)
+- [Scrive workshop](https://scrive.github.io/nix-workshop/) - Nix language and packaging workshop
+- [Wombat's Book of Nix](https://mhwombat.codeberg.page/nix-book) - A book on Nix language and flakes for newcomers
+- [NixOS &amp; Flakes Book - An unofficial book for beginners](https://nixos-and-flakes.thiscute.world/) - A beginner friendly tutorial about NixOS and Flakes. By Ryan Yin
+- [NixOS in Production](https://leanpub.com/nixos-in-production) - A NixOS handbook for professional use. By Gabriella Gonzalez
+- [nix-1p](https://code.tvl.fyi/about/nix/nix-1p) - A (more or less) one page introduction to Nix, the language.
+- [Nixcademy Blog](https://nixcademy.com/posts/) - high quality Nix and NixOS guides and tutorials
+
+#### Video tutorials
+
+- &lt;a href=&quot;Wil_T_Nix_Guides&quot; class=&quot;wikilink&quot; title=&quot;Wil T Nix Guides&quot;&gt;Wil T Nix Guides&lt;/a&gt; - A video series in 8 parts, covering the Nix ecosystem from foundations, providing orientation with all available resources, and showing hands on how to get NixOS installed and running (including managing all your configuration through git and using Flakes).
+- [Nix Friday](https://www.youtube.com/playlist?list=PLuVXx3vBwgelE9hbg5lH4w-JFU7llOqtI) - a series of 24 video streams of 1-2 hours on learning Nix and meeting community members
+- [The Nix Hour](https://www.youtube.com/playlist?list=PLyzwHTVJlRc8yjlx4VR4LU5A5O44og9in) - A weekly beginner-oriented improvised QA-style lecture on Nix
+- [Vimjoyer's Nix Tutorials](https://www.youtube.com/playlist?list=PLko9chwSoP-15ZtZxu64k_CuTzXrFpxPE) - A regularly released tutorial series about configuring things with Nix.
+- [NixOS Config Guides for Nerds and Other Cool People](https://www.youtube.com/playlist?list=PL_WcXIXdDWWpuypAEKzZF2b5PijTluxRG) - A tutorial series geared towards people that have some Linux command line experience.
+- [Nixology](https://www.youtube.com/playlist?list=PLRGI9KQ3_HP_OFRG6R-p4iFgMSK1t5BHs) - A tutorial series by Burke Libbey, originally released internally at Shopify
+- [Informal intro to the Nix language, derivations and nixpkgs](https://youtu.be/9DJtHIpdp0Y) - A thorough introduction to the Nix language
+- [EmergentMind's Nix Tutorials](https://m.youtube.com/playlist?list=PLAWyx2BxU4OyERRTbzNAaRHK08DQ0DD_l) - A tutorial series for Nix configuration and secrets management
+
+### Examples
+
+- &lt;a href=&quot;Configuration_Collection&quot; class=&quot;wikilink&quot; title=&quot;Configuration Collection&quot;&gt;Configuration Collection&lt;/a&gt;
+- &lt;a href=&quot;Comparison_of_NixOS_setups&quot; class=&quot;wikilink&quot; title=&quot;Comparison of NixOS setups&quot;&gt;Comparison of NixOS setups&lt;/a&gt;
+
+### Talks
+
+#### NixCon
+
+- [NixCon 2025 Talks](https://www.youtube.com/@NixCon/videos)
+- [NixCon 2024 Talks](https://www.youtube.com/@NixCon/videos)
+- [NixCon 2023 Talks](https://media.ccc.de/c/nixcon2023)
+- [NixCon 2022 Talks](https://www.youtube.com/playlist?list=PLgknCdxP89ReD6gxl755B6G_CI65z4J2e)
+- [NixCon 2020 Talks](https://www.youtube.com/playlist?list=PLgknCdxP89RcXpf7xLU7tuWXTOsL1rSHU)
+- [NixCon 2019 Talks](https://www.youtube.com/playlist?list=PLgknCdxP89Re9oFsLnAb5iLO0XG_rMuAo)
+- [NixCon 2018 Talks](https://www.youtube.com/playlist?list=PLgknCdxP89ReJKWX3sthcsbBYsoihzSQX)
+- [NixCon 2017 Talks](https://www.youtube.com/playlist?list=PLgknCdxP89ReQzhfKwMYjLdwWsc7us8ns&amp;index=1)
+- [NixCon 2015 Talks](https://media.ccc.de/c/nixcon2015) produced and hosted by the CCC Video Operation Center
+
+#### Other
+
+- [FOSDEM 2024 - Nix and NixOS devroom](https://fosdem.org/2024/schedule/track/nix-devroom/)
+- [Summer of Nix 2023 Talks](https://www.youtube.com/playlist?list=PLt4-_lkyRrOPcBuz_tjm6ZQb-6rJjU3cf)
+- [FOSDEM 2023 - Nix and NixOS devroom](https://archive.fosdem.org/2023/schedule/track/nix_and_nixos/)
+- [Summer of Nix 2022 Talks](https://www.youtube.com/playlist?list=PLt4-_lkyRrOMWyp5G-m_d1wtTcbBaOxZk)
+- [ZFS NAS](https://danielunderwood.dev/post/nixos-nas/)
+
+&lt;a href=&quot;Category:Guide&quot; class=&quot;wikilink&quot; title=&quot;Category:Guide&quot;&gt;Category:Guide&lt;/a&gt;</code></pre>
+      </div>
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Packaging/Ruby</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/Packaging">Packaging</a><span aria-hidden="true"> / </span>Ruby</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Packaging/Ruby -->
+
+<p>See <a href="https://nixos.org/manual/nixpkgs/stable/#packaging-applications">Packaging Ruby programs</a> in the nixpkgs manual</p>
+<p>Ruby projects are generally packaged with <a href="https://github.com/manveru/bundix">bundix</a>. This guide will show how to package a ruby project</p>
+<p>See</p>
+<h2 id="building-beef">Building <strong>BeEF</strong></h2><div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">git <span class="hljs-built_in">clone</span> https://github.com/beefproject/beef/</span></code></pre>
+      </div><h3 id="create-shell-nix-with-all-dependencies">Create shell.nix with all dependencies</h3><p>we create a <code>shell.nix</code> in the project directory:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-keyword">with</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> {};
+stdenv.mkDerivation {
+  <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;env&quot;</span>;
+  <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> [
+    ruby.devEnv
+    git
+    sqlite
+    libpcap
+    postgresql
+    libxml2
+    libxslt
+    pkg-config
+    bundix
+    gnumake
+  ];
+}</code></pre>
+      </div><h3 id="build-gemfile-lock-and-gemset-nix">Build Gemfile.lock and gemset.nix</h3><div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-shell</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">bundle lock      <span class="hljs-comment"># generates Gemfile.lock</span></span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">bundix              <span class="hljs-comment"># generates gemset.nix</span></span></code></pre>
+      </div><h2 id="build-default-nix">Build default.nix</h2><p>This will be the package configuration:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ stdenv, bundlerEnv, ruby }:
+<span class="hljs-keyword">let</span>
+  <span class="hljs-comment"># the magic which will include gemset.nix</span>
+  <span class="hljs-attr">gems</span> <span class="hljs-operator">=</span> bundlerEnv {
+    <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;beef-env&quot;</span>;
+    <span class="hljs-keyword">inherit</span> ruby;
+    <span class="hljs-attr">gemdir</span>  <span class="hljs-operator">=</span> <span class="hljs-symbol">./.</span>;
+  };
+<span class="hljs-keyword">in</span> stdenv.mkDerivation {
+  <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;beef&quot;</span>;
+  <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> <span class="hljs-symbol">./.</span>;
+  <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> [gems ruby];
+  <span class="hljs-attr">installPhase</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    mkdir -p $out/{bin,share/beef}
+    cp -r * $out/share/beef
+    bin=$out/bin/beef
+# we are using bundle exec to start in the bundled environment
+    cat &gt; $bin &lt;&lt;EOF
+#!/bin/sh -e
+exec <span class="hljs-subst">${gems}</span>/bin/bundle exec <span class="hljs-subst">${ruby}</span>/bin/ruby $out/share/beef/beef &quot;\$@&quot;
+EOF
+    chmod +x $bin
+  &#x27;&#x27;</span>;
+}</code></pre>
+      </div><h3 id="build-the-package">Build the package</h3><div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-build -E <span class="hljs-string">&#x27;((import &lt;nixpkgs&gt; {}).callPackage (import ./default.nix) { })&#x27;</span> --keep-failed</span>
+....
+do_sqlite3 build FAILED!</code></pre>
+      </div><p>Our Problem is that <code>do_sqlite3</code> wants to build native extensions and requires <code>sqlite</code> as dependency. There are two ways to solve this issue:</p>
+<ol>
+<li>add a global override to your nixpkgs</li>
+<li>set the gemConfig for the bundleEnv manually</li>
+</ol>
+<h3 id="adding-a-global-override-for-a-gem">Adding a global override for a gem</h3><p>We edit: <code>&lt;nixpkgs/pkgs/development/ruby-modules/gem-config/default.nix</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+   ...
+   <span class="hljs-attr">do_sqlite3</span> <span class="hljs-operator">=</span> <span class="hljs-params">attrs:</span> {
+     <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> [ sqlite ];
+   };
+   ...
+}</code></pre>
+      </div><h3 id="override-gemconfig-locally">Override gemConfig locally</h3><div class="code-container">
+        
+        <pre><code class="language-nix hljs">g<span class="hljs-attr">ems</span> <span class="hljs-operator">=</span> bundlerEnv {
+    <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;beef-env&quot;</span>;
+    <span class="hljs-keyword">inherit</span> ruby;
+    <span class="hljs-attr">gemdir</span>  <span class="hljs-operator">=</span> <span class="hljs-symbol">./.</span>;
+    <span class="hljs-attr">gemConfig</span> <span class="hljs-operator">=</span> pkgs.defaultGemConfig <span class="hljs-operator">//</span> {
+        <span class="hljs-attr">do_sqlite3</span> <span class="hljs-operator">=</span> <span class="hljs-params">attrs:</span> {
+            <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> [ sqlite ];
+        };
+    };
+};</code></pre>
+      </div><p>After this change we build the package again.</p>
+<h3 id="defining-groups">Defining groups</h3><p>Sophisticated applications use groups to organize their gems like <code>development</code>, <code>test</code> and <code>production</code>. <code>bundlerEnv</code> only makes the <code>default</code> group available in the environment, that is all gems which are <strong>not</strong> in a group. To make other groups available, they need to be provided as an array. Don&#39;t forget to include the <code>default</code> group.</p>
+<p>Example:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">gems</span> <span class="hljs-operator">=</span> pkgs.bundlerEnv {
+    <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;exampleApp&quot;</span>;
+    <span class="hljs-keyword">inherit</span> ruby;
+    <span class="hljs-attr">gemfile</span> <span class="hljs-operator">=</span> <span class="hljs-symbol">./Gemfile</span>;
+    <span class="hljs-attr">lockfile</span> <span class="hljs-operator">=</span> <span class="hljs-symbol">./Gemfile.lock</span>;
+    <span class="hljs-attr">gemset</span> <span class="hljs-operator">=</span> <span class="hljs-symbol">./gemset.nix</span>;
+    <span class="hljs-attr">groups</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;default&quot;</span> <span class="hljs-string">&quot;production&quot;</span> <span class="hljs-string">&quot;development&quot;</span> <span class="hljs-string">&quot;test&quot;</span> ];
+  };</code></pre>
+      </div><h2 id="using-bundler-2">Using Bundler 2</h2><p>Bundler 2 comes included with Ruby, so instead of importing <code>ruby.devEnv</code> import Ruby and Bundix separately.</p>
+<p><a href="category:Development" class="wikilink" title="Category:Development">Category:Development</a> <a href="category:Ruby" class="wikilink" title="Category:Ruby">Category:Ruby</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

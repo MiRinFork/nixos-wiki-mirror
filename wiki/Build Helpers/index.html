@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Build Helpers</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Build Helpers</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Build Helpers -->
+
+<p><a href="https://mirror.nixoscn.org/wiki/Build%20Helpers/Nixpkgs" class="wikilink" title="Nixpkgs">Nixpkgs</a> hosts a number of simple functions called &quot;build helpers&quot;, that are commonly used as part of a larger derivation, such as <a href="https://mirror.nixoscn.org/wiki/Build%20Helpers/Derivations" class="wikilink" title="stdenv.mkDerivation">stdenv.mkDerivation</a>. These helpers can be used part of a larger derivation, or to produce a simple derivation that doesn&#39;t need the full power of the standard environment.</p>
+<h3 id="trivial-build-helpers">Trivial Build Helpers</h3><h4 id="runcommandwith">runCommandWith</h4><p>An extremely simple derivation that runs a series of shell commands as part of the build-step. It would be accurate to consider this as a fancy wrapper around installPhase.</p>
+<p>This function accepts two arguments, an attribute set and a string. The attribute set is defined as:</p>
+<ol>
+<li>name: The derivation name, exactly like a standard Nix derivation.</li>
+<li>stdenv (default: <code>pkgs.stdenv</code>): Define the standard environment used</li>
+<li>runLocal (default: <code>false</code>): Prevents the usage of substituters and/or remote builders; forces local builds only.</li>
+<li>derivationArgs (default: <code>{}</code>): Additional arguments passed directly into an internal <code>mkDerivation</code>.</li>
+</ol>
+<p>The string represents a series of shell commands to execute when building this derivation. These must generate an <code>$out</code>, much like a standard derivation.</p>
+<p>A common use case for this type of builder is when you&#39;re copying files into the store. You can get quite creative and use this to transform those files as they become part of the store, leaving you with the final, transformed file output.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  runCommandWith,
+  sassc,
+}:
+runCommandWith {
+  <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sass-to-css&quot;</span>;
+  <span class="hljs-attr">derivationArgs.nativeBuildInputs</span> <span class="hljs-operator">=</span> [ sassc ];
+} <span class="hljs-string">&#x27;&#x27;
+  mkdir -p $out
+  sassc <span class="hljs-subst">${.<span class="hljs-operator">/</span>style.scss}</span> $out/style.css
+&#x27;&#x27;</span></code></pre>
+      </div><p>Nixpkgs provides a few higher-level entry points for this builder. All of these functions accept a name, and an attribute set that maps to <code>derivationArgs</code> for the above. This simpler signature makes them more suitable for use as compared to <code>runCommandWith</code>, and should be preferred unless you know you need <code>runCommandWith</code> directly.</p>
+<ul>
+<li><code>runCommand</code>: sets <code>stdenv = pkgs.stdenvNoCC</code>.</li>
+<li><code>runCommandCC</code>: completely default <code>runCommandWith</code>.</li>
+<li><code>runCommandLocal</code>: sets <code>runLocal = true</code>.</li>
+</ul>
+<p>There are a couple other aliases that aren&#39;t used very often, but will be listed here anyways as an exhaustive reference:</p>
+<ul>
+<li><code>runCommandNoCC</code>: identical to <code>runCommand</code>.</li>
+<li><code>runCommandNoCCLocal</code>: identical to <code>runCommandLocal</code>.</li>
+</ul>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

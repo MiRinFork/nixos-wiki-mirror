@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NixOS Installation Guide/Manual USB Creation</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide">NixOS Installation Guide</a><span aria-hidden="true"> / </span>Manual USB Creation</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: NixOS Installation Guide/Manual USB Creation -->
+
+<h2 id="using-syslinux-cfg">Using syslinux.cfg</h2><p>If you have trouble booting from a USB drive or sdcard with Unetbootin (I just got a blinking cursor instead of a bootloader on an Asus eee 1000) the procedure described on <a href="http://knoppix.net/wiki/Bootable_USB_Key">http://knoppix.net/wiki/Bootable_USB_Key</a> should work. After preparing the sdcard with mkdiskimage and syslinux you can mount it and copy all the content from the NixOS iso:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">mount -o loop ~/Downloads/nixos-graphical-0.1pre27337-i686-linux.iso /media/iso</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">rsync -av --progress /media/iso/ /media/sd-card/</span></code></pre>
+      </div><p>The syslinux.cfg needs to be created manually, but the details can easily be derived from the grub.cfg on the NixOS install cd.</p>
+<p>I specified the root device by UUID, to get the UUID:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">blkid /dev/mmcblk0p1</code></pre>
+      </div><p>The relevant section from the live cd: /media/sd-card/boot/grub/grub.cfg</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">menuentry &quot;NixOS Installer / Rescue&quot; {
+  linux /boot/bzImage init=/nix/store/r7xhnzymi1ll49r4glf1dwr5y1alx0bl-system/init root=LABEL=NIXOS_INSTALL_CD_0.1pre27337 splash=verbose vga=0x317
+  initrd /boot/initrd
+}</code></pre>
+      </div><p>can be used in the syslinux config file: /media/sd-card/syslinux.cfg (you should just need to update the init path and the root UUID / LABEL or device path)</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">DEFAULT linux
+LABEL linux
+  SAY Now booting the kernel from SYSLINUX...
+  KERNEL /boot/bzImage
+  APPEND init=/nix/store/r7xhnzymi1ll49r4glf1dwr5y1alx0bl-system/init root=UUID=509C-63E2 ro initrd=/boot/initrd splash=verbose</code></pre>
+      </div><p><strong>Note</strong>: in place of using mkdiskimage, you can simply format your SDCard as a fat32 system and install syslinux on it:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">mkdosfs -F32 /dev/mmcblk0p1
+syslinux -s /dev/mmcblk0p1</code></pre>
+      </div><h2 id="using-grub">Using grub</h2><ol>
+<li><p>Download the ISO image from <a href="https://nixos.org/download/#nixos-iso">https://nixos.org/download/#nixos-iso</a>.</p>
+</li>
+<li><p>Prepare your USB stick. If it isn&#39;t yet partitioned to your liking, create a bootable partition on <code>/dev/sdb1</code>:
+fdisk /dev/sdb
+And format it with:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">mkdosfs /dev/sdb1</code></pre>
+      </div><p>Add ext2 partitions if you like. If you want both 32-bit and 64-bit NixOS, you need at least two partitions. You can directly use the entire disk without partition if that&#39;s what you like. Once you have your VFAT (dosfs) block device, you should give it a label, within a 11-character limit, e.g.:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">dosfslabel /dev/sdb1 NIXBOOT</code></pre>
+      </div></li>
+<li><p>Mount the bootable USB partition with:
+mkdir -p /media/NIXBOOT
+mount /dev/sdb1 /media/NIXBOOT</p>
+</li>
+<li><p>Mount the ISO image with:
+mkdir -p /media/iso
+mount -o loop ~/Downloads/nixos-graphical-0.2pre4463_5e88e9b-c877f45-x86_64-linux.iso /media/iso</p>
+</li>
+<li><p>Copy the contents of the NixOS ISO (<code>/media/iso</code>) to your USB stick (<code>/media/NIXBOOT</code>) with:
+rsync -av --progress /media/iso/ /media/NIXBOOT/</p>
+</li>
+<li><p>Install a complete and recent GRUB to the USB stick with:
+grub-install /dev/sdb --root-directory=/media/NIXBOOT/</p>
+</li>
+<li><p>Edit the file <code>/media/NIXBOOT/boot/grub/grub.cfg</code>. Start from an existing grub.cfg, say from your hard drive or from another working bootable USB stick (e.g., from GRML.org). Then, merge in the entry for NixOS from <code>/media/iso/boot/grub/grub.cfg</code>, modifying the LABEL to be that of your VFAT partition:
+menuentry &quot;NixOS Installer / Rescue&quot; {
+  linux /boot/bzImage init=/nix/store/p94ckcksmhj90cr868cpcajrqgzwy57w-nixos-0.2pre4463_5e88e9b-c877f45/init root=LABEL=NIXBOOT
+  initrd /boot/initrd
+}</p>
+</li>
+<li><p>To share your USB stick with other distributions (e.g., GRML, or both 32- and 64- bit NixOS), you can move NixOS&#39;s bzImage and initrd to different location (e.g., <code>/boot/nix32/</code> and <code>/boot/nix64/</code>), and you appropriately edit the entries in your grub.cfg. If you have both nix32 and nix64, only one can have its <code>nix-store.squashfs</code> in the root of any given partition. That&#39;s where you can use a second partition, for the second one. For instance, copy the contents of your 64-bit NixOS to the first partition, with label <code>NIX64</code>, and copy the nix-store.squashfs of your 32-bit NixOS to the second partition with label <code>NIX32</code> (and create an empty nix/store). Copy the 32-bit kernel and initrd to <code>/boot/nix32/</code> on the bootable partition, and edit the grub.cfg of the bootable partition accordingly.</p>
+</li>
+<li><p>There you go: you have a bootable NixOS USB drive, possibly allowing you to boot NixOS 64-bit, NixOS 32-bit, GRML 64-bit, GRML 32-bit, FreeBSD, FreeDOS, boot-sector-tetris, etc. Just you convince your BIOS to let you boot off it.</p>
+</li>
+</ol>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

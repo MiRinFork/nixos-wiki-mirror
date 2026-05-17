@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hardware/GPD/GPD Pocket</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/Hardware">Hardware</a><span aria-hidden="true"> / </span><a href="https://mirror.nixoscn.org/wiki/Hardware/GPD">GPD</a><span aria-hidden="true"> / </span>GPD Pocket</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Hardware/GPD/GPD Pocket -->
+
+<p>The following configuration bits are required for a GPD Pocket device.</p>
+<p><code>let</code><br><code>  dummy_firmware = pkgs.writeTextFile {</code><br><code>    name        = &quot;brcmfmac4356-pcie.txt&quot;;</code><br><code>    text        = builtins.readFile &quot;brcmfmac4356-pcie.txt&quot;;</code><br><code>    destination = &quot;/lib/firmware/brcm/brcmfmac4356-pcie.txt&quot;;</code><br><code>  };</code><br><code>in</code><br><code>{</code><br><code>  imports = [</code><br><code>    # generated by nixos-generate-config on installation</code><br><code>    &lt;nixpkgs/nixos/modules/installer/scan/not-detected.nix&gt;</code>  </p>
+<p><code>    # Device specific</code><br><code>    &quot;${configDir}/etc/gpd/kernel.nix&quot;</code><br><code>  ];</code>  </p>
+<p><code>  boot = {</code><br><code>    kernelPackages = pkgs.linuxPackages_4_14;</code>  </p>
+<p><code>    kernelParams = [</code><br><code>      &quot;gpd-pocket-fan.speed_on_ac=0&quot;</code><br><code>      &quot;fbcon=rotate:1&quot;</code><br><code>    ];</code>  </p>
+<p><code>    kernelModules = [ &quot;btusb&quot; &quot;kvm-intel&quot; ]; # bluetooth</code>  </p>
+<p><code>    initrd.kernelModules = [</code><br><code>      &quot;pwm-lpss&quot; &quot;pwm-lpss-platform&quot; # for brightness control</code><br><code>      &quot;g_serial&quot; # be a serial device via OTG</code><br><code>      &quot;bq24190_charger&quot;</code><br><code>      &quot;i915&quot;</code><br><code>      &quot;fusb302&quot;</code><br><code>    ];</code>  </p>
+<p><code>    initrd.availableKernelModules = [</code><br><code>      &quot;xhci_pci&quot;</code><br><code>      &quot;dm_mod&quot;</code><br><code>      &quot;btrfs&quot;</code><br><code>      &quot;crc23c&quot;</code><br><code>      &quot;nvme&quot;</code><br><code>      &quot;usbhid&quot;</code><br><code>      &quot;usb_storage&quot;</code><br><code>      &quot;sd_mod&quot;</code><br><code>      &quot;sdhci_acpi&quot;</code><br><code>      &quot;sdhci_pci&quot;</code><br><code>      &quot;rtsx_pci_sdmmc&quot;</code><br><code>    ];</code>  </p>
+<p><code>    loader.systemd-boot.enable = true;</code><br><code>    loader.efi.canTouchEfiVariables = true;</code><br><code>  };</code>  </p>
+<p><code>  services.tlp = {</code><br><code>    enable = true;</code><br><code>    extraConfig = &#39;&#39;</code><br><code>      DISK_DEVICES=&quot;mmcblk0&quot;</code><br><code>      DISK_IOSCHED=&quot;deadline&quot;</code><br><code>      WIFI_PWR_ON_AC=off</code><br><code>      WIFI_PWR_ON_BAT=off</code><br><code>    &#39;&#39;;</code><br><code>  };</code>  </p>
+<p><code> hardware = {</code><br><code>    firmware = [ dummy_firmware ];</code><br><code>    enableRedistributableFirmware = true;</code>  </p>
+<p><code>    bluetooth.enable = true;</code><br><code>    pulseaudio = {</code><br><code>      package     = pkgs.pulseaudioFull;</code><br><code>      extraConfig = &#39;&#39;</code><br><code>        set-card-profile alsa_card.platform-cht-bsw-rt5645 HiFi</code><br><code>        set-default-sink alsa_output.platform-cht-bsw-rt5645.HiFi__hw_chtrt5645_0__sink</code><br><code>        set-sink-port alsa_output.platform-cht-bsw-rt5645.HiFi__hw_chtrt5645_0__sink [Out] Speaker</code><br><code>      &#39;&#39;;</code>  </p>
+<p><code>      daemon.config = {</code><br><code>        &quot;realtime-scheduling&quot; = &quot;no&quot;;</code><br><code>      };</code><br><code>    };</code><br><code>  };</code>  </p>
+<p><code>  # on resume the i2c bus complains, reloading the module helps</code><br><code>  powerManagement = {</code><br><code>    enable = true;</code><br><code>    powerUpCommands = &#39;&#39;</code><br><code>      modprobe goodix</code><br><code>    &#39;&#39;;</code><br><code>    powerDownCommands = &#39;&#39;</code><br><code>      modprobe -r goodix</code><br><code>    &#39;&#39;;</code><br><code>    resumeCommands = &#39;&#39;</code><br><code>      modprobe goodix</code><br><code>    &#39;&#39;;</code><br><code>  };</code>  </p>
+<p><code>  # more config</code><br><code>}</code></p>
+<p>Firmware file:</p>
+<p><code># Sample variables file for BCM94356Z NGFF 22x30mm iPA, iLNA board with PCIe for production package</code><br><code>NVRAMRev=$Rev: 492104 $</code><br><code>#4356 chip = 4354 A2 chip</code><br><code>sromrev=11</code><br><code>boardrev=0x1102</code><br><code>boardtype=0x073e</code><br><code>boardflags=0x02400201</code><br><code>#0x2000 enable 2G spur WAR</code><br><code>boardflags2=0x00802000</code><br><code>boardflags3=0x0000000a</code><br><code>#boardflags3 0x00000100 /* to read swctrlmap from nvram*/</code><br><code>#define BFL3_5G_SPUR_WAR   0x00080000   /* enable spur WAR in 5G band */</code><br><code>#define BFL3_AvVim   0x40000000   /* load AvVim from nvram */</code><br><code>macaddr=00:90:4c:1a:10:01</code><br><code>ccode=0x5854</code><br><code>regrev=205</code><br><code>antswitch=0</code><br><code>pdgain5g=4</code><br><code>pdgain2g=4</code><br><code>tworangetssi2g=0</code><br><code>tworangetssi5g=0</code><br><code>paprdis=0</code><br><code>femctrl=10</code><br><code>vendid=0x14e4</code><br><code>devid=0x43ec</code><br><code>manfid=0x2d0</code><br><code>#prodid=0x052e</code><br><code>nocrc=1</code><br><code>otpimagesize=502</code><br><code>xtalfreq=37400</code><br><code>rxgains2gelnagaina0=0</code><br><code>rxgains2gtrisoa0=7</code><br><code>rxgains2gtrelnabypa0=0</code><br><code>rxgains5gelnagaina0=0</code><br><code>rxgains5gtrisoa0=11</code><br><code>rxgains5gtrelnabypa0=0</code><br><code>rxgains5gmelnagaina0=0</code><br><code>rxgains5gmtrisoa0=13</code><br><code>rxgains5gmtrelnabypa0=0</code><br><code>rxgains5ghelnagaina0=0</code><br><code>rxgains5ghtrisoa0=12</code><br><code>rxgains5ghtrelnabypa0=0</code><br><code>rxgains2gelnagaina1=0</code><br><code>rxgains2gtrisoa1=7</code><br><code>rxgains2gtrelnabypa1=0</code><br><code>rxgains5gelnagaina1=0</code><br><code>rxgains5gtrisoa1=10</code><br><code>rxgains5gtrelnabypa1=0</code><br><code>rxgains5gmelnagaina1=0</code><br><code>rxgains5gmtrisoa1=11</code><br><code>rxgains5gmtrelnabypa1=0</code><br><code>rxgains5ghelnagaina1=0</code><br><code>rxgains5ghtrisoa1=11</code><br><code>rxgains5ghtrelnabypa1=0</code><br><code>rxchain=3</code><br><code>txchain=3</code><br><code>aa2g=3</code><br><code>aa5g=3</code><br><code>agbg0=2</code><br><code>agbg1=2</code><br><code>aga0=2</code><br><code>aga1=2</code><br><code>tssipos2g=1</code><br><code>extpagain2g=2</code><br><code>tssipos5g=1</code><br><code>extpagain5g=2</code><br><code>tempthresh=255</code><br><code>tempoffset=255</code><br><code>rawtempsense=0x1ff</code><br><code>pa2ga0=-147,6192,-705</code><br><code>pa2ga1=-161,6041,-701</code><br><code>pa5ga0=-194,6069,-739,-188,6137,-743,-185,5931,-725,-171,5898,-715</code><br><code>pa5ga1=-190,6248,-757,-190,6275,-759,-190,6225,-757,-184,6131,-746</code><br><code>subband5gver=0x4</code><br><code>pdoffsetcckma0=0x4</code><br><code>pdoffsetcckma1=0x4</code><br><code>pdoffset40ma0=0x0000</code><br><code>pdoffset80ma0=0x0000</code><br><code>pdoffset40ma1=0x0000</code><br><code>pdoffset80ma1=0x0000</code><br><code>maxp2ga0=76</code><br><code>maxp5ga0=74,74,74,74</code><br><code>maxp2ga1=76</code><br><code>maxp5ga1=74,74,74,74</code><br><code>cckbw202gpo=0x0000</code><br><code>cckbw20ul2gpo=0x0000</code><br><code>mcsbw202gpo=0x99644422</code><br><code>mcsbw402gpo=0x99644422</code><br><code>dot11agofdmhrbw202gpo=0x6666</code><br><code>ofdmlrbw202gpo=0x0022</code><br><code>mcsbw205glpo=0x88766663</code><br><code>mcsbw405glpo=0x88666663</code><br><code>mcsbw805glpo=0xbb666665</code><br><code>mcsbw205gmpo=0xd8666663</code><br><code>mcsbw405gmpo=0x88666663</code><br><code>mcsbw805gmpo=0xcc666665</code><br><code>mcsbw205ghpo=0xdc666663</code><br><code>mcsbw405ghpo=0xaa666663</code><br><code>mcsbw805ghpo=0xdd666665</code><br><code>mcslr5glpo=0x0000</code><br><code>mcslr5gmpo=0x0000</code><br><code>mcslr5ghpo=0x0000</code><br><code>sb20in40hrpo=0x0</code><br><code>sb20in80and160hr5glpo=0x0</code><br><code>sb40and80hr5glpo=0x0</code><br><code>sb20in80and160hr5gmpo=0x0</code><br><code>sb40and80hr5gmpo=0x0</code><br><code>sb20in80and160hr5ghpo=0x0</code><br><code>sb40and80hr5ghpo=0x0</code><br><code>sb20in40lrpo=0x0</code><br><code>sb20in80and160lr5glpo=0x0</code><br><code>sb40and80lr5glpo=0x0</code><br><code>sb20in80and160lr5gmpo=0x0</code><br><code>sb40and80lr5gmpo=0x0</code><br><code>sb20in80and160lr5ghpo=0x0</code><br><code>sb40and80lr5ghpo=0x0</code><br><code>dot11agduphrpo=0x0</code><br><code>dot11agduplrpo=0x0</code><br><code>phycal_tempdelta=255</code><br><code>temps_period=15</code><br><code>temps_hysteresis=15</code><br><code>rssicorrnorm_c0=4,4</code><br><code>rssicorrnorm_c1=4,4</code><br><code>rssicorrnorm5g_c0=1,2,3,1,2,3,6,6,8,6,6,8</code><br><code>rssicorrnorm5g_c1=1,2,3,2,2,2,7,7,8,7,7,8</code></p>
+<p><a href="category:Cookbook" class="wikilink" title="Category:Cookbook">Category:Cookbook</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

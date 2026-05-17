@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kubernetes</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Kubernetes</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Kubernetes -->
+
+<p><a href="https://kubernetes.io/">Kubernetes</a> is an open-source container orchestration system for automating software deployment, scaling, and management.</p>
+<p>This wiki article extends the documentation in <a href="https://nixos.org/manual/nixos/stable/#sec-kubernetes">NixOS manual</a>.</p>
+<h2 id="kiss"><a href="wikipedia:en:KISS_principle" class="wikilink" title="KISS">KISS</a></h2><p>If you are new to <a href="https://mirror.nixoscn.org/wiki/Kubernetes/Kubernetes" class="wikilink" title="Kubernetes">Kubernetes</a> you might want to check out <a href="https://mirror.nixoscn.org/wiki/Kubernetes/K3s" class="wikilink" title="K3s">K3s</a> first as it is easier to set up (less moving parts).</p>
+<h2 id="1-master-and-1-node">1 Master and 1 Node</h2><p>Assumptions:</p>
+<ul>
+<li>Master and Node are on the same network (in this example <code>10.1.1.0/24</code>)</li>
+<li>IP of the Master: <code>10.1.1.2</code></li>
+<li>IP of the first Node: <code>10.1.1.3</code></li>
+</ul>
+<p>Caveats:</p>
+<ul>
+<li>This was only tested on <code>20.09pre215024.e97dfe73bba (Nightingale)</code> (<code>unstable</code>)</li>
+<li>This is probably not best-practice<ul>
+<li>For a production-grade cluster you shouldn&#39;t use <code>easyCerts</code></li>
+</ul>
+</li>
+<li>If you experience inability to reach service CIDR from pods, disable firewall via <code>networking.firewall.enable = false;</code> or otherwise make sure that it doesn&#39;t interfere with packet forwarding.</li>
+<li>Make sure to set <code>docker0</code> in promiscuous mode <code>ip link set docker0 promisc on</code></li>
+</ul>
+<h3 id="master">Master</h3><p>Add to your <code>configuration.nix</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ config, pkgs, ... }:
+<span class="hljs-keyword">let</span>
+  <span class="hljs-comment"># When using &#x27;easyCerts = true;&#x27;, the IP address must resolve to the master at the time of creation. </span>
+  <span class="hljs-comment"># In this case, set &#x27;kubeMasterIP = &quot;127.0.0.1&quot;;&#x27;. Otherwise, you may encounter the following issue: https://github.com/NixOS/nixpkgs/issues/59364.</span>
+  <span class="hljs-attr">kubeMasterIP</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;10.1.1.2&quot;</span>;
+  <span class="hljs-attr">kubeMasterHostname</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;api.kube&quot;</span>;
+  <span class="hljs-attr">kubeMasterAPIServerPort</span> <span class="hljs-operator">=</span> <span class="hljs-number">6443</span>;
+<span class="hljs-keyword">in</span>
+{
+  <span class="hljs-comment"># resolve master hostname</span>
+  <span class="hljs-attr">networking.extraHosts</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${kubeMasterIP}</span> <span class="hljs-subst">${kubeMasterHostname}</span>&quot;</span>;
+
+  <span class="hljs-comment"># packages for administration tasks</span>
+  <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+    kompose
+    kubectl
+    kubernetes
+  ];
+
+  <span class="hljs-attr">services.kubernetes</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">roles</span> <span class="hljs-operator">=</span> [<span class="hljs-string">&quot;master&quot;</span> <span class="hljs-string">&quot;node&quot;</span>];
+    <span class="hljs-attr">masterAddress</span> <span class="hljs-operator">=</span> kubeMasterHostname;
+    <span class="hljs-attr">apiserverAddress</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://<span class="hljs-subst">${kubeMasterHostname}</span>:<span class="hljs-subst">${<span class="hljs-built_in">toString</span> kubeMasterAPIServerPort}</span>&quot;</span>;
+    <span class="hljs-attr">easyCerts</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">apiserver</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">securePort</span> <span class="hljs-operator">=</span> kubeMasterAPIServerPort;
+      <span class="hljs-attr">advertiseAddress</span> <span class="hljs-operator">=</span> kubeMasterIP;
+    };
+
+    <span class="hljs-comment"># use coredns</span>
+    <span class="hljs-attr">addons.dns.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+    <span class="hljs-comment"># needed if you use swap</span>
+    <span class="hljs-attr">kubelet.extraOpts</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;--fail-swap-on=false&quot;</span>;
+  };
+}</code></pre>
+      </div><p>Apply your config (e.g. <code>nixos-rebuild switch</code>).</p>
+<p>Link your <code>kubeconfig</code> to your home directory:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">ln</span> -s /etc/kubernetes/cluster-admin.kubeconfig ~/.kube/config</code></pre>
+      </div><p>Now, executing <code>kubectl cluster-info</code> should yield something like this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs">Kubernetes master is running at https://10.1.1.2
+CoreDNS is running at https://10.1.1.2/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
+
+To further debug and diagnose cluster problems, use &#x27;kubectl cluster-info dump&#x27;.</code></pre>
+      </div><p>You should also see that the master is also a node using <code>kubectl get nodes</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs">NAME       STATUS   ROLES    AGE   VERSION
+direwolf   Ready    &lt;none&gt;   41m   v1.16.6-beta.0</code></pre>
+      </div><h3 id="node">Node</h3><p>Add to your <code>configuration.nix</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ config, pkgs, ... }:
+<span class="hljs-keyword">let</span>
+  <span class="hljs-attr">kubeMasterIP</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;10.1.1.2&quot;</span>;
+  <span class="hljs-attr">kubeMasterHostname</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;api.kube&quot;</span>;
+  <span class="hljs-attr">kubeMasterAPIServerPort</span> <span class="hljs-operator">=</span> <span class="hljs-number">6443</span>;
+<span class="hljs-keyword">in</span>
+{
+  <span class="hljs-comment"># resolve master hostname</span>
+  <span class="hljs-attr">networking.extraHosts</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${kubeMasterIP}</span> <span class="hljs-subst">${kubeMasterHostname}</span>&quot;</span>;
+
+  <span class="hljs-comment"># packages for administration tasks</span>
+  <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+    kompose
+    kubectl
+    kubernetes
+  ];
+
+  <span class="hljs-attr">services.kubernetes</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">let</span>
+    <span class="hljs-attr">api</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://<span class="hljs-subst">${kubeMasterHostname}</span>:<span class="hljs-subst">${<span class="hljs-built_in">toString</span> kubeMasterAPIServerPort}</span>&quot;</span>;
+  <span class="hljs-keyword">in</span>
+  {
+    <span class="hljs-attr">roles</span> <span class="hljs-operator">=</span> [<span class="hljs-string">&quot;node&quot;</span>];
+    <span class="hljs-attr">masterAddress</span> <span class="hljs-operator">=</span> kubeMasterHostname;
+    <span class="hljs-attr">easyCerts</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+    <span class="hljs-comment"># point kubelet and other services to kube-apiserver</span>
+    <span class="hljs-attr">kubelet.kubeconfig.server</span> <span class="hljs-operator">=</span> api;
+    <span class="hljs-attr">apiserverAddress</span> <span class="hljs-operator">=</span> api;
+
+    <span class="hljs-comment"># use coredns</span>
+    <span class="hljs-attr">addons.dns.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+    <span class="hljs-comment"># needed if you use swap</span>
+    <span class="hljs-attr">kubelet.extraOpts</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;--fail-swap-on=false&quot;</span>;
+  };
+}</code></pre>
+      </div><p>Apply your config (e.g. <code>nixos-rebuild switch</code>).</p>
+<p>According to the <a href="https://github.com/NixOS/nixpkgs/blob/18ff53d7656636aa440b2f73d2da788b785e6a9c/nixos/tests/kubernetes/rbac.nix#L118">NixOS tests</a>, make your Node join the cluster:</p>
+<p>On the master, grab the apitoken</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">cat</span> /var/lib/kubernetes/secrets/apitoken.secret</code></pre>
+      </div><p>On the node, join the node with</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">echo</span> TOKEN | nixos-kubernetes-node-join</code></pre>
+      </div><p>After that, you should see your new node using <code>kubectl get nodes</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs">NAME       STATUS   ROLES    AGE    VERSION
+direwolf   Ready    &lt;none&gt;   62m    v1.16.6-beta.0
+drake      Ready    &lt;none&gt;   102m   v1.16.6-beta.0</code></pre>
+      </div><h2 id="n-masters-ha">N Masters (HA)</h2><h2 id="troubleshooting">Troubleshooting</h2><div class="code-container">
+        
+        <pre><code class="language-bash hljs">systemctl status kubelet</code></pre>
+      </div><div class="code-container">
+        
+        <pre><code class="language-bash hljs">systemctl status kube-apiserver</code></pre>
+      </div><div class="code-container">
+        
+        <pre><code class="language-bash hljs">kubectl get nodes</code></pre>
+      </div><h3 id="join-cluster-not-working">Join Cluster not working</h3><p>If you face issues while running the <code>nixos-kubernetes-node-join</code> script:</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs">Restarting certmgr...
+Job for certmgr.service failed because a timeout was exceeded.
+See &quot;systemctl status certmgr.service&quot; and &quot;journalctl -xe&quot; for details.</code></pre>
+      </div><p>Go investigate with <code>journalctl -u certmgr</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs">... certmgr: loading from config file /nix/store/gj7qr7lp6wakhiwcxdpxwbpamvmsifhk-certmgr.yaml
+... manager: loading certificates from /nix/store/4n41ikm7322jxg7bh0afjpxsd4b2idpv-certmgr.d
+... manager: loading spec from /nix/store/4n41ikm7322jxg7bh0afjpxsd4b2idpv-certmgr.d/flannelClient.json
+... [ERROR] cert: failed to fetch remote CA: failed to parse rootCA certs</code></pre>
+      </div><p>In this case, <code>cfssl</code> could be overloaded.</p>
+<p>Restarting cfssl on the <code>master</code> node should help: <code>systemctl restart cfssl</code></p>
+<p>Also, make sure that port <code>8888</code> is open on your master node.</p>
+<h3 id="dns-issues">DNS issues</h3><p>Check if coredns is running via <code>kubectl get pods -n kube-system</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs">NAME                       READY   STATUS    RESTARTS   AGE
+coredns-577478d784-bmt5s   1/1     Running   2          163m
+coredns-577478d784-bqj65   1/1     Running   2          163m</code></pre>
+      </div><p>Run a pod to check with <code>kubectl run curl --restart=Never --image=radial/busyboxplus:curl -i --tty</code>:</p>
+<p>If you don&#39;t see a command prompt, try pressing enter.</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs">[ root@curl:/ ]$ </code></pre>
+      </div><div class="code-container">
+        
+        <pre><code class="language-bash hljs">nslookup google.com</code></pre>
+      </div><div class="code-container">
+        
+        <pre><code class="language-shell hljs">Server:    10.0.0.254
+Address 1: 10.0.0.254 kube-dns.kube-system.svc.cluster.local
+
+Name:      google.com
+Address 1: 2a00:1450:4016:803::200e muc12s04-in-x0e.1e100.net
+Address 2: 172.217.23.14 lhr35s01-in-f14.1e100.net</code></pre>
+      </div><p>In case DNS is still not working I found that sometimes, restarting services helps:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">systemctl restart kube-proxy flannel kubelet</code></pre>
+      </div><h3 id="reset-to-a-clean-state">Reset to a clean state</h3><p>Sometimes it helps to have a clean state on all instances:</p>
+<ul>
+<li>comment kubernetes-related code in <code>configuration.nix</code></li>
+<li><code>nixos-rebuild switch</code></li>
+<li>clean up filesystem<ul>
+<li><code>rm -rf /var/lib/kubernetes/ /var/lib/etcd/ /var/lib/cfssl/ /var/lib/kubelet/</code></li>
+<li><code>rm -rf /etc/kube-flannel/ /etc/kubernetes/</code></li>
+</ul>
+</li>
+<li>uncomment kubernetes-related code again</li>
+<li><code>nixos-rebuild switch</code></li>
+</ul>
+<h2 id="miscellaneous">Miscellaneous</h2><h3 id="rook-ceph-storage-cluster">Rook Ceph storage cluster</h3><p>Chances are you want to setup a storage cluster using <a href="https://rook.io/">rook</a>.</p>
+<p>To do so, I found it necessary to change a few things (tested with <code>rook v1.2</code>):</p>
+<ul>
+<li>You need the <code>ceph</code> kernel module: <code>boot.kernelModules = [ &quot;ceph&quot; ];</code></li>
+<li>Change the root dir of the kubelet: <code>kubelet.extraOpts = &quot;--root-dir=/var/lib/kubelet&quot;;</code></li>
+<li>Reboot all your nodes</li>
+<li>Continue with <a href="https://rook.io/docs/rook/v1.2/ceph-quickstart.html">the official quickstart guide</a></li>
+<li>In <code>operator.yaml</code>, help the CSI plugins find the hosts&#39; ceph kernel modules by adding (or uncommenting -- they&#39;re in the example config) these entries:</li>
+</ul>
+<p><code> CSI_CEPHFS_PLUGIN_VOLUME: |</code><br><code> - name: lib-modules</code><br><code>   hostPath:</code><br><code>     path: /run/current-system/kernel-modules/lib/modules/</code><br><code> CSI_RBD_PLUGIN_VOLUME: |</code><br><code> - name: lib-modules</code><br><code>   hostPath:</code><br><code>     path: /run/current-system/kernel-modules/lib/modules/</code></p>
+<h3 id="nvidia">NVIDIA</h3><p>You can use NVIDIA&#39;s <a href="https://github.com/NVIDIA/k8s-device-plugin">k8s-device-plugin</a>.</p>
+<p>Make <code>nvidia-docker</code> your default docker runtime:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">v<span class="hljs-attr">irtualisation.docker</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+    <span class="hljs-comment"># use nvidia as the default runtime</span>
+    <span class="hljs-attr">enableNvidia</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">extraOptions</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;--default-runtime=nvidia&quot;</span>;
+};</code></pre>
+      </div><p>Apply their Daemonset:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">kubectl create -f https://raw.githubusercontent.com/NVIDIA/k8s-device-plugin/1.0.0-beta4/nvidia-device-plugin.yml</code></pre>
+      </div><h3 id="dev-shm"><code>/dev/shm</code></h3><p>Some applications need enough shared memory to work properly. Create a new volumeMount for your Deployment:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">volumeMounts:
+- mountPath: /dev/shm
+  name: dshm</code></pre>
+      </div><p>and mark its <code>medium</code> as <code>Memory</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">volumes:
+- name: dshm
+  emptyDir:
+  medium: Memory</code></pre>
+      </div><h3 id="arm64">Arm64</h3><p>Nix might pull in <code>coredns</code> and <code>etcd</code> images that are incompatible with arm, To resolve this add the following to your master node&#39;s configuration:</p>
+<h4 id="etcd">etcd</h4><div class="code-container">
+        
+        <pre><code class="language-nix hljs">  ...
+  <span class="hljs-attr">services.kubernetes</span> <span class="hljs-operator">=</span> {...};
+  <span class="hljs-attr">systemd.services.etcd</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">environment</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">ETCD_UNSUPPORTED_ARCH</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;arm64&quot;</span>;
+    };
+  };
+  ...</code></pre>
+      </div><h4 id="coredns">coredns</h4><div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">services.kubernetes</span> <span class="hljs-operator">=</span> {
+    ...
+    <span class="hljs-comment"># use coredns</span>
+    <span class="hljs-attr">addons.dns</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">coredns</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">finalImageTag</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;1.10.1&quot;</span>;
+        <span class="hljs-attr">imageDigest</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sha256:a0ead06651cf580044aeb0a0feba63591858fb2e43ade8c9dea45a6a89ae7e5e&quot;</span>;
+        <span class="hljs-attr">imageName</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;coredns/coredns&quot;</span>;
+        <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;0c4vdbklgjrzi6qc5020dvi8x3mayq4li09rrq2w0hcjdljj0yf9&quot;</span>;
+      };
+    };
+   ...
+  };</code></pre>
+      </div><h2 id="tooling">Tooling</h2><p>There are various community projects aimed at facilitating working with Kubernetes combined with Nix:</p>
+<ul>
+<li><a href="https://github.com/saschagrunert/kubernix">kubernix</a>: simple setup of development clusters using Nix</li>
+<li><a href="https://kubenix.org/">kubenix</a>: <a href="https://github.com/hall/kubenix">GitHub (updated 2023)</a></li>
+<li><a href="https://github.com/justinas/nixos-ha-kubernetes">nixos-ha-kubernetes</a></li>
+<li><a href="https://github.com/nix-community/nixhelm">nixhelm</a>: generates nix expressions from a selection of helm charts</li>
+<li><a href="https://github.com/reMarkable/helmfile-nix">helmfile-nix</a>: wrapper around <a href="https://mirror.nixoscn.org/wiki/Kubernetes/Helm_and_Helmfile" class="wikilink" title="Helmfile">Helmfile</a> to allow writing helmfiles in the nix language</li>
+</ul>
+<h2 id="references">References</h2><ul>
+<li><a href="https://github.com/NixOS/nixpkgs/issues/39327">Issue #39327</a>: Kubernetes support is missing some documentation</li>
+<li><a href="https://discourse.nixos.org/t/kubernetes-using-multiple-nodes-with-latest-unstable/3936">NixOS Discourse</a>: Using multiple nodes on unstable</li>
+<li><a href="https://kubernetes.io/docs/home/">Kubernetes docs</a></li>
+<li><a href="https://github.com/NixOS/nixpkgs/tree/master/nixos/tests/kubernetes">NixOS e2e kubernetes tests</a>: Node Joining etc.</li>
+<li><a href="https://logs.nix.samueldr.com/nixos-kubernetes/2018-09-07">IRC (2018-09)</a>: issues related to DNS</li>
+<li><a href="https://logs.nix.samueldr.com/nixos-kubernetes/2019-09-05">IRC (2019-09)</a>: discussion about <code>easyCerts</code> and general setup</li>
+</ul>
+<p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="category:Container" class="wikilink" title="Category:Container">Category:Container</a> <a href="category:NixOS_Manual" class="wikilink" title="Category:NixOS Manual">Category:NixOS Manual</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

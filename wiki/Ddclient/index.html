@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ddclient</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Ddclient</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Ddclient -->
+
+<p><a href="https://github.com/ddclient/ddclient">Ddclient</a> is a program that can dynamically update your <a href="wikipedia:Domain_Name_System" class="wikilink" title="DNS">DNS</a> records for a variety of providers. This is helpful if you&#39;re hosting a server without a static IP address.</p>
+<h2 id="installation-amp-configuration">Installation &amp; Configuration</h2><p>Below is an example configuration to dynamically update your records in <a href="https://www.cloudflare.com/application-services/products/dns/">Cloudflare DNS</a></p>
+<p>may be set to a time of your choosing, check your DNS provider&#39;s documentation to ensure that you aren&#39;t sending requests too frequently. For formatting, run <code>man 7 systemd.time</code> or reference the <a href="https://man7.org/linux/man-pages/man7/systemd.time.7.html">online man pages</a>.</p>
+<h3 id="using-your-dns-provider">Using Your DNS Provider</h3><p>For more in depth info on using ddclient for a specific DNS provider visit the <a href="https://ddclient.net/protocols.html">ddclient documentation</a>. If your provider isn&#39;t listed there try searching for the name of your DNS provider in the <a href="https://github.com/ddclient/ddclient/blob/main/ddclient.in">ddclient source code</a>. Modify the above configuration with the relevant , , , , and from the documentation or source code.</p>
+<h4 id="cloudflare">Cloudflare</h4><p>This excerpt of <a href="https://github.com/ddclient/ddclient/blob/main/ddclient.in">ddclient.in</a> describes the specific options needed for Cloudflare. Reference the above nix configuration to understand the mapping between the ddclient config and the Nix config.</p>
+<h2 id="troubleshooting">Troubleshooting</h2><p>Adding to your ddclient config will enable debug logs on the <a href="https://mirror.nixoscn.org/wiki/Ddclient/systemd" class="wikilink" title="systemd">systemd</a> unit. The debug logs can help verify that the client is able to reach your DNS provider even if it doesn&#39;t need to change the DNS records.</p>
+<h2 id="references">References</h2><ol>
+<li><a href="https://github.com/ddclient/ddclient">ddclient source code</a></li>
+<li><a href="https://ddclient.net/">ddclient documentation</a></li>
+</ol>
+<p><a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="category:Networking" class="wikilink" title="Category:Networking">Category:Networking</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

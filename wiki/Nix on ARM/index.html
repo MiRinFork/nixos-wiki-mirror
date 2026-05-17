@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nix on ARM</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Nix on ARM</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Nix on ARM -->
+
+<p>This wiki section concerns the Nix package manager tool only. Information about ARM based NixOS systems can be found here: <a href="https://mirror.nixoscn.org/wiki/Nix%20on%20ARM/NixOS_on_ARM" class="wikilink" title="NixOS on ARM">NixOS on ARM</a></p>
+<p>Both aarch64 and armv7l are tested and working. Though, aarch64 is the only ARM architecture which is officially supported and has binary packages available from the official NixOS cache. Therefore it is highly recommended to use the aarch64 version of Nix if your platform and OS support it. For example on Raspberry OS, aarch64 support <a href="https://www.raspberrypi.org/forums/viewtopic.php?t=250730">can be enabled easily</a>.</p>
+<h2 id="aarch64">aarch64</h2><p>Since aarch64 is officially supported, Nix can be installed the official way <code>curl -L </code><a href="https://nixos.org/nix/install"><code>https://nixos.org/nix/install</code></a><code> | sh</code> For more information see: <a href="https://nixos.org/download.html">Getting Nix</a></p>
+<h2 id="armv7l">armv7l</h2><p>A prebuilt nix installer for armv7l, including instruction on how to build it yourself using docker, can be found here: <a href="https://github.com/DavHau/nix-on-armv7l">github.com/DavHau/nix-on-armv7l</a></p>
+<p>For some more information on, for example, community maintained binary caches, check also: <a href="https://mirror.nixoscn.org/wiki/Nix%20on%20ARM/NixOS_on_ARM" class="wikilink" title="NixOS on ARM">NixOS on ARM</a></p>
+<p>In case this helps anyone - by modifying Nix&#39;s `release.nix` you can make your own ARMv7 installer. (This is outdated and doesn&#39;t work anymore. At least not without additional modifications)</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ nix <span class="hljs-operator">?</span> <span class="hljs-built_in">builtins.fetchGit</span> <span class="hljs-symbol">./.</span>
+, nixpkgs <span class="hljs-operator">?</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> <span class="hljs-comment">#builtins.fetchGit { url = https://github.com/NixOS/nixpkgs.git; ref = &quot;nixos-18.03&quot;; }</span>
+, officialRelease <span class="hljs-operator">?</span> <span class="hljs-literal">false</span>
+, systems <span class="hljs-operator">?</span> [ <span class="hljs-string">&quot;armv7l-linux&quot;</span> ]
+}:
+
+<span class="hljs-keyword">let</span>
+
+  <span class="hljs-attr">pkgs</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> nixpkgs { <span class="hljs-attr">system</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">builtins.currentSystem</span> <span class="hljs-keyword">or</span> <span class="hljs-string">&quot;x86_64-linux&quot;</span>; };
+
+  <span class="hljs-attr">jobs</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">rec</span> {
+
+
+    <span class="hljs-attr">tarball</span> <span class="hljs-operator">=</span>
+      <span class="hljs-keyword">with</span> pkgs;
+
+      <span class="hljs-keyword">with</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">./release-common.nix</span> { <span class="hljs-keyword">inherit</span> pkgs; };
+
+      releaseTools.sourceTarball {
+        <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nix-tarball&quot;</span>;
+        <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">builtins.readFile</span> <span class="hljs-symbol">./.version</span>;
+        <span class="hljs-attr">versionSuffix</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">if</span> officialRelease <span class="hljs-keyword">then</span> <span class="hljs-string">&quot;&quot;</span> <span class="hljs-keyword">else</span> <span class="hljs-string">&quot;pre<span class="hljs-subst">${<span class="hljs-built_in">toString</span> nix.revCount}</span>_<span class="hljs-subst">${nix.shortRev}</span>&quot;</span>;
+        <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> nix;
+        <span class="hljs-keyword">inherit</span> officialRelease;
+
+        <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> tarballDeps <span class="hljs-operator">++</span> buildDeps <span class="hljs-operator">++</span> propagatedDeps;
+
+        <span class="hljs-attr">configureFlags</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;--enable-gc&quot;</span>;
+
+        <span class="hljs-attr">postUnpack</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+          (cd source &amp;&amp; find . -type f) | cut -c3- &gt; source/.dist-files
+          cat source/.dist-files
+        &#x27;&#x27;</span>;
+
+        <span class="hljs-attr">preConfigure</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+          (cd perl ; autoreconf --install --force --verbose)
+          # TeX needs a writable font cache.
+          export VARTEXFONTS=$TMPDIR/texfonts
+        &#x27;&#x27;</span>;
+
+        <span class="hljs-attr">distPhase</span> <span class="hljs-operator">=</span>
+          <span class="hljs-string">&#x27;&#x27;
+            runHook preDist
+            make dist
+            mkdir -p $out/tarballs
+            cp *.tar.* $out/tarballs
+          &#x27;&#x27;</span>;
+
+        <span class="hljs-attr">preDist</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+          make install docdir=$out/share/doc/nix makefiles=doc/manual/local.mk
+          echo &quot;doc manual $out/share/doc/nix/manual&quot; &gt;&gt; $out/nix-support/hydra-build-products
+        &#x27;&#x27;</span>;
+      };
+
+
+    <span class="hljs-attr">build</span> <span class="hljs-operator">=</span> pkgs.lib.genAttrs systems (<span class="hljs-params">system:</span>
+
+      <span class="hljs-keyword">let</span> pkgs <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> nixpkgs { <span class="hljs-keyword">inherit</span> system; }; <span class="hljs-keyword">in</span>
+
+      <span class="hljs-keyword">with</span> pkgs;
+
+      <span class="hljs-keyword">with</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">./release-common.nix</span> { <span class="hljs-keyword">inherit</span> pkgs; };
+
+      releaseTools.nixBuild {
+        <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nix&quot;</span>;
+        <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> tarball;
+
+        <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> buildDeps;
+        <span class="hljs-attr">propagatedBuildInputs</span> <span class="hljs-operator">=</span> propagatedDeps;
+
+        <span class="hljs-attr">configureFlags</span> <span class="hljs-operator">=</span> configureFlags <span class="hljs-operator">++</span>
+          [ <span class="hljs-string">&quot;--sysconfdir=/etc&quot;</span> ];
+
+        <span class="hljs-attr">enableParallelBuilding</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+        <span class="hljs-attr">makeFlags</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;profiledir=$(out)/etc/profile.d&quot;</span>;
+
+        <span class="hljs-attr">preBuild</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;unset NIX_INDENT_MAKE&quot;</span>;
+
+        <span class="hljs-attr">installFlags</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sysconfdir=$(out)/etc&quot;</span>;
+
+        <span class="hljs-attr">doInstallCheck</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+        <span class="hljs-attr">installCheckFlags</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sysconfdir=$(out)/etc&quot;</span>;
+      });
+
+
+    <span class="hljs-attr">perlBindings</span> <span class="hljs-operator">=</span> pkgs.lib.genAttrs systems (<span class="hljs-params">system:</span>
+
+      <span class="hljs-keyword">let</span> pkgs <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> nixpkgs { <span class="hljs-keyword">inherit</span> system; }; <span class="hljs-keyword">in</span> <span class="hljs-keyword">with</span> pkgs;
+
+      releaseTools.nixBuild {
+        <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nix-perl&quot;</span>;
+        <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> tarball;
+
+        <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span>
+          [ jobs.build.${system} curl bzip2 xz pkg-config pkgs.perl boost ]
+          <span class="hljs-operator">++</span> lib.optional (stdenv.isLinux <span class="hljs-operator">||</span> stdenv.isDarwin) libsodium;
+
+        <span class="hljs-attr">configureFlags</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+          --with-dbi=<span class="hljs-subst">${perlPackages.DBI}</span>/<span class="hljs-subst">${pkgs.perl.libPrefix}</span>
+          --with-dbd-sqlite=<span class="hljs-subst">${perlPackages.DBDSQLite}</span>/<span class="hljs-subst">${pkgs.perl.libPrefix}</span>
+        &#x27;&#x27;</span>;
+
+        <span class="hljs-attr">enableParallelBuilding</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+        <span class="hljs-attr">postUnpack</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sourceRoot=$sourceRoot/perl&quot;</span>;
+
+        <span class="hljs-attr">preBuild</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;unset NIX_INDENT_MAKE&quot;</span>;
+      });
+
+
+    <span class="hljs-attr">binaryTarball</span> <span class="hljs-operator">=</span> pkgs.lib.genAttrs systems (<span class="hljs-params">system:</span>
+
+      <span class="hljs-keyword">with</span> <span class="hljs-built_in">import</span> nixpkgs { <span class="hljs-keyword">inherit</span> system; };
+
+      <span class="hljs-keyword">let</span>
+        <span class="hljs-attr">toplevel</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">builtins.getAttr</span> system jobs.build;
+        <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> toplevel.src.version;
+        <span class="hljs-attr">installerClosureInfo</span> <span class="hljs-operator">=</span> closureInfo { <span class="hljs-attr">rootPaths</span> <span class="hljs-operator">=</span> [ toplevel cacert ]; };
+      <span class="hljs-keyword">in</span>
+
+      runCommand <span class="hljs-string">&quot;nix-binary-tarball-<span class="hljs-subst">${version}</span>&quot;</span>
+        { <span class="hljs-attr">nativeBuildInputs</span> <span class="hljs-operator">=</span> lib.optional (system <span class="hljs-operator">!=</span> <span class="hljs-string">&quot;armv7l-linux&quot;</span>) shellcheck;
+          <span class="hljs-attr">meta.description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Distribution-independent Nix bootstrap binaries for <span class="hljs-subst">${system}</span>&quot;</span>;
+        }
+        <span class="hljs-string">&#x27;&#x27;
+          cp <span class="hljs-subst">${installerClosureInfo}</span>/registration $TMPDIR/reginfo
+          substitute <span class="hljs-subst">${.<span class="hljs-operator">/</span>scripts<span class="hljs-operator">/</span>install-nix-from-closure.sh}</span> $TMPDIR/install \
+            --subst-var-by nix <span class="hljs-subst">${toplevel}</span> \
+            --subst-var-by cacert <span class="hljs-subst">${cacert}</span>
+
+          substitute <span class="hljs-subst">${.<span class="hljs-operator">/</span>scripts<span class="hljs-operator">/</span>install-darwin-multi-user.sh}</span> $TMPDIR/install-darwin-multi-user.sh \
+            --subst-var-by nix <span class="hljs-subst">${toplevel}</span> \
+            --subst-var-by cacert <span class="hljs-subst">${cacert}</span>
+          substitute <span class="hljs-subst">${.<span class="hljs-operator">/</span>scripts<span class="hljs-operator">/</span>install-systemd-multi-user.sh}</span> $TMPDIR/install-systemd-multi-user.sh \
+            --subst-var-by nix <span class="hljs-subst">${toplevel}</span> \
+            --subst-var-by cacert <span class="hljs-subst">${cacert}</span>
+          substitute <span class="hljs-subst">${.<span class="hljs-operator">/</span>scripts<span class="hljs-operator">/</span>install-multi-user.sh}</span> $TMPDIR/install-multi-user \
+            --subst-var-by nix <span class="hljs-subst">${toplevel}</span> \
+            --subst-var-by cacert <span class="hljs-subst">${cacert}</span>
+
+          if type -p shellcheck; then
+            # SC1090: Don&#x27;t worry about not being able to find
+            #         $nix/etc/profile.d/nix.sh
+            shellcheck --exclude SC1090 $TMPDIR/install
+            shellcheck $TMPDIR/install-darwin-multi-user.sh
+            shellcheck $TMPDIR/install-systemd-multi-user.sh
+
+            # SC1091: Don&#x27;t panic about not being able to source
+            #         /etc/profile
+            # SC2002: Ignore &quot;useless cat&quot; &quot;error&quot;, when loading
+            #         .reginfo, as the cat is a much cleaner
+            #         implementation, even though it is &quot;useless&quot;
+            # SC2116: Allow ROOT_HOME=$(echo ~root) for resolving
+            #         root&#x27;s home directory
+            shellcheck --external-sources \
+              --exclude SC1091,SC2002,SC2116 $TMPDIR/install-multi-user
+          fi
+
+          chmod +x $TMPDIR/install
+          chmod +x $TMPDIR/install-darwin-multi-user.sh
+          chmod +x $TMPDIR/install-systemd-multi-user.sh
+          chmod +x $TMPDIR/install-multi-user
+          dir=nix-<span class="hljs-subst">${version}</span>-<span class="hljs-subst">${system}</span>
+          fn=$out/$dir.tar.bz2
+          mkdir -p $out/nix-support
+          echo &quot;file binary-dist $fn&quot; &gt;&gt; $out/nix-support/hydra-build-products
+          tar cvfj $fn \
+            --owner=0 --group=0 --mode=u+rw,uga+r \
+            --absolute-names \
+            --hard-dereference \
+            --transform &quot;s,$TMPDIR/install,$dir/install,&quot; \
+            --transform &quot;s,$TMPDIR/reginfo,$dir/.reginfo,&quot; \
+            --transform &quot;s,$NIX_STORE,$dir/store,S&quot; \
+            $TMPDIR/install $TMPDIR/install-darwin-multi-user.sh \
+            $TMPDIR/install-systemd-multi-user.sh \
+            $TMPDIR/install-multi-user $TMPDIR/reginfo \
+            $(cat <span class="hljs-subst">${installerClosureInfo}</span>/store-paths)
+        &#x27;&#x27;</span>);
+
+
+    <span class="hljs-attr">coverage</span> <span class="hljs-operator">=</span>
+      <span class="hljs-keyword">with</span> pkgs;
+
+      <span class="hljs-keyword">with</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">./release-common.nix</span> { <span class="hljs-keyword">inherit</span> pkgs; };
+
+      releaseTools.coverageAnalysis {
+        <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nix-build&quot;</span>;
+        <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> tarball;
+
+        <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> buildDeps;
+        <span class="hljs-attr">propagatedBuildInputs</span> <span class="hljs-operator">=</span> propagatedDeps;
+
+        <span class="hljs-attr">configureFlags</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+          --disable-init-state
+        &#x27;&#x27;</span>;
+
+        <span class="hljs-attr">dontInstall</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+
+        <span class="hljs-attr">doInstallCheck</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+        <span class="hljs-attr">lcovFilter</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;*/boost/*&quot;</span> <span class="hljs-string">&quot;*-tab.*&quot;</span> <span class="hljs-string">&quot;*/nlohmann/*&quot;</span> <span class="hljs-string">&quot;*/linenoise/*&quot;</span> ];
+
+        <span class="hljs-comment"># We call `dot&#x27;, and even though we just use it to</span>
+        <span class="hljs-comment"># syntax-check generated dot files, it still requires some</span>
+        <span class="hljs-comment"># fonts.  So provide those.</span>
+        <span class="hljs-attr">FONTCONFIG_FILE</span> <span class="hljs-operator">=</span> texFunctions.fontsConf;
+      };
+
+    <span class="hljs-comment"># Aggregate job containing the release-critical jobs.</span>
+    <span class="hljs-attr">release</span> <span class="hljs-operator">=</span> pkgs.releaseTools.aggregate {
+      <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nix-<span class="hljs-subst">${tarball.version}</span>&quot;</span>;
+      <span class="hljs-attr">meta.description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Release-critical builds&quot;</span>;
+      <span class="hljs-attr">constituents</span> <span class="hljs-operator">=</span>
+        [ tarball
+          build.armv7l-linux
+        ];
+    };
+
+  };
+
+<span class="hljs-keyword">in</span> jobs</code></pre>
+      </div><p><a href="category:NixOS_on_ARM" class="wikilink" title="Category:NixOS on ARM">Category:NixOS on ARM</a> <a href="category:Nix" class="wikilink" title="Category:Nix">Category:Nix</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

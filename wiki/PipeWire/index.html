@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PipeWire</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / PipeWire</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: PipeWire -->
+
+<p><a href="https://www.pipewire.org/">PipeWire</a> is a relatively new (first release in 2017) low-level multimedia framework. It aims to offer capture and playback for both audio and video with minimal latency while retaining support for <a href="https://mirror.nixoscn.org/wiki/PipeWire/PulseAudio" class="wikilink" title="PulseAudio">PulseAudio</a>-, <a href="https://mirror.nixoscn.org/wiki/PipeWire/JACK" class="wikilink" title="JACK">JACK</a>-, <a href="https://mirror.nixoscn.org/wiki/PipeWire/ALSA" class="wikilink" title="ALSA">ALSA</a>-, and <a href="https://mirror.nixoscn.org/wiki/PipeWire/GStreamer" class="wikilink" title="GStreamer">GStreamer</a>-based applications. PipeWire has great <a href="https://mirror.nixoscn.org/wiki/PipeWire/Bluetooth" class="wikilink" title="Bluetooth">Bluetooth</a> support; due to Pulseaudio being <a href="https://github.com/NixOS/nixpkgs/issues/123784">reported to have troubles with Bluetooth</a>, PipeWire may be a good alternative.</p>
+<p>The daemon based on the framework can be configured to be both an audio server (with PulseAudio and JACK features) as well as a video capture server.</p>
+<p>PipeWire also supports containers such as <a href="https://mirror.nixoscn.org/wiki/PipeWire/Flatpak" class="wikilink" title="Flatpak">Flatpak</a> and does not rely on <code>audio</code> and <code>video</code> user groups, rather it uses a <a href="https://mirror.nixoscn.org/wiki/PipeWire/Polkit" class="wikilink" title="Polkit">Polkit</a>-like security model, asking Flatpak or <a href="https://mirror.nixoscn.org/wiki/PipeWire/Wayland" class="wikilink" title="Wayland">Wayland</a> for permission to record the screen or audio.</p>
+<p>As of <a href="https://nixos.org/manual/nixos/stable/release-notes#sec-release-24.11">NixOS 24.11</a>, PipeWire is the default sound server for most graphical sessions.</p>
+<h2 id="configuring-pipewire">Configuring PipeWire</h2><div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-comment"># rtkit (optional, recommended) allows Pipewire to use the realtime scheduler for increased performance.</span>
+  <span class="hljs-attr">security.rtkit.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">services.pipewire</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; <span class="hljs-comment"># if not already enabled</span>
+    <span class="hljs-attr">alsa.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">alsa.support32Bit</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">pulse.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-comment"># If you want to use JACK applications, uncomment the following</span>
+    <span class="hljs-comment">#jack.enable = true;</span>
+  };</code></pre>
+      </div><p>It is possible to use the option hierarchy in NixOS to create drop-in configuration files, if needed. For example, to disable the <a href="https://docs.pipewire.org/page_module_x11_bell.html">PipeWire x11-bell module</a> (which plays a sound on every X11 urgency hint), use:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">services.pipewire</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-comment"># Disable X11 bell module, which plays a sound on urgency hint</span>
+    <span class="hljs-comment"># (my prompt includes an urgency hint, so I want no sounds).</span>
+    <span class="hljs-attr">extraConfig</span> <span class="hljs-operator">=</span> {
+      pipewire.<span class="hljs-string">&quot;99-silent-bell.conf&quot;</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-string">&quot;context.properties&quot;</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-string">&quot;module.x11.bell&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+        };
+      };
+    };
+  };</code></pre>
+      </div><h2 id="bluetooth-configuration">Bluetooth Configuration</h2><p>PipeWire can be configured to use specific codecs, by default all codecs and most connection modes are enabled, see <a href="https://pipewire.pages.freedesktop.org/wireplumber/daemon/configuration/bluetooth.html#monitor-properties">this link</a> for precise details of which connections modes are enabled by default. The mSBC codec provides slightly better sound quality in calls than regular HFP/HSP, while the SBC-XQ provides better sound quality for audio listening. For more information <a href="https://www.guyrutenberg.com/2021/03/11/replacing-pulseaudio-with-pipewire/">see this link</a>.</p>
+<p>Wireplumber () is the default modular session / policy manager for PipeWire in unstable. To add custom configuration you can use directly. For example:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  services.pipewire.wireplumber.extraConfig.<span class="hljs-string">&quot;10-bluez&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-string">&quot;monitor.bluez.properties&quot;</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-string">&quot;bluez5.enable-sbc-xq&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-string">&quot;bluez5.enable-msbc&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-string">&quot;bluez5.enable-hw-volume&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-string">&quot;bluez5.roles&quot;</span> <span class="hljs-operator">=</span> [
+        <span class="hljs-string">&quot;hsp_hs&quot;</span>
+        <span class="hljs-string">&quot;hsp_ag&quot;</span>
+        <span class="hljs-string">&quot;hfp_hf&quot;</span>
+        <span class="hljs-string">&quot;hfp_ag&quot;</span>
+      ];
+    };
+  };</code></pre>
+      </div><p>Or, to disable automatic HSP/HFP and A2DP mode switching, which is part of the <code>11-bluetooth-policy</code> configuration:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  services.pipewire.wireplumber.extraConfig.<span class="hljs-string">&quot;11-bluetooth-policy&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-string">&quot;wireplumber.settings&quot;</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-string">&quot;bluetooth.autoswitch-to-headset-profile&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+    };
+  };</code></pre>
+      </div><p>Alternatively you can set as well, adding derivations that output wireplumber config files in <code>$out/share/wireplumber/wireplumber.conf.d/*.conf</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">services.pipewire.wireplumber.configPackages</span> <span class="hljs-operator">=</span> [
+    (pkgs.writeTextDir <span class="hljs-string">&quot;share/wireplumber/wireplumber.conf.d/10-bluez.conf&quot;</span> <span class="hljs-string">&#x27;&#x27;
+      monitor.bluez.properties = {
+        bluez5.enable-sbc-xq = true
+        bluez5.enable-msbc = true
+        bluez5.enable-hw-volume = true
+        bluez5.roles = [hsp_hs hsp_ag hfp_hf hfp_ag]
+      }
+    &#x27;&#x27;</span>)
+  ];</code></pre>
+      </div><p>It is possible change a particular user instead of system-wide, with adding this to <code>~/.config/wireplumber/bluetooth.conf.d</code> (<code>~/.config/wireplumber/bluetooth.lua.d</code> for wireplumber 4.X and below) instead, manually or using <a href="https://mirror.nixoscn.org/wiki/PipeWire/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a>. Refer to <a href="https://wiki.archlinux.org/title/PipeWire">ArchWiki</a> for possible configurations, as well as the <a href="https://docs.pipewire.org/">Full Documentation</a>.</p>
+<h2 id="airplay-raop-configuration">AirPlay/RAOP configuration</h2><p>Remote Audio Output Protocol, branded as AirPlay, is the apple-developed wireless audio stack used in apple devices, many &quot;smart speakers&quot; and similar appliances as well as several open source implementations. It&#39;s based on RTSP, streams in PCM and is supported natively by PipeWire. With the following configuration AirPlay servers on your local network should be automatically added as output devices:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># avahi required for service discovery</span>
+s<span class="hljs-attr">ervices.avahi.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+<span class="hljs-attr">services.pipewire</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-comment"># opens UDP ports 6001-6002</span>
+  <span class="hljs-attr">raopOpenFirewall</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+  <span class="hljs-attr">extraConfig.pipewire</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-string">&quot;10-airplay&quot;</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-string">&quot;context.modules&quot;</span> <span class="hljs-operator">=</span> [
+        {
+          <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;libpipewire-module-raop-discover&quot;</span>;
+
+          <span class="hljs-comment"># increase the buffer size if you get dropouts/glitches</span>
+          <span class="hljs-comment"># args = {</span>
+          <span class="hljs-comment">#   &quot;raop.latency.ms&quot; = 500;</span>
+          <span class="hljs-comment"># };</span>
+        }
+      ];
+    };
+  };
+};</code></pre>
+      </div><p>Note that to set up an airplay server as opposed to a client, separate software is required.</p>
+<h2 id="graphical-tools">Graphical tools</h2><p>All protocols (Pulseaudio/JACK) are now talking to the PipeWire protocol and are managed by the PipeWire daemon (therefore, applications can be managed by both Pulseaudio and JACK tools). For that reason, all graphical tools used for these protocols can be used:</p>
+<ul>
+<li><p>controls the volume (per-sink and per-app basis), the default outputs/inputs, the different profiles (for HDMI outputs/bluetooth devices), routes each application to a different input/output, etc.</p>
+</li>
+<li><p>a <a href="https://mirror.nixoscn.org/wiki/PipeWire/KDE" class="wikilink" title="Plasma">Plasma</a> applet to change volume directly from the systray. Also deals with volume keys.</p>
+</li>
+<li><p>with JACK emulation, provides a patchbay (to connect applications together). Note that JACK does not provide any way to change the volume of a single application; use Pulseaudio tools for that purpose.</p>
+</li>
+<li><p>with JACK emulation, provides a patchbay (make sure to go to &quot;Patchbay&quot; tab and check &quot;Canvas &gt; Show External&quot;).</p>
+</li>
+<li><p>catia/: similar to qjackctl and carla.</p>
+</li>
+<li><p>Similar to pavucontrol but for pipewire</p>
+</li>
+</ul>
+<h2 id="advanced-configuration">Advanced Configuration</h2><p>PipeWire can be extensively configured to fit the users&#39; needs.</p>
+<h3 id="null-sinks">Null sinks</h3><p>Should the user want to do some fancy routing with null sinks, these can be defined directly in the config as shown below.</p>
+<p>This is especially convenient if the user has a multi-channel (8+, or something &quot;weird&quot; like 2x2, 3x2) soundcard that keeps confusing applications with too many channels or a bad channel layout.</p>
+<p><strong>Note</strong>: those cards can be set to the &quot;Pro Audio&quot; profile with <code>pavucontrol</code> so PipeWire doesn&#39;t try to guess a wrong channel layout for them.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  services.pipewire.extraConfig.pipewire.<span class="hljs-string">&quot;91-null-sinks&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-string">&quot;context.objects&quot;</span> <span class="hljs-operator">=</span> [
+      {
+        <span class="hljs-comment"># A default dummy driver. This handles nodes marked with the &quot;node.always-driver&quot;</span>
+        <span class="hljs-comment"># properyty when no other driver is currently active. JACK clients need this.</span>
+        <span class="hljs-attr">factory</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;spa-node-factory&quot;</span>;
+        <span class="hljs-attr">args</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-string">&quot;factory.name&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;support.node.driver&quot;</span>;
+          <span class="hljs-string">&quot;node.name&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Dummy-Driver&quot;</span>;
+          <span class="hljs-string">&quot;priority.driver&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-number">8000</span>;
+        };
+      }
+      {
+        <span class="hljs-attr">factory</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;adapter&quot;</span>;
+        <span class="hljs-attr">args</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-string">&quot;factory.name&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;support.null-audio-sink&quot;</span>;
+          <span class="hljs-string">&quot;node.name&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Microphone-Proxy&quot;</span>;
+          <span class="hljs-string">&quot;node.description&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Microphone&quot;</span>;
+          <span class="hljs-string">&quot;media.class&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Audio/Source/Virtual&quot;</span>;
+          <span class="hljs-string">&quot;audio.position&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;MONO&quot;</span>;
+        };
+      }
+      {
+        <span class="hljs-attr">factory</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;adapter&quot;</span>;
+        <span class="hljs-attr">args</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-string">&quot;factory.name&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;support.null-audio-sink&quot;</span>;
+          <span class="hljs-string">&quot;node.name&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Main-Output-Proxy&quot;</span>;
+          <span class="hljs-string">&quot;node.description&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Main Output&quot;</span>;
+          <span class="hljs-string">&quot;media.class&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Audio/Sink&quot;</span>;
+          <span class="hljs-string">&quot;audio.position&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;FL,FR&quot;</span>;
+        };
+      }
+    ];
+  };</code></pre>
+      </div><h3 id="linking-nodes">Linking nodes</h3><p>The config does not currently cover linking nodes together, but this can be fixed with a script. Soundcard names and ports should be replaced with the ones from the user&#39;s configuration:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-meta">#!/usr/bin/env bash</span>
+
+<span class="hljs-comment"># ports obtained from `pw-link -io`</span>
+
+pw-link <span class="hljs-string">&quot;Main-Output-Proxy:monitor_FL&quot;</span> <span class="hljs-string">&quot;alsa_output.usb-Native_Instruments_Komplete_Audio_6_69BC86B9-00.pro-audio:playback_1&quot;</span>
+pw-link <span class="hljs-string">&quot;Main-Output-Proxy:monitor_FR&quot;</span> <span class="hljs-string">&quot;alsa_output.usb-Native_Instruments_Komplete_Audio_6_69BC86B9-00.pro-audio:playback_2&quot;</span>
+
+pw-link <span class="hljs-string">&quot;alsa_input.usb-M-Audio_Fast_Track-00.pro-audio:capture_1&quot;</span> <span class="hljs-string">&quot;Microphone-Proxy:input_MONO&quot;</span></code></pre>
+      </div><p>In order to load the script on startup, it can be added to <code>~/.xprofile</code> or the specific DE/WM autostart config. Similarly, a one-shot user service can be created that runs the script.</p>
+<h3 id="low-latency-setup">Low-latency setup</h3><p>Audio production and rhythm games require lower latency audio than general applications. PipeWire can achieve the required latency with much less CPU usage compared to PulseAudio, with the appropriate configuration. The minimum period size controls how small a buffer can be. The lower it is, the less latency there is. PipeWire has a value of 32/48000 by default, which amounts to 0.667ms. It can be brought lower if needed:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  services.pipewire.extraConfig.pipewire.<span class="hljs-string">&quot;92-low-latency&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-string">&quot;context.properties&quot;</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-string">&quot;default.clock.rate&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-number">48000</span>;
+      <span class="hljs-string">&quot;default.clock.quantum&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-number">32</span>;
+      <span class="hljs-string">&quot;default.clock.min-quantum&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-number">32</span>;
+      <span class="hljs-string">&quot;default.clock.max-quantum&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-number">32</span>;
+    };
+  };</code></pre>
+      </div><p><strong>NOTE</strong>: Every setup is different, and a lot of factors determine your final latency, like CPU speed, RT/PREEMPTIVE kernels and soundcards supporting different audio formats. That&#39;s why 32/48000 isn&#39;t always a value that&#39;s going to work for everyone. The best way to get everything working is to keep increasing the quant value until you get no crackles (underruns) or until you get audio again (in case there wasn&#39;t any). This won&#39;t guarantee the lowest possible latency, but will provide a decent one paired with stable audio.</p>
+<h4 id="pulseaudio-backend">PulseAudio backend</h4><p>Applications using the Pulse backend have a separate configuration. The default minimum value is 1024, so it needs to be tweaked if low-latency audio is desired.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  services.pipewire.extraConfig.pipewire-pulse.<span class="hljs-string">&quot;92-low-latency&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-string">&quot;context.properties&quot;</span> <span class="hljs-operator">=</span> [
+      {
+        <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;libpipewire-module-protocol-pulse&quot;</span>;
+        <span class="hljs-attr">args</span> <span class="hljs-operator">=</span> { };
+      }
+    ];
+    <span class="hljs-string">&quot;pulse.properties&quot;</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-string">&quot;pulse.min.req&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;32/48000&quot;</span>;
+      <span class="hljs-string">&quot;pulse.default.req&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;32/48000&quot;</span>;
+      <span class="hljs-string">&quot;pulse.max.req&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;32/48000&quot;</span>;
+      <span class="hljs-string">&quot;pulse.min.quantum&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;32/48000&quot;</span>;
+      <span class="hljs-string">&quot;pulse.max.quantum&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;32/48000&quot;</span>;
+    };
+    <span class="hljs-string">&quot;stream.properties&quot;</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-string">&quot;node.latency&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;32/48000&quot;</span>;
+      <span class="hljs-string">&quot;resample.quality&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-number">1</span>;
+    };
+  };</code></pre>
+      </div><p>As a general rule, the values in <code>pipewire-pulse</code> should not be lower than the ones in <code>pipewire</code>.</p>
+<h3 id="controlling-the-alsa-devices">Controlling the ALSA devices</h3><p>It is possible to configure various aspects of soundcards through PipeWire, including format, period size and batch mode:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">services.pipewire.wireplumber.configPackages</span> <span class="hljs-operator">=</span> [
+    (pkgs.writeTextDir <span class="hljs-string">&quot;share/wireplumber/main.lua.d/99-alsa-lowlatency.lua&quot;</span> <span class="hljs-string">&#x27;&#x27;
+      alsa_monitor.rules = {
+        {
+          matches = {{{ &quot;node.name&quot;, &quot;matches&quot;, &quot;alsa_output.*&quot; }}};
+          apply_properties = {
+            [&quot;audio.format&quot;] = &quot;S32LE&quot;,
+            [&quot;audio.rate&quot;] = &quot;96000&quot;, -- for USB soundcards it should be twice your desired rate
+            [&quot;api.alsa.period-size&quot;] = 2, -- defaults to 1024, tweak by trial-and-error
+            -- [&quot;api.alsa.disable-batch&quot;] = true, -- generally, USB soundcards use the batch mode
+          },
+        },
+      }
+    &#x27;&#x27;</span>)
+  ];</code></pre>
+      </div><p>The <code>matches</code> attribute applies the <code>actions</code> to the devices/properties listed there. It is usually used with soundcard names, like shown in the config above. <matches> can match any of the outputs of</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">pw-dump | grep node.name | grep alsa</span></code></pre>
+      </div><h3 id="headless-operation">Headless operation</h3><p>PipeWire can run on a headless device (without a GUI) such as a Raspberry Pi connected to a speaker. In that case, it may be preferable to start PipeWire on boot and keep it running rather than only running during an interactive login session. Among other things, this helps prevent a race condition that may occur when socket activation fails to initialize audio devices in time for their first use, leading to one-time errors after reboots. The following additional configuration facilitates this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-comment"># Socket activation too slow for headless; start at boot instead.</span>
+  <span class="hljs-attr">services.pipewire.socketActivation</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>; 
+  <span class="hljs-comment"># Start WirePlumber (with PipeWire) at boot.</span>
+  <span class="hljs-attr">systemd.user.services.wireplumber.wantedBy</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;default.target&quot;</span> ];
+  users.users.<span class="hljs-symbol">&lt;name&gt;</span>.linger <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; <span class="hljs-comment"># keep user services running</span>
+  users.users.<span class="hljs-symbol">&lt;name&gt;</span>.extraGroups <span class="hljs-operator">=</span> [ ... <span class="hljs-string">&quot;audio&quot;</span> ];</code></pre>
+      </div><p>Despite early activation, you may still experience a race condition that prevents audio from working if you play media immediately after a new login such as running an SSH command. If this occurs, try introducing a short delay (e.g. <code>sleep 5</code>) before invoking the media player application.</p>
+<h4 id="system-wide-pipewire">System-wide PipeWire</h4><p>As an alternative to having lingering systemd user services, PipeWire can also run as a system-wide Systemd service. See for more.</p>
+<h3 id="setting-default-sink-volume-via-wireplumber">Setting default sink volume via wireplumber</h3><p>It&#39;s possible to declare your desired volume through by setting <a href="https://pipewire.pages.freedesktop.org/wireplumber/daemon/configuration/configuration_option_types.html">wireplumber.settings</a>&#39;s <a href="https://pipewire.pages.freedesktop.org/wireplumber/daemon/configuration/settings.html">default-sink-volume</a>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">services.pipewire.wireplumber</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">extraConfig</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-string">&quot;10-default-volume&quot;</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-string">&quot;wireplumber.settings&quot;</span>.<span class="hljs-string">&quot;device.routes.default-sink-volume&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-number">0.8</span>; <span class="hljs-comment"># default is 0.4</span>
+      };
+    };
+  };</code></pre>
+      </div><h2 id="troubleshooting">Troubleshooting</h2><h3 id="pactl-not-found">pactl not found</h3><p>The <code>pactl</code> functionality is superseded in PipeWire with the native <code>pw-cli</code>, <code>pw-mon</code> and <code>pw-top</code> CLI tools. When using WirePlumber (which is enabled by default), you can also use <code>wpctl</code> as a <code>pactl</code> alternative with similar high level subcommands.</p>
+<h3 id="no-signal-detected-in-audio-application-from-external-audio-interface">No signal detected in audio application from external audio interface</h3><p>This issue was seen when attempting to use a Roland STUDIO-CAPTURE 16x10 Audio Interface to record audio in Ardour8 on NixOS. One possible solution:</p>
+<ul>
+<li>Install .</li>
+<li>Run , navigate to the configuration tab, and set the Profile for STUDIO-CAPTURE (or your audio interface) to &quot;Pro Audio&quot;.</li>
+<li>Ensure the audio interface and Ardour are set to the same sample rate. Ardour8 will accept a configuration where its sample rate does not match the audio interface&#39;s sample rate, when using PipeWire, but will not actually be able to record audio unless they match. If you are unable to successfully activate a track&#39;s record button, this may be the issue.</li>
+</ul>
+<h3 id="sound-pops-a-few-seconds-after-playback-stops-or-audio-takes-a-long-time-to-start-playing-after-a-couple-of-seconds">Sound pops a few seconds after playback stops OR audio takes a long time to start playing after a couple of seconds</h3><p>By default Wireplumber suspends a sink after 5 seconds of no playback which can create a sound pop on sensitive audio equipment, or a noticeable delay on equipment that takes a moment to start back up. You can disable this by providing extra configuration to wireplumber but first you need to find out the name of the problematic sink in the wireplumber namespace (or blanket disable the functionality).</p>
+<ol>
+<li><p><strong>Find out the name of the sink (Optional)</strong></p>
+<ol>
+<li>Run <code>pw-top</code> to monitor pipewire processes</li>
+<li>Play and pause sound on the problematic device. After 5 seconds the numeric columns of at least one process will disappear. This is the suspension in action. You need the value of the NAME column to refer to this sink in the configuration below. Since the display updates each second, you can&#39;t copy the value easily. Rerun <code>pw-top -b</code> and abort with <kbd>CTRL</kbd>+<kbd>C</kbd> to get persistent output.</li>
+</ol>
+</li>
+<li><p><strong>Add configuration</strong>: If you want to blanket do this for all devices, you can use <code>~alsa_input.*</code> and <code>~alsa_output.*</code> to match all input and output devices. You can also use (from the step above) an exact device if you only want to change the setting for that single device. In that case you can match only a single device, and replace the node name with EG: <code>alsa_output.usb-ASUSTeK_Xonar_SoundCard-00.iec958-stereo</code>, and it will target that specific device.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"> <span class="hljs-comment"># Disable suspend of Toslink output to prevent audio popping.</span>
+  services.pipewire.wireplumber.extraConfig.<span class="hljs-string">&quot;99-disable-suspend&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-string">&quot;monitor.alsa.rules&quot;</span> <span class="hljs-operator">=</span> [
+      {
+        <span class="hljs-attr">matches</span> <span class="hljs-operator">=</span> [
+          {
+            <span class="hljs-string">&quot;node.name&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;~alsa_input.*&quot;</span>;
+          }
+          {
+            <span class="hljs-string">&quot;node.name&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;~alsa_output.*&quot;</span>;
+          }
+        ];
+        <span class="hljs-attr">actions</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">update-props</span> <span class="hljs-operator">=</span> {
+            <span class="hljs-string">&quot;session.suspend-timeout-seconds&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>;
+          };
+        };
+      }
+    ];
+  };</code></pre>
+      </div><p>The value 0 disables suspension entirely. You could also set it to a higher value. 5 (seconds) is the default value.</p>
+</li>
+<li><p><strong>Verify resolution</strong>: After switching to the new configuration you need to also run <code>systemctl --user restart wireplumber</code> as your non-root user to apply the new wireplumber configuration, since wireplumber runs as your non-root user - <code>nixos-rebuild switch</code> is not sufficient. Play and pause sound again and verify that no sound pops occur anymore and observe in <code>pw-top</code> that the numeric columns for that sink do not disappear after 5 seconds.</p>
+</li>
+</ol>
+<h3 id="eliminating-audio-startup-delay-after-suspend-or-boot">Eliminating audio startup delay after suspend or boot</h3><p>In addition to audio popping, some HTPC systems may experience a delay when audio playback starts after resuming from suspend or system boot. This occurs even if suspension is disabled as described above.</p>
+<ol>
+<li><p><strong>Identify your sink</strong> using the method in the previous section.</p>
+</li>
+<li><p><strong>Enhance configuration</strong>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># Disable node suspend on NVIDIA graphics</span>
+services.pipewire.wireplumber.extraConfig.<span class="hljs-string">&quot;99-disable-suspend&quot;</span>.<span class="hljs-string">&quot;monitor.alsa.rules&quot;</span> <span class="hljs-operator">=</span> [
+  {
+    <span class="hljs-attr">matches</span> <span class="hljs-operator">=</span> [ { <span class="hljs-string">&quot;node.name&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;alsa_output.pci-0000_01_00.1.hdmi-stereo-extra1&quot;</span>; } ];
+    <span class="hljs-attr">actions.update-props</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-string">&quot;session.suspend-timeout-seconds&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>;
+      <span class="hljs-string">&quot;node.always-process&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-string">&quot;dither.method&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;wannamaker3&quot;</span>;
+      <span class="hljs-string">&quot;dither.noise&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-number">1</span>;
+    };
+  }
+];</code></pre>
+      </div><p>This configuration prevents audio popping and keeps the audio pipeline active, effectively reducing startup delay from ~5s to ~1s. Adding the dither settings further eliminates the remaining delay.</p>
+</li>
+</ol>
+<h3 id="audio-crackling-fix">Audio Crackling Fix</h3><p>Increasing buffer size for the audio will reduce crackling but increase latency. More details can be found in <a href="https://docs.pipewire.org/page_man_pipewire_conf_5.html">pipewire docs</a> and <a href="https://pipewire.pages.freedesktop.org/wireplumber/daemon/configuration/alsa.html">wireplumber docs</a></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.pipewire.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+ 
+<span class="hljs-attr">services.pipewire.extraConfig.pipewire</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-string">&quot;98-crackling-fix&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-string">&quot;context.properties&quot;</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-string">&quot;default.clock.quantum&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-number">1024</span>;
+      <span class="hljs-string">&quot;default.clock.min-quantum&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-number">1024</span>;
+      <span class="hljs-string">&quot;default.clock.max-quantum&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-number">8192</span>;
+    };
+  };
+};
+
+<span class="hljs-comment"># additional fix for very bad devices or VM. </span>
+s<span class="hljs-attr">ervices.pipewire.wireplumber.extraConfig</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-string">&quot;99-crackling-fix&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-string">&quot;api.alsa.period-size&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-number">1024</span>;
+    <span class="hljs-string">&quot;api.alsa.headroom&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-number">8192</span>;
+  };
+};</code></pre>
+      </div><h2 id="see-also">See also</h2><ul>
+<li><a href="https://github.com/NixOS/nixpkgs/issues/102547">https://github.com/NixOS/nixpkgs/issues/102547</a></li>
+<li><a href="https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/3858">https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/3858</a></li>
+</ul>
+<p><a href="category:Audio" class="wikilink" title="Category:Audio">Category:Audio</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

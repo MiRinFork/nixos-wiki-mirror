@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stalwart</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Stalwart</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Stalwart -->
+
+<p><a href="https://stalw.art/">Stalwart</a> is an open-source, all-in-one mail server solution that supports JMAP, IMAP4, and SMTP protocols. It&#39;s designed to be secure, fast, robust, and scalable, with features like built-in DMARC, DKIM, SPF, and ARC support for message authentication. It also provides strong transport security through DANE, MTA-STS, and SMTP TLS reporting. Stalwart is written in Rust, ensuring high performance and memory safety.</p>
+<h2 id="setup">Setup</h2><p>The following example enables the Stalwart mail server for the domain <em>example.org</em>, listening on mail delivery SMTP/Submission (<code>25, 465</code>), IMAPS (<code>993</code>) and JMAP ports (8080/443) for mail clients to connect to. Mailboxes for the accounts <code>postmaster@example.org</code> and <code>user1@example.org</code> get created if they don&#39;t exist yet.</p>
+<p>TLS key generation is done using DNS-01 challenge through Cloudflare domain provider, see dns-update library for <a href="https://github.com/stalwartlabs/dns-update">further providers</a> or configure <a href="https://stalw.art/docs/server/tls/certificates">manual certificates</a>.</p>
+<h3 id="dns-records">DNS records</h3><p>Before adding required records to the example domain <code>example.org</code>, we need to register the domain on the Stalwart server.</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs">stalwart-cli --url https://webadmin.example.org domain create example.org</code></pre>
+      </div><p>Authenticate using the fallback-admin password.</p>
+<p>Review the list of which DNS records are required including their values for the mail server to work at <a href="https://webadmin.example.org/manage/directory/domains/tuxtux.com.co/view">https://webadmin.example.org/manage/directory/domains/tuxtux.com.co/view</a>. Especially following records are essential:</p>
+<table>
+<thead>
+<tr>
+<th>Record Type</th>
+<th>Name</th>
+<th>Value / Target</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>A</td>
+<td>example.org</td>
+<td><em>IPv4 address of the mail server</em></td>
+<td>Required</td>
+</tr>
+<tr>
+<td>AAAA</td>
+<td>example.org</td>
+<td><em>IPv6 address of the mail server</em></td>
+<td>Required</td>
+</tr>
+<tr>
+<td>CNAME</td>
+<td>autoconfig</td>
+<td>example.org</td>
+<td>Mail client autoconfiguration</td>
+</tr>
+<tr>
+<td>CNAME</td>
+<td>autodiscover</td>
+<td>example.org</td>
+<td>Outlook / Exchange compatibility</td>
+</tr>
+<tr>
+<td>CNAME</td>
+<td>mail</td>
+<td>example.org</td>
+<td>Mail host</td>
+</tr>
+<tr>
+<td>CNAME</td>
+<td>mta-sts</td>
+<td>example.org</td>
+<td>MTA-STS</td>
+</tr>
+<tr>
+<td>CNAME</td>
+<td>webadmin</td>
+<td>example.org</td>
+<td>Stalwart web administration interface</td>
+</tr>
+<tr>
+<td>MX</td>
+<td>example.org</td>
+<td>mx1.example.org</td>
+<td>Mail delivery</td>
+</tr>
+<tr>
+<td>SRV</td>
+<td>_imaps._tcp</td>
+<td><em>See Web Admin for exact values</em></td>
+<td>IMAPS service</td>
+</tr>
+<tr>
+<td>SRV</td>
+<td>_submissions._tcp</td>
+<td><em>See Web Admin for exact values</em></td>
+<td>SMTP Submission service</td>
+</tr>
+<tr>
+<td>TLSA</td>
+<td>_25._tcp.example.org.</td>
+<td>3 1 1 …</td>
+<td>Only the record starting with <code>3 1 1</code> is required</td>
+</tr>
+<tr>
+<td>TLSA</td>
+<td>_25._tcp.mx1.example.org.</td>
+<td>3 1 1 …</td>
+<td>Only the record starting with <code>3 1 1</code> is required</td>
+</tr>
+<tr>
+<td>TXT</td>
+<td>202409e._domainkey</td>
+<td><em>DKIM public key</em></td>
+<td>DKIM</td>
+</tr>
+<tr>
+<td>TXT</td>
+<td>202409r._domainkey</td>
+<td><em>DKIM public key</em></td>
+<td>DKIM</td>
+</tr>
+<tr>
+<td>TXT</td>
+<td>_dmarc</td>
+<td><em>DMARC policy</em></td>
+<td>DMARC</td>
+</tr>
+<tr>
+<td>TXT</td>
+<td>mx1</td>
+<td><em>SPF or server information</em></td>
+<td>Depends on configuration</td>
+</tr>
+<tr>
+<td>TXT</td>
+<td>_smtp._tls</td>
+<td><em>MTA-STS policy</em></td>
+<td>SMTP TLS reporting</td>
+</tr>
+<tr>
+<td>TXT</td>
+<td>example.org</td>
+<td><em>SPF record</em></td>
+<td>SPF</td>
+</tr>
+</tbody></table>
+<h3 id="dnssec">DNSSEC</h3><p>Ensure that DNSSEC is enabled for your primary and mail server domain. It can be enabled by your domain provider.</p>
+<p>For example, check if DNSSEC is working correctly for your new TLSA record</p>
+<p><code># nix shell nixpkgs#dnsutils --command delv _25._tcp.mx1.example.org TLSA @1.1.1.1</code><br><code>; fully validated</code><br><code>_25._tcp.mx1.example.org. 10800 IN TLSA 3 1 1 7f59d873a70e224b184c95a4eb54caa9621e47d48b4a25d312d83d96 e3498238</code><br><code>_25._tcp.mx1.example.org. 10800 IN RRSIG   TLSA 13 5 10800 20230601000000 20230511000000 39688 example.org. He9VYZ35xTC3fNo8GJa6swPrZodSnjjIWPG6Th2YbsOEKTV1E8eGtJ2A +eyBd9jgG+B3cA/jw8EJHmpvy/buCw==</code></p>
+<h3 id="running-behind-reverse-proxy">Running behind reverse proxy</h3><p>When running behind a load balancer or reverse proxy, Stalwart will not be able to see the &quot;real&quot; sender IP-addresses of incoming mails in case of simple port forwarding. <a href="https://mirror.nixoscn.org/wiki/Stalwart/HAProxy" class="wikilink" title="HAProxy">HAProxy</a> or Proxy Protocol solves this problem and should be used on the reverse proxy server to forward SMTP traffic. Stalwart will start parsing the Proxy Protocol packages if correctly configured on the listener.In this example we set <code>proxy.trusted-networks</code> with an array of the gateway IP-addresses in the <code>smtp</code> listener section.</p>
+<h2 id="configuration">Configuration</h2><h3 id="mail-aliases">Mail aliases</h3><p>Considering the configuration above, we could add a mail alias for <code>user1@example.org</code> by simply adding further addresses to the <code>email</code>-array such as <code>user1real@example.org</code></p>
+<h3 id="blocking-mail-sender-address">Blocking mail sender address</h3><p>If you don&#39;t want to receive any mails from a specific address, even not into your spam folder, you can add it to the spam-trap array.</p>
+<h2 id="tips-and-tricks">Tips and tricks</h2><h3 id="auto-update-tlsa-records">Auto update TLSA records</h3><p>Stalwart <a href="https://github.com/stalwartlabs/stalwart/issues/1664">does not yet</a> automatically update the TLSA record if your ACME certificate changes.</p>
+<p>Following script is a possible workaounrd. It extracts the ACME cert every five minute, calculates the TLSA hash and compares it with the upstream record. If it doesn&#39;t match, it uses <a href="https://github.com/Stenstromen/gotlsaflare">gotlsaflare</a> to update the TLSA record on Cloudflare.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs">s<span class="hljs-attr">ystemd.services.tlsa-cloudflare-update</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Check and update TLSA/DANE record for mx1 from Stalwart ACME Cert&quot;</span>;
+  
+  <span class="hljs-attr">after</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-string">&quot;network-online.target&quot;</span>
+    <span class="hljs-string">&quot;stalwart.service&quot;</span>
+  ];
+  <span class="hljs-attr">wants</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-string">&quot;network-online.target&quot;</span>
+    <span class="hljs-string">&quot;stalwart.service&quot;</span>
+  ];
+  
+  <span class="hljs-attr">serviceConfig</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">Type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;oneshot&quot;</span>;
+    <span class="hljs-attr">User</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;stalwart&quot;</span>;
+    <span class="hljs-attr">Group</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;stalwart&quot;</span>;
+    <span class="hljs-attr">EnvironmentFile</span> <span class="hljs-operator">=</span> config.age.secrets.gotlsaflare-cloudflare-token.path;
+    <span class="hljs-attr">RuntimeDirectory</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;stalwart-tlsa&quot;</span>;
+  };
+  <span class="hljs-attr">environment</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">DOMAIN</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;example.org&quot;</span>;
+    <span class="hljs-attr">SUBDOMAIN</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;mail&quot;</span>;
+    <span class="hljs-attr">PORT</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;25&quot;</span>;
+    <span class="hljs-attr">ACME_PROVIDER_ID</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;cloudflare&quot;</span>;
+  };
+  <span class="hljs-attr">path</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+    bash
+    coreutils
+    openssl
+    dnsutils
+    gotlsaflare
+    rocksdb.tools
+    gawk
+  ];
+
+  <span class="hljs-attr">script</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    set -eu
+
+    TLSA_RECORD=&quot;_$PORT._tcp.$SUBDOMAIN.$DOMAIN&quot;
+    DB_PATH=&quot;/var/lib/stalwart/db&quot;
+    TEMP_RAW=&quot;/run/stalwart-tlsa/cert.bundle&quot;
+    TEMP_CRT=&quot;/run/stalwart-tlsa/cert.crt&quot;
+
+    echo &quot;Starting TLSA update process for $DOMAIN&quot;
+
+    ldb --db=&quot;$DB_PATH&quot; --column_family=s get &quot;acme.$ACME_PROVIDER_ID.cert&quot; | base64 -d &gt; &quot;$TEMP_RAW&quot;
+
+    if [ ! -s &quot;$TEMP_RAW&quot; ]; then
+      echo &quot;ERROR: ACME certificate extraction failed&quot;
+      exit 1
+    fi
+
+    openssl x509 -in &quot;$TEMP_RAW&quot; -out &quot;$TEMP_CRT&quot;
+
+    LOCAL_HASH=$(openssl x509 -in &quot;$TEMP_CRT&quot; -pubkey -noout | openssl pkey -pubin -outform DER | openssl sha256 | awk &#x27;{print tolower($2)}&#x27;)
+    echo &quot;Local hash: $LOCAL_HASH&quot;
+
+    UPSTREAM_HASH=$(dig +nosplit +short TLSA &quot;$TLSA_RECORD&quot; | awk &#x27;{print tolower($4)}&#x27; | head -n1)
+    echo &quot;Upstream hash: $UPSTREAM_HASH&quot;
+
+    if [ &quot;$LOCAL_HASH&quot; = &quot;$UPSTREAM_HASH&quot; ]; then
+      echo &quot;Hashes match. DNS is up to date.&quot;
+      exit 0
+    fi
+
+    echo &quot;Hashes differ! Updating Cloudflare...&quot;
+    gotlsaflare update \
+      --url &quot;$DOMAIN&quot; \
+      --subdomain &quot;$SUBDOMAIN&quot; \
+      --tcp&quot;$PORT&quot; \
+      --cert &quot;$TEMP_CRT&quot;
+
+    echo &quot;TLSA update completed successfully.&quot;
+  &#x27;&#x27;</span>;
+};
+
+<span class="hljs-attr">systemd.timers.tlsa-cloudflare-update</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Run TLSA check and update every 5 minutes&quot;</span>;
+  <span class="hljs-attr">wantedBy</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;timers.target&quot;</span> ];
+  <span class="hljs-attr">timerConfig</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">OnBootSec</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;2m&quot;</span>;
+    <span class="hljs-attr">OnUnitActiveSec</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;5m&quot;</span>;
+    <span class="hljs-attr">Unit</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;tlsa-cloudflare-update.service&quot;</span>;
+  };
+};</code></pre>
+      </div><p>Adapt the variables <code>DOMAIN</code>, <code>SUBDOMAIN</code>, and <code>PORT</code> according to your needs. The variable <code>ACME_PROVIDER_ID</code> corresponds to the ACME profile name you&#39;ve setup in the Stalwart webadmin interface. <code>EnvironmentFile</code> points to a file containing the secret Cloudflare api token in the format: TOKEN=12345678[...].</p>
+<h4 id="desec-io">deSEC.io</h4><p>In case you want to update your TLSA records at deSEC you can use <a href="https://codeberg.org/Cameo007/dyndns-tlsa-desec">dyndns-tlsa-desec</a> (<strong>install via flake</strong>) which checks your existing records and updates them if necessary. The certificate and key are taken from the specified directory (like your <a href="https://mirror.nixoscn.org/wiki/Stalwart/ACME" class="wikilink" title="ACME">ACME</a> directory)</p>
+<p>It defaults to <code>3 1 1</code> but you can choose other values as described <a href="wikipedia:DNS-based_Authentication_of_Named_Entities#RR_data_fields" class="wikilink" title="here">here</a>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs">s<span class="hljs-attr">ervices.dyndns-tlsa-desec</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">api_token_file</span> <span class="hljs-operator">=</span> config.age.secrets.dyndns-tlsa-desec-api-key.path;
+
+  tlsa_zones.<span class="hljs-string">&quot;example.com&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">cert_path</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/var/lib/acme/example.com/&quot;</span>;
+    records.<span class="hljs-string">&quot;_25._tcp.mail&quot;</span> <span class="hljs-operator">=</span> { };
+  };
+};</code></pre>
+      </div><p>The program is executed hourly per default but you can set the <code>interval</code> option to any <a href="https://www.freedesktop.org/software/systemd/man/latest/systemd.time.html#Calendar%20Events">systemd calendar event</a>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs">s<span class="hljs-attr">ervices.dyndns-tlsa-desec.interval</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;5m&quot;</span>; <span class="hljs-comment"># Every 5 minutes</span></code></pre>
+      </div><h3 id="sending-from-subaddresses">Sending from subaddresses</h3><p>Receiving mails to subaddresses like <code>john+secondary@example.org</code> is enabled by default. Sending from subaddresses will fail with &quot;You are not allowed to send from this address&quot; as long as they are not an configured alias address. You can disable this check but it will allow any authenticated user to send from any other address.</p>
+<p>A configuration option to customize the pattern of authorized sender addresses is a <a href="https://github.com/stalwartlabs/stalwart/issues/394#issuecomment-3705990056">planned feature</a>.</p>
+<h3 id="test-mail-server">Test mail server</h3><p>You can use several online tools to test your mail server configuration:</p>
+<ul>
+<li><a href="https://en.internet.nl/test-mail">en.internet.nl/test-mail</a>: Test your mail server configuration for validity and security.</li>
+<li><a href="https://www.hardenize.com/">hardenize.com</a>: Test your mail server configuration for validity and security. Checks DANE validity even when not all MX servers support DANE.</li>
+<li><a href="https://www.mail-tester.com/">mail-tester.com</a>: Send a mail to this service and get a rating about the &quot;spaminess&quot; of your mail server.</li>
+<li>Send a mail to the echo server <code>echo@univie.ac.at</code>. You should receive a response containing your message in several seconds.</li>
+</ul>
+<h3 id="unsecure-setup-for-testing-environments">Unsecure setup for testing environments</h3><p>The following minimal configuration example is unsecure and for testing purpose only. It will run the Stalwart mail server on <code>localhost</code>, listening on port <code>143</code> (IMAP) and <code>587</code> (Submission). Users <code>alice</code> and <code>bob</code> are configured with the password <code>foobar</code>.</p>
+<h2 id="see-also">See also</h2><ul>
+<li><a href="https://mirror.nixoscn.org/wiki/Stalwart/Maddy" class="wikilink" title="Maddy">Maddy</a>, a composable, modern mail server written in Go.</li>
+<li><a href="https://nixos-mailserver.readthedocs.io/en/latest">Simple NixOS Mailserver</a></li>
+</ul>
+<p><a href="category:Mail_Server" class="wikilink" title="Category:Mail Server">Category:Mail Server</a> <a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Perl</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Perl</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Perl -->
+
+<h2 id="running-a-perl-script">Running a Perl script</h2><h3 id="replacing-with-nix-shell">Replacing #! with nix-shell</h3><p>Perl scripts normally start something like this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs"><span class="hljs-meta prompt_">  #</span><span class="language-bash">!/usr/bin/env perl</span></code></pre>
+      </div><p>In Nix, we often make isolated environments using <a href="https://nixos.org/manual/nix/unstable/command-ref/nix-shell.html">nix-shell</a>. You can do this in the <code>#!</code> (shabang) section directly in the script too. Here is an example from the manual — a Perl script that specifies that it requires Perl and the HTML::TokeParser::Simple and LWP packages:</p>
+<div class="code-container">
+        
+        <pre><code class="language-perl hljs"><span class="hljs-comment">#! /usr/bin/env nix-shell</span>
+<span class="hljs-comment">#! nix-shell -i perl -p perl perlPackages.HTMLTokeParserSimple perlPackages.LWP</span>
+
+<span class="hljs-keyword">use</span> HTML::TokeParser::Simple;
+
+<span class="hljs-comment"># Fetch nixos.org and print all hrefs.</span>
+<span class="hljs-keyword">my</span> <span class="hljs-variable">$p</span> = HTML::TokeParser::Simple-&gt;new(<span class="hljs-string">url =&gt;</span> <span class="hljs-string">&#x27;http://nixos.org/&#x27;</span>);
+
+<span class="hljs-keyword">while</span> (<span class="hljs-keyword">my</span> <span class="hljs-variable">$token</span> = <span class="hljs-variable">$p</span>-&gt;get_tag(<span class="hljs-string">&quot;a&quot;</span>)) {
+    <span class="hljs-keyword">my</span> <span class="hljs-variable">$href</span> = <span class="hljs-variable">$token</span>-&gt;get_attr(<span class="hljs-string">&quot;href&quot;</span>);
+    <span class="hljs-keyword">print</span> <span class="hljs-string">&quot;<span class="hljs-variable">$href</span>\n&quot;</span> <span class="hljs-keyword">if</span> <span class="hljs-variable">$href</span>;
+}</code></pre>
+      </div><h3 id="invoking-nix-shell-on-command-line">Invoking nix-shell on command-line</h3><p>If you run a perl script and encounter a dependency error like this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs">Can&#x27;t locate DB_File.pm in @INC (you may need to install the DB_File module)</code></pre>
+      </div><p>... use <code>nix-shell</code> to create a shell environment which includes the dependency. Here we searched NixOS packages and found an existing perl package which suits, <a href="https://search.nixos.org/packages?channel=unstable&amp;from=0&amp;size=30&amp;sort=relevance&amp;type=packages&amp;query=dbfile">like so</a>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs">nix-shell -p perl perl534Packages.DBFile --run ./myscript.pl</code></pre>
+      </div><h3 id="there-is-no-usr-bin-perl">There is no /usr/bin/perl</h3><p>By design, there is no <code>/usr/bin/perl</code> in Nix. So you may encounter messages like:</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs">./myscript.pl: bad interpreter: /usr/bin/perl: no such file or directory</code></pre>
+      </div><p>Change the first line of the script to</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs"><span class="hljs-meta prompt_">#</span><span class="language-bash">!/usr/bin/env -S perl</span></code></pre>
+      </div><p>or start it with <code>perl ./myscript.pl</code></p>
+<h2 id="adding-something-from-cpan-to-nixpkgs">Adding something from CPAN to nixpkgs</h2><ol>
+<li><p>Enter a <code>nix-shell</code> that provides the necessary dependencies:</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs">nix-shell -p perl perlPackages.CPANPLUS perlPackages.GetoptLongDescriptive perlPackages.LogLog4perl perlPackages.Readonly</code></pre>
+      </div><p>.</p>
+</li>
+<li><p>Use the <code>nix-generate-from-cpan.pl</code> script (see <code>nixpkgs/maintainers/scripts/</code>) to generate something appropriate.<br>Example usage:</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs">nix-generate-from-cpan.pl Devel::REPL</code></pre>
+      </div></li>
+<li><p>After reviewing the result from the previous step and making appropriate modifications, add it to <code>pkgs/top-level/perl-packages.nix</code>. Note that some things use <code>buildPerlPackage</code> while some use <code>buildPerlModule</code>. Also note the mostly-followed naming convention as well as the mostly-followed alphabetical ordering. There are plenty of examples in <code>perl-packages.nix</code> — use the source, Luke!</p>
+</li>
+<li><p>Build and test.</p>
+</li>
+</ol>
+<h2 id="adding-something-without-a-makefile-pl">Adding something without a Makefile.PL</h2><p>The perlPackages.buildPerlPackage assumes a Makefile.PL to exist as part of the configurePhase. If no such file is present in the project you are building, it is easiest to add a Makefile.PL into the source yourself.</p>
+<p>The example below does so by adding it using the postPatch hook:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">p<span class="hljs-attr">ostPatch</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+  cat &lt;&lt;EOF &gt; Makefile.PL
+    use v5.10;
+    use ExtUtils::MakeMaker;
+    WriteMakefile(
+        NAME          =&gt; &#x27;RevBank&#x27;,
+        VERSION_FROM  =&gt; &#x27;revbank&#x27;,
+        ABSTRACT_FROM =&gt; &#x27;lib/RevBank.pod&#x27;,
+        EXE_FILES     =&gt; [ &#x27;revbank&#x27; ],
+    );
+  EOF
+&#x27;&#x27;</span>;</code></pre>
+      </div><p>The documentation for ExtUtils::MakeMaker can be found [<a href="https://perldoc.perl.org/ExtUtils">https://perldoc.perl.org/ExtUtils</a>::MakeMaker here].</p>
+<h2 id="wrappers-for-installed-programs">Wrappers for installed programs</h2><p>To make perl modules available to a program in your derivation:</p>
+<ol>
+<li>Add <code>makeWrapper</code> to <code>nativeBuildInputs</code></li>
+<li>Add</li>
+</ol>
+<p>postFixup = &#39;&#39;</p>
+<p><code> wrapProgram $out/bin/something \</code><br><code>   --prefix PERL5LIB : &quot;${with perlPackages; makePerlPath [ something ]}&quot;</code></p>
+<p>&#39;&#39;;</p>
+</syntaxhighlight>
+
+<p>Also keep in mind that <code>makePerlPath</code> would not resolve transitive dependencies of Perl packages. Hence if you want to just reference top-level packages, then use <code>makeFullPerlPath</code> which would recursively resolve dependency graph for you.</p>
+<h2 id="see-also">See also</h2><ul>
+<li><a href="https://nixos.org/manual/nixpkgs/stable/#sec-language-perl">Nixpkgs Manual - Perl section</a></li>
+<li><a href="https://blog.stigok.com/2020/04/16/building-a-custom-perl-package-for-nixos.html">Overriding an existing Perl package in NixOS</a></li>
+</ul>
+<p><a href="category:Languages" class="wikilink" title="Category:Languages">Category:Languages</a> <a href="category:Perl" class="wikilink" title="Category:Perl">Category:Perl</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

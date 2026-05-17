@@ -1,0 +1,568 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nginx</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Nginx</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Nginx -->
+
+<p><a href="https://nginx.org/"></a> (<a href="wikipedia:en:```{{PAGENAME}}```" class="wikilink" title="wikipedia:en:```
+{{PAGENAME}}
+```">wikipedia:en:```
+{{PAGENAME}}</p>
+<div class="code-container">
+        <div class="code-header"><span class="code-filename">is a lightweight webserver.</span></div>
+        <pre><code class="language-</a>) hljs">
+## Installation
+
+To install Nginx, add the following to your NixOS configuration: More options are available:
+
+## Sample setups
+
+#### Minimal raw html dummy page for testing `configuration.nix`
+
+``` nix
+services.nginx = {
+  enable = true;
+  virtualHosts.localhost = {
+    locations.&quot;/&quot; = {
+      return = &quot;200 '&lt;html&gt;&lt;body&gt;It works&lt;/body&gt;&lt;/html&gt;'&quot;;
+      extraConfig = ''
+        default_type text/html;
+      '';
+    };
+  };
+};</code></pre>
+      </div><h4 id="static-blog-with-ssl-enforced-in-configuration-nix">Static blog with ssl enforced in <code>configuration.nix</code></h4><div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.nginx</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  virtualHosts.<span class="hljs-string">&quot;blog.example.com&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enableACME</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">forceSSL</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">root</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/var/www/blog&quot;</span>;
+  };
+};
+
+<span class="hljs-attr">networking.firewall.allowedTCPPorts</span> <span class="hljs-operator">=</span> [ <span class="hljs-number">80</span> <span class="hljs-number">443</span> ];
+
+<span class="hljs-attr">security.acme</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-comment"># Accept the CA’s terms of service. The default provider is Let’s Encrypt, you can find their ToS at https://letsencrypt.org/repository/. </span>
+  <span class="hljs-attr">acceptTerms</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-comment"># Optional: You can configure the email address used with Let&#x27;s Encrypt.</span>
+  <span class="hljs-comment"># This way you get renewal reminders (automated by NixOS) as well as expiration emails.</span>
+  <span class="hljs-attr">defaults.email</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;youremail@address.com&quot;</span>;
+};</code></pre>
+      </div><h4 id="lemp-stack">LEMP stack</h4><p>(Nginx/MySQL/PHP) in <code>configuration.nix</code></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ config, ...}: {
+<span class="hljs-attr">services.nginx</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  virtualHosts.<span class="hljs-string">&quot;blog.example.com&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enableACME</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">forceSSL</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">root</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/var/www/blog&quot;</span>;
+    locations.<span class="hljs-string">&quot;~ <span class="hljs-char escape_">\\</span>.php{{content}}quot;</span>.extraConfig <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+      fastcgi_pass  unix:<span class="hljs-subst">${config.services.phpfpm.pools.mypool.socket}</span>;
+      fastcgi_index index.php;
+    &#x27;&#x27;</span>;
+  };
+};
+<span class="hljs-attr">services.mysql</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">package</span> <span class="hljs-operator">=</span> pkgs.mariadb;
+};
+<span class="hljs-attr">services.phpfpm.pools.mypool</span> <span class="hljs-operator">=</span> {                                                                                                                                                                                                             
+  <span class="hljs-attr">user</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nobody&quot;</span>;                                                                                                                                                                                                                           
+  <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {                                                                                                                                                                                                                               
+    <span class="hljs-string">&quot;pm&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;dynamic&quot;</span>;            
+    <span class="hljs-string">&quot;listen.owner&quot;</span> <span class="hljs-operator">=</span> config.services.nginx.user;                                                                                                                                                                                                              
+    <span class="hljs-string">&quot;pm.max_children&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-number">5</span>;                                                                                                                                                                                                                   
+    <span class="hljs-string">&quot;pm.start_servers&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-number">2</span>;                                                                                                                                                                                                                  
+    <span class="hljs-string">&quot;pm.min_spare_servers&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-number">1</span>;                                                                                                                                                                                                              
+    <span class="hljs-string">&quot;pm.max_spare_servers&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-number">3</span>;                                                                                                                                                                                                              
+    <span class="hljs-string">&quot;pm.max_requests&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-number">500</span>;                                                                                                                                                                                                                 
+  };                                                                                                                                                                                                                                         
+};</code></pre>
+      </div><p><strong>Robots.txt</strong></p>
+<p>If you want to set a robots.txt for your domain (or any subdomains), add this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">locations.<span class="hljs-string">&quot;/robots.txt&quot;</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">extraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    rewrite ^/(.*)  $1;
+    return 200 &quot;User-agent: *<span class="hljs-char escape_">\n</span>Disallow: /&quot;;
+  &#x27;&#x27;</span>;
+};</code></pre>
+      </div><h4 id="http-authentication">HTTP Authentication</h4><h5 id="basic-authentication">Basic Authentication</h5><p>Nginx can require users to login using HTTP Basic Authentication. In NixOS, this is set using the `basicAuth` option:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.nginx</span> <span class="hljs-operator">=</span> {
+    virtualHosts.<span class="hljs-string">&quot;example.com&quot;</span> <span class="hljs-operator">=</span>  {
+      <span class="hljs-attr">basicAuth</span> <span class="hljs-operator">=</span> { <span class="hljs-attr">user</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;password&quot;</span>; <span class="hljs-attr">anotherUser</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;...&quot;</span>; };
+      ...
+    };
+};</code></pre>
+      </div><h5 id="authentication-via-pam">Authentication via PAM</h5><p>It is also possible to authenticate system users, e.g. users in the /etc/passwd file, by using the PAM module.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">
+  <span class="hljs-attr">security.pam.services.nginx.setEnvironment</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+  <span class="hljs-attr">systemd.services.nginx.serviceConfig</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">SupplementaryGroups</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;shadow&quot;</span> ];
+  };
+
+  <span class="hljs-attr">services.nginx</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">additionalModules</span> <span class="hljs-operator">=</span> [ pkgs.nginxModules.pam ];
+    ...
+    virtualHosts.<span class="hljs-string">&quot;example.com&quot;</span>.extraConfig <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+      auth_pam  &quot;Password Required&quot;;
+      auth_pam_service_name &quot;nginx&quot;;
+    &#x27;&#x27;</span>;
+    ...
+    };
+  };</code></pre>
+      </div><h4 id="tls-reverse-proxy">TLS reverse proxy</h4><p>This is a &quot;minimal&quot; example in terms of security, see below for more tips.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.nginx</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">recommendedProxySettings</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">recommendedTlsSettings</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-comment"># other Nginx options</span>
+    virtualHosts.<span class="hljs-string">&quot;example.com&quot;</span> <span class="hljs-operator">=</span>  {
+      <span class="hljs-attr">enableACME</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">forceSSL</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      locations.<span class="hljs-string">&quot;/&quot;</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">proxyPass</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;http://127.0.0.1:12345&quot;</span>;
+        <span class="hljs-attr">proxyWebsockets</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; <span class="hljs-comment"># needed if you need to use WebSocket</span>
+        <span class="hljs-attr">extraConfig</span> <span class="hljs-operator">=</span>
+          <span class="hljs-comment"># required when the target is also TLS server with multiple hosts</span>
+          <span class="hljs-string">&quot;proxy_ssl_server_name on;&quot;</span> <span class="hljs-operator">+</span>
+          <span class="hljs-comment"># required when the server wants to use HTTP Authentication</span>
+          <span class="hljs-string">&quot;proxy_pass_header Authorization;&quot;</span>
+          ;
+      };
+    };
+};</code></pre>
+      </div><h4 id="hardened-setup-with-tls-and-hsts-preloading">Hardened setup with TLS and HSTS preloading</h4><p>For testing your TLS configuration, you might want to visit <a href="https://www.ssllabs.com/ssltest/index.html">1</a>. If you configured preloading and want to apply for being included in the preloading list, check out <a href="https://hstspreload.org/">2</a>. Please read enough about preloading to understand the consequences, as it takes some effort to be removed from the list.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.nginx</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+    <span class="hljs-comment"># Use recommended settings</span>
+    <span class="hljs-attr">recommendedGzipSettings</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">recommendedOptimisation</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">recommendedProxySettings</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">recommendedTlsSettings</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+    <span class="hljs-comment"># Only allow PFS-enabled ciphers with AES256</span>
+    <span class="hljs-attr">sslCiphers</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;AES256+EECDH:AES256+EDH:!aNULL&quot;</span>;
+    
+    <span class="hljs-attr">appendHttpConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+      # Add HSTS header with preloading to HTTPS requests.
+      # Adding this header to HTTP requests is discouraged
+      map $scheme $hsts_header {
+          https   &quot;max-age=31536000; includeSubdomains; preload&quot;;
+      }
+      add_header Strict-Transport-Security $hsts_header;
+
+      # Enable CSP for your services.
+      #add_header Content-Security-Policy &quot;script-src &#x27;self&#x27;; object-src &#x27;none&#x27;; base-uri &#x27;none&#x27;;&quot; always;
+
+      # Minimize information leaked to other domains
+      add_header &#x27;Referrer-Policy&#x27; &#x27;origin-when-cross-origin&#x27;;
+
+      # Disable embedding as a frame
+      add_header X-Frame-Options DENY;
+
+      # Prevent injection of code in other mime types (XSS Attacks)
+      add_header X-Content-Type-Options nosniff;
+
+      # This might create errors
+      proxy_cookie_path / &quot;/; secure; HttpOnly; SameSite=strict&quot;;
+    &#x27;&#x27;</span>;
+
+    <span class="hljs-comment"># Add any further config to match your needs, e.g.:</span>
+    <span class="hljs-attr">virtualHosts</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">let</span>
+      <span class="hljs-attr">base</span> <span class="hljs-operator">=</span> <span class="hljs-params">locations:</span> {
+        <span class="hljs-keyword">inherit</span> locations;
+
+        <span class="hljs-attr">forceSSL</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+        <span class="hljs-attr">enableACME</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      };
+      <span class="hljs-attr">proxy</span> <span class="hljs-operator">=</span> <span class="hljs-params">port:</span> base {
+        <span class="hljs-string">&quot;/&quot;</span>.proxyPass <span class="hljs-operator">=</span> <span class="hljs-string">&quot;http://127.0.0.1:&quot;</span> <span class="hljs-operator">+</span> <span class="hljs-built_in">toString</span>(port) <span class="hljs-operator">+</span> <span class="hljs-string">&quot;/&quot;</span>;
+      };
+    <span class="hljs-keyword">in</span> {
+      <span class="hljs-comment"># Define example.com as reverse-proxied service on 127.0.0.1:3000</span>
+      <span class="hljs-string">&quot;example.com&quot;</span> <span class="hljs-operator">=</span> proxy <span class="hljs-number">3000</span> <span class="hljs-operator">//</span> { <span class="hljs-attr">default</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; };
+    };
+};</code></pre>
+      </div><h4 id="using-realip-when-behind-cloudflare-or-other-cdn">Using realIP when behind CloudFlare or other CDN</h4><p>When Nginx is behind another proxy it won&#39;t know the true IP address of clients hitting it. It will then pass down those the proxy&#39;s IP address instead of the client IP address. By using the nginx realip module, we can ensure nginx knows the real client IP, and we can further inform nginx to only trust the HTTP header from valid upstream proxies.</p>
+<p>In the following example, we are fetching the list of IPs directly from cloudflare and including a hash. This has some pros and cons. Nix will not attempt to download or update that file while it is in a nix store it trusts, but after a nix garbage collection, it will error if the list of proxies has changed informing you of that when you apply the config.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">services.nginx.commonHttpConfig</span> <span class="hljs-operator">=</span>
+    <span class="hljs-keyword">let</span>
+      <span class="hljs-attr">realIpsFromList</span> <span class="hljs-operator">=</span> lib.strings.concatMapStringsSep <span class="hljs-string">&quot;<span class="hljs-char escape_">\n</span>&quot;</span> (<span class="hljs-params">x:</span> <span class="hljs-string">&quot;set_real_ip_from  <span class="hljs-subst">${x}</span>;&quot;</span>);
+      <span class="hljs-attr">fileToList</span> <span class="hljs-operator">=</span> <span class="hljs-params">x:</span> lib.strings.splitString <span class="hljs-string">&quot;<span class="hljs-char escape_">\n</span>&quot;</span> (<span class="hljs-built_in">builtins.readFile</span> x);
+      <span class="hljs-attr">cfipv4</span> <span class="hljs-operator">=</span> fileToList (pkgs.fetchurl {
+        <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://www.cloudflare.com/ips-v4&quot;</span>;
+        <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;0ywy9sg7spafi3gm9q5wb59lbiq0swvf0q3iazl0maq1pj1nsb7h&quot;</span>;
+      });
+      <span class="hljs-attr">cfipv6</span> <span class="hljs-operator">=</span> fileToList (pkgs.fetchurl {
+        <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://www.cloudflare.com/ips-v6&quot;</span>;
+        <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;1ad09hijignj6zlqvdjxv7rjj8567z357zfavv201b9vx3ikk7cy&quot;</span>;
+      });
+    <span class="hljs-keyword">in</span>
+    <span class="hljs-string">&#x27;&#x27;
+      <span class="hljs-subst">${realIpsFromList cfipv4}</span>
+      <span class="hljs-subst">${realIpsFromList cfipv6}</span>
+      real_ip_header CF-Connecting-IP;
+    &#x27;&#x27;</span>;</code></pre>
+      </div><h4 id="unix-socket-reverse-proxy">UNIX socket reverse proxy</h4><p>In order for nginx to be able to access UNIX sockets, you have to do some permission modifications.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># Example service that supports listening to UNIX sockets</span>
+s<span class="hljs-attr">ervices.hedgedoc</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">settings.path</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/run/hedgedoc/hedgedoc.sock&quot;</span>
+};
+
+<span class="hljs-attr">services.nginx</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  virtualHosts.<span class="hljs-string">&quot;example.com&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enableACME</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">forceSSL</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    locations.<span class="hljs-string">&quot;/&quot;</span>.proxyPass <span class="hljs-operator">=</span> <span class="hljs-string">&quot;http://unix:/run/hedgedoc/hedgedoc.sock&quot;</span>;
+  };
+};
+
+<span class="hljs-comment"># This is needed for nginx to be able to read other processes</span>
+<span class="hljs-comment"># directories in `/run`. Else it will fail with (13: Permission denied)</span>
+s<span class="hljs-attr">ystemd.services.nginx.serviceConfig.ProtectHome</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+
+<span class="hljs-comment"># Most services will create sockets with 660 permissions.</span>
+<span class="hljs-comment"># This means you have to add nginx to their group.</span>
+u<span class="hljs-attr">sers.groups.hedgedoc.members</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;nginx&quot;</span> ];
+
+<span class="hljs-comment"># Alternatively, you can try to force the unit to create the socket with</span>
+<span class="hljs-comment"># different permissions, if you have a reason for not wanting to add nginx</span>
+<span class="hljs-comment"># to their group. This might not work, depending on how the program sets</span>
+<span class="hljs-comment"># its permissions for the socket.</span>
+s<span class="hljs-attr">ystemd.services.hedgedoc.serviceConfig.UMask</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;0000&quot;</span>;</code></pre>
+      </div><h2 id="modules">Modules</h2><p>Nginx can be run with optional modules. You can add them like this:</p>
+<p><code>  services.nginx.package = (pkgs.nginx.override { modules = [ </code><br><code>    pkgs.nginxModules.dav</code><br><code>    pkgs.nginxModules.lua</code><br><code>    ...</code><br><code>  ]; });</code></p>
+<p>See <a href="https://github.com/NixOS/nixpkgs/blob/master/pkgs/servers/http/nginx/modules.nix#L69">this</a> for a more comprehensive list of modules available via configuration.</p>
+<h2 id="let-39-s-encrypt-certificates">Let&#39;s Encrypt certificates</h2><p>The nginx module for NixOS has native support for Let&#39;s Encrypt certificates; . The  explains it in detail.</p>
+<h3 id="minimal-internet-exposed-server-example">Minimal Internet Exposed Server Example</h3><p>Assuming that <code>myhost.org</code> resolves to the IP address of your host and port 80 and 443 have been opened.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.nginx.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+services.nginx.virtualHosts.<span class="hljs-string">&quot;myhost.org&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">addSSL</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">enableACME</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">root</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/var/www/myhost.org&quot;</span>;
+};
+<span class="hljs-attr">security.acme</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">acceptTerms</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">defaults.email</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;foo@bar.com&quot;</span>;
+};</code></pre>
+      </div><p>This will set up nginx to serve files for <code>myhost.org</code>, automatically request an ACME SSL Certificate using a &quot;<strong>HTTP-01</strong>&quot; challenge (meaning your server must be exposed to the internet) and will configure systemd timers to renew the certificate if required.</p>
+<h3 id="minimal-private-local-lan-server-example">Minimal Private Local LAN Server Example</h3><p>We can also have a private server running in our local network (including VPN), that isn&#39;t reachable from the internet, but that still can get valid Let&#39;s Encrypt certificates that are accepted in a browser.</p>
+<p>1. We have to <strong>modify DNS such that our domain</strong> like <code>myhost.org</code> <strong>resolves to the local IP address of our private server</strong> and port 80 and 443 have been opened. <a href="https://www.youtube.com/watch?v=qlcVx-k-02E">See this video tutorial</a> for an example on how to do that. Hint: You might need to <strong>add an exception to your router</strong> (definitely on Fritzboxes), because resolving to local IP address is usually blocked to prevent <strong>&quot;DNS rebind attacks&quot;</strong>.</p>
+<p>2. We have to setup the Let&#39;s Encrypt NixOS ACME services such that it uses an <strong>API token in a secrets file</strong> (<a href="https://github.com/ryantm/agenix">secrets for a server can be conveniently and securely deployed in NixOS with agenix</a>; just follow the tutorial) against our DNS provider to <strong>prove from our server that we own the domain</strong>. This way our server doesn&#39;t need to be exposed and reachable from the internet. NixOS ACME uses the <a href="https://go-acme.github.io/lego/">LEGO library</a> to communicate to DNS providers (it supports a lot) and therefore we have to provide the token(s) in that library&#39;s secrets file format.</p>
+<p>In the example we use Hetzner as our &quot;dnsProvider&quot; that only needs a single API token environment in our secrets file:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">H<span class="hljs-attr">ETZNER_API_KEY</span><span class="hljs-operator">=</span>xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx</code></pre>
+      </div><p>Other <a href="https://carjorvaz.com/posts/setting-up-wildcard-lets-encrypt-certificates-on-nixos/">DNS providers need like OVH</a> require more environment variables.</p>
+<p>See the section &quot;<strong>Credentials</strong>&quot; on what you have to specify in the secrets file: <a href="https://go-acme.github.io/lego/dns/hetzner/">https://go-acme.github.io/lego/dns/hetzner/</a></p>
+<p>See Hetzner guide on how to get an API token for its &quot;DNS console&quot;: <a href="https://docs.hetzner.com/dns-console/dns/general/api-access-token/">https://docs.hetzner.com/dns-console/dns/general/api-access-token/</a></p>
+<p>3. Point our virtualHost to the ACME entry.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">services.nginx</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-comment"># we can use the main domain or any subdomain that&#x27;s mentioned by </span>
+    <span class="hljs-comment"># &quot;extraDomainNames&quot; in the acme certificate.</span>
+    virtualHosts.<span class="hljs-string">&quot;subdomain.example.org&quot;</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-comment"># 3. Instead of &quot;enableACME = true;&quot; we</span>
+      <span class="hljs-comment"># reuse the certificate from &quot;security.acme.certs.&quot;example.org&quot;</span>
+      <span class="hljs-comment"># down below</span>
+      <span class="hljs-attr">useACMEHost</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;example.org&quot;</span>;
+      <span class="hljs-attr">forceSSL</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      locations.<span class="hljs-string">&quot;/&quot;</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">return</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;200 &#x27;&lt;html&gt;&lt;body&gt;It works&lt;/body&gt;&lt;/html&gt;&#x27;&quot;</span>;
+        <span class="hljs-attr">extraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+          default_type text/html;
+        &#x27;&#x27;</span>;
+      };
+    };
+  };
+
+  <span class="hljs-attr">security.acme.acceptTerms</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">security.acme.defaults.email</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;info@example.org&quot;</span>;
+
+  <span class="hljs-comment"># 2. Let NixOS generate a Let&#x27;s Encrypt certificate that we can reuse</span>
+  <span class="hljs-comment"># above for several virtualhosts above.</span>
+  security.acme.certs.<span class="hljs-string">&quot;example.org&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">domain</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;example.org&quot;</span>;
+    <span class="hljs-attr">extraDomainNames</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;subdomain.example.org&quot;</span> ];
+    <span class="hljs-comment"># The LEGO DNS provider name. Depending on the provider, need different</span>
+    <span class="hljs-comment"># contents in the credentialsFile below.</span>
+    <span class="hljs-attr">dnsProvider</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;hetzner&quot;</span>;
+    <span class="hljs-attr">dnsPropagationCheck</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-comment"># agenix will decrypt our secrets file (below) on the server and make it available</span>
+    <span class="hljs-comment"># under /run/agenix/secrets/hetzner-dns-token (by default):</span>
+    <span class="hljs-comment"># credentialsFile = &quot;/run/agenix/secrets/hetzner-dns-token&quot;;</span>
+    <span class="hljs-attr">credentialsFile</span> <span class="hljs-operator">=</span> config.age.secrets.<span class="hljs-string">&quot;hetzner-dns-token.age&quot;</span>.path;
+  };
+  
+  <span class="hljs-comment"># Let agenix know about and copy our (encrypted) DNS API token secrets file</span>
+  <span class="hljs-comment"># (containing &quot;HETZNER_API_KEY=...&quot;) to the server an decrypt it there.</span>
+  <span class="hljs-comment"># Follow the agenix tutorial on how to encrypt a secrets file</span>
+  <span class="hljs-comment"># to a .age file and how to setup your Nix flake to use it.</span>
+  age.secrets.<span class="hljs-string">&quot;hetzner-dns-token.age&quot;</span>.file <span class="hljs-operator">=</span> .<span class="hljs-symbol">../hetzner-dns-token.age</span>;
+
+  <span class="hljs-attr">users.users.nginx.extraGroups</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;acme&quot;</span> ];
+}</code></pre>
+      </div><p>This will set up nginx to serve files for example.org, automatically request an ACME SSL Certificate using a &quot;DNS-01&quot; challenge (meaning <strong>your server doesn&#39;t need to be exposed to the internet</strong>, which is great for self-hosting) and will configure systemd timers to renew the certificate if required.</p>
+<h2 id="troubleshooting">Troubleshooting</h2><h3 id="read-only-filesystem-for-nginx-upgrade-to-20-09">Read-only Filesystem for nginx upgrade to 20.09</h3><p>With the upgrade to nixos-20.09 the nginx comes with extra hardening parameters, most prominently the restriction of write access to the Operating System Disk. When you see errors like <code>[emerg] open() &quot;/var/spool/nginx/logs/binaergewitter.access.log&quot; failed (30: Read-only file system)</code> you can add extra paths to nginx service like this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">systemd.services.nginx.serviceConfig.ReadWritePaths</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;/var/spool/nginx/logs/&quot;</span> ];</code></pre>
+      </div><h3 id="sigterm-received-from-1">SIGTERM received from 1</h3><p>If you turn debug logging on:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">services.nginx.logError = &quot;stderr debug&quot;;</code></pre>
+      </div><p>You may see this:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">[notice] 12383#12383: signal 15 (SIGTERM) received from 1, exiting</code></pre>
+      </div><p>This means systemd is killing nginx for you, but systemd (in nixOS 20.09) isn&#39;t nice enough to tell you why it&#39;s happening. Chances are it&#39;s because your nginx config has daemon mode turned on, turn off daemon mode in your nginx config like so:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">daemon off;</code></pre>
+      </div><p>And it should fix nginx so systemd won&#39;t go killing your nginx anymore.</p>
+<h3 id="escape-special-chars-in-regular-expressions">Escape special chars in Regular Expressions</h3><p>Some nginx configuration options like <code>locations</code> allows the use of Regular Expressions. Be ware that you <a href="https://nixos.org/manual/nix/stable/language/values.html#type-string">need to escape some special chars</a> like <code>\</code>, if provided by a double quoted <code>&quot; &quot;</code> string.</p>
+<p>A common example found on the internet is:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">locations.<span class="hljs-string">&quot;~ ^(.+<span class="hljs-char escape_">\.</span>php)(.*){{content}}quot;</span>  <span class="hljs-operator">=</span> {
+    ...
+};</code></pre>
+      </div><p>But in this case the <code>\.php</code> part will be parsed by Nix to <code>.php</code>. In RegEx the dot represents any character instead of the dot character itself. Thus the path /gly<strong>php</strong>ro.css will be matched, too. Additionaly to the intended match of <code>/somephpfile.php?param=value</code>.</p>
+<p>To circumvent this error <code>\.php</code> has to be double escaped as <code>\\.php</code></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">locations.<span class="hljs-string">&quot;~ ^(.+<span class="hljs-char escape_">\\</span>.php)(.*){{content}}quot;</span>  <span class="hljs-operator">=</span> {
+    ...
+};</code></pre>
+      </div><h3 id="general">General</h3><p>Nginx is run as the systemd service nginx, so <code>systemctl status nginx</code> may say something useful. If you have a problem with configuration, you can find the configuration location in the <code>systemctl status</code>, it should be at <code>/nix/store/*-nginx.conf</code>.</p>
+<h2 id="replace-dependencies-like-openssl">Replace dependencies like openssl</h2><p>In wake of the 2022 OpenSSL library, Nix can support in mitigating the library by downgrading (or replacing) the SSL library. For this, the <a href="https://mirror.nixoscn.org/wiki/Nginx/Overlay" class="wikilink" title="overlay">overlay</a> facility of nixpkgs can be used:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">ixpkgs.overlays</span> <span class="hljs-operator">=</span> [ 
+   (<span class="hljs-params">final:</span> <span class="hljs-params">super:</span> { 
+        <span class="hljs-attr">nginxStable</span> <span class="hljs-operator">=</span> super.nginxStable.override { <span class="hljs-attr">openssl</span> <span class="hljs-operator">=</span> super.pkgs.libressl; }; 
+    } ) 
+];</code></pre>
+      </div><p>When utilizing NixOS options the following configuration will also work:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.nginx.package</span> <span class="hljs-operator">=</span> pkgs.nginxStable.override { <span class="hljs-attr">openssl</span> <span class="hljs-operator">=</span> pkgs.libressl; };</code></pre>
+      </div><h2 id="extra-config">Extra config</h2><p>Apart native options, Nix allows to specify verbatim Nginx configuration. Some options are mutually exclusive.</p>
+<p>Below table assumes &quot;services.nginx.&quot; prefix for all options. These options allows to keep using Nix configuration file while taking advantage of Nginx features which are not representend in options.</p>
+<table>
+<thead>
+<tr>
+<th>Options</th>
+<th>Block</th>
+<th>Behaviour</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>config</td>
+<td>nginx.conf</td>
+<td>Verbatim <code>nginx.conf</code> configuration</td>
+</tr>
+<tr>
+<td>appendConfig</td>
+<td>nginx.conf</td>
+<td>Lines appended to the generated Nginx configuration file</td>
+</tr>
+<tr>
+<td>httpConfig</td>
+<td>http block</td>
+<td>exclusive with the structured configuration via virtualHosts</td>
+</tr>
+<tr>
+<td>appendHttpConfig</td>
+<td>http block</td>
+<td>lines appended. exclusive with using config and httpConfig</td>
+</tr>
+<tr>
+<td>virtualHosts.<name>.extraConfig</td>
+<td>server</td>
+<td>These lines go to the end of the vhost verbatim.</td>
+</tr>
+<tr>
+<td>virtualHosts.<name>.locations.<name>.extraConfig</td>
+<td>server</td>
+<td>These lines go to the end of the location verbatim</td>
+</tr>
+</tbody></table>
+<h2 id="see-more">See more</h2><ul>
+<li><a href="http://nginx.org/en/docs/">Official Documentation</a></li>
+</ul>
+<p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="category:Networking" class="wikilink" title="Category:Networking">Category:Networking</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

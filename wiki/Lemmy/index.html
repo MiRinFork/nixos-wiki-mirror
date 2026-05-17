@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lemmy</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Lemmy</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Lemmy -->
+
+<p><a href="https://join-lemmy.org/"></a> (<a href="https://en.wikipedia.org/wiki/Lemmy_(software)">wikipedia</a>) is a link aggregator for the fediverse.</p>
+<p>Lemmy is a selfhosted social link aggregation and discussion platform. It is completely free and open, and not controlled by any company. This means that there is no advertising, tracking, or secret algorithms. Content is organized into communities, so it is easy to subscribe to topics that you are interested in, and ignore others. Voting is used to bring the most interesting items to the top. (Lemmy is to Reddit what Mastodon is to Twitter)</p>
+<p>This article is an extension to the documentation in the <a href="https://nixos.org/manual/nixos/stable/#module-services-lemmy">NixOS manual</a>.</p>
+<h2 id="basic-setup">Basic Setup</h2><p>This is the &quot;bare minimum&quot; to run a lemmy instance:</p>
+<ul>
+<li>lemmy, lemmy-ui and pictrs.</li>
+<li>nginx reverse proxy with ssl-offloading</li>
+<li>ACME ssl certificate</li>
+<li>postgres database setup</li>
+</ul>
+<p>There are a few things that need changing, those are marked with TODO.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ config, pkgs, lib, ... } :
+<span class="hljs-keyword">let</span>
+
+  <span class="hljs-comment"># add nginx reverse proxy and ACME web certificate</span>
+  <span class="hljs-attr">add_nginx</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">nginx_ports</span> <span class="hljs-operator">=</span> [ <span class="hljs-number">80</span> <span class="hljs-number">443</span> ];
+
+  <span class="hljs-attr">lemmy</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">upstreamName</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;lemmy&quot;</span>;
+    <span class="hljs-attr">dataDir</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/var/lib/lemmy&quot;</span>;
+    <span class="hljs-attr">ip</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;127.0.0.1&quot;</span>;
+    <span class="hljs-attr">port</span> <span class="hljs-operator">=</span> <span class="hljs-number">1234</span>;
+    <span class="hljs-comment"># <span class="hljs-doctag">TODO:</span> Change this domain to your own</span>
+    <span class="hljs-attr">domain</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;lemmy.example.com&quot;</span>;
+  };
+
+  <span class="hljs-attr">lemmy-ui</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">upstreamName</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;lemmy-ui&quot;</span>;
+    <span class="hljs-attr">ip</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;127.0.0.1&quot;</span>;
+    <span class="hljs-attr">port</span> <span class="hljs-operator">=</span> <span class="hljs-number">8536</span>;
+  };
+
+  <span class="hljs-attr">pict-rs</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">ip</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;127.0.0.1&quot;</span>;
+    <span class="hljs-attr">port</span> <span class="hljs-operator">=</span> <span class="hljs-number">8080</span>;
+  };
+
+  <span class="hljs-attr">acmeDomain</span> <span class="hljs-operator">=</span> lemmy.domain;
+  <span class="hljs-attr">nginxVhost</span> <span class="hljs-operator">=</span> lemmy.domain;
+
+<span class="hljs-keyword">in</span> {
+
+  <span class="hljs-attr">security.acme</span> <span class="hljs-operator">=</span> lib.mkIf add_nginx {
+    <span class="hljs-comment"># <span class="hljs-doctag">TODO:</span> change this to true if you accept</span>
+    <span class="hljs-attr">acceptTerms</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+    <span class="hljs-attr">defaults</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-comment"># <span class="hljs-doctag">TODO:</span> you will receive a notification if automatic certificate renewal fails</span>
+      <span class="hljs-attr">email</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;postmaster@<span class="hljs-subst">${lemmy.domain}</span>&quot;</span>;
+      <span class="hljs-comment"># <span class="hljs-doctag">TODO:</span> put your dns provider here: https://go-acme.github.io/lego/dns/</span>
+      <span class="hljs-attr">dnsProvider</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;</span>;
+      <span class="hljs-comment"># <span class="hljs-doctag">TODO:</span> this file should contain environment variables expected by your dns provider</span>
+      <span class="hljs-attr">credentialsFile</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;</span>;
+    };
+    certs.<span class="hljs-string">&quot;<span class="hljs-subst">${acmeDomain}</span>&quot;</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">domain</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${acmeDomain}</span>&quot;</span>;
+    };
+  };
+
+  <span class="hljs-attr">networking.firewall.allowedTCPPorts</span> <span class="hljs-operator">=</span> lib.mkIf add_nginx nginx_ports;
+
+  <span class="hljs-comment"># is needed because of certificate file permissions</span>
+  <span class="hljs-attr">users.users.nginx.extraGroups</span> <span class="hljs-operator">=</span> lib.mkIf add_nginx [<span class="hljs-string">&quot;acme&quot;</span>];
+
+  <span class="hljs-attr">services.nginx</span> <span class="hljs-operator">=</span> lib.mkIf add_nginx {
+    upstreams.<span class="hljs-string">&quot;<span class="hljs-subst">${lemmy.upstreamName}</span>&quot;</span>.servers.<span class="hljs-string">&quot;<span class="hljs-subst">${lemmy.ip}</span>:<span class="hljs-subst">${<span class="hljs-built_in">builtins.toString</span> lemmy.port}</span>&quot;</span> <span class="hljs-operator">=</span> {};
+    upstreams.<span class="hljs-string">&quot;<span class="hljs-subst">${lemmy-ui.upstreamName}</span>&quot;</span>.servers.<span class="hljs-string">&quot;<span class="hljs-subst">${lemmy-ui.ip}</span>:<span class="hljs-subst">${<span class="hljs-built_in">builtins.toString</span> lemmy-ui.port}</span>&quot;</span> <span class="hljs-operator">=</span> {};
+
+    virtualHosts.<span class="hljs-string">&quot;<span class="hljs-subst">${nginxVhost}</span>&quot;</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">useACMEHost</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${acmeDomain}</span>&quot;</span>;
+        <span class="hljs-comment"># inherit from config.security.acme.acmeRoot;</span>
+        <span class="hljs-attr">acmeRoot</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;
+        <span class="hljs-comment"># add redirects from http to https</span>
+        <span class="hljs-attr">forceSSL</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+        <span class="hljs-comment"># this whole block was lifted from https://github.com/LemmyNet/lemmy/blob/ef1aa18fd20cc03d492a81cb70cc75cf3281649f/docker/nginx.conf#L21 lines 21-32</span>
+        <span class="hljs-attr">extraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+          # disables emitting nginx version on error pages and in the “Server” response header field
+          server_tokens off;
+
+          gzip on;
+          gzip_types text/css application/javascript image/svg+xml;
+          gzip_vary on;
+
+          # Upload limit, relevant for pictrs
+          client_max_body_size 20M;
+
+          add_header X-Frame-Options SAMEORIGIN;
+          add_header X-Content-Type-Options nosniff;
+          add_header X-XSS-Protection &quot;1; mode=block&quot;;
+        &#x27;&#x27;</span>;
+
+        <span class="hljs-attr">locations</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-string">&quot;/&quot;</span> <span class="hljs-operator">=</span> {
+                <span class="hljs-comment"># we do not use the nixos &quot;locations.&lt;name&gt;.proxyPass&quot; option because the nginx config needs to do something fancy.</span>
+                <span class="hljs-comment"># again, lifted wholesale from https://github.com/LemmyNet/lemmy/blob/ef1aa18fd20cc03d492a81cb70cc75cf3281649f/docker/nginx.conf#L36 lines 36-55</span>
+                <span class="hljs-attr">extraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+                  # distinguish between ui requests and backend
+                  # don&#x27;t change lemmy-ui or lemmy here, they refer to the upstream definitions on top
+                  set $proxpass &quot;http://<span class="hljs-subst">${lemmy-ui.upstreamName}</span>&quot;;
+
+                  if ($http_accept = &quot;application/activity+json&quot;) {
+                    set $proxpass &quot;http://<span class="hljs-subst">${lemmy.upstreamName}</span>&quot;;
+                  }
+                  if ($http_accept = &quot;application/ld+json; profile=<span class="hljs-char escape_">\&quot;</span>https://www.w3.org/ns/activitystreams<span class="hljs-char escape_">\&quot;</span>&quot;) {
+                    set $proxpass &quot;http://<span class="hljs-subst">${lemmy.upstreamName}</span>&quot;;
+                  }
+                  if ($request_method = POST) {
+                    set $proxpass &quot;http://<span class="hljs-subst">${lemmy.upstreamName}</span>&quot;;
+                  }
+                  proxy_pass $proxpass;
+
+                  # Cuts off the trailing slash on URLs to make them valid
+                  rewrite ^(.+)/+$ $1 permanent;
+
+                  # Send actual client IP upstream
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                &#x27;&#x27;</span>;
+              };
+
+              <span class="hljs-comment"># again, lifted wholesale from https://github.com/LemmyNet/lemmy/blob/ef1aa18fd20cc03d492a81cb70cc75cf3281649f/docker/nginx.conf#L60 lines 60-69 (nice!)</span>
+              <span class="hljs-string">&quot;~ ^/(api|pictrs|feeds|nodeinfo|.well-known)&quot;</span> <span class="hljs-operator">=</span> {
+                <span class="hljs-attr">proxyPass</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;http://<span class="hljs-subst">${lemmy.upstreamName}</span>&quot;</span>;
+                <span class="hljs-attr">extraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+                  # proxy common stuff
+                  proxy_http_version 1.1;
+                  proxy_set_header Upgrade $http_upgrade;
+                  proxy_set_header Connection &quot;upgrade&quot;;
+
+                  ## Send actual client IP upstream
+                  #proxy_set_header X-Real-IP $remote_addr;
+                  #proxy_set_header Host $host;
+                  #proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                &#x27;&#x27;</span>;
+              };
+            };
+          };
+        };
+
+      <span class="hljs-attr">systemd.services.lemmy-ui</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">environment</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">LEMMY_UI_HOST</span> <span class="hljs-operator">=</span> lib.mkForce <span class="hljs-string">&quot;<span class="hljs-subst">${lemmy-ui.ip}</span>:<span class="hljs-subst">${<span class="hljs-built_in">toString</span> lemmy-ui.port}</span>&quot;</span>;
+          <span class="hljs-attr">LEMMY_UI_LEMMY_INTERNAL_HOST</span> <span class="hljs-operator">=</span> lib.mkForce <span class="hljs-string">&quot;<span class="hljs-subst">${lemmy.ip}</span>:<span class="hljs-subst">${<span class="hljs-built_in">toString</span> lemmy.port}</span>&quot;</span>;
+          <span class="hljs-attr">LEMMY_UI_LEMMY_EXTERNAL_HOST</span> <span class="hljs-operator">=</span> lib.mkForce lemmy.domain ;
+          <span class="hljs-attr">LEMMY_UI_HTTPS</span><span class="hljs-operator">=</span><span class="hljs-string">&quot;true&quot;</span>;
+        };
+      };
+
+      <span class="hljs-attr">services.pict-rs</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+        <span class="hljs-attr">port</span> <span class="hljs-operator">=</span> pict-rs.port;
+        <span class="hljs-attr">dataDir</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${dataDir}</span>/pict-rs&quot;</span>;
+        <span class="hljs-attr">address</span> <span class="hljs-operator">=</span> pict-rs.ip;
+      };
+
+      <span class="hljs-attr">systemd.services.lemmy</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">requires</span> <span class="hljs-operator">=</span> [<span class="hljs-string">&quot;postgresql.service&quot;</span>];
+        <span class="hljs-attr">after</span> <span class="hljs-operator">=</span> [<span class="hljs-string">&quot;postgresql.service&quot;</span>];
+        <span class="hljs-attr">environment</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">LEMMY_DATABASE_URL</span> <span class="hljs-operator">=</span> lib.mkForce <span class="hljs-string">&quot;postgresql://lemmy@127.0.0.1:<span class="hljs-subst">${<span class="hljs-built_in">toString</span> config.services.postgresql.port}</span>/lemmy&quot;</span>;
+        };
+      };
+
+      <span class="hljs-attr">services.lemmy</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+        <span class="hljs-attr">ui.port</span> <span class="hljs-operator">=</span> lemmy-ui.port;
+        <span class="hljs-attr">database.createLocally</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+        <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-comment"># <span class="hljs-doctag">TODO:</span> Enable this much later when you tested everything.</span>
+          <span class="hljs-comment"># N.B. you can&#x27;t change your domain name after enabling this.</span>
+          <span class="hljs-attr">federation.enabled</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+          <span class="hljs-comment"># settings related to the postgresql database</span>
+          <span class="hljs-attr">database</span> <span class="hljs-operator">=</span> {
+            <span class="hljs-attr">user</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;lemmy&quot;</span>;
+            <span class="hljs-attr">password</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;secretlemmypassword&quot;</span>;
+            <span class="hljs-attr">host</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;127.0.0.1&quot;</span>;
+            <span class="hljs-attr">port</span> <span class="hljs-operator">=</span> ${config.services.postgresql.port};
+            <span class="hljs-attr">database</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;lemmy&quot;</span>;
+            <span class="hljs-attr">pool_size</span> <span class="hljs-operator">=</span> <span class="hljs-number">5</span>;
+          };
+          <span class="hljs-comment"># Pictrs image server configuration.</span>
+          <span class="hljs-attr">pictrs</span> <span class="hljs-operator">=</span> {
+            <span class="hljs-comment"># Address where pictrs is available (for image hosting)</span>
+            <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;http://<span class="hljs-subst">${pict-rs.ip}</span>:<span class="hljs-subst">${<span class="hljs-built_in">toString</span> pict-rs.port}</span>/&quot;</span>;
+            <span class="hljs-comment"># <span class="hljs-doctag">TODO:</span> Set a custom pictrs API key. ( Required for deleting images )</span>
+            <span class="hljs-attr">api_key</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;</span>;
+          };
+          <span class="hljs-comment"># <span class="hljs-doctag">TODO:</span> Email sending configuration. All options except login/password are mandatory</span>
+          <span class="hljs-attr">email</span> <span class="hljs-operator">=</span> {
+            <span class="hljs-comment"># Hostname and port of the smtp server</span>
+            <span class="hljs-attr">smtp_server</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;</span>;
+            <span class="hljs-comment"># Login name for smtp server</span>
+            <span class="hljs-attr">smtp_login</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;</span>;
+            <span class="hljs-comment"># Password to login to the smtp server</span>
+            <span class="hljs-attr">smtp_password</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;</span>;
+            <span class="hljs-comment"># Address to send emails from, eg &quot;noreply@your-instance.com&quot;;</span>
+            <span class="hljs-attr">smtp_from_address</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;noreply@<span class="hljs-subst">${lemmy.domain}</span>&quot;</span>;
+            <span class="hljs-comment"># Whether or not smtp connections should use tls. Can be none, tls, or starttls</span>
+            <span class="hljs-attr">tls_type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;none&quot;</span>;
+          };
+          <span class="hljs-comment"># <span class="hljs-doctag">TODO:</span> Parameters for automatic configuration of new instance (only used at first start)</span>
+          <span class="hljs-attr">setup</span> <span class="hljs-operator">=</span> {
+            <span class="hljs-comment"># Username for the admin user</span>
+            <span class="hljs-attr">admin_username</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;superawesomeadmin&quot;</span>;
+            <span class="hljs-comment"># Password for the admin user. It must be at least 10 characters.</span>
+            <span class="hljs-attr">admin_password</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;</span>;
+            <span class="hljs-comment"># Name of the site (can be changed later)</span>
+            <span class="hljs-attr">site_name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Lemmy at <span class="hljs-subst">${lemmy.domain}</span>&quot;</span>;
+            <span class="hljs-comment"># Email for the admin user (optional, can be omitted and set later through the website)</span>
+            <span class="hljs-attr">admin_email</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;admin@<span class="hljs-subst">${lemmy.domain}</span>&quot;</span>;
+          };
+          <span class="hljs-comment"># the domain name of your instance (mandatory)</span>
+          <span class="hljs-attr">hostname</span> <span class="hljs-operator">=</span> lemmy.domain;
+          <span class="hljs-comment"># Address where lemmy should listen for incoming requests</span>
+          <span class="hljs-attr">bind</span> <span class="hljs-operator">=</span> lemmy.ip;
+          <span class="hljs-comment"># Port where lemmy should listen for incoming requests</span>
+          <span class="hljs-attr">port</span> <span class="hljs-operator">=</span> lemmy.port;
+          <span class="hljs-comment"># Whether the site is available over TLS. Needs to be true for federation to work.</span>
+          <span class="hljs-attr">tls_enabled</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+        };
+
+      };
+
+
+      <span class="hljs-comment"># needed for now</span>
+      <span class="hljs-attr">nixpkgs.config.permittedInsecurePackages</span> <span class="hljs-operator">=</span> [
+        <span class="hljs-string">&quot;nodejs-14.21.3&quot;</span>
+        <span class="hljs-string">&quot;openssl-1.1.1t&quot;</span>
+      ];
+
+      system.activationScripts.<span class="hljs-string">&quot;make_sure_lemmy_user_owns_files&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        uid=&#x27;<span class="hljs-subst">${config.users.users.lemmy.uid}</span>&#x27;;
+        gid=&#x27;<span class="hljs-subst">${config.users.groups.lemmy.gid}</span>&#x27;;
+        dir=&#x27;<span class="hljs-subst">${lemmy.dataDir}</span>&#x27;
+
+        mkdir -p &quot;<span class="hljs-char escape_">&#x27;&#x27;$</span>{dir}&quot;
+
+        if [[ &quot;$(<span class="hljs-subst">${pkgs.toybox}</span>/bin/stat &quot;<span class="hljs-char escape_">&#x27;&#x27;$</span>{dir}&quot; -c &#x27;%u:%g&#x27; | tee /dev/stderr )&quot; != &quot;<span class="hljs-char escape_">&#x27;&#x27;$</span>{uid}:<span class="hljs-char escape_">&#x27;&#x27;$</span>{gid}&quot; ]]; then
+          chown -R &quot;<span class="hljs-char escape_">&#x27;&#x27;$</span>{uid}:<span class="hljs-char escape_">&#x27;&#x27;$</span>{gid}&quot; &quot;<span class="hljs-char escape_">&#x27;&#x27;$</span>{dir}&quot;
+        fi
+      &#x27;&#x27;</span>;
+    };
+  };
+}</code></pre>
+      </div><p>N.B. this exact setup is currently untested, I just took my own config and removed my personal items (e.g. credentials).</p>
+<h2 id="see-more">See more</h2><ul>
+<li><a href="https://join-lemmy.org/docs/en/index.html">Official Documentation</a></li>
+</ul>
+<p><a href="category:Web_Applications" class="wikilink" title="Category:Web Applications">Category:Web Applications</a> <a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="category:NixOS_Manual" class="wikilink" title="Category:NixOS Manual">Category:NixOS Manual</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Overlays</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Overlays</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Overlays -->
+
+<blockquote>
+<p>Overlays are Nix functions which accept two arguments, conventionally called <code>final</code> and <code>prev</code> (formerly also <code>self</code> and <code>super</code>), and return a set of packages. ... Overlays are similar to other methods for customizing Nixpkgs, in particular the packageOverrides ... Indeed, packageOverrides acts as an overlay with only the <code>prev</code> (<code>super</code>) argument. It is therefore appropriate for basic use, but overlays are more powerful and easier to distribute.</p>
+</blockquote>
+<p><cite>From the <a href="https://nixos.org/manual/nixpkgs/stable/#sec-overlays-definition">Nixpkgs manual</a></cite></p>
+<p>Overlays provide a method to extend and change nixpkgs. They replace constructs like <code>packageOverride</code> and <code>overridePackages</code>.</p>
+<p>Consider a simple example of setting the default proxy in Google Chrome:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-params">final:</span> <span class="hljs-params">prev:</span> {
+   <span class="hljs-attr">google-chrome</span> <span class="hljs-operator">=</span> prev.google-chrome.override {
+     <span class="hljs-attr">commandLineArgs</span> <span class="hljs-operator">=</span>
+       <span class="hljs-string">&quot;--proxy-server=&#x27;https=127.0.0.1:3128;http=127.0.0.1:3128&#x27;&quot;</span>;
+   };
+};</code></pre>
+      </div><h2 id="data-flow-of-overlays">Data flow of overlays</h2><p>The data flow of overlays, especially regarding <code>prev</code> and <code>final</code> arguments can be a bit confusing if you are not familiar with how overlays work. This graph shows the data flow:</p>
+<figure>
+<img src="https://mirror.nixoscn.org/wiki/Overlays/Dram-overlay-final-prev.png" title="Dram-overlay-final-prev.png" />
+<figcaption>Dram-overlay-final-prev.png</figcaption>
+</figure>
+
+<p>Here the main package set is extended with two overlays, ext-1 and ext-2. <code>x // y</code> is represented by a <code>//</code> box with <code>x</code> coming in from the left and <code>y</code> from above.</p>
+<p>As you can see, <code>final</code> is the same for every stage, but <code>prev</code> comes from only the stage before. So when you define an attribute <code>foo</code> in the set to override it, within that overlay <code>final.foo</code> will be its version, and <code>prev.foo</code> will be the non-overriden version. This is why you see patterns like <code>foo = prev.foo.override { ... }</code>.</p>
+<p>The alternate names <code>self</code> and <code>super</code> might remind you of inheritance in object-oriented languages. In fact, overlays are exactly the same thing as subclasses, with regards to overriding and calling methods. This data flow is also how objects know which method to call. This is probably how the two arguments got those names, too.</p>
+<h2 id="data-flow-of-overlays-alternative-explanation">Data flow of overlays (alternative explanation)</h2><p>Source: <a href="https://discourse.nixos.org/t/how-to-exclude-packages/13039/4">https://discourse.nixos.org/t/how-to-exclude-packages/13039/4</a></p>
+<p>I recommend final: prev. That&#39;s also easier to explain. The first argument is nixpkgs with your overlay applied, and the second argument is nixpkgs without your overlay. So the “final” nixpkgs and the “previous” nixpkgs. This allows you to access things you defined in your overlay along with things from nixpkgs itself.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-params">final:</span> <span class="hljs-params">prev:</span> { <span class="hljs-attr">f</span> <span class="hljs-operator">=</span> final.firefox; }</code></pre>
+      </div><p>would work, but</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-params">final:</span> <span class="hljs-params">prev:</span> { <span class="hljs-attr">f</span> <span class="hljs-operator">=</span> prev.firefox; }</code></pre>
+      </div><p>would make more sense. This could be useful:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-params">final:</span> <span class="hljs-params">prev:</span> {
+  <span class="hljs-attr">firefox</span> <span class="hljs-operator">=</span> prev.firefox.override { ... };
+  <span class="hljs-attr">myBrowser</span> <span class="hljs-operator">=</span> final.firefox;
+}</code></pre>
+      </div><p>And</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-params">final:</span> <span class="hljs-params">prev:</span> { <span class="hljs-attr">firefox</span> <span class="hljs-operator">=</span> final.firefox.override { ... }; }</code></pre>
+      </div><p>would cause infinite recursion.</p>
+<h2 id="using-overlays">Using overlays</h2><h3 id="applying-overlays-manually">Applying overlays manually</h3><h4 id="in-standalone-nix-code">In standalone nix code</h4><h5 id="in-a-shell-nix">In a shell.nix</h5><p>When writing standalone nix code, for example a <code>shell.nix</code> for a project, one usually starts by importing nixpkgs: <code>let pkgs = import </code><nixpkgs><code> {}</code>. To use an overlay in this context, replace that by:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> { <span class="hljs-attr">overlays</span> <span class="hljs-operator">=</span> [ overlay1 overlay2 ]; }</code></pre>
+      </div><h5 id="in-a-nix-flake">In a Nix flake</h5><p>In a Nix flake, nixpkgs will be coming from the inputs. It is common to write something like</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-keyword">let</span> pkgs <span class="hljs-operator">=</span> nixpkgs.legacyPackages.${system}</code></pre>
+      </div><p>where <code>system</code> is a variable containing eg. <code>&quot;x86_64-linux&quot;</code>. In order to apply overlays to this, one can do either of:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-keyword">let</span> pkgs <span class="hljs-operator">=</span> (nixpkgs.legacyPackages.${system}.extend overlay1).extend overlay2</code></pre>
+      </div><p>or, using the <code>import</code> function:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-keyword">let</span> pkgs <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> nixpkgs { <span class="hljs-keyword">inherit</span> system; <span class="hljs-attr">overlays</span> <span class="hljs-operator">=</span> [ overlay1 overlay2 ]; }</code></pre>
+      </div><h4 id="in-nixos">In NixOS</h4><p>In <code>/etc/nixos/configuration.nix</code>, use the <code>nixpkgs.overlays</code> option:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ config, pkgs, lib, ... }:
+{
+   <span class="hljs-comment"># [...]</span>
+   <span class="hljs-attr">nixpkgs.overlays</span> <span class="hljs-operator">=</span> [ (<span class="hljs-params">final:</span> <span class="hljs-params">prev:</span> <span class="hljs-comment">/* overlay goes here */</span>) ];
+}</code></pre>
+      </div><p>Note that this does not impact the usage of nix on the command line, only your NixOS configuration.</p>
+<h4 id="in-home-manager">In <a href="https://mirror.nixoscn.org/wiki/Overlays/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a></h4><p>In <code>~/.config/nixpkgs/home.conf</code>, use the <code>nixpkgs.overlays</code> option:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ config, pkgs, lib, ... }:
+{
+   <span class="hljs-comment"># [...]</span>
+   <span class="hljs-attr">nixpkgs.overlays</span> <span class="hljs-operator">=</span> [ (<span class="hljs-params">final:</span> <span class="hljs-params">prev:</span> <span class="hljs-comment">/* overlay goes here */</span>) ];
+}</code></pre>
+      </div><p>Note that this does not impact the usage of nix on the command line or in your your NixOS configuration, only your home-manager configuration.</p>
+<h3 id="applying-overlays-automatically">Applying overlays automatically</h3><h4 id="on-the-user-level">On the user level</h4><p>A list of overlays placed into <code>~/.config/nixpkgs/overlays.nix</code> will be automatically loaded by all nix tools run as your user (hence not nixos-rebuild).</p>
+<p>Alternatively, you can put each overlay in its own .nix file under your <code>~/.config/nixpkgs/overlays</code> directory.</p>
+<h4 id="on-the-system-level">On the system level</h4><p>If you want your overlays to be accessible by nix tools and also in the system-wide configuration, add <code>nixpkgs-overlays</code> to your <code>NIX_PATH</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs">NIX_PATH=&quot;$NIX_PATH:nixpkgs-overlays=/etc/nixos/overlays&quot;</code></pre>
+      </div><p>Currently <code>nixos-rebuild</code> only works with a <nixpkgs-overlays> path that is a directory.</p>
+<p>There is a configuration option <code>nixpkgs.overlays</code>. Overlays set here will <strong>not</strong> be automatically applied by nix tools.</p>
+<h5 id="using-nixpkgs-overlays-from-configuration-nix-as-in-your-nix_path">Using <code>nixpkgs.overlays</code> from <code>configuration.nix</code> as <nixpkgs-overlays> in your NIX_PATH</h5><p>Configuration below will allow all of the Nix tools to see the exact same overlay as is defined in your <code>configuration.nix</code> in the option.</p>
+<p>The core of the idea here is to point the <code>nixpkgs-overlays</code> element of <code>NIX_PATH</code> to a &quot;compatibility&quot; overlay, which will load all of the overlays defined in your NixOS system configuration and apply them to its own input. Thus, when various Nix tools attempt to load the overlays from the <code>nixpkgs-overlays</code> element of <code>NIX_PATH</code>, they will get contents of overlays defined in your NixOS system config.</p>
+<p>First, in the <code>configuration.nix</code> file, depending on whether your <code>configuration.nix</code> already defines <code>nix.nixPath</code>, add one of these definitions:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ config, pkgs, options, ... }: {
+  <span class="hljs-comment"># With an existing `nix.nixPath` entry:</span>
+  <span class="hljs-attr">nix.nixPath</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-comment"># Add the following to existing entries.</span>
+    <span class="hljs-string">&quot;nixpkgs-overlays=/etc/nixos/overlays-compat/&quot;</span>
+  ];
+
+  <span class="hljs-comment"># Without any `nix.nixPath` entry:</span>
+  <span class="hljs-attr">nix.nixPath</span> <span class="hljs-operator">=</span>
+    <span class="hljs-comment"># Prepend default nixPath values.</span>
+    options.nix.nixPath.default <span class="hljs-operator">++</span>
+    <span class="hljs-comment"># Append our nixpkgs-overlays.</span>
+    [ <span class="hljs-string">&quot;nixpkgs-overlays=/etc/nixos/overlays-compat/&quot;</span> ]
+  ;
+}</code></pre>
+      </div><p>Then, add the following contents to <code>/etc/nixos/overlays-compat/overlays.nix</code><sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Overlays#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-params">final:</span> <span class="hljs-params">prev:</span>
+<span class="hljs-keyword">with</span> prev.lib;
+<span class="hljs-keyword">let</span>
+  <span class="hljs-comment"># Load the system config and get the `nixpkgs.overlays` option</span>
+  <span class="hljs-attr">overlays</span> <span class="hljs-operator">=</span> (<span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs/nixos&gt;</span> { }).config.nixpkgs.overlays;
+<span class="hljs-keyword">in</span>
+  <span class="hljs-comment"># Apply all overlays to the input of the current &quot;main&quot; overlay</span>
+  foldl&#x27; (flip extends) (<span class="hljs-params">_:</span> prev) overlays final</code></pre>
+      </div><p>The <code>/etc/nixos/overlays-compat</code> directory should contain a single <code>overlays.nix</code> file to be understood by the Nix tooling, but the location of this directory can be arbitrary, as long as it is set correctly in the <code>nix.nixPath</code> option.</p>
+<h2 id="examples-of-overlays">Examples of overlays</h2><p>Here are a few example usages of overlays.</p>
+<h3 id="overriding-a-version">Overriding a version</h3><p>Assume you want the original version of sl, not the fork that nixpkgs ships. First, you have to choose the exact revision you want nix to build. Here we will build revision 923e7d7ebc5c1f009755bdeb789ac25658ccce03. The core of the method is to override the attribute <code>src</code> of the derivation with an updated value. Here we use <code>fetchFromGitHub</code> because sl is hosted on github, but other locations need other functions. To see the original derivation, run <code>nix edit -f &quot;</code><nixpkgs><code>&quot; sl</code>. This method will fail if the build system changed or new dependencies are required.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-params">final:</span> <span class="hljs-params">prev:</span>
+{
+  <span class="hljs-attr">sl</span> <span class="hljs-operator">=</span> prev.sl.overrideAttrs (<span class="hljs-params">old:</span> {
+    <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> prev.fetchFromGitHub {
+      <span class="hljs-attr">owner</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;mtoyoda&quot;</span>;
+      <span class="hljs-attr">repo</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sl&quot;</span>;
+      <span class="hljs-attr">rev</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;923e7d7ebc5c1f009755bdeb789ac25658ccce03&quot;</span>;
+      <span class="hljs-comment"># If you don&#x27;t know the hash, the first time, set:</span>
+      <span class="hljs-comment"># hash = &quot;&quot;;</span>
+      <span class="hljs-comment"># then nix will fail the build with such an error message:</span>
+      <span class="hljs-comment"># hash mismatch in fixed-output derivation &#x27;/nix/store/m1ga09c0z1a6n7rj8ky3s31dpgalsn0n-source&#x27;:</span>
+      <span class="hljs-comment"># specified: sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</span>
+      <span class="hljs-comment"># got:    sha256-173gxk0ymiw94glyjzjizp8bv8g72gwkjhacigd1an09jshdrjb4</span>
+      <span class="hljs-attr">hash</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sha256-173gxk0ymiw94glyjzjizp8bv8g72gwkjhacigd1an09jshdrjb4&quot;</span>;
+    };
+  });
+}</code></pre>
+      </div><h3 id="adding-patches">Adding patches</h3><p>It is easy to add patches to a nix package:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-params">final:</span> <span class="hljs-params">prev:</span>
+{
+  <span class="hljs-attr">sl</span> <span class="hljs-operator">=</span> prev.sl.overrideAttrs (<span class="hljs-params">old:</span> {
+    <span class="hljs-attr">patches</span> <span class="hljs-operator">=</span> (old.patches <span class="hljs-keyword">or</span> []) <span class="hljs-operator">++</span> [
+      (prev.fetchpatch {
+        <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://github.com/charlieLehman/sl/commit/e20abbd7e1ee26af53f34451a8f7ad79b27a4c0a.patch&quot;</span>;
+        <span class="hljs-attr">hash</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;07sx98d422589gxr8wflfpkdd0k44kbagxl3b51i56ky2wfix7rc&quot;</span>;
+      })
+      <span class="hljs-comment"># alternatively if you have a local patch,</span>
+      <span class="hljs-symbol">/path/to/file.patch</span>
+      <span class="hljs-comment"># or a relative path (relative to the current nix file)</span>
+      <span class="hljs-symbol">./relative.patch</span>
+    ];
+  });
+}</code></pre>
+      </div><h3 id="compilation-options">Compilation options</h3><p>Some packages provide compilation options. Those are not easily disoverable; to find them you need to have a look at the source. For example, with <code>nix edit -f &quot;</code><nixpkgs><code>&quot; pass</code> one can see that pass can be compiled with or without dependencies on X11 with the <code>x11Support</code> argument. Here is how you can remove X11 dependencies:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-params">final:</span> <span class="hljs-params">prev:</span>
+{
+  <span class="hljs-attr">pass</span> <span class="hljs-operator">=</span> prev.pass.override { <span class="hljs-attr">x11Support</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>; };
+}</code></pre>
+      </div><h3 id="overriding-a-package-inside-a-scope">Overriding a package inside a scope</h3><p>Some packages are not in the top level of nixpkgs but inside a <em>scope</em>. For example all <a href="https://mirror.nixoscn.org/wiki/Overlays/GNOME" class="wikilink" title="GNOME">GNOME</a> packages are in the <code>gnome</code> attribute set and <a href="https://mirror.nixoscn.org/wiki/Overlays/Xfce" class="wikilink" title="Xfce">Xfce</a> packages inside <code>xfce</code>. These attributes are often <em>scopes</em> and must be overriden specially. Here is an example of patching <code>gnome.mutter</code> and <code>gnome.gnome-control-center</code>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># elements of nixpkgs must be taken from final and prev</span>
+<span class="hljs-params">final:</span> <span class="hljs-params">prev:</span> {
+  <span class="hljs-comment"># elements of pkgs.gnome must be taken from gfinal and gprev</span>
+  <span class="hljs-attr">gnome</span> <span class="hljs-operator">=</span> prev.gnome.overrideScope (<span class="hljs-params">gfinal:</span> <span class="hljs-params">gprev:</span> {
+    <span class="hljs-attr">mutter</span> <span class="hljs-operator">=</span> gprev.mutter.overrideAttrs (<span class="hljs-params">oldAttrs:</span> {
+      <span class="hljs-attr">patches</span> <span class="hljs-operator">=</span> oldAttrs.patches <span class="hljs-operator">++</span> [
+        <span class="hljs-comment"># https://salsa.debian.org/gnome-team/mutter/-/blob/ubuntu/master/debian/patches/x11-Add-support-for-fractional-scaling-using-Randr.patch</span>
+        (prev.fetchpatch {
+          <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://salsa.debian.org/gnome-team/mutter/-/raw/91d9bdafd5d624fe1f40f4be48663014830eee78/debian/patches/x11-Add-support-for-fractional-scaling-using-Randr.patch&quot;</span>;
+          <span class="hljs-attr">hash</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;m6PKjVxhGVuzsMBVA82UyJ6Cb1s6SMI0eRooa+F2MY8=&quot;</span>;
+        })
+    ];
+    });
+    <span class="hljs-attr">gnome-control-center</span> <span class="hljs-operator">=</span> gprev.gnome-control-center.overrideAttrs (<span class="hljs-params">oldAttrs:</span> {
+      <span class="hljs-attr">patches</span> <span class="hljs-operator">=</span> oldAttrs.patches <span class="hljs-operator">++</span> [
+        <span class="hljs-comment"># https://salsa.debian.org/gnome-team/gnome-control-center/-/blob/ubuntu/master/debian/patches/ubuntu/display-Support-UI-scaled-logical-monitor-mode.patch</span>
+        (prev.fetchpatch {
+          <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://salsa.debian.org/gnome-team/gnome-control-center/-/raw/f185f33fb200cc963c062c7a82920a085f696978/debian/patches/ubuntu/display-Support-UI-scaled-logical-monitor-mode.patch&quot;</span>;
+          <span class="hljs-attr">hash</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;XBMD0chaV6GGg3R9/rQnsBejXspomVZz/a4Bvv/AHCA=&quot;</span>;
+        })
+        <span class="hljs-comment"># https://salsa.debian.org/gnome-team/gnome-control-center/-/blob/ubuntu/master/debian/patches/ubuntu/display-Allow-fractional-scaling-to-be-enabled.patch</span>
+        (prev.fetchpatch {
+          <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://salsa.debian.org/gnome-team/gnome-control-center/-/raw/f185f33fb200cc963c062c7a82920a085f696978/debian/patches/ubuntu/display-Allow-fractional-scaling-to-be-enabled.patch&quot;</span>;
+          <span class="hljs-attr">hash</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Pm6PTmsL2bW9JAHD1u0oUEqD1PCIErOlcuqlwvP593I=&quot;</span>;
+        })
+      ];
+    });
+  });
+}</code></pre>
+      </div><h3 id="overriding-a-package-inside-an-extensible-attribute-set">Overriding a package inside an extensible attribute set</h3><p>Here is an example of adding plugins to <code>vimPlugins</code>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-params">final:</span> <span class="hljs-params">prev:</span> {
+  <span class="hljs-attr">vimPlugins</span> <span class="hljs-operator">=</span> prev.vimPlugins.extend (<span class="hljs-params">final&#x27;:</span> <span class="hljs-params">prev&#x27;:</span> {
+    <span class="hljs-attr">indent-blankline-nvim-lua</span> <span class="hljs-operator">=</span> prev.callPackage <span class="hljs-symbol">../packages/indent-blankline-nvim-lua</span> { };
+  });
+}</code></pre>
+      </div><h3 id="overrding-a-package-inside-a-plain-attribute-set">Overrding a package inside a plain attribute set</h3><p>Here&#39;s an example of overriding the source of <code>obs-studio-plugins.obs-backgroundremoval</code>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">    <span class="hljs-params">final:</span> <span class="hljs-params">prev:</span> {
+      <span class="hljs-attr">obs-studio-plugins</span> <span class="hljs-operator">=</span> prev.obs-studio-plugins <span class="hljs-operator">//</span> {
+        <span class="hljs-attr">obs-backgroundremoval</span> <span class="hljs-operator">=</span>
+          prev.obs-studio-plugins.obs-backgroundremoval.overrideAttrs (<span class="hljs-params">old:</span> {
+            <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;0.5.17&quot;</span>;
+            <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> prev.fetchFromGitHub {
+              <span class="hljs-attr">owner</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;royshil&quot;</span>;
+              <span class="hljs-attr">repo</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;obs-backgroundremoval&quot;</span>;
+              <span class="hljs-attr">rev</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;v0.5.17&quot;</span>;
+              <span class="hljs-attr">hash</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;</span>;
+            };
+          });
+      };
+    };</code></pre>
+      </div><h3 id="perl-package-overlays">Perl Package overlays</h3><p>Perl packages require some extra care prevent the error <code>undefined variable &#39;perl&#39;</code>. This example turns off tests for the <code>example</code> package:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-params">final:</span> <span class="hljs-params">prev:</span> {
+    <span class="hljs-attr">perlPackages</span> <span class="hljs-operator">=</span> prev.perlPackages <span class="hljs-operator">//</span> {
+      <span class="hljs-attr">example</span> <span class="hljs-operator">=</span> prev.perlPackages.example.overrideAttrs (<span class="hljs-params">attrs:</span> 
+        { <span class="hljs-attr">doChecks</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>; }
+      )
+    };
+  };</code></pre>
+      </div><h3 id="python-packages-overlay">Python Packages Overlay</h3><p>Here is an example of Python packages overlay. The trick is to also override python itself with <code>packageOverrides</code>.</p>
+<p>Github issue with the snippet below: <a href="https://github.com/NixOS/nixpkgs/issues/26487#issuecomment-307363295" class="wikilink" title="https://github.com/NixOS/nixpkgs/issues/26487#issuecomment-307363295">https://github.com/NixOS/nixpkgs/issues/26487#issuecomment-307363295</a></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-params">final:</span> <span class="hljs-params">prev:</span>
+<span class="hljs-comment"># Within the overlay we use a recursive set, though I think we can use `final` as well.</span>
+{
+  <span class="hljs-comment"># nix-shell -p python.pkgs.my_stuff</span>
+  <span class="hljs-attr">python</span> <span class="hljs-operator">=</span> prev.python.override {
+    <span class="hljs-comment"># Careful, we&#x27;re using a different final and prev here!</span>
+    <span class="hljs-attr">packageOverrides</span> <span class="hljs-operator">=</span> <span class="hljs-params">pyfinal:</span> <span class="hljs-params">pyprev:</span> {
+      <span class="hljs-attr">my_stuff</span> <span class="hljs-operator">=</span> pyprev.buildPythonPackage <span class="hljs-keyword">rec</span> {
+        <span class="hljs-attr">pname</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;pyaes&quot;</span>;
+        <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;1.6.0&quot;</span>;
+        <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> pyprev.fetchPypi {
+          <span class="hljs-keyword">inherit</span> pname version;
+          <span class="hljs-attr">hash</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;0bp9bjqy1n6ij1zb86wz9lqa1dhla8qr1d7w2kxyn7jbj56sbmcw&quot;</span>;
+        };
+      };
+    };
+  };
+  <span class="hljs-comment"># nix-shell -p pythonPackages.my_stuff</span>
+  <span class="hljs-attr">pythonPackages</span> <span class="hljs-operator">=</span> final.python.pkgs;
+
+  <span class="hljs-comment"># nix-shell -p my_stuff</span>
+  <span class="hljs-attr">my_stuff</span> <span class="hljs-operator">=</span> final.pythonPackages.buildPythonPackage <span class="hljs-keyword">rec</span> {
+    <span class="hljs-attr">pname</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;pyaes&quot;</span>;
+    <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;1.6.0&quot;</span>;
+    <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> pythonPackages.fetchPypi {
+      <span class="hljs-keyword">inherit</span> pname version;
+      <span class="hljs-attr">hash</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;0bp9bjqy1n6ij1zb86wz9lqa1dhla8qr1d7w2kxyn7jbj56sbmcw&quot;</span>;
+    };
+  };
+}</code></pre>
+      </div><h3 id="r-packages-overlay">R Packages Overlay</h3><p>Here is an example of an R packages overlay, in which it can be seen how to provide different versions of packages then those available in the current R version. It should be noted that in the case of R and Python the argument to <code>override</code> is named differently. Names of these can be found using <code>nix repl</code> and evaluating e.g. <code>python.override.__functionArgs</code>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-params">final:</span> <span class="hljs-params">prev:</span>
+
+{
+  <span class="hljs-attr">rPackages</span> <span class="hljs-operator">=</span> prev.rPackages.override {
+    <span class="hljs-attr">overrides</span> <span class="hljs-operator">=</span> {
+
+      <span class="hljs-attr">rprojroot</span> <span class="hljs-operator">=</span> prev.rPackages.buildRPackage <span class="hljs-keyword">rec</span> {
+        <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;rprojroot-<span class="hljs-subst">${version}</span>&quot;</span>;
+        <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;2.0.2&quot;</span>;
+        <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> prev.fetchurl {
+          <span class="hljs-attr">url</span> <span class="hljs-operator">=</span>
+            <span class="hljs-string">&quot;https://github.com/r-lib/rprojroot/archive/refs/tags/v2.0.2.tar.gz&quot;</span>;
+          <span class="hljs-attr">hash</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;1i0s1f7hla91yw1fdx0rn7c18dp6jwmg2mlww8dix1kk7qbxfjww&quot;</span>;
+        };
+        <span class="hljs-attr">nativeBuildInputs</span> <span class="hljs-operator">=</span> [ prev.R ];
+      };
+
+      <span class="hljs-attr">here</span> <span class="hljs-operator">=</span> prev.rPackages.buildRPackage <span class="hljs-keyword">rec</span> {
+        <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;here-<span class="hljs-subst">${version}</span>&quot;</span>;
+        <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;1.0.1&quot;</span>;
+        <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> prev.fetchurl {
+          <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://github.com/r-lib/here/archive/refs/tags/v1.0.1.tar.gz&quot;</span>;
+          <span class="hljs-attr">hash</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;0ky6sq6n8px3b70s10hy99sccf3vcjjpdhamql5dr7i9igsf8nqy&quot;</span>;
+        };
+        <span class="hljs-attr">nativeBuildInputs</span> <span class="hljs-operator">=</span> [ prev.R final.rPackages.rprojroot ];
+        <span class="hljs-attr">propagatedBuildInputs</span> <span class="hljs-operator">=</span> [ final.rPackages.rprojroot ];
+      };
+    };
+  };
+}</code></pre>
+      </div><h3 id="rust-packages">Rust packages</h3><p>Due to <a href="https://github.com/NixOS/nixpkgs/issues/107070">https://github.com/NixOS/nixpkgs/issues/107070</a></p>
+<p>it is not possible to just override <code>cargoHash</code>, instead cargoDeps has to be overriden</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-params">final:</span> <span class="hljs-params">prev:</span> {
+  <span class="hljs-attr">rnix-lsp</span> <span class="hljs-operator">=</span> prev.rnix-lsp.overrideAttrs (<span class="hljs-params">oldAttrs:</span> <span class="hljs-keyword">rec</span> {
+    <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;master&quot;</span>;
+  
+    <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> prev.fetchFromGitHub {
+      <span class="hljs-attr">owner</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nix-community&quot;</span>;
+      <span class="hljs-attr">repo</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;rnix-lsp&quot;</span>;
+      <span class="hljs-attr">rev</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;1fdd7cf9bf56b8ad2dddcfd27354dae8aef2b453&quot;</span>;
+      <span class="hljs-attr">hash</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sha256-w0hpyFXxltmOpbBKNQ2tfKRWELQzStc/ho1EcNyYaWc=&quot;</span>;
+    };
+  
+    <span class="hljs-attr">cargoDeps</span> <span class="hljs-operator">=</span> oldAttrs.cargoDeps.overrideAttrs (lib.const {
+      <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;rnix-lsp-vendor.tar.gz&quot;</span>;
+      <span class="hljs-keyword">inherit</span> src;
+      <span class="hljs-attr">outputHash</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sha256-6ZaaWYajmgPXQ5sbeRQWzsbaf0Re3F7mTPOU3xqY02g=&quot;</span>;
+    });
+  });
+}</code></pre>
+      </div><h2 id="list-of-3rd-party-overlays">List of 3rd party overlays</h2><p>This is an non-exhaustive list:</p>
+<ul>
+<li><a href="https://nixos.org/manual/nixpkgs/unstable/#using-community-maintained-rust-toolchains">Details in the Nixpkgs manual for using Rust overlays</a></li>
+<li><a href="https://github.com/peter-sa/nixos-rocm">Overlay for Radeon Open-Compute packages</a></li>
+<li><a href="https://github.com/garbas/nixpkgs-python">Overlay by Rok Garbas for a set of python packages built by pypi2nix (archived)</a></li>
+</ul>
+<h2 id="see-also">See also</h2><ul>
+<li><a href="https://nixos.org/nixpkgs/manual/#chap-overlays">Overlays in nixpkgs manual</a></li>
+<li><a href="https://nixcademy.com/posts/mastering-nixpkgs-overlays-techniques-and-best-practice/">Blog post &quot;Mastering Nixpkgs Overlays: Techniques and Best Practice&quot;</a></li>
+<li><a href="https://blog.flyingcircus.io/2017/11/07/nixos-the-dos-and-donts-of-nixpkgs-overlays/">Blog post &quot;The DOs and DON’Ts of nixpkgs overlays&quot;</a></li>
+<li><a href="https://www.youtube.com/watch?v=s2fkgkN55vk&amp;list=PLgknCdxP89ReD6gxl755B6G_CI65z4J2e">Nixpkgs Overlays – A place for all excluded packages</a> - Talk by Nicolas B. Pierron at NixCon 2017</li>
+<li><a href="https://mirror.nixoscn.org/wiki/Overlays/Nixpkgs/Patching_Nixpkgs" class="wikilink" title="Nixpkgs/Patching Nixpkgs">Nixpkgs/Patching Nixpkgs</a></li>
+</ul>
+<h4 id="references">References</h4><p><a href="category:Cookbook" class="wikilink" title="Category:Cookbook">Category:Cookbook</a> <a href="category:Nixpkgs" class="wikilink" title="Category:Nixpkgs">Category:Nixpkgs</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p>Based on <a href="https://gitlab.com/samueldr/nixos-configuration/blob/3febd83b15210282d6435932944d426cd0a9e0ca/modules/overlays-compat/overlays.nix">1</a><a href="user:Samueldr" class="wikilink" title="@samueldr">@samueldr</a><span>&#39;s configuration: overlays-compat</span> <a href="https://mirror.nixoscn.org/wiki/Overlays#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

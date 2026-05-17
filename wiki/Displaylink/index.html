@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Displaylink</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Displaylink</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Displaylink -->
+
+<h3 id="displaylink-monitors">DisplayLink monitors</h3><p>In order to use DisplayLink monitors over USB, such as the ASUS MB16AC, the DisplayLink driver needs to be installed.</p>
+<p>Since these drivers depend on binary unfree blobs, you will need to first add it to your Nix store.</p>
+<p>Run <code>nix-shell -p displaylink --arg config &#39;{ allowUnfree = true; }&#39;</code> to get the <strong>instructions and follow them</strong>.</p>
+<p>When you try to use <code>pkgs.displaylink</code> in your nixos system, you will get the same instructions printed to the stderr, follow those to prefetch the driver. Once the blob is in the Nix store you can add the package</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+ displaylink
+];</code></pre>
+      </div><p>Then add the videoDrivers:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.xserver.videoDrivers</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;displaylink&quot;</span> <span class="hljs-string">&quot;modesetting&quot;</span> ];</code></pre>
+      </div><p>The module <code>nixos/modules/hardware/video/displaylink.nix</code> should also work for wlroots compositors.</p>
+<h4 id="xserver"><big>Xserver</big></h4><h5 id="connecting-a-second-external-monitor">Connecting a second external monitor</h5><p>In order to add a second external monitor you can add the following to your configuration:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.xserver.displayManager.sessionCommands</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    <span class="hljs-subst">${lib.getBin pkgs.xorg.xrandr}</span>/bin/xrandr --setprovideroutputsource 2 0
+&#x27;&#x27;</span>;</code></pre>
+      </div><h4 id="wayland">Wayland</h4><p>At first add displayLink driver to nix store as above described.</p>
+<h5 id="evdi-module">evdi module</h5><p>You probably will need the `evdi` module</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">b<span class="hljs-attr">oot</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">extraModulePackages</span> <span class="hljs-operator">=</span> [ config.boot.kernelPackages.evdi ];
+  <span class="hljs-attr">initrd</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-comment"># List of modules that are always loaded by the initrd.</span>
+    <span class="hljs-attr">kernelModules</span> <span class="hljs-operator">=</span> [
+      <span class="hljs-string">&quot;evdi&quot;</span>
+    ];
+  };
+};</code></pre>
+      </div><h5 id="gnome-wayland"><strong>Gnome Wayland</strong></h5><p>Install displayLink package</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+  displaylink
+];</code></pre>
+      </div><p>Define videoDrivers</p>
+<p>Add dlm service</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ystemd.services.dlm.wantedBy</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;multi-user.target&quot;</span> ];</code></pre>
+      </div><h5 id="kde-plasma"><strong>KDE Plasma</strong></h5><p>Apparently KDE Plasma (Wayland) requires a slight different approach.</p>
+<p>Esnure you properly enabled wayland session</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.variables</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">KWIN_DRM_PREFER_COLOR_DEPTH</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;24&quot;</span>;
+};
+
+<span class="hljs-attr">services</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">desktopManager.plasma6</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  };
+  <span class="hljs-attr">displayManager</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">sddm</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">wayland.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    };
+    <span class="hljs-attr">defaultSession</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;plasma&quot;</span>;
+  };
+
+};</code></pre>
+      </div><p>Install displayLink package</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+  displaylink
+];</code></pre>
+      </div><p>Instead of dlm setup display-link server as follows:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ystemd.services.displaylink-server</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">requires</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;systemd-udevd.service&quot;</span> ];
+  <span class="hljs-attr">after</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;systemd-udevd.service&quot;</span> ];
+  <span class="hljs-attr">wantedBy</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;multi-user.target&quot;</span> ];
+  <span class="hljs-attr">serviceConfig</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">Type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;simple&quot;</span>;
+    <span class="hljs-attr">ExecStart</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.displaylink}</span>/bin/DisplayLinkManager&quot;</span>;
+    <span class="hljs-attr">User</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;root&quot;</span>;
+    <span class="hljs-attr">Group</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;root&quot;</span>;
+    <span class="hljs-attr">Restart</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;on-failure&quot;</span>;
+    <span class="hljs-attr">RestartSec</span> <span class="hljs-operator">=</span> <span class="hljs-number">5</span>; <span class="hljs-comment"># Wait 5 seconds before restarting</span>
+  };
+};</code></pre>
+      </div><h2 id="sway">Sway</h2><p>Identify which card has the render device, <code>evdi</code> is the DisplayLink interface, so it&#39;s not <code>card0</code>, but <code>card1</code>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">ls</span> -l /dev/dri/by-path</span>
+lrwxrwxrwx - root  2 Nov 13:38 pci-0000:00:02.0-card -&gt; ../card1
+lrwxrwxrwx - root  2 Nov 13:38 pci-0000:00:02.0-render -&gt; ../renderD128
+lrwxrwxrwx - root  2 Nov 13:38 platform-evdi.0-card -&gt; ../card0</code></pre>
+      </div><div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.variables</span> <span class="hljs-operator">=</span> {    
+  <span class="hljs-attr">WLR_EVDI_RENDER_DEVICE</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/dev/dri/card1&quot;</span>;                                                                                                   
+};
+<span class="hljs-attr">nixpkgs.overlays</span> <span class="hljs-operator">=</span> [
+  (<span class="hljs-params">final:</span> <span class="hljs-params">prev:</span> {    
+    <span class="hljs-attr">wlroots_0_17</span> <span class="hljs-operator">=</span> prev.wlroots_0_17.overrideAttrs (<span class="hljs-params">old:</span> { <span class="hljs-comment"># you may need to use 0_18</span>
+      <span class="hljs-attr">patches</span> <span class="hljs-operator">=</span> (old.patches <span class="hljs-keyword">or</span> [ ]) <span class="hljs-operator">++</span> [
+        (prev.fetchpatch {
+          <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://gitlab.freedesktop.org/wlroots/wlroots/uploads/bd115aa120d20f2c99084951589abf9c/DisplayLink_v2.patch&quot;</span>;
+              <span class="hljs-attr">hash</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sha256-vWQc2e8a5/YZaaHe+BxfAR/Ni8HOs2sPJ8Nt9pfxqiE=&quot;</span>;
+            })       
+          ];
+        });
+      })
+];
+<span class="hljs-attr">services.xserver.videoDrivers</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;displaylink&quot;</span> ];
+<span class="hljs-comment"># only for NixOS 25.05 and earlier</span>
+s<span class="hljs-attr">ystemd.services.dlm.wantedBy</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;multi-user.target&quot;</span> ];</code></pre>
+      </div><p>Note as of <a href="https://github.com/NixOS/nixpkgs/pull/351752">2024-10-30</a> nixos-unstable sway uses <code>wlroots_0_18</code> and as of NixOS 25.11 sway uses <code>wlroots_0_19</code>. The patch above applies correctly but you will need to invoke sway with the <code>--unsupported-gpu</code> flag.</p>
+<p>For NixOS 25.11 and later you also will not have to add a dependency on the dlm service but instead use <code>displaylink-server</code> like KDE Plasma.</p>
+<p>You can also test if your setup is working without this service (you will still require the patch for wlroots and sway with the <code>--unsupported-gpu</code> flag) by invoking the DisplayLinkManager executable (provided by the displaylink package) as root. If the setup is working, sway should at this point recognize the new display(s). <a href="https://gitlab.freedesktop.org/wlroots/wlroots/-/issues/1823#note_2146862">Source</a></p>
+<h2 id="troubleshooting">Troubleshooting</h2><h3 id="suspend-blocked-by-pre-sleep-service">Suspend blocked by <code>pre-sleep.service</code></h3><p>As of NixOS 25.05, installing <code>pkgs.displaylink</code> inserts some directives into the script referenced by <code>pre-sleep.service</code>. If suspending does not work and causes the reboot and poweroff buttons to stop working, it may be a symptom of <a href="https://mirror.nixoscn.org/wiki/Displaylink/Power_Management#Suspend_blocked_by_pre-sleep.service" class="wikilink" title="suspend being blocked by pre-sleep.service">suspend being blocked by pre-sleep.service</a>.</p>
+<p>The script in question:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-meta">#!/nix/store/cfqbabpc7xwg8akbcchqbq3cai6qq2vs-bash-5.2p37/bin/bash</span>
+<span class="hljs-built_in">set</span> -e
+
+<span class="hljs-comment">#flush any bytes in pipe</span>
+<span class="hljs-keyword">while</span> <span class="hljs-built_in">read</span> -n 1 -t 1 SUSPEND_RESULT &lt; /tmp/PmMessagesPort_out; <span class="hljs-keyword">do</span> : ; <span class="hljs-keyword">done</span>;
+
+<span class="hljs-comment">#suspend DisplayLinkManager</span>
+<span class="hljs-built_in">echo</span> <span class="hljs-string">&quot;S&quot;</span> &gt; /tmp/PmMessagesPort_in
+
+<span class="hljs-comment">#wait until suspend of DisplayLinkManager finish</span>
+<span class="hljs-keyword">if</span> [ -f /tmp/PmMessagesPort_out ]; <span class="hljs-keyword">then</span>
+  <span class="hljs-comment">#wait until suspend of DisplayLinkManager finish</span>
+  <span class="hljs-built_in">read</span> -n 1 -t 10 SUSPEND_RESULT &lt; /tmp/PmMessagesPort_out
+<span class="hljs-keyword">fi</span></code></pre>
+      </div><p>Because of a stray <code>/tmp/PmMessagesPort_out</code> caused by an unclean shutdown, the suspend action was blocked by this script trying to flush the port. A myriad of solutions can be used to unblock the script and restore suspend:</p>
+<ul>
+<li>Start <code>dlm.service</code> so that DisplayLinkManager can clear the ports and unblock the script</li>
+<li>Use <code>sudo DisplayLinkManager</code> to clear the ports and unblock the script</li>
+</ul>
+<p>Untested solutions:</p>
+<ul>
+<li>Removing the file</li>
+<li>Killing the script</li>
+</ul>
+<p><a href="category:Video" class="wikilink" title="Category:Video">Category:Video</a> <a href="category:Video" class="wikilink" title="Category:Video">Category:Video</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

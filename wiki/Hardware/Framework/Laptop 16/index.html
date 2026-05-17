@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hardware/Framework/Laptop 16</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/Hardware">Hardware</a><span aria-hidden="true"> / </span><a href="https://mirror.nixoscn.org/wiki/Hardware/Framework">Framework</a><span aria-hidden="true"> / </span>Laptop 16</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Hardware/Framework/Laptop 16 -->
+
+<div class="infobox">
+
+<table>
+<thead>
+<tr>
+<th colspan="2" class="title"><p>Framework Laptop 16</p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td colspan="2" class="title"><p>Laptop 16</p></td>
+</tr>
+<tr>
+<td><p>Manufacturer</p></td>
+<td><p><a href="https://mirror.nixoscn.org/wiki/Hardware/Framework/Laptop%2016/Hardware/Framework" class="wikilink" title="Framework">Framework</a></p></td>
+</tr>
+<tr>
+<td><p>Support</p></td>
+<td><p><a href="https://knowledgebase.frame.work/framework-component-linux-support-matrix-B1gwmFtPgg">components</a></p></td>
+</tr>
+<tr>
+<td><p>Architecture</p></td>
+<td><p>x86_64-linux</p></td>
+</tr>
+<tr>
+<td colspan="2" class="title"><p>AMD Ryzen 7040 Series</p></td>
+</tr>
+<tr>
+<td><p>Maintainer</p></td>
+<td></td>
+</tr>
+<tr>
+<td colspan="2" class="title"><p>AMD Ryzen AI 300 Series</p></td>
+</tr>
+<tr>
+<td><p>Maintainer</p></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+
+</div>
+
+<p>The Framework Laptop 16 is a configurable, upgradeable, and repairable laptop made by Framework.</p>
+<h2 id="status">Status</h2><p>The device boots NixOS and works well with a recent kernel and the appropriate nixos-hardware module for your CPU generation.</p>
+<h2 id="known-issues">Known issues</h2><p>The device still has a couple of hardware quirks (see below).</p>
+<p><a href="https://mirror.nixoscn.org/wiki/Hardware/Framework/Laptop%2016/Linux_kernel" class="wikilink" title="Using the latest kernel">Using the latest kernel</a> will fix some issues. Also read configuration hints in this article.</p>
+<h3 id="double-suspend-after-gnome-automatic-idle-suspend-systemd-v258-regression">Double suspend after GNOME automatic/idle suspend (systemd v258 regression)</h3><p>Some users have reported a &quot;double suspend&quot; / &quot;suspend loop&quot; on Framework Laptop 16 (notably with GNOME and the NVIDIA dGPU module): after the machine suspends due to *automatic idle suspend* and is resumed, it may suspend again ~20-30 seconds later (sometimes repeating multiple times). Manual suspend and lid-close suspend may still behave normally.</p>
+<p>Upstream tracking:</p>
+<ul>
+<li><a href="https://github.com/systemd/systemd/issues/40078">https://github.com/systemd/systemd/issues/40078</a></li>
+<li><a href="https://github.com/systemd/systemd/issues/39259">https://github.com/systemd/systemd/issues/39259</a></li>
+</ul>
+<h4 id="workaround-1-add-a-post-resume-sleep-inhibitor">Workaround 1: add a post-resume sleep inhibitor</h4><p>Add this snippet to configuration.nix:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ystemd.services.inhibit-sleep-after-resume</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Temporary sleep inhibitor after resume (workaround for double-suspend)&quot;</span>;
+  <span class="hljs-attr">wantedBy</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;post-resume.target&quot;</span> ];
+  <span class="hljs-attr">after</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;post-resume.target&quot;</span> ];
+  <span class="hljs-attr">serviceConfig.Type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;oneshot&quot;</span>;
+  <span class="hljs-attr">script</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    <span class="hljs-subst">${pkgs.systemd}</span>/bin/systemd-inhibit \
+      --mode=block \
+      --what=sleep:idle \
+      --why=&quot;Workaround: avoid immediate second suspend after resume&quot; \
+      <span class="hljs-subst">${pkgs.coreutils}</span>/bin/sleep 60
+  &#x27;&#x27;</span>;
+};</code></pre>
+      </div><h4 id="workaround-2-disable-gnome-idle-suspend-low-risk-lid-close-suspend-still-works">Workaround 2: disable GNOME idle-suspend (low risk; lid-close suspend still works)</h4><h5 id="quick-imperative-test">Quick (imperative) test</h5><p>Disable idle suspend on AC power:</p>
+<div class="code-container">
+        
+        <pre><code class="language-sh hljs">gsettings <span class="hljs-built_in">set</span> org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type <span class="hljs-string">&#x27;nothing&#x27;</span>
+gsettings <span class="hljs-built_in">set</span> org.gnome.settings-daemon.plugins.power sleep-inactive-ac-timeout 0</code></pre>
+      </div><p>Optionally also disable it on battery:</p>
+<div class="code-container">
+        
+        <pre><code class="language-sh hljs">gsettings <span class="hljs-built_in">set</span> org.gnome.settings-daemon.plugins.power sleep-inactive-battery-type <span class="hljs-string">&#x27;nothing&#x27;</span>
+gsettings <span class="hljs-built_in">set</span> org.gnome.settings-daemon.plugins.power sleep-inactive-battery-timeout 0</code></pre>
+      </div><h5 id="declarative-configuration-recommended">Declarative configuration (recommended)</h5><div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ lib, ... }:
+
+{
+
+<span class="hljs-comment"># Declaratively set GNOME dconf defaults.</span>
+
+<span class="hljs-attr">programs.dconf.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+<span class="hljs-attr">programs.dconf.profiles.user.databases</span> <span class="hljs-operator">=</span> [
+  {
+    <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-string">&quot;org/gnome/settings-daemon/plugins/power&quot;</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-comment"># Disable idle-suspend on AC power (keeps lid-close suspend behavior):</span>
+        <span class="hljs-attr">sleep-inactive-ac-type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nothing&quot;</span>;
+        <span class="hljs-attr">sleep-inactive-ac-timeout</span> <span class="hljs-operator">=</span> lib.gvariant.mkUint32 <span class="hljs-number">0</span>;
+
+        <span class="hljs-comment"># Optional: also disable idle-suspend on battery:</span>
+        <span class="hljs-comment"># sleep-inactive-battery-type = &quot;nothing&quot;;</span>
+        <span class="hljs-comment"># sleep-inactive-battery-timeout = lib.gvariant.mkUint32 0;</span>
+      };
+    };
+  }
+
+];
+}</code></pre>
+      </div><p>After applying, log out and log back in (or reboot) to ensure GNOME picks up the updated settings.</p>
+<h4 id="workaround-3-pin-nixpkgs-to-pre-systemd-v258-for-the-affected-machine-higher-impact">Workaround 3: pin nixpkgs to pre-systemd-v258 for the affected machine (higher impact)</h4><p>If you prefer to keep GNOME idle-suspend enabled, another workaround is to pin the affected system to a nixpkgs revision before systemd v258 landed.</p>
+<ul>
+<li>Commit that introduced systemd v258: <a href="https://github.com/NixOS/nixpkgs/commit/70ca21d3c4982d7f95e48688d02cd9ef6b1347f5">https://github.com/NixOS/nixpkgs/commit/70ca21d3c4982d7f95e48688d02cd9ef6b1347f5</a></li>
+<li>Latest pre-v258 commit (pre-merge parent): <a href="https://github.com/NixOS/nixpkgs/commit/d3736636ac39ed678e557977b65d620ca75142d0">https://github.com/NixOS/nixpkgs/commit/d3736636ac39ed678e557977b65d620ca75142d0</a>.</li>
+</ul>
+<h2 id="configuration">Configuration</h2><p>Framework-specific NixOS hardware configuration is bundled within the <a href="https://github.com/NixOS/nixos-hardware">nixos-hardware</a> project.</p>
+<h3 id="amd-ryzen-7040-series">AMD Ryzen 7040 Series</h3><p>It is recommended to use <a href="https://search.nixos.org/options?query=power-profiles-daemon">power-profiles-daemon</a> over <code>tlp</code> for the AMD Framework.</p>
+<ul>
+<li>NixOS Hardware module for flakes: <code>nixos-hardware.nixosModules.framework-16-7040-amd</code></li>
+<li>NixOS Hardware module for channels: <code>&lt;nixos-hardware/framework/16-inch/7040-amd&gt;</code></li>
+</ul>
+<h3 id="amd-ryzen-ai-300-series">AMD Ryzen AI 300 Series</h3><ul>
+<li>NixOS Hardware module for flakes: <code>nixos-hardware.nixosModules.framework-16-amd-ai-300-series</code></li>
+<li>NixOS Hardware module for channels: <code>&lt;nixos-hardware/framework/16-inch/amd-ai-300-series&gt;</code></li>
+</ul>
+<h4 id="nvidia-dgpu-module-rtx-5070-etc">NVIDIA dGPU module (RTX 5070 etc.)</h4><p>If you have the NVIDIA dGPU module, prefer the maintained nixos-hardware NVIDIA submodule (it enables hybrid graphics with PRIME offload and provides <code>nvidia-offload &lt;command&gt;</code>):</p>
+<ul>
+<li>NixOS Hardware module for flakes: <code>nixos-hardware.nixosModules.framework-16-amd-ai-300-series-nvidia</code></li>
+<li>NixOS Hardware module for channels: <code>&lt;nixos-hardware/framework/16-inch/amd-ai-300-series/nvidia&gt;</code></li>
+</ul>
+<p><strong>IMPORTANT:</strong> You MUST override the PRIME PCI bus IDs for your specific system. Framework 16’s modular design means bus IDs can vary depending on installed expansion cards and NVMe drives.</p>
+<p>Example override:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-comment"># In your system configuration:</span>
+  <span class="hljs-attr">hardware.nvidia.prime</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-comment"># Replace these values with your own system&#x27;s IDs:</span>
+    <span class="hljs-attr">amdgpuBusId</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;PCI:XXX:YY:Z&quot;</span>;
+    <span class="hljs-attr">nvidiaBusId</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;PCI:AAA:BB:C&quot;</span>;
+  };
+}</code></pre>
+      </div><p>Find PCI IDs:</p>
+<div class="code-container">
+        
+        <pre><code class="language-sh hljs">$ nix-shell -p pciutils --run <span class="hljs-string">&#x27;lspci | grep -E &quot;VGA|3D|Display&quot;&#x27;</span></code></pre>
+      </div><p>Convert the hex bus/device numbers to decimal and format as <code>PCI:&lt;bus&gt;:&lt;device&gt;:&lt;function&gt;</code>. Example: <code>c1:00.0</code> → <code>PCI:193:0:0</code>.</p>
+<p>Quick helper (optional):</p>
+<div class="code-container">
+        
+        <pre><code class="language-sh hljs"><span class="hljs-comment"># Replace BDF with the lspci value like c1:00.0</span>
+BDF=<span class="hljs-string">&quot;c1:00.0&quot;</span>
+BUS=<span class="hljs-string">&quot;<span class="hljs-variable">${BDF%%:*}</span>&quot;</span>; REST=<span class="hljs-string">&quot;<span class="hljs-variable">${BDF#*:}</span>&quot;</span>
+DEV=<span class="hljs-string">&quot;<span class="hljs-variable">${REST%%.*}</span>&quot;</span>; FUN=<span class="hljs-string">&quot;<span class="hljs-variable">${REST#*.}</span>&quot;</span>
+<span class="hljs-built_in">printf</span> <span class="hljs-string">&#x27;PCI:%d:%d:%d\n&#x27;</span> <span class="hljs-string">&quot;<span class="hljs-subst">$((16#$BUS)</span>)&quot;</span> <span class="hljs-string">&quot;<span class="hljs-subst">$((16#$DEV)</span>)&quot;</span> <span class="hljs-string">&quot;<span class="hljs-variable">$FUN</span>&quot;</span></code></pre>
+      </div><p>Validation (hybrid/offload):</p>
+<div class="code-container">
+        
+        <pre><code class="language-sh hljs"><span class="hljs-comment"># Default: should show AMD iGPU</span>
+nix-shell -p mesa-demos --run <span class="hljs-string">&#x27;glxinfo -B | grep -E &quot;OpenGL vendor|OpenGL renderer&quot;&#x27;</span>
+
+<span class="hljs-comment"># Offload: should show NVIDIA dGPU</span>
+nix-shell -p mesa-demos --run <span class="hljs-string">&#x27;nvidia-offload glxinfo -B | grep -E &quot;OpenGL vendor|OpenGL renderer&quot;&#x27;</span>
+
+<span class="hljs-comment"># Idle power check: should become &quot;suspended&quot; when idle</span>
+<span class="hljs-built_in">cat</span> /sys/bus/pci/devices/0000:??:??.?/power/runtime_status</code></pre>
+      </div><p>Note: <code>nvidia-smi</code> can wake the GPU, so it is not a reliable “is the GPU sleeping?” probe.</p>
+<h3 id="fix-color-accuracy-in-power-saving-modes">Fix color accuracy in Power Saving modes</h3><p><a href="https://docs.kernel.org/gpu/amdgpu/module-parameters.html?highlight=abmlevel">Active Backlight Management</a> is used to reduce <a href="https://community.frame.work/t/solved-color-issues-in-linux-6-9/52158/34">battery power consumption</a>, which can cause the colors of the screen to be inaccurate.</p>
+<p>Some desktop environments may already be able to modify this setting.</p>
+<p>To disable it add the kernel parameter:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">b<span class="hljs-attr">oot.kernelParams</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;amdgpu.abmlevel=0&quot;</span> ];</code></pre>
+      </div><h3 id="prevent-wake-up-in-backpack">Prevent wake up in backpack</h3><p>Putting your Framework in a backpack can cause it to wake up due to the screen flexing onto the keyboard. While this is not resolved in firmware, you can work around this issue with a udev rule.</p>
+<p>If you are also importing <code>nixos-hardware</code>, prefer merging (e.g. <code>lib.mkAfter</code>) rather than overwriting <code>services.udev.extraRules</code>, since nixos-hardware may install its own udev rules.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ lib, ... }:
+{
+  <span class="hljs-attr">services.udev.extraRules</span> <span class="hljs-operator">=</span> lib.mkAfter <span class="hljs-string">&#x27;&#x27;
+    SUBSYSTEM==&quot;usb&quot;, DRIVERS==&quot;usb&quot;, ATTRS{idVendor}==&quot;32ac&quot;, ATTRS{idProduct}==&quot;0012&quot;, ATTR{power/wakeup}=&quot;disabled&quot;, ATTR{driver/1-1.1.1.4/power/wakeup}=&quot;disabled&quot;
+    SUBSYSTEM==&quot;usb&quot;, DRIVERS==&quot;usb&quot;, ATTRS{idVendor}==&quot;32ac&quot;, ATTRS{idProduct}==&quot;0014&quot;, ATTR{power/wakeup}=&quot;disabled&quot;, ATTR{driver/1-1.1.1.4/power/wakeup}=&quot;disabled&quot;
+  &#x27;&#x27;</span>;
+}</code></pre>
+      </div><table>
+<thead>
+<tr>
+<th>Product</th>
+<th>Vendor and Product ID</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>RGB Macropad</td>
+<td>32ac 0013</td>
+</tr>
+<tr>
+<td>Backlit keyboard ISO</td>
+<td>32ac 0018</td>
+</tr>
+<tr>
+<td>Other devices</td>
+<td>Use <code>lsusb</code> to find Vendor/Product IDs</td>
+</tr>
+</tbody></table>
+<p>This does not prevent the trackpad from waking up the device; this however seems to happen less in a backpack.</p>
+<h3 id="bios-configuration">BIOS configuration</h3><p>Enable <a href="https://guides.frame.work/Guide/Ubuntu+22.04+LTS+Installation+on+the+Framework+Laptop+16/306?lang=en#s1974">Linux Audio Compatibility</a> in the BIOS to improve speaker audio quality.</p>
+<h2 id="useful-utilities">Useful utilities</h2><p>Framework provides and the community maintains utilities that help manage Framework hardware.</p>
+<ul>
+<li><code>framework-tool</code> provides libraries and tools to interact with Framework-specific features.</li>
+<li>Input modules (LED matrix / numpad) can be controlled with tools such as <code>inputmodule-control</code>.</li>
+</ul>
+<p>To enable input module support (if installed), set:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">i<span class="hljs-attr">nputmodule.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><p>Example (LED matrix clock):</p>
+<div class="code-container">
+        
+        <pre><code class="language-sh hljs"><span class="hljs-comment"># Serial device is often /dev/ttyACM0 (or ttyACM1 if you have two modules)</span>
+inputmodule-control --serial-dev /dev/ttyACM0 led-matrix --clock</code></pre>
+      </div><h2 id="external-resources">External resources</h2><p>There is <a href="https://community.frame.work/t/nixos-on-the-framework-laptop-16/46743">a NixOS thread on the Framework forum</a>, where you can find additional help, guidance, and example configurations.</p>
+<p><a href="category:_Incomplete" class="wikilink" title="Category: Incomplete">Category: Incomplete</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

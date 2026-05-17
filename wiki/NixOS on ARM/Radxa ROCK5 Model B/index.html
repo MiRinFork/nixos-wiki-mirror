@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NixOS on ARM/Radxa ROCK5 Model B</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM">NixOS on ARM</a><span aria-hidden="true"> / </span>Radxa ROCK5 Model B</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: NixOS on ARM/Radxa ROCK5 Model B -->
+
+<div class="infobox">
+
+<table>
+<thead>
+<tr>
+<th colspan="2" class="title"><p><a href="https://radxa.com/rock5b/">Radxa ROCK 5B</a></p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td colspan="2"><figure>
+<img src="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/Radxa%20ROCK5%20Model%20B/Radxa_ROCK_5B.jpg" title="Radxa R SBC" width="256" />
+<figcaption>Radxa R SBC</figcaption>
+</figure></td>
+</tr>
+<tr>
+<td><p>Manufacturer</p></td>
+<td><p><a href="https://radxa.com/">Radxa</a></p></td>
+</tr>
+<tr>
+<td><p>Architecture</p></td>
+<td><p>AArch64</p></td>
+</tr>
+<tr>
+<td><p>Bootloader</p></td>
+<td><p>Vendor BSP</p></td>
+</tr>
+<tr>
+<td><p>Boot order</p></td>
+<td><p>SPI NOR Flash, eMMC, SD</p></td>
+</tr>
+<tr>
+<td><p>Maintainer</p></td>
+<td><p><a href="https://github.com/jakubgs">jakubgs</a></p></td>
+</tr>
+</tbody>
+</table>
+
+</div>
+
+<p>The <a href="https://wiki.radxa.com/Rock5/5B">Radxa ROCK 5B</a> is a Single-Board Computer with a Rockchip RK3588 SoC.</p>
+<ul>
+<li><strong>CPU</strong>: ARM Cortex-A76 and Cortex-A55</li>
+<li><strong>GPU</strong>: Mali-G610 MP4</li>
+<li><strong>RAM</strong>: 4GB/8GB/16GB LPDDR4X at 2133MHz</li>
+<li><strong>MMC</strong>: eMMC Connector for up to 512GB</li>
+<li><strong>NET</strong>: 2.5 Gigabit Ethernet</li>
+<li><strong>USB</strong>: 2x USB 3.1 Type-A, 2x USB 2.0 Type-A</li>
+<li><strong>PCIe</strong>: M.2 Key E connector with PCIe 2.1 x1, M.2 Key M connector with PCIe 3.0 x4</li>
+</ul>
+<h2 id="status">Status</h2><p>Support of this system is YMMV (your mileage may vary), and depends on vendor-provided BSP (Board Support Package) based components.</p>
+<p>Two kinds of bootloaders are available in different variants:</p>
+<ul>
+<li>U-Boot<ul>
+<li><a href="https://github.com/u-boot/u-boot/">Mainline</a> - Supports all storage boot options, including NVMe</li>
+<li><a href="https://dl.radxa.com/rock5/sw/images/loader/rock-5b/">Vendor</a> - Works well for eMMC and SD card boot, not for NVMe.</li>
+<li><a href="https://github.com/samueldr/Tow-Boot/tree/wip/rock5-vendor">Not-TowBoot</a> - Supports eMMC and SD card, NVMe sometimes.<ul>
+<li>Vendor U-Boot built using the TowBoot build infrastructure</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>EDK2/TianoCore<ul>
+<li><a href="https://github.com/edk2-porting/edk2-rk3588">EDK2 UEFI Firmware</a> - Supports all storage boot options, including NVMe.</li>
+</ul>
+</li>
+</ul>
+<p>The official hardware documentation can be found <a href="https://wiki.radxa.com/Rock5/hardware/5b">on the Radxa wiki</a>.</p>
+<h2 id="bootloader-firmware">Bootloader Firmware</h2><h3 id="vendor-u-boot-firmware">Vendor U-Boot Firmware</h3><p>Booting the system with the vendor-provided platform firmware may not work due to a <a href="https://github.com/samueldr/u-boot/commit/a0af72272b8db4b5d83df2f14ad950d3e30b3e04">known issue in older U-Boot</a>.</p>
+<p>If using the vendor-provided platform firmware is desired, <a href="https://gitlab.com/K900/nix/-/blob/1ae5db476aee96fab9c445d7b690a8f5cf7fbe75/hacks/orangepi5/kernel/default.nix#L20">renaming the kernel derivation to a shorter name</a> should allow boot to succeed.</p>
+<h3 id="community-uefi-firmware">Community UEFI Firmware</h3><p>The best available bootloader is <a href="https://github.com/edk2-porting/edk2-rk3588">EDK2 UEFI firmware for Rockchip RK3588 platforms</a>. The <a href="https://github.com/edk2-porting/edk2-rk3588/releases/tag/v0.9.1">v0.9.1</a> release is confirmed working.</p>
+<p>In order to flash this bootloader we&#39;ll need to download two files:</p>
+<ul>
+<li><a href="https://dl.radxa.com/rock5/sw/images/loader/rock-5b/release/rk3588_spl_loader_v1.15.113.bin"><code>rk3588_spl_loader_v1.15.113.bin</code></a> - SPI bootloader image.</li>
+<li><a href="https://github.com/edk2-porting/edk2-rk3588/releases/download/v0.9.1/rock-5b_UEFI_Release_v0.9.1.img"><code>rock-5b_UEFI_Release_v0.9.1.img</code></a> - UEFI bootloader image.</li>
+</ul>
+<p>Then use the <code>rkdeveloptool</code> tool in version <code>1.32</code> or higher as described in <a href="https://wiki.radxa.com/Rock5/install/spi">SPI flashing documentation</a>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"> &gt; nix-shell -p rkdeveloptool
+
+[nix-shell:~/rk3588]$ rkdeveloptool --version
+rkdeveloptool ver 1.32
+
+[nix-shell:~/rk3588]$ <span class="hljs-built_in">sudo</span> rkdeveloptool db rk3588_spl_loader_v1.08.111.bin
+Downloading bootloader succeeded.
+
+[nix-shell:~/rk3588]$ <span class="hljs-built_in">sudo</span> rkdeveloptool wl 0 rock-5b_UEFI_Release_v0.9.1.img
+Write LBA from file (100%)
+
+[nix-shell:~/rk3588]$ <span class="hljs-built_in">sudo</span> rkdeveloptool rd</code></pre>
+      </div><p>Now the device has a graphical bootloader available when pressing <code>Escape</code> at boot time:</p>
+<figure>
+<img src="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/Radxa%20ROCK5%20Model%20B/Radxa_ROCK_5B_UEFI_Firmware.png" title="NanoPi-R6C UEFI Firmware screen" width="600" />
+<figcaption>NanoPi-R6C UEFI Firmware screen</figcaption>
+</figure>
+
+<h3 id="community-u-boot-firmware">Community U-Boot Firmware</h3><p>A WIP tree to build U-Boot using the infrastructure for Tow-Boot is available. (The end-result is <em>not</em> a proper Tow-Boot build.)</p>
+<ul>
+<li><a href="https://github.com/samueldr/Tow-Boot/tree/wip/rock5-vendor">https://github.com/samueldr/Tow-Boot/tree/wip/rock5-vendor</a></li>
+</ul>
+<p>This uses [<a href="https://github.com/u-boot/u-boot/compare/d892cca08d5da230a6690f504ba7a06044b840c8">https://github.com/u-boot/u-boot/compare/d892cca08d5da230a6690f504ba7a06044b840c8</a>...samueldr:u-boot:wip/rock5/not-tb-2023-03-30 a fork with some fixes], so that an installation on the SPI Flash will work, and allow OS booting from NVMe, eMMC or SD. NVMe support may be YMMV depending on the specific hardware.</p>
+<p>The <a href="https://github.com/samueldr/Tow-Boot/blob/wip/rock5-vendor/boards/radxa-rock5b/README.md">board-specific README</a> has further notes.</p>
+<p>Using from shared storage (SD, eMMC) or from SPI should work, and both are as supported.</p>
+<p>To build:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nix-build -A radxa-rock5b</code></pre>
+      </div><p>The SD or eMMC shared storage image can be flashed as usual:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">dd</span> <span class="hljs-keyword">if</span>=shared.disk-image.img of=/dev/XXX bs=1M oflag=direct,<span class="hljs-built_in">sync</span> status=progress</code></pre>
+      </div><p>The SPI image <strong>cannot</strong> be installed using the usual installer. For now you should <a href="https://wiki.radxa.com/Rock5/install/spi">follow the vendor instructions</a> to write the <code>binaries/Tow-Boot.spi.bin</code> file to SPI. In other words using <code>rkdeveloptool</code> for the installation, or any other way to write to SPI flash.</p>
+<h2 id="system-configuration">System configuration</h2><p>A <a href="https://github.com/jakubgs/nixos-config/blob/16cc3ccf5448259e6d88a24bdfa70ee2f455e200/hosts/arael/configuration.nix#L21-L33">working bootloader configuration</a> looks like this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">boot.loader</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">efi.canTouchEfiVariables</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">systemd-boot.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">grub.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+  };</code></pre>
+      </div><p>The current NixOS 23.05 release with 6.1 Linux kernel detects NVMe but not the eMMC.</p>
+<h3 id="aciceri-39-s-flake">@aciceri&#39;s flake</h3><p>Nix flake for building OS image: <a href="https://github.com/aciceri/rock5b-nixos">https://github.com/aciceri/rock5b-nixos</a></p>
+<p>Flash result to a new second legacy bootable ext4 partition on the installation media</p>
+<p>Boot into system:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">sudo</span> nixos-rebuild switch --flake github:jonahbron/config/aciceri-rebooted-into-this#rock5b</code></pre>
+      </div><p><a href="category:NixOS_on_ARM" class="wikilink" title="Category:NixOS on ARM">Category:NixOS on ARM</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

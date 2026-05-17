@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Go</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Go</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Go -->
+
+<p><a href="https://golang.org/">Go</a> is a statically-typed language with syntax loosely derived from that of C, adding garbage collected memory management, type safety, some dynamic-typing capabilities, additional built-in types such as variable-length arrays and key-value maps, and a large standard library.</p>
+<h2 id="buildgomodule">buildGoModule</h2><p>nixpkgs includes a library function called <strong>buildGoModule</strong> (<a href="https://github.com/NixOS/nixpkgs/blob/master/pkgs/build-support/go/module.nix">implementation</a>) See <a href="https://nixos.org/manual/nixpkgs/stable/#sec-language-go">nixpkgs manual <strong>Language: Go</strong></a></p>
+<p>`buildGoModule` uses the version of Go that&#39;s included in `nixpkgs` to build the software.</p>
+<h4 id="using-a-specific-version-of-go">Using a specific version of Go</h4><p>To build for a specific version of Go, you may need to find the appropriate `pkgs.buildGoXXXModule` function to use.</p>
+<p>This function may not be present in the version of nixpkgs that you&#39;re using, for example, `buildGo122Module` is not available in `github:NixOS/nixpkgs/nixos-23.05`, but is available in `github:NixOS/nixpkgs/nixos-unstable`.</p>
+<h4 id="subpackages">Subpackages</h4><p>By default, `buildGoModule` will attempt to build the `main` package that&#39;s in the root of the source code location.</p>
+<p>However, it&#39;s a common pattern in Go applications to have binaries within the `./cmd/binary-name` directory instead.</p>
+<p>Setting the `subPackages` attribute to be a list of the packages to build supports this pattern.</p>
+<h4 id="example-downloading-source-code-from-github">Example (downloading source code from Github)</h4><p>The following `flake.nix` demonstrates how to build a Go module, where the source code is located in Github. To use it, copy this file as `flake.nix` into an empty directory on your computer, and run `nix build`. Nix will download the source code, including dependencies, and produce a `./result` folder containing a `ziti` binary.</p>
+<p>Running `nix shell` will create a shell, where you can execute the `ziti` binary.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;OpenZiti&quot;</span>;
+
+  <span class="hljs-attr">inputs</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">nixpkgs.url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:NixOS/nixpkgs/nixos-unstable&quot;</span>;
+  };
+
+  <span class="hljs-attr">outputs</span> <span class="hljs-operator">=</span> { self, nixpkgs }:
+    <span class="hljs-keyword">let</span>
+      <span class="hljs-attr">allSystems</span> <span class="hljs-operator">=</span> [
+        <span class="hljs-string">&quot;x86_64-linux&quot;</span> <span class="hljs-comment"># 64-bit Intel/AMD Linux</span>
+        <span class="hljs-string">&quot;aarch64-linux&quot;</span> <span class="hljs-comment"># 64-bit ARM Linux</span>
+        <span class="hljs-string">&quot;x86_64-darwin&quot;</span> <span class="hljs-comment"># 64-bit Intel macOS</span>
+        <span class="hljs-string">&quot;aarch64-darwin&quot;</span> <span class="hljs-comment"># 64-bit ARM macOS</span>
+      ];
+      <span class="hljs-attr">forAllSystems</span> <span class="hljs-operator">=</span> <span class="hljs-params">f:</span> nixpkgs.lib.genAttrs allSystems (<span class="hljs-params">system:</span> f {
+        <span class="hljs-attr">pkgs</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> nixpkgs { <span class="hljs-keyword">inherit</span> system; };
+      });
+    <span class="hljs-keyword">in</span>
+    {
+      <span class="hljs-attr">packages</span> <span class="hljs-operator">=</span> forAllSystems ({ pkgs }: {
+        <span class="hljs-attr">default</span> <span class="hljs-operator">=</span> pkgs.buildGo122Module <span class="hljs-keyword">rec</span> {
+          <span class="hljs-attr">pname</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;openziti&quot;</span>;
+          <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;1.0.0&quot;</span>;
+          <span class="hljs-attr">subPackages</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;ziti&quot;</span> ];
+          <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> pkgs.fetchFromGitHub {
+            <span class="hljs-attr">owner</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;openziti&quot;</span>;
+            <span class="hljs-attr">repo</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ziti&quot;</span>;
+            <span class="hljs-attr">rev</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;v<span class="hljs-subst">${version}</span>&quot;</span>;
+            <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sha256-2li/+XWKk+lybB1DE0unKvQrA0pKE9VIRFoEYMcbLS8=&quot;</span>;
+          };
+          <span class="hljs-attr">vendorHash</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sha256-uyjQd5kB61UEKSl1Qf1Gu6Fr40l4KixHSnEtTMq58Vc=&quot;</span>;
+        };
+      });
+    };
+}</code></pre>
+      </div><h4 id="example-local-source">Example (local source)</h4><p>If you want to build a local project with Nix, replace the `src` attribute to be the local directory, e.g.:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">some-package</span> <span class="hljs-operator">=</span> buildGoModule {
+    <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> <span class="hljs-symbol">./.</span>
+  };</code></pre>
+      </div><h4 id="monorepo-support">Monorepo support</h4><p>the <code>go.mod</code> file must be in the source root for <code>buildGoModule</code>. to change the source root, use</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">some-package</span> <span class="hljs-operator">=</span> buildGoModule {
+    <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> fetchFromGitHub {
+      <span class="hljs-comment"># ...</span>
+    } <span class="hljs-operator">+</span> <span class="hljs-string">&quot;/path/to/module&quot;</span>;
+    <span class="hljs-comment"># ...</span>
+  };</code></pre>
+      </div><h3 id="buildgopackage">buildGoPackage</h3><p>If no <code>go.mod</code> file is available, <strong>buildGoPackage</strong> (<a href="https://github.com/NixOS/nixpkgs/blob/master/pkgs/build-support/go/package.nix">implementation</a>) can be used. Dependencies must be specified manually in a <code>deps.nix</code> file, which is linked with</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">some-package</span> <span class="hljs-operator">=</span> buildGoPackage {
+    <span class="hljs-comment"># ...</span>
+    <span class="hljs-attr">goDeps</span> <span class="hljs-operator">=</span> <span class="hljs-symbol">./deps.nix</span>;
+  };</code></pre>
+      </div><h2 id="using-cgo-on-nixos">Using cgo on NixOS</h2><p>On NixOS, include files and libraries aren&#39;t kept in a system-wide search path. If a Go program uses cgo and attempts to include C header files, or link against libraries, compilation is likely to fail.</p>
+<p>In order to expose header files and libraries in environment variable search paths, <code>nix-shell</code> can be used to enter an environment which provides the requested development dependencies.</p>
+<p>For example, suppose a Go program includes <code>&lt;sys/capability.h&gt;</code> (provided by <code>libcap</code>), and links against <code>libcap</code>. To obtain an environment in which the program can be compiled, run:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-shell -p libcap go gcc</span></code></pre>
+      </div><p>You can verify the presence of the necessary environment variables via the following command:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">export</span> | egrep <span class="hljs-string">&#x27;NIX_.*(LDFLAGS|COMPILE|LINK)&#x27;</span></span></code></pre>
+      </div><p>If you intend to compile against glibc statically (such as via <code>go build -ldflags &quot;-s -w -linkmode external -extldflags -static&quot;</code>), add <code>glibc.static</code> to the list of packages passed to <code>nix-shell</code>.</p>
+<p>If you encounter <a href="https://github.com/go-delve/delve/issues/3085">this issue</a> and receive an error about _FORTIFY_SOURCE when running delve (for example in VSCode), put <code>hardeningDisable = [ &quot;fortify&quot; ];</code> inside shell.nix or in the <code>mkShell</code> invocation argument like this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">pkgs.mkShell {
+  <span class="hljs-attr">hardeningDisable</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;fortify&quot;</span> ];
+  <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> [ pkgs.go_1_18 ];
+};</code></pre>
+      </div><h2 id="compile-go-program-with-static-compile-flag">Compile go program with static compile flag</h2><p>If <code>go build -ldflags &quot;-s -w -linkmode external -extldflags -static&quot;</code> fails on NixOS, with the error message <code>cannot find `-lpthread</code> and <code>cannot find -lc</code> - it is because the linker cannot find static glibc to link with. You need to have glibc.static in your environment (and have CFLAGS/LDFLAGS adjusted accordingly). One way to achieve this is to have something like the following as <code>shell.nix</code> and run the compilation in a nix-shell:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-keyword">with</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> {}; {
+  <span class="hljs-attr">devEnv</span> <span class="hljs-operator">=</span> stdenv.mkDerivation {
+    <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;dev&quot;</span>;
+    <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> [ stdenv go glibc.static ];
+    <span class="hljs-attr">CFLAGS</span><span class="hljs-operator">=</span><span class="hljs-string">&quot;-I<span class="hljs-subst">${pkgs.glibc.dev}</span>/include&quot;</span>;
+    <span class="hljs-attr">LDFLAGS</span><span class="hljs-operator">=</span><span class="hljs-string">&quot;-L<span class="hljs-subst">${pkgs.glibc}</span>/lib&quot;</span>;
+  };
+}</code></pre>
+      </div><h2 id="compile-go-program-with-static-compile-flag-take-2">Compile go program with static compile flag (take 2)</h2><p>Linking against glibc.static does not really work because glibc does not really like static linking. You get a warning like <code>warning: Using &#39;getaddrinfo&#39; in statically linked applications requires at runtime the shared libraries from the glibc version used for linking</code>. To really create a static build, use musl. Example based on buildGoModule example from documentation:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">p<span class="hljs-attr">et</span> <span class="hljs-operator">=</span> buildGoModule <span class="hljs-keyword">rec</span> {
+  <span class="hljs-attr">pname</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;pet&quot;</span>;
+  <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;0.3.4&quot;</span>;
+
+  <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> fetchFromGitHub {
+    <span class="hljs-attr">owner</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;knqyf263&quot;</span>;
+    <span class="hljs-attr">repo</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;pet&quot;</span>;
+    <span class="hljs-attr">rev</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;v<span class="hljs-subst">${version}</span>&quot;</span>;
+    <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;0m2fzpqxk7hrbxsgqplkg7h2p7gv6s1miymv3gvw0cz039skag0s&quot;</span>;
+  };
+
+  <span class="hljs-attr">vendorSha256</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;1879j77k96684wi554rkjxydrj8g3hpp0kvxz03sd8dmwr3lh83j&quot;</span>;
+
+  <span class="hljs-attr">ldflags</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-string">&quot;-s -w -X github.com/knqyf263/pet/cmd.version=<span class="hljs-subst">${version}</span>&quot;</span>
+  ];
+
+  <span class="hljs-attr">nativeBuildInputs</span> <span class="hljs-operator">=</span> [musl];
+
+  <span class="hljs-attr">CGO_ENABLED</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>;
+
+  <span class="hljs-attr">ldflags</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-string">&quot;-linkmode external&quot;</span>
+    <span class="hljs-string">&quot;-extldflags &#x27;-static -L<span class="hljs-subst">${musl}</span>/lib&#x27;&quot;</span>
+  ];
+
+  <span class="hljs-attr">meta</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> lib; {
+    <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Simple command-line snippet manager, written in Go&quot;</span>;
+    <span class="hljs-attr">homepage</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://github.com/knqyf263/pet&quot;</span>;
+    <span class="hljs-attr">license</span> <span class="hljs-operator">=</span> licenses.mit;
+    <span class="hljs-attr">maintainers</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> maintainers; [ kalbasit ];
+  };
+}</code></pre>
+      </div><p><a href="category:Languages" class="wikilink" title="Category:Languages">Category:Languages</a> <a href="category:Go" class="wikilink" title="Category:Go">Category:Go</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

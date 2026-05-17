@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Install NixOS on Kimsufi</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Install NixOS on Kimsufi</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Install NixOS on Kimsufi -->
+
+<p>This guide explains how to install NixOS on <a href="https://www.kimsufi.com/en/">Kimsufi</a> machines from the rescue system. It is based on <a href="https://mgdm.net/weblog/nixos-on-kimsufi/">this blog post</a> (with permission) and includes some minor corrections &amp; simplifications. All thanks to Michael Maclean &amp; Graham Christensen for the original post.</p>
+<h2 id="how-to">How-to</h2><p>Set your machine to netboot into the rescue system using the Kimsufi control panel, and reboot it. You’ll get a password for the root user via email. The rescue system starts the machine up using a Linux distro provided over a read-only NFS, and a home directory which is in a tmpfs in memory. We’ll use this space to install the Nix tools later on. We’re logged in as root which gives us a fair amount of flexibility. The machine’s own hard disk is not mounted by default–we’ll do this after partitioning.</p>
+<p>The first steps are to log in via SSH, and flatten the disk, then set up the partition layout.</p>
+<h3 id="partitioning-and-formatting">Partitioning and formatting</h3><p>I created a 512MB partition for /boot, then most of the disk is taken up by the root partition (btrfs in this instance, but choose your own poison; also see original post for ZFS setup), and the final 4GB is swap.</p>
+<p>I’m going to present all these commands as if it were a script, but I did it all interactively.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">wipefs -a /dev/sda
+
+parted /dev/sda -- mklabel msdos
+parted /dev/sda -- mkpart primary 1MiB 512MiB <span class="hljs-comment"># /dev/sda1 is /boot</span>
+parted /dev/sda -- mkpart primary 512MiB -8GiB <span class="hljs-comment"># This is the root partition</span>
+parted /dev/sda -- mkpart primary linux-swap -8GiB 100% <span class="hljs-comment"># Swap</span>
+
+mkfs.ext4 -L boot /dev/sda1
+mkfs.btrfs -L nixos /dev/sda2
+mkswap -L swap /dev/sda3
+
+mount /dev/disk/by-label/root /mnt
+<span class="hljs-built_in">mkdir</span> /mnt/boot
+mount /dev/disk/by-label/boot /mnt/boot</code></pre>
+      </div><p>Now the partition layout is complete. We can move on to the NixOS parts.</p>
+<h3 id="getting-nix">Getting Nix</h3><p>We need an existing installation of Nix for `nixos-install`. There are some prerequisites needed before we can install &amp; use Nix in the rescue system.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-comment"># Create a user for the install process</span>
+useradd -m setupuser
+
+<span class="hljs-comment"># Create a user for the Nix daemon</span>
+groupadd -g 30000 nixbld
+useradd -u 30000 -g nixbld -G nixbld nixbld
+
+<span class="hljs-comment"># Set this to something you will remember, you&#x27;ll need it in a moment</span>
+passwd setupuser 
+
+<span class="hljs-comment"># Give sudo rights to your user</span>
+<span class="hljs-built_in">echo</span> <span class="hljs-string">&quot;setupuser    ALL=(ALL) NOPASSWD: ALL&quot;</span> &gt;/etc/sudoers.d/setupuser
+su setupuser -s /bin/bash -l
+
+<span class="hljs-comment"># Disable sandboxing as it doesn&#x27;t work in tmpfs mounted systems</span>
+<span class="hljs-comment"># see: https://github.com/NixOS/nix/issues/5934</span>
+<span class="hljs-built_in">sudo</span> <span class="hljs-built_in">mkdir</span> -p /etc/nix/
+<span class="hljs-built_in">echo</span> <span class="hljs-string">&quot;sandbox = false&quot;</span> | <span class="hljs-built_in">sudo</span> <span class="hljs-built_in">tee</span> -a /etc/nix/nix.conf
+
+ <span class="hljs-comment"># Install Nix</span>
+curl -L https://nixos.org/nix/install | sh
+
+<span class="hljs-comment"># This next line makes the Nix tools available in our shell</span>
+<span class="hljs-built_in">source</span> <span class="hljs-variable">$HOME</span>/.nix-profile/etc/profile.d/nix.sh
+
+<span class="hljs-comment"># The default channel is `nixpkgs-unstable`, let&#x27;s switch to a stable NixOS channel</span>
+nix-channel --add https://nixos.org/channels/nixos-22.11 nixpkgs
+nix-channel --update
+
+nix-shell -p nixos-install-tools
+<span class="hljs-built_in">sudo</span> `<span class="hljs-built_in">which</span> nixos-generate-config` --root /mnt</code></pre>
+      </div><p>This will place the usual configuration in /mnt/etc/nixos/configuration.nix and /mnt/etc/nixos/hardware-configuration.nix. I only changed the former file. I’m not going to paste the entire config in here, but I will call out the key parts that were needed for this to work.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-comment"># This machine is very insistent on BIOS boot, so configure that</span>
+boot.loader.grub.enable = <span class="hljs-literal">true</span>;
+boot.loader.grub.version = 2;
+boot.loader.grub.device = <span class="hljs-string">&quot;/dev/sda&quot;</span>; <span class="hljs-comment"># or &quot;nodev&quot; for efi only</span>
+
+networking.hostName = <span class="hljs-string">&quot;metis&quot;</span>;
+
+<span class="hljs-comment"># Check what the rescue system&#x27;s IP, route and optionally nameservers are</span>
+<span class="hljs-comment"># (or just use 8.8.8.8 for DNS if you like)</span>
+
+networking.usePredictableInterfaceNames = <span class="hljs-literal">false</span>;
+networking.interfaces.eth0.ipv4.addresses = [{
+    address = <span class="hljs-string">&quot;192.0.2.1&quot;</span>;
+    prefixLength = 24;
+}];
+
+networking.defaultGateway = <span class="hljs-string">&quot;192.0.2.254&quot;</span>;
+networking.nameservers = [ <span class="hljs-string">&quot;8.8.8.8&quot;</span> ];
+
+services.openssh.enable = <span class="hljs-literal">true</span>;
+
+<span class="hljs-comment"># You can enable this once you&#x27;ve proved the machine boots</span>
+networking.firewall.enable = <span class="hljs-literal">false</span>;
+
+users.users = {
+    <span class="hljs-comment"># Usual user config goes here. Be sure to include an SSH public key for root</span>
+    <span class="hljs-comment"># (`users.users.root.openssh.authorizedKeys.keys`; password login per SSH is disabled</span>
+    <span class="hljs-comment"># by default for root) or some other way to log in &amp; get root, e.g. a user in group `wheel`</span>
+    <span class="hljs-comment"># with a hashed password (an SSH public key alone won&#x27;t help you with `sudo`!).</span>
+}</code></pre>
+      </div><h3 id="installing-nixos">Installing NixOS</h3><div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">sudo</span> PATH=<span class="hljs-string">&quot;<span class="hljs-variable">$PATH</span>&quot;</span> NIX_PATH=<span class="hljs-string">&quot;<span class="hljs-variable">${NIX_PATH:-<span class="hljs-variable">$HOME</span>/.nix-defexpr/channels}</span>&quot;</span> `<span class="hljs-built_in">which</span> nixos-install` --root /mnt</code></pre>
+      </div><p>If all goes well, you should be asked to set a root password. You may encounter quite a lot of errors about locales being missing–I ignored these as they didn’t seem to matter.</p>
+<p>At this point, you should have a NixOS system ready to go on the machine’s internal disk. You’ll need to use the Kimsufi control panel to set the machine back to boot from its own hard disk, using the menu option marked Netboot.</p>
+<p>You will probably encounter an error when you connect because the SSH host key will have changed. You can fix this with ssh-keygen -R 192.0.2.1 (replacing the IP with the one for your machine), and then try again. Hopefully you’ve now got a new NixOS machine up and running and ready to do whatever you need it to do.</p>
+<p><a href="category:Deployment" class="wikilink" title="Category:Deployment">Category:Deployment</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

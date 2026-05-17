@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Qt</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Qt</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Qt -->
+
+<h2 id="development">Development</h2><p>To develop Qt applications in NixOS you may use nix-shell or direnv. For using nix-shell just run this command in the terminal:</p>
+<p><code>nix-shell -p qt5Full -p qtcreator --run qtcreator</code></p>
+<p>Tip: if it finds no Qt Kits, <code>rm -rf ~/.config/QtProject*</code> and start again. Sometimes it finds a kit, but cannot find a suitable qt version for it, in this case you can also type <code>which qmake</code> in your nix-shell and add a new entry in the <code>QT-Versions</code> tab in <code>Tools-&gt;Options-&gt;Kits</code>.</p>
+<p>For using direnv, create a <strong>shell.nix</strong> file in the root of your project and paste these lines into it:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># shell.nix</span>
+{ pkgs <span class="hljs-operator">?</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> {} }:
+  pkgs.mkShell {
+    <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> [
+      pkgs.qt5.full
+      pkgs.qtcreator
+    ];
+}</code></pre>
+      </div><p>Also, create <strong>.envrc</strong> file and paste: <code>use_nix</code> into it.</p>
+<h3 id="explicit-dependencies">Explicit Dependencies</h3><p>If fetching the entirety of <code>pkgs.qt6.full</code> is not appealing and you know which parts of Qt you need, your first instinct might be adding something like <code>pkgs.qt6.qtdeclarative</code> for creating QML-based Qt programs to <code>buildInputs</code>, <strong>however</strong> that will not work and you will get compile errors for missing libraries. <code>pkgs.qt6.full</code> is actually <a href="https://github.com/NixOS/nixpkgs/blob/nixos-24.11/pkgs/development/libraries/qt-6/default.nix#L94-L144">creating an environment that contains all Qt libraries</a> that allows <code>qmake</code> and tools to find those libraries, so you must do the same and <code>pkgs.qt6.env</code> will help make one. For example:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># shell.nix</span>
+{ pkgs <span class="hljs-operator">?</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> {} }:
+<span class="hljs-keyword">let</span>
+  <span class="hljs-comment"># pkgs.qt6.env already includes pkgs.qt6.qtbase</span>
+  <span class="hljs-comment"># And using `with` to prevent a lot of typing.</span>
+  <span class="hljs-attr">qtEnv</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs.qt6; env <span class="hljs-string">&quot;qt-custom-<span class="hljs-subst">${qtbase.version}</span>&quot;</span> [
+    qtdeclarative
+  ];
+<span class="hljs-keyword">in</span>
+  pkgs.mkShell {
+    <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> [
+      qtEnv
+      <span class="hljs-comment"># pkgs.qt6.qtdeclarative depends on pkgs.libglvnd</span>
+      <span class="hljs-comment"># Also worth noting it could be in qtEnv if preferred for &quot;relatedness&quot; reasons</span>
+      pkgs.libglvnd
+      pkgs.qtcreator
+    ];
+}</code></pre>
+      </div><h2 id="packaging">Packaging</h2><p><a href="https://nixos.org/manual/nixpkgs/stable/#sec-language-qt">See</a> for the entry in the nixpkgs manual.</p>
+<p>Qt applications can&#39;t be called with <code>callPackage</code>, since they expect more inputs. Namely <code>qtbase</code> and <code>wrapQtAppsHook</code>. Instead they should be called with <code>libsForQt5.callPackage</code>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment">#nix-repl</span>
+m<span class="hljs-attr">yapp</span> <span class="hljs-operator">=</span> callPackage <span class="hljs-symbol">./build/myapp/default.nix</span> { } <span class="hljs-comment"># Will complain it wasn&#x27;t called with qtbase, etc.</span>
+m<span class="hljs-attr">yapp</span> <span class="hljs-operator">=</span> libsForQt5.callPackage <span class="hljs-symbol">./build/myapp/default.nix</span> { } <span class="hljs-comment"># Should work</span></code></pre>
+      </div><h2 id="projects-using-python-e-g-pyqt5">Projects using python (e.g. PyQt5)</h2><p>It&#39;s possible to package a program that uses internally python and Qt (like PyQt5) by providing a python executable with the appropriate libraries like that <code>myPython = python3.withPackages (pkgs: with pkgs; [ pyqt5 ]);</code>. `<code>wrapQtAppsHook</code>` even seems to be optional when using `mkderivation` (at least this program can be run without) since anyway it does not patch scripts.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ mkDerivation,
+  lib,
+  stdenv,
+  fetchFromGitHub,
+  jack2,
+  which,
+  python3,
+  qtbase,
+  qttools,
+  wrapQtAppsHook,
+  liblo,
+  git,
+}:
+<span class="hljs-keyword">let</span>
+  <span class="hljs-attr">myPython</span> <span class="hljs-operator">=</span> python3.withPackages (<span class="hljs-params">pkgs:</span> <span class="hljs-keyword">with</span> pkgs; [ pyqt5 liblo pyliblo pyxdg ]);
+<span class="hljs-keyword">in</span>
+mkDerivation <span class="hljs-keyword">rec</span> {
+  <span class="hljs-attr">pname</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;RaySession&quot;</span>;
+  <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;0.11.1&quot;</span>;
+
+  <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> fetchFromGitHub {
+    <span class="hljs-attr">owner</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Houston4444&quot;</span>;
+    <span class="hljs-attr">repo</span> <span class="hljs-operator">=</span> pname;
+    <span class="hljs-attr">rev</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;v<span class="hljs-subst">${version}</span>&quot;</span>;
+    <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sha256-EbDBuOcF0JQq/LOrakb040Yfrpdi3FOB1iczQTeXBkc=&quot;</span>;
+  };
+
+  <span class="hljs-comment"># This patch is required to be able to create a new session, but not a problem to compile and start the program</span>
+  <span class="hljs-comment"># patches = [ ./copy_template_writable.patch ];</span>
+
+  <span class="hljs-comment"># Otherwise lrelease-qt is not found:</span>
+  <span class="hljs-attr">postPatch</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+   substituteInPlace Makefile \
+     --replace &quot;lrelease-qt4&quot; &quot;<span class="hljs-subst">${qttools.dev}</span>/bin/lrelease&quot; \
+     --replace &#x27;$(DESTDIR)/&#x27; &#x27;$(DESTDIR)$(PREFIX)&#x27; # Otherwise problem with installing manual etc...
+  &#x27;&#x27;</span>;
+
+  <span class="hljs-attr">nativeBuildInputs</span> <span class="hljs-operator">=</span> [
+    myPython
+    wrapQtAppsHook <span class="hljs-comment"># Not really useful since it will not pack scripts. And actually it seems that it&#x27;s not required?</span>
+    which
+    qttools
+  ];
+  <span class="hljs-attr">propagatedBuildInputs</span> <span class="hljs-operator">=</span> [ myPython qtbase jack2 git ];
+
+  <span class="hljs-comment"># Prefix must be set correctly due to sed -i &quot;s?X-PREFIX-X?$(PREFIX)?&quot;</span>
+  <span class="hljs-attr">makeFlags</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;PREFIX=$(out)&quot;</span> ]; <span class="hljs-comment"># prefix does not work since due to line &quot;install -d $(DESTDIR)/etc/xdg/&quot;</span>
+}</code></pre>
+      </div><p>Call it with</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">{ pkgs ? import &lt;nixpkgs&gt; {} }:
+pkgs.libsForQt5.callPackage ./derivation.nix {}</code></pre>
+      </div><p>For actual python applications, you may also use something like that (to test) :</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">python3.pkgs.buildPythonApplication {
+  <span class="hljs-attr">pname</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;blabla&quot;</span>;
+  <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;3.32.2&quot;</span>;
+
+  <span class="hljs-attr">nativeBuildInputs</span> <span class="hljs-operator">=</span> [
+    wrapQtAppsHook
+    ...
+  ];
+
+  <span class="hljs-attr">dontWrapQtApps</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; <span class="hljs-comment"># wrapQtApps won&#x27;t patch script anyway. <span class="hljs-doctag">TODO:</span> save to use if it contains executables? </span>
+
+  <span class="hljs-comment"># Arguments to be passed to `makeWrapper`, only used by buildPython*</span>
+  <span class="hljs-attr">preFixup</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        qtWrapperArgs+=(&quot;<span class="hljs-char escape_">&#x27;&#x27;$</span>{gappsWrapperArgs[@]}&quot;)
+        # You can manually patch scripts using: wrapQtApp &quot;$out/bin/myapp&quot;. TODO: check when it&#x27;s required.
+  &#x27;&#x27;</span>;
+}</code></pre>
+      </div><h2 id="migrating-apps-from-qt5-to-qt6">Migrating apps from Qt5 to Qt6</h2><ol>
+<li>Replace <code>libsForQt5.callPackage</code> with <code>qt6Packages.callPackage</code></li>
+<li>Add the dependency <a href="https://www.qt.io/blog/porting-from-qt-5-to-qt-6-using-qt5compat-library">qt5compat</a></li>
+<li>Hope for the best ; )</li>
+</ol>
+<p><code>qt5compat</code> is only needed for Qt5 projects, which are not-yet migrated to Qt6.</p>
+<p>Maybe add libraries like <code>qtwayland</code></p>
+<p>Conditional blocks in qmake <code>*.pro</code> files</p>
+<div class="code-container">
+        
+        <pre><code class="language-pro hljs">lessThan(QT_MAJOR_VERSION, 6) {
+  # qt5, qt4, ...
+  QT += x11extras
+}
+equals(QT_MAJOR_VERSION, 6) {
+  # qt6
+  QT += core-private
+}</code></pre>
+      </div><p>See also:</p>
+<ul>
+<li><a href="https://doc.qt.io/qt-6/portingguide.html">Porting to Qt 6</a></li>
+<li><a href="https://stackoverflow.com/questions/18663331">How to check the selected version of Qt in a .pro file?</a></li>
+</ul>
+<h2 id="hello-world-involving-qml-qt5-nix-and-cmake-qmake-or-meson">Hello world involving QML, Qt5, nix and cmake, qmake or meson</h2><p>You can find <a href="https://gist.github.com/tobiasBora/04d0febda0b3f09707b5e1b7b85390a5">here</a> a minimal example to use QML, cmake, nix and Qt5, and <a href="https://gist.github.com/tobiasBora/6f114cca1affb5528c872ca01d7e28c1">here</a> is the same example with qmake instead and <a href="https://gist.github.com/tobiasBora/812701e8741814393f3df7b23a11eb4b">here</a> is the same with meson instead. There is nothing special to nix there, but note that if you provide the qml file using something like <code>qrc:///main.qml</code>, then you need to write a qrc file that lists all the resources that must be included in the qt resource manager. This file is then used to compile the resources and include them in the binary (you have to compile the binaries, either automatically with cmake or qmake, or manually using rcc). With cmake you compile it using <code>qt5_add_resources(SOURCES qml.qrc)</code> (<a href="https://doc.qt.io/qt-5/qtcore-cmake-qt5-add-resources.html">doc</a>) as illustrated in the above example (make sure to use a variable as the source and to reuse the same variable in <code>add_executable</code>).</p>
+<h2 id="troubleshooting">Troubleshooting</h2><h3 id="this-application-failed-to-start-because-it-could-not-find-or-load-the-qt-platform-plugin-in-quot-quot">This application failed to start because it could not find or load the Qt platform plugin ??? in &quot;&quot;</h3><div class="code-container">
+        
+        <pre><code class="language- hljs">qt.qpa.plugin: Could not find the Qt platform plugin &quot;xcb&quot; in &quot;&quot;
+This application failed to start because no Qt platform plugin could be initialized. Reinstalling the application may fix this problem.</code></pre>
+      </div><p>The package will need to be fixed to use [the new <a href="https://github.com/NixOS/nixpkgs/issues/65399">https://github.com/NixOS/nixpkgs/issues/65399</a> <code>wrapQtAppsHook</code>]. The hook wraps every qt application with adding <code>QT_PLUGIN_PATH</code> and <code>XDG_DATA_DIRS</code> as well as <code>XDG_CONFIG_DIRS</code>.See <a href="https://github.com/NixOS/nixpkgs/blob/nixos-19.09/pkgs/development/libraries/qt-5/hooks/wrap-qt-apps-hook.sh">wrap-qt-apps-hook.sh in nixpkgs</a></p>
+<h3 id="debugging-methods">Debugging methods</h3><p>As a general rule, exporting <code>QT_DEBUG_PLUGINS=1</code> make qt print where it looks for plugins.</p>
+<p>If a plugin exists in a directory but is ignored with a message like <code>QLibraryPrivate::loadPlugin failed on &quot;/nix/store/...-teamspeak-client-3.1.6/lib/teamspeak/platforms/libqxcb.so&quot; : &quot;Cannot load library /nix/store/...-client-3.1.6/lib/teamspeak/platforms/libqxcb.so: &quot;</code> it can be that the library cannot be <code>dlopen()</code>ed because of dependencies/rpath issues and needs <code>patchelf</code>ing. Exporting <code>LD_DEBUG=libs</code> may prove helpful in this scenario.</p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

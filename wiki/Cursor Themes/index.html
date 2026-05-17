@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cursor Themes</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Cursor Themes</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Cursor Themes -->
+
+<p>To install the DMZ white cursor theme with add this to your <a href="https://mirror.nixoscn.org/wiki/Cursor%20Themes/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> config:</p>
+<p><code>home.file.&quot;.icons/default&quot;.source = &quot;${pkgs.vanilla-dmz}/share/icons/Vanilla-DMZ&quot;;</code></p>
+<p>For a more fine-grained configuration, check the option <code>xsession.pointerCursor</code>.</p>
+<h2 id="cursor-theme-with-home-manager">Cursor Theme with Home Manager</h2><p>Here&#39;s an example how you can get a cursor theme from a url and assign it to HM&#39;s pointerCursor:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">home.pointerCursor</span> <span class="hljs-operator">=</span> 
+    <span class="hljs-keyword">let</span> 
+      <span class="hljs-attr">getFrom</span> <span class="hljs-operator">=</span> <span class="hljs-params">url:</span> <span class="hljs-params">hash:</span> <span class="hljs-params">name:</span> {
+          <span class="hljs-attr">gtk.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+          <span class="hljs-attr">x11.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+          <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> name;
+          <span class="hljs-attr">size</span> <span class="hljs-operator">=</span> <span class="hljs-number">48</span>;
+          <span class="hljs-attr">package</span> <span class="hljs-operator">=</span> 
+            pkgs.runCommand <span class="hljs-string">&quot;moveUp&quot;</span> {} <span class="hljs-string">&#x27;&#x27;
+              mkdir -p $out/share/icons
+              ln -s <span class="hljs-subst">${pkgs.fetchzip {
+                <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> url;
+                <span class="hljs-attr">hash</span> <span class="hljs-operator">=</span> hash;
+              }</span>} $out/share/icons/<span class="hljs-subst">${name}</span>
+          &#x27;&#x27;</span>;
+        };
+    <span class="hljs-keyword">in</span>
+      getFrom 
+        <span class="hljs-string">&quot;https://github.com/ful1e5/fuchsia-cursor/releases/download/v2.0.0/Fuchsia-Pop.tar.gz&quot;</span>
+        <span class="hljs-string">&quot;sha256-BvVE9qupMjw7JRqFUj1J0a4ys6kc9fOLBPx2bGaapTk=&quot;</span>
+        <span class="hljs-string">&quot;Fuchsia-Pop&quot;</span>; </code></pre>
+      </div><h2 id="troubleshooting">Troubleshooting</h2><h3 id="cursor-themes-in-gnome-apps-under-hyprland-are-different-not-applied">Cursor themes in Gnome apps under Hyprland are different / not applied</h3><p>Try giving the Gnome apps an extra kick with:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">w<span class="hljs-attr">ayland.windowManager.hyprland.settings</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">exec-once</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-comment"># Fixes cursor themes in gnome apps under hyprland</span>
+    <span class="hljs-string">&quot;gsettings set org.gnome.desktop.interface cursor-theme &#x27;<span class="hljs-subst">${config.home.pointerCursor.name}</span>&#x27;&quot;</span>
+    <span class="hljs-string">&quot;gsettings set org.gnome.desktop.interface cursor-size <span class="hljs-subst">${<span class="hljs-built_in">toString</span> home.pointerCursor.size}</span>&quot;</span>
+  ];
+};</code></pre>
+      </div><h3 id="cursor-themes-in-flatpaks-are-different-not-applied">Cursor themes in flatpaks are different / not applied</h3><h4 id="set-xdg-desktop-portal-gtk-as-fallback">Set <code>xdg-desktop-portal-gtk</code> as fallback</h4><p>Most flatpaks need the functions implemented by <code>xdg-desktop-portal-gtk</code> and other desktop portals are not always implementing everything in <code>xdg-desktop-portal-gtk</code> themself. So its a good idea to set<code>xdg-desktop-portal-gtk</code> as a fallback.</p>
+<p>This can be achieved in home-manager through <code>xdg.portals.config</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">x<span class="hljs-attr">dg.portal</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">config</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-comment"># example with hyprland</span>
+    <span class="hljs-attr">hyprland.preferred</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;hyprland&quot;</span> <span class="hljs-string">&quot;gtk&quot;</span> ];
+  };
+};</code></pre>
+      </div><p>OR in home-manager through <code>xdg.portals.configPackages</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">x<span class="hljs-attr">dg.portal</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-comment"># example with hyprland</span>
+  <span class="hljs-attr">configPackages</span> <span class="hljs-operator">=</span> [ pkgs.hyprland ];
+  <span class="hljs-comment"># has a file with /nix/store/...-hyprland-.../share/xdg-desktop-portal/hyprland-portals.conf</span>
+  <span class="hljs-comment"># 1 │ [preferred]</span>
+  <span class="hljs-comment"># 2 │ default=hyprland;gtk</span>
+};</code></pre>
+      </div><p>Keep in mind that with the home-manager module <code>wayland.windowManager.hyprland.enable</code> this is already done. See [./<a href="https://github.com/nix-community/home-manager/blob/22b418c13fb0be43f4bc5c185f323a3237028594/modules/services/window-managers/hyprland.nix#L298">Https://github.com/nix-community/home-manager/blob/22b418c13fb0be43f4bc5c185f323a3237028594/modules/services/window-managers/hyprland.nix#L298</a> github.com/nix-community/home-manager/blob/master/modules/services/window-managers/hyprland.nix]</p>
+<h4 id="make-sure-xdg-desktop-portal-gtk-is-running">Make sure <code>xdg-desktop-portal-gtk</code> is running</h4><p>For flatpaks you need to make sure the <code>xdg-desktop-portal-gtk</code> is running in userspace, which is not automatically always the case (espacially on tiling windowManagers). So in home-manager you can set:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">x<span class="hljs-attr">dg.portal</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">extraPortals</span> <span class="hljs-operator">=</span> [ pkgs.xdg-desktop-portal-gtk ]; <span class="hljs-comment"># Fixes OpenURI and cursor themes in flatpaks</span>
+};</code></pre>
+      </div><h4 id="giving-flatpaks-permission-to-nix-store">Giving flatpaks permission to <em><code>/nix/store</code></em></h4><p>This already fixes themes for most apps like gnome. But not all (e.g. Obsidian or Logseq).</p>
+<p>And since flatpaks are sandboxed and dont have access to the nix-store you need to give them permission, since the cursors are eventually linked to <em><code>/nix/store/...</code></em>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs">flatpak --user override --filesystem=/nix/store:ro</code></pre>
+      </div><p>OR with the <a href="https://github.com/gmodena/nix-flatpak">https://github.com/gmodena/nix-flatpak</a> homeManagerModule:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.flatpak</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+  <span class="hljs-attr">overrides</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">global</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">Context.filesystems</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;/nix/store:ro&quot;</span> ];
+    };
+  };
+};</code></pre>
+      </div><p><a href="category:Configuration" class="wikilink" title="Category:Configuration">Category:Configuration</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

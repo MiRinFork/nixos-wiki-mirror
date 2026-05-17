@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dovecot</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Dovecot</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Dovecot -->
+
+<p>Dovecot is a mail storage server. It handles the storage of e-mail messages and their retrieval by a e-mail client (mail user agent) via authenticated IMAP.</p>
+<p>This article describes a basic Dovecot setup with <a href="https://mirror.nixoscn.org/wiki/Dovecot/Postfix" class="wikilink" title="Postfix">Postfix</a> and virtual users, i.e., e-mail users are configured separately in Dovecot passdb, and are independent from system users.</p>
+<h1 id="ssl-certificate-with-acme">SSL Certificate with ACME</h1><p>This article assumes a working <a href="https://mirror.nixoscn.org/wiki/Dovecot/ACME" class="wikilink" title="ACME">ACME</a> configuration for certificate renewal.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  config,
+  ...
+}:
+<span class="hljs-keyword">let</span>
+  <span class="hljs-attr">sslCertDir</span> <span class="hljs-operator">=</span> config.security.acme.certs.<span class="hljs-string">&quot;example.org&quot;</span>.directory;
+  <span class="hljs-attr">domainName</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;example.org&quot;</span>;
+<span class="hljs-keyword">in</span>
+{
+  <span class="hljs-comment"># further dovecot configuration goes here</span>
+  ...
+}</code></pre>
+      </div><h1 id="dovecot-passwd-database">Dovecot passwd database</h1><p>Create a plaintext virtual user password database in the following format</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-comment"># authenticate via Passwd-file</span>
+  <span class="hljs-comment">#</span>
+  <span class="hljs-comment"># bill@example.org:{PLAIN}your_plain_password</span>
+  <span class="hljs-comment"># alice@example.org:{PLAIN-MD5}1a1dc91c907325c69271ddf0c944bc72::::::</span>
+  <span class="hljs-comment"># This file need to have correct permissions.</span>
+
+  <span class="hljs-attr">age.secrets.dovecot</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">file</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;./dovecot-secret.age&quot;</span>;
+    <span class="hljs-comment"># -rw-------</span>
+    <span class="hljs-attr">mode</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;600&quot;</span>;
+    <span class="hljs-attr">owner</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;dovecot2&quot;</span>;
+    <span class="hljs-attr">group</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;dovecot2&quot;</span>;
+  };</code></pre>
+      </div><h1 id="open-firewall-port">Open firewall port</h1><p>Open firewall port for IMAPS clients.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">networking.firewall.allowedTCPPorts</span> <span class="hljs-operator">=</span> [ <span class="hljs-number">993</span> ]; <span class="hljs-comment"># dovecot imaps</span></code></pre>
+      </div><h1 id="setup-auth-via-passwd-file">Setup auth via passwd-file</h1><div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">services.dovecot2</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+    <span class="hljs-comment"># use my own passwd file for auth, see below</span>
+    <span class="hljs-attr">enablePAM</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+
+    <span class="hljs-comment"># https://doc.dovecot.org/2.3/configuration_manual/howto/postfix_dovecot_lmtp/</span>
+    <span class="hljs-comment"># https://doc.dovecot.org/2.3/configuration_manual/howto/postfix_and_dovecot_sasl/</span>
+    <span class="hljs-attr">extraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+      # force to use full user name plus domain name
+      # for disambiguation
+      auth_username_format = %Lu
+
+      # Authentication configuration:
+      auth_mechanisms = plain
+      passdb {
+        driver = passwd-file
+        args = <span class="hljs-subst">${config.age.secrets.dovecot.path}</span>
+      }
+    &#x27;&#x27;</span>
+  };</code></pre>
+      </div><h1 id="setup-virtual-users">Setup virtual users</h1><div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-comment"># /var/spool/mail/vmail needs to be created and owned by vmail</span>
+  users.users.<span class="hljs-string">&quot;vmail&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">createHome</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">home</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/var/spool/mail/vmail&quot;</span>;
+  };
+
+  <span class="hljs-attr">services.dovecot2</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-comment"># configure virtual mail user and group</span>
+    <span class="hljs-attr">createMailUser</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">mailUser</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;vmail&quot;</span>;
+    <span class="hljs-attr">mailGroup</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;vmail&quot;</span>;
+
+    <span class="hljs-comment"># implement virtual users</span>
+    <span class="hljs-comment"># https://doc.dovecot.org/2.3/configuration_manual/howto/simple_virtual_install/</span>
+    <span class="hljs-comment"># store virtual mail under</span>
+    <span class="hljs-comment"># /var/spool/mail/vmail/&lt;DOMAIN&gt;/&lt;USER&gt;/Maildir/</span>
+    <span class="hljs-attr">mailLocation</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;maildir:~/Maildir&quot;</span>;
+
+    <span class="hljs-attr">mailboxes</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-comment"># use rfc standard https://apple.stackexchange.com/a/201346</span>
+      <span class="hljs-attr">All</span> <span class="hljs-operator">=</span> { <span class="hljs-attr">auto</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;create&quot;</span>; <span class="hljs-attr">autoexpunge</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>; <span class="hljs-attr">specialUse</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;All&quot;</span>; };
+      <span class="hljs-attr">Archive</span> <span class="hljs-operator">=</span> { <span class="hljs-attr">auto</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;create&quot;</span>; <span class="hljs-attr">autoexpunge</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>; <span class="hljs-attr">specialUse</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Archive&quot;</span>; };
+      <span class="hljs-attr">Drafts</span> <span class="hljs-operator">=</span> { <span class="hljs-attr">auto</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;create&quot;</span>; <span class="hljs-attr">autoexpunge</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>; <span class="hljs-attr">specialUse</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Drafts&quot;</span>; };
+      <span class="hljs-attr">Flagged</span> <span class="hljs-operator">=</span> { <span class="hljs-attr">auto</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;create&quot;</span>; <span class="hljs-attr">autoexpunge</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>; <span class="hljs-attr">specialUse</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Flagged&quot;</span>; };
+      <span class="hljs-attr">Junk</span> <span class="hljs-operator">=</span> { <span class="hljs-attr">auto</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;create&quot;</span>; <span class="hljs-attr">autoexpunge</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;60d&quot;</span>; <span class="hljs-attr">specialUse</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Junk&quot;</span>; };
+      <span class="hljs-attr">Sent</span> <span class="hljs-operator">=</span> { <span class="hljs-attr">auto</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;create&quot;</span>; <span class="hljs-attr">autoexpunge</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>; <span class="hljs-attr">specialUse</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Sent&quot;</span>; };
+      <span class="hljs-attr">Trash</span> <span class="hljs-operator">=</span> { <span class="hljs-attr">auto</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;create&quot;</span>; <span class="hljs-attr">autoexpunge</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;60d&quot;</span>; <span class="hljs-attr">specialUse</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Trash&quot;</span>; };
+    };
+
+    <span class="hljs-attr">extraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+      userdb {
+        driver = static
+        # the full e-mail address inside passwd-file is the username (%u)
+        # user@example.com
+        # %d for domain_name %n for user_name
+        args = uid=vmail gid=vmail username_format=%u home=/var/spool/mail/vmail/%d/%n
+      }
+    &#x27;&#x27;</span>;
+  };</code></pre>
+      </div><h1 id="connect-to-postfix-via-lmtp">Connect to postfix via lmtp</h1><p>See <a href="https://mirror.nixoscn.org/wiki/Dovecot/Postfix" class="wikilink" title="Postfix">Postfix</a> for further setup on postfix side.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">services.dovecot2</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-comment"># connection to postfix</span>
+    <span class="hljs-attr">enableLmtp</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+    <span class="hljs-comment"># https://doc.dovecot.org/2.3/configuration_manual/howto/postfix_dovecot_lmtp/</span>
+    <span class="hljs-comment"># https://doc.dovecot.org/2.3/configuration_manual/howto/postfix_and_dovecot_sasl/</span>
+    <span class="hljs-attr">extraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+      # connection to postfix via lmtp
+      service lmtp {
+       unix_listener /var/spool/postfix/dovecot-lmtp {
+         mode = 0600
+         user = postfix
+         group = postfix
+        }
+      }
+      service auth {
+        unix_listener /var/spool/postfix/auth {
+          mode = 0600
+          user = postfix
+          group = postfix
+        }
+      }
+    &#x27;&#x27;</span>;
+  };
+
+  <span class="hljs-comment"># postfix connection to dovecot</span>
+  <span class="hljs-attr">services.postfix.config</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-comment"># https://doc.dovecot.org/2.3/configuration_manual/howto/postfix_dovecot_lmtp/</span>
+    <span class="hljs-attr">mailbox_transport</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;lmtp:unix:/var/spool/postfix/dovecot-lmtp&quot;</span>;
+    <span class="hljs-attr">virtual_transport</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;lmtp:unix:/var/spool/postfix/dovecot-lmtp&quot;</span>;
+
+    <span class="hljs-comment"># https://doc.dovecot.org/2.3/configuration_manual/howto/postfix_and_dovecot_sasl/</span>
+    <span class="hljs-attr">smtpd_sasl_type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;dovecot&quot;</span>;
+    <span class="hljs-attr">smtpd_sasl_path</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/var/spool/postfix/auth&quot;</span>;
+    <span class="hljs-attr">smtpd_sasl_auth_enable</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;yes&quot;</span>;
+    <span class="hljs-attr">smtpd_recipient_restrictions</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;permit_mynetworks, permit_sasl_authenticated, reject_unauth_destination&quot;</span>;
+  };
+
+  <span class="hljs-comment"># create path for dovecot socket</span>
+  users.users.<span class="hljs-string">&quot;postfix&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">createHome</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">home</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/var/spool/postfix&quot;</span>;
+  };</code></pre>
+      </div><h1 id="configure-ssl-certificates">Configure SSL Certificates</h1><div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">services.dovecot2</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">sslServerCert</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${sslCertDir}</span>/fullchain.pem&quot;</span>;
+    <span class="hljs-attr">sslServerKey</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${sslCertDir}</span>/key.pem&quot;</span>;
+    <span class="hljs-attr">sslCACert</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${sslCertDir}</span>/chain.pem&quot;</span>;
+  };</code></pre>
+      </div><p>You also need to set proper file permissions on the cert directory and key files. See <a href="https://mirror.nixoscn.org/wiki/Dovecot/ACME#Integration_with_service_modules" class="wikilink" title="ACME#Integration_with_service_modules">ACME#Integration_with_service_modules</a>.</p>
+<h1 id="using-sieve-plugins">Using sieve plugins</h1><p>The following is required to use Sieve plugins (<code>imap_sieve</code>, ManageSieve, etc):</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+  dovecot_pigeonhole
+];</code></pre>
+      </div><h1 id="mail_crypt-plugin-encryption-at-rest">mail_crypt plugin (encryption at rest)</h1><p>The following seems to make mail_crypt work in its per-user/per-folder mode (note that this mode is still described as &#39;not production quality&#39; in the dovecot docs):</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">security.pam.services.dovecot2 = { }; # needed as we disable PAM below
+
+services.dovecot2 = {
+  enable = true;
+  enablePAM = false; # need to disable this as we redefine passdb
+  mailPlugins.globally.enable = [ &quot;mail_crypt&quot; ]; 
+  pluginSettings = {
+    mail_crypt_curve = &quot;secp521r1&quot;;
+    mail_crypt_save_version = &quot;2&quot;;
+    mail_crypt_require_encrypted_user_key = &quot;yes&quot;;
+  }; 
+  extraConfig = '' 
+    mail_attribute_dict = file:%h/.attributes
+    userdb {
+      driver = passwd
+    }  
+    passdb {
+      driver = pam
+      override_fields = userdb_mail_crypt_private_password=%{sha256:password} userdb_mail_crypt_save_version=2
+      args = failure_show_msg=yes dovecot2
+    }  
+  '';
+}; </code></pre>
+      </div><h1 id="troubleshooting">Troubleshooting</h1><h2 id="sievec-fails-to-compile-basic-sieve-scripts">sievec fails to compile basic sieve scripts</h2><p>Sieve commands such as <em>fileinto</em> need to be enabled explicitly with:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.dovecot2.sieve.globalExtensions</span> <span class="hljs-operator">=</span> [<span class="hljs-string">&quot;fileinto&quot;</span>];</code></pre>
+      </div><p>Otherwise, the <em>sievec</em> command will fail to compile sieve scripts with <code>fileinto</code> statements and as a result the Dovecot service itself will fail to start if the configuration contains <code>services.dovecot2.sieve.scripts</code>.</p>
+<p><a href="category:Mail_Server" class="wikilink" title="Category:Mail Server">Category:Mail Server</a> <a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

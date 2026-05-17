@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Samba</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Samba</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Samba -->
+
+<p>This guide will help you on how to use samba on nixos.</p>
+<h2 id="usershares">Usershares</h2><p>You can allow some users to share via samba a given directory simply via a right click in their file browser (tested with Dolphin). For that, first add this configuration (make sure to add your user in the samba group):</p>
+<p>Then, logout and login (to make sure your group change has been taken into account), open Dolphin, right click on a folder you&#39;d like to share, go to Properties, Tab &quot;Share&quot;, and configure it the way you want.</p>
+<h2 id="server-setup">Server setup</h2><p>Example setup for creating a public guest share called <code>public</code> and a private share called <code>private</code>.</p>
+<p>The <code>samba-wsdd</code> service and avahi is used to advertise the shares to Windows hosts.</p>
+<h3 id="user-authentication">User Authentication</h3><p>For a user called <code>my_user</code>to be authenticated on the samba server, you can add a password using:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">sudo</span> smbpasswd -a my_user</code></pre>
+      </div><p>To automate creation of the samba user and the required system user, you can use <a href="https://search.nixos.org/options?show=system.activationScripts">system.activationScripts</a>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-comment"># Make the samba user &quot;my_user&quot; on the system</span>
+  <span class="hljs-attr">users.users.my_user</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Write-access to samba media shares&quot;</span>;
+    <span class="hljs-comment"># Add this user to a group with permission to access the expected files </span>
+    <span class="hljs-attr">extraGroups</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;users&quot;</span> ];
+    <span class="hljs-comment"># Password can be set in clear text with a literal string or from a file.</span>
+    <span class="hljs-comment"># Using sops-nix we can use the same file so that the system user and samba</span>
+    <span class="hljs-comment"># user share the same credential (if desired).</span>
+    <span class="hljs-attr">hashedPasswordFile</span> <span class="hljs-operator">=</span> config.sops.secrets.samba.path;
+    <span class="hljs-attr">isNormalUser</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  };
+  <span class="hljs-comment"># Set &quot;my_user&quot; as a valid samba login</span>
+  <span class="hljs-attr">services.samba</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">openFirewall</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">global</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-comment"># ...</span>
+        <span class="hljs-string">&quot;security&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;user&quot;</span>;
+      };
+      <span class="hljs-attr">my_share_directory</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-comment"># ...</span>
+        <span class="hljs-string">&quot;valid users&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;my_user&quot;</span>;
+      };
+    };
+  };
+  <span class="hljs-comment"># Activation scripts run every time nixos switches build profiles. So if you&#x27;re</span>
+  <span class="hljs-comment"># pulling the user/samba password from a file then it will be updated during</span>
+  <span class="hljs-comment"># nixos-rebuild. Again, in this example we&#x27;re using sops-nix with a &quot;samba&quot; entry</span>
+  <span class="hljs-comment"># to avoid cleartext password, but this could be replaced with a static path.</span>
+  <span class="hljs-attr">system.activationScripts</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-comment"># The &quot;init_smbpasswd&quot; script name is arbitrary, but a useful label for tracking</span>
+    <span class="hljs-comment"># failed scripts in the build output. An absolute path to smbpasswd is necessary</span>
+    <span class="hljs-comment"># as it is not in $PATH in the activation script&#x27;s environment. The password</span>
+    <span class="hljs-comment"># is repeated twice with newline characters as smbpasswd requires a password</span>
+    <span class="hljs-comment"># confirmation even in non-interactive mode where input is piped in through stdin. </span>
+    <span class="hljs-attr">init_smbpasswd.text</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+      /run/current-system/sw/bin/printf &quot;$(/run/current-system/sw/bin/cat <span class="hljs-subst">${config.sops.secrets.samba.path}</span>)<span class="hljs-char escape_">\n</span>$(/run/current-system/sw/bin/cat <span class="hljs-subst">${config.sops.secrets.samba.path}</span>)<span class="hljs-char escape_">\n</span>&quot; | /run/current-system/sw/bin/smbpasswd -sa my_user
+    &#x27;&#x27;</span>;
+  };
+
+}</code></pre>
+      </div><h3 id="configuration">Configuration</h3><h4 id="apple-time-machine">Apple Time Machine</h4><p>In addition to the example above, add this to your configuration:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.samba</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-string">&quot;tm_share&quot;</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-string">&quot;path&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/mnt/Shares/tm_share&quot;</span>;
+        <span class="hljs-string">&quot;valid users&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;username&quot;</span>;
+        <span class="hljs-string">&quot;public&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;no&quot;</span>;
+        <span class="hljs-string">&quot;writeable&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;yes&quot;</span>;
+        <span class="hljs-string">&quot;force user&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;username&quot;</span>;
+        <span class="hljs-comment"># Below are the most imporant for macOS compatibility</span>
+        <span class="hljs-comment"># Change the above to suit your needs</span>
+        <span class="hljs-string">&quot;fruit:aapl&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;yes&quot;</span>;
+        <span class="hljs-string">&quot;fruit:time machine&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;yes&quot;</span>;
+        <span class="hljs-string">&quot;vfs objects&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;catia fruit streams_xattr&quot;</span>;
+    };
+  };
+};
+
+<span class="hljs-comment"># Ensure Time Machine can discover the share without `tmutil`</span>
+s<span class="hljs-attr">ervices.avahi</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">extraServiceFiles</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">timemachine</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+      &lt;?xml version=&quot;1.0&quot; standalone=&#x27;no&#x27;?&gt;
+      &lt;!DOCTYPE service-group SYSTEM &quot;avahi-service.dtd&quot;&gt;
+      &lt;service-group&gt;
+        &lt;name replace-wildcards=&quot;yes&quot;&gt;%h&lt;/name&gt;
+        &lt;service&gt;
+          &lt;type&gt;_smb._tcp&lt;/type&gt;
+          &lt;port&gt;445&lt;/port&gt;
+        &lt;/service&gt;
+          &lt;service&gt;
+          &lt;type&gt;_device-info._tcp&lt;/type&gt;
+          &lt;port&gt;0&lt;/port&gt;
+          &lt;txt-record&gt;model=TimeCapsule8,119&lt;/txt-record&gt;
+        &lt;/service&gt;
+        &lt;service&gt;
+          &lt;type&gt;_adisk._tcp&lt;/type&gt;
+          &lt;!-- 
+            change tm_share to share name, if you changed it. 
+          --&gt; 
+          &lt;txt-record&gt;dk0=adVN=tm_share,adVF=0x82&lt;/txt-record&gt;
+          &lt;txt-record&gt;sys=waMa=0,adVF=0x100&lt;/txt-record&gt;
+        &lt;/service&gt;
+      &lt;/service-group&gt;
+    &#x27;&#x27;</span>;
+  };
+};</code></pre>
+      </div><h4 id="printer-sharing">Printer sharing</h4><div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.samba.package</span> <span class="hljs-operator">=</span> pkgs.sambaFull;</code></pre>
+      </div><p>A printer share that allows printing to all members in the local network</p>
+<p>The `samba` packages comes without <a href="https://mirror.nixoscn.org/wiki/Samba/Printing" class="wikilink" title="CUPS printing">CUPS printing</a> support compiled in, however `sambaFull` features printer sharing support.</p>
+<h4 id="active-directory-domain-controller">Active Directory Domain Controller</h4><p>We will setup an AD DC just like the the <a href="https://wiki.samba.org/index.php/Setting_up_Samba_as_an_Active_Directory_Domain_Controller">Samba Wiki</a>. Let&#39;s add the following nix config, updating the <code>adDomain</code>, <code>adWorkgroup</code>, <code>adNetbiosName</code> and <code>staticIp</code> according to your needs.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ config, lib, pkgs, ... }:
+<span class="hljs-keyword">with</span> lib;
+
+<span class="hljs-keyword">let</span>
+  <span class="hljs-attr">cfg</span> <span class="hljs-operator">=</span> config.services.samba;
+  <span class="hljs-attr">samba</span> <span class="hljs-operator">=</span> cfg.package;
+  <span class="hljs-attr">nssModulesPath</span> <span class="hljs-operator">=</span> config.system.nssModules.path;
+  <span class="hljs-attr">adDomain</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;samdom.example.com&quot;</span>;
+  <span class="hljs-attr">adWorkgroup</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;SAM&quot;</span>;
+  <span class="hljs-attr">adNetbiosName</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;SAMDOM&quot;</span>;
+  <span class="hljs-attr">staticIp</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;10.42.129.160&quot;</span>;
+<span class="hljs-keyword">in</span> {
+  <span class="hljs-comment"># Disable resolveconf, we&#x27;re using Samba internal DNS backend</span>
+  <span class="hljs-attr">systemd.services.resolvconf.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+  <span class="hljs-attr">environment.etc</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">resolvconf</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">text</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        search <span class="hljs-subst">${adDomain}</span>
+        nameserver <span class="hljs-subst">${staticIp}</span>
+      &#x27;&#x27;</span>;
+    };
+  };
+
+  <span class="hljs-comment"># Rebuild Samba with LDAP, MDNS and Domain Controller support</span>
+  <span class="hljs-attr">nixpkgs.overlays</span> <span class="hljs-operator">=</span> [ (<span class="hljs-params">self:</span> <span class="hljs-params">super:</span> {
+    <span class="hljs-attr">samba</span> <span class="hljs-operator">=</span> (super.samba.override {
+      <span class="hljs-attr">enableLDAP</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">enableMDNS</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">enableDomainController</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">enableProfiling</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; <span class="hljs-comment"># Optional for logging</span>
+       <span class="hljs-comment"># Set pythonpath manually (bellow with overrideAttrs) as it is not set on 22.11 due to bug</span>
+    }).overrideAttrs (<span class="hljs-params">finalAttrs:</span> <span class="hljs-params">previousAttrs:</span> {
+        <span class="hljs-attr">pythonPath</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> super; [ python3Packages.dnspython python3Packages.markdown tdb ldb talloc ];
+      });
+  })];
+
+  <span class="hljs-comment"># Disable default Samba `smbd` service, we will be using the `samba` server binary</span>
+  <span class="hljs-attr">systemd.services.samba-smbd.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;  
+  <span class="hljs-attr">systemd.services.samba</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Samba Service Daemon&quot;</span>;
+
+    <span class="hljs-attr">requiredBy</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;samba.target&quot;</span> ];
+    <span class="hljs-attr">partOf</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;samba.target&quot;</span> ];
+
+    <span class="hljs-attr">serviceConfig</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">ExecStart</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${samba}</span>/sbin/samba --foreground --no-process-group&quot;</span>;
+      <span class="hljs-attr">ExecReload</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.coreutils}</span>/bin/kill -HUP $MAINPID&quot;</span>;
+      <span class="hljs-attr">LimitNOFILE</span> <span class="hljs-operator">=</span> <span class="hljs-number">16384</span>;
+      <span class="hljs-attr">PIDFile</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/run/samba.pid&quot;</span>;
+      <span class="hljs-attr">Type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;notify&quot;</span>;
+      <span class="hljs-attr">NotifyAccess</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;all&quot;</span>; <span class="hljs-comment">#may not do anything...</span>
+    };
+    <span class="hljs-attr">unitConfig.RequiresMountsFor</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/var/lib/samba&quot;</span>;
+  };
+  <span class="hljs-attr">services.samba</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">enableNmbd</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+    <span class="hljs-attr">enableWinbindd</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+    <span class="hljs-attr">configText</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+      # Global parameters
+      [global]
+          dns forwarder = <span class="hljs-subst">${staticIp}</span>
+          netbios name = <span class="hljs-subst">${adNetbiosName}</span>
+          realm = <span class="hljs-subst">${toUpper adDomain}</span>
+          server role = active directory domain controller
+          workgroup = <span class="hljs-subst">${adWorkgroup}</span>
+          idmap_ldb:use rfc2307 = yes
+
+      [sysvol]
+          path = /var/lib/samba/sysvol
+          read only = No
+
+      [netlogon]
+          path = /var/lib/samba/sysvol/<span class="hljs-subst">${adDomain}</span>/scripts
+          read only = No
+    &#x27;&#x27;</span>;
+  };  
+}</code></pre>
+      </div><p>After evaluating, you should see that the Samba service crashed because we haven&#39;t setup the database yet.</p>
+<p>To do that, let&#39;s run the following command, updated with your own configuration:</p>
+<p><code>samba-tool domain provision --server-role=dc --use-rfc2307 --dns-backend=SAMBA_INTERNAL --realm=SAMDOM.EXAMPLE.COM --domain=SAMDOM --adminpass=Passw0rd</code></p>
+<p>Then restart the samba service with <code>sudo systemctl restart samba</code>, and you&#39;re ready to go!</p>
+<h2 id="samba-client">Samba Client</h2><h3 id="cifs-mount-configuration">CIFS mount configuration</h3><p>The following snippets shows how to mount a CIFS (Windows) share in NixOS.</p>
+<p>Note the inclusion of the <code>&quot;nofail&quot;</code> option; NixOS will treat CIFS shares like any other mounted drive, and this will allow the system to boot correctly if the mounted NAS is off or if the network is slow to initialize.</p>
+<p>Replace all <FIELDS> with concrete values:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-comment"># For mount.cifs, required unless domain name resolution is not needed.</span>
+  <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> [ pkgs.cifs-utils ];
+  fileSystems.<span class="hljs-string">&quot;/mnt/share&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">device</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;//&lt;IP_OR_HOST&gt;/path/to/share&quot;</span>;
+    <span class="hljs-attr">fsType</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;cifs&quot;</span>;
+    <span class="hljs-attr">options</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">let</span>
+      <span class="hljs-comment"># this line prevents hanging on network split</span>
+      <span class="hljs-attr">automount_opts</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s&quot;</span>;
+
+    <span class="hljs-keyword">in</span> [<span class="hljs-string">&quot;<span class="hljs-subst">${automount_opts}</span>,credentials=/etc/nixos/smb-secrets&quot;</span> <span class="hljs-string">&quot;nofail&quot;</span>];
+  };
+}</code></pre>
+      </div><p>Also create /etc/nixos/smb-secrets with the following content (<code>domain=</code> can be optional)</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">u<span class="hljs-attr">sername</span><span class="hljs-operator">=</span><span class="hljs-symbol">&lt;USERNAME&gt;</span>
+d<span class="hljs-attr">omain</span><span class="hljs-operator">=</span><span class="hljs-symbol">&lt;DOMAIN&gt;</span>
+p<span class="hljs-attr">assword</span><span class="hljs-operator">=</span><span class="hljs-symbol">&lt;PASSWORD&gt;</span></code></pre>
+      </div><p>By default, CIFS shares are mounted as root. If mounting as user is desirable, `uid`, `gid` and usergroup arguments can be provided as part of the filesystem options:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  fileSystems.<span class="hljs-string">&quot;/mnt/share&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-comment"># ... rest of the filesystem config omitted</span>
+    <span class="hljs-attr">options</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">let</span>
+      <span class="hljs-attr">automount_opts</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s,user,users&quot;</span>;
+
+      <span class="hljs-keyword">in</span> [<span class="hljs-string">&quot;<span class="hljs-subst">${automount_opts}</span>,credentials=/etc/nixos/smb-secrets,uid=1000,gid=100&quot;</span>];
+    <span class="hljs-comment"># or if you have specified `uid` and `gid` explicitly through NixOS configuration,</span>
+    <span class="hljs-comment"># you can refer to them rather than hard-coding the values:</span>
+    <span class="hljs-comment"># in [&quot;${automount_opts},credentials=/etc/nixos/smb-secrets,uid=${toString config.users.users.&lt;username&gt;.uid},gid=${toString config.users.groups.&lt;group&gt;.gid}&quot;];</span>
+  };
+}</code></pre>
+      </div><h3 id="firewall-configuration">Firewall configuration</h3><p>Samba discovery of machines and shares may need the firewall to be tuned (<a href="https://wiki.archlinux.org/index.php/Samba#.22Browsing.22_network_fails_with_.22Failed_to_retrieve_share_list_from_server.22">source</a>): in <code>/etc/nixos/configuration.nix</code>, add:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">etworking.firewall.extraCommands</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;iptables -t raw -A OUTPUT -p udp -m udp --dport 137 -j CT --helper netbios-ns&#x27;&#x27;</span>;</code></pre>
+      </div><h3 id="command-line">Command line</h3><p>List shares</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">smbclient --list localhost</code></pre>
+      </div><p>This should print</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">$ smbclient --list localhost 
+Password for [WORKGROUP\user]:
+
+    Sharename       Type      Comment
+    ---------       ----      -------
+    public          Disk      
+    IPC$            IPC       IPC Service (smbnix)
+SMB1 disabled -- no workgroup available</code></pre>
+      </div><p>Mount as guest. <code>public</code> is your share name</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">nix-shell -p cifs-utils
+mkdir mnt
+sudo mount.cifs -o sec=none //localhost/public mnt</code></pre>
+      </div><p>mount as user. <code>user</code> is your username</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">sudo mount.cifs -o sec=ntlmssp,username=user //localhost/public mnt</code></pre>
+      </div><p><code>sec=ntlmssp</code> should work. for more values, see `man mount.cifs` (search for `sec=arg`)</p>
+<h3 id="browsing-samba-shares-with-gvfs">Browsing samba shares with GVFS</h3><p>Many GTK-based file managers like Nautilus, Thunar, and PCManFM can browse samba shares thanks to GVFS. GVFS is a dbus daemon which must be running for this to work. If you use Gnome, you have nothing to do as the module already enables it for you, but in less full-featured desktop environments, some further configuration options are needed.</p>
+<p>The generic way of enabling GVFS is to add this in <code>/etc/nixos/configuration.nix</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.gvfs.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><p>There are however some special cases.</p>
+<h5 id="xfce">XFCE</h5><p><a href="https://mirror.nixoscn.org/wiki/Samba/Xfce" class="wikilink" title="Xfce">Xfce</a> comes with a slimmed-down version of GVFS by default which comes with samba support compiled out. To have <a href="smb://">smb://</a> support in Thunar, we will use GNOME&#39;s full-featured version of GVFS:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">services.gvfs</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">package</span> <span class="hljs-operator">=</span> lib.mkForce pkgs.gnome.gvfs;
+  };</code></pre>
+      </div><h5 id="no-desktop-environment">No desktop environment</h5><p>GVFS relies on polkit to gain privileges for some operations. Polkit needs an authentication agent to ask for credentials. Desktop environments usually provide one but if you have no desktop environment, you may have to install one yourself:</p>
+<p>Excerpt of <code>/etc/nixos/configuration.nix</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [ lxqt.lxqt-policykit ]; <span class="hljs-comment"># provides a default authentification client for policykit</span></code></pre>
+      </div><h5 id="dbus">DBUS</h5><p>Furthermore, if you happen to start your Window Manager directly, via <code>.xinitrc</code>, or directly invoke a Wayland compositor such as Sway, you should ensure that you launch dbus at startup in your session and export its environment. If you do not have a dbus session in your environment, you will see errors such as &quot;Operation not supported&quot; when attempting to browse the network.</p>
+<p>For example, if you are using <code>.xinitrc</code>, you could invoke <code>dbus-launch</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">export</span> `dbus-launch` <span class="hljs-comment"># starts dbus and exports its address</span>
+<span class="hljs-built_in">exec</span> xterm <span class="hljs-comment"># your prefered Window Manager</span></code></pre>
+      </div><p>(You need to restart your Window Manager to have the changes in <code>.xinitrc</code> to take place.)</p>
+<p>If you are using a Wayland compositor like Sway, you can run it under <code>dbus-run-session</code> for the same effect:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">dbus-run-session sway</code></pre>
+      </div><p>(Because <code>dbus-run-session</code> exits when the child process exits, it is only appropriate to use <code>dbus-run-session</code> with a process that will be running during the entire session. This is the case for Wayland compositors, but is not necessarily true for all configurations of X11 window managers.)</p>
+<h2 id="troubleshooting">Troubleshooting</h2><h3 id="server-log">Server log</h3><div class="code-container">
+        
+        <pre><code class="language- hljs">sudo journalctl -u samba-smbd.service -f</code></pre>
+      </div><h3 id="stale-file-handle">Stale file handle</h3><p>Trying to read the contents of a remote file leads to the following error message: &quot;Stale file handle&quot;. If you have mounted a share via the method described in &quot;cfis mount&quot;, adding the option <code>noserverino</code> might fix this problem. <a href="https://askubuntu.com/questions/1265164/stale-file-handler-when-mounting-cifs-smb-network-drive-from-fritz-router">1</a></p>
+<h3 id="nt_status_invalid_network_response">NT_STATUS_INVALID_NETWORK_RESPONSE</h3><p>The error <code>protocol negotiation failed: NT_STATUS_INVALID_NETWORK_RESPONSE</code> means &quot;access denied&quot;. Probably you must fix your server&#39;s <code>hosts allow</code> section. Note that <code>localhost</code> is the ipv6 localhost <code>::1</code>, and <code>127.0.0.1</code> is the ipv4 localhost</p>
+<h3 id="permission-denied">Permission denied</h3><p>Maybe check the <code>guest account</code> setting in your server config. The default value is <code>nobody</code>, but the user <code>nobody</code> has no access to <code>/home/user</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">$ sudo -u nobody ls /home/user
+[sudo] password for user: 
+ls: cannot open directory '/home/user': Permission denied</code></pre>
+      </div><p>As workaround, set <code>guest account = user</code>, where <code>user</code> is your username</p>
+<h2 id="see-also">See also</h2><ul>
+<li><a href="https://search.nixos.org/options?channel=unstable&amp;from=0&amp;size=50&amp;sort=relevance&amp;type=packages&amp;query=services.samba">Samba Options in NixOS on unstable</a></li>
+<li><a href="https://wiki.archlinux.org/title/Samba">Samba in the Arch Linux Wiki</a></li>
+<li><a href="https://www.samba.org/samba/docs/current/man-html/smb.conf.5.html">smb.conf man page</a></li>
+</ul>
+<p><a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

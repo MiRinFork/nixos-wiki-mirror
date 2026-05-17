@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Git</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Git</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Git -->
+
+<p><a href="https://en.wikipedia.org/wiki/Git_(software)">Git</a> is the version control system (VCS) developed by Junio C Hamano and designed by Linus Torvalds (Creator of the Linux kernel). Git is used to maintain NixOS packages, as well as many other projects, including sources for the Linux kernel.</p>
+<h2 id="installing-and-configuring-git">Installing and configuring Git</h2><p>On NixOS, Git can be installed and configured at either the system level or the user level with <a href="https://mirror.nixoscn.org/wiki/Git/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a>.</p>
+<h3 id="system-wide-installation">System-wide installation</h3><p>Git can be installed system-wide either by adding it to the list of system environment packages:</p>
+<p>Or by enabling the NixOS Git module:</p>
+<p>Additional Git module configuration options can be found at .</p>
+<h3 id="user-level-configuration-with-home-manager">User-level configuration with Home Manager</h3><p>Git can be configured using <a href="https://mirror.nixoscn.org/wiki/Git/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">programs.git</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">config.user</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">name</span>  <span class="hljs-operator">=</span> <span class="hljs-string">&quot;John Doe&quot;</span>;
+        <span class="hljs-attr">email</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;johndoe@example.com&quot;</span>;
+    };
+  };</code></pre>
+      </div><p>Aliases can be added with:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">programs.git</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">settings.alias</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">ci</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;commit&quot;</span>;
+      <span class="hljs-attr">co</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;checkout&quot;</span>;
+      <span class="hljs-attr">s</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;status&quot;</span>;
+    };
+  };</code></pre>
+      </div><p>Git <a href="https://git-lfs.com/">LFS</a> can be enabled with:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">programs.git</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">lfs.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  };</code></pre>
+      </div><p>Configure git-credential-helper with libsecret:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs, ... }:
+
+{
+  <span class="hljs-attr">programs.git</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">package</span> <span class="hljs-operator">=</span> pkgs.git.override { <span class="hljs-attr">withLibsecret</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; };
+    <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">credential.helper</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;libsecret&quot;</span>;
+    };
+  };
+}</code></pre>
+      </div><p>To add additional configuration you can specify options in an attribute set, so to add something like this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-ini hljs"><span class="hljs-section">[push]</span>
+        <span class="hljs-attr">autoSetupRemote</span> = <span class="hljs-literal">true</span></code></pre>
+      </div><p>To your <code>~/.config/git/config</code>, you can add the below to <code>settings</code></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs, ... }:
+
+{
+  <span class="hljs-attr">programs.git</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">push</span> <span class="hljs-operator">=</span> { <span class="hljs-attr">autoSetupRemote</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; };
+    };
+  };
+}</code></pre>
+      </div><h4 id="using-your-public-ssh-key-as-a-signing-key">Using your public SSH key as a signing key</h4><p>To configure git to automatically sign your commits using your public SSH key like so:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">programs.git</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">signing</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">key</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ssh-ed25519 AAAAAAAAAAAA...AA username@hostname&quot;</span>;
+      <span class="hljs-attr">signByDefault</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    };
+    <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">gpg</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">format</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ssh&quot;</span>;
+      };
+    };
+  };
+}</code></pre>
+      </div><p>However, note that this will also require Home Manager to manage your SSH configuration:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{    
+  <span class="hljs-attr">programs.ssh</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">addKeysToAgent</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;yes&quot;</span>;
+  };
+}</code></pre>
+      </div><h3 id="enabling-git-ui">Enabling Git UI</h3><p>Install <code>tk</code> to use the git gui:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">git citool</span></code></pre>
+      </div><p>Or you may wish to install the <code>gitFull</code> package, which includes <code>git gui</code>, <code>gitk</code>, etc. This can be installed either through system environment packages or by setting the package module option:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">programs.git</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">package</span> <span class="hljs-operator">=</span> pkgs.gitFull;
+  };</code></pre>
+      </div><h2 id="management-of-the-nixpkgs-git-repository">Management of the <code>nixpkgs</code> git repository</h2><p><code>nixpkgs</code> has become a git repository of quite substantial size with &gt; 889 000 commits (as of late 2025). This brings many unoptimized tools to their limits, leading to long waiting times on certain operations. Here we’ll collect useful info on how to manage that.</p>
+<h3 id="garbage-collecting">Garbage collecting</h3><p>Normal <code>git gc</code> should work as usual, but you should force a full garbage collect every half a year or so. <code>git gc --aggressive</code> is the command for that. For the author it did not work on the first try, since their laptop’s memory was too small and it went out of memory. According to <a href="https://stackoverflow.com/a/4829883/1382925%7Cthis">StackOverflow</a> answer it suffices to set some local repository config variables.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">git config pack.windowMemory 2g</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">git config pack.packSizeLimit 1g</span></code></pre>
+      </div><p>worked well on a machine with about 6–8 GB of free RAM and two processor threads, and reduced the size of the <code>nixpkgs</code> checkout from ~1.3 GB to ~0.95 GB.</p>
+<h1 id="serve-git-repos-via-ssh">Serve Git repos via SSH</h1><p>This section implements <a href="https://git-scm.com/book/en/v2/Git-on-the-Server-Setting-Up-the-Server">Git on the Server - Setting Up the Server</a> on NixOS.</p>
+<p>See also: <a href="https://mirror.nixoscn.org/wiki/Git/gitolite" class="wikilink" title="gitolite">gitolite</a>.</p>
+<h2 id="configuration">Configuration</h2><div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ config, pkgs, ... }: {
+  <span class="hljs-attr">users.users.git</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">isSystemUser</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">group</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;git&quot;</span>;
+    <span class="hljs-attr">home</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/var/lib/git-server&quot;</span>;
+    <span class="hljs-attr">createHome</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">shell</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.git}</span>/bin/git-shell&quot;</span>;
+    <span class="hljs-attr">openssh.authorizedKeys.keys</span> <span class="hljs-operator">=</span> [
+      <span class="hljs-comment"># <span class="hljs-doctag">FIXME:</span> Add pubkeys of authorized users</span>
+      <span class="hljs-string">&quot;ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF38sHxXn/r7KzWL1BVCqcKqmZA/V76N/y5p52UQghw7 example&quot;</span>
+    ];
+  };
+
+  <span class="hljs-attr">users.groups.git</span> <span class="hljs-operator">=</span> {};
+
+  <span class="hljs-attr">services.openssh</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">extraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+      Match user git
+        AllowTcpForwarding no
+        AllowAgentForwarding no
+        PasswordAuthentication no
+        KbdInteractiveAuthentication no
+        PermitTTY no
+        X11Forwarding no
+    &#x27;&#x27;</span>;
+  };
+}</code></pre>
+      </div><h2 id="usage">Usage</h2><p>1. Run this on the server to create repo <code>myproject</code> accessible by user <code>git</code></p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">sudo</span> -u git bash -c <span class="hljs-string">&quot;git init --bare ~/myproject.git&quot;</span></code></pre>
+      </div><p>(<code>~</code> here is the home of the user <code>git</code>, which is <code>/var/lib/git-server</code>)</p>
+<p>2. Push to the server repo from another system</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">mkdir</span> myproject
+<span class="hljs-built_in">cd</span> myproject
+<span class="hljs-built_in">echo</span> hello &gt; a
+git init
+git add .
+git commit -m init
+git remote add origin git@myserver:myproject.git
+git push origin master</code></pre>
+      </div><p>3. Clone and edit the server repo from another system</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">git <span class="hljs-built_in">clone</span> git@myserver:myproject.git
+<span class="hljs-built_in">cd</span> myproject
+<span class="hljs-built_in">cat</span> a
+<span class="hljs-built_in">echo</span> world &gt;&gt; a
+git commit -am hello
+git push origin master</code></pre>
+      </div><h2 id="bisecting-nix-regressions">Bisecting Nix regressions</h2><p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="category:CLI_Applications" class="wikilink" title="Category:CLI Applications">Category:CLI Applications</a> <a href="category:Version_control" class="wikilink" title="Category:Version control">Category:Version control</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

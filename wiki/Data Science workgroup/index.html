@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Data Science workgroup</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Data Science workgroup</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Data Science workgroup -->
+
+<p>This workgroup is dedicated towards improving the state of the data science stack in Nixpkgs. This includes work on packages and modules for scientific computation, artificial intelligence and data processing, as well as data science IDEs.</p>
+<h3 id="jupyterlab">JupyterLab</h3><p>The <a href="https://github.com/tweag/jupyterWith">JupyterWith</a> repo &quot;provides a Nix-based framework for the definition of declarative and reproducible Jupyter environments. These environments include JupyterLab - configurable with extensions - the classic notebook, and configurable Jupyter kernels.&quot;</p>
+<p>Alternatively, <a href="https://github.com/NixOS/nixpkgs/pull/49807">there is an unmerged pull request</a> with work to easily deploy arbitrary kernels and jupyter extensions with nix. There are some limitations due to jupyterlab extensions relying heavily on npm and webpack to compile the javascript modules. Thus an unpure setup was considered easiest to get it working. If the pull request were merged, the following `default.nix` shell would install 20 jupyerlab extension + 4 kernels (c, python, go, and ansible). All that would need to be edited by user would be kernels, additionalExtensions, and buildInputs. The rest would be automatic and would launch a jupyterlab instance for you.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs <span class="hljs-operator">?</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> {}, pythonPackages <span class="hljs-operator">?</span> pkgs.python36Packages }:
+
+<span class="hljs-keyword">let</span> kernels <span class="hljs-operator">=</span> [
+      pkgs.python36Packages.ansible-kernel
+      pythonPackages.jupyter-c-kernel
+      pkgs.gophernotes
+    ];
+
+    <span class="hljs-attr">additionalExtensions</span> <span class="hljs-operator">=</span> [
+      <span class="hljs-string">&quot;@jupyterlab/toc&quot;</span>
+      <span class="hljs-string">&quot;@jupyterlab/fasta-extension&quot;</span>
+      <span class="hljs-string">&quot;@jupyterlab/geojson-extension&quot;</span>
+      <span class="hljs-string">&quot;@jupyterlab/katex-extension&quot;</span>
+      <span class="hljs-string">&quot;@jupyterlab/mathjax3-extension&quot;</span>
+      <span class="hljs-string">&quot;@jupyterlab/plotly-extension&quot;</span>
+      <span class="hljs-string">&quot;@jupyterlab/vega2-extension&quot;</span>
+      <span class="hljs-string">&quot;@jupyterlab/vega3-extension&quot;</span>
+      <span class="hljs-string">&quot;@jupyterlab/xkcd-extension&quot;</span>
+      <span class="hljs-string">&quot;jupyterlab-drawio&quot;</span>
+      <span class="hljs-string">&quot;@jupyterlab/hub-extension&quot;</span>
+      <span class="hljs-string">&quot;jupyterlab_bokeh&quot;</span>
+    ];
+<span class="hljs-keyword">in</span>
+pkgs.mkShell <span class="hljs-keyword">rec</span> {
+  <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-comment">### Base Packages</span>
+    pythonPackages.jupyterlab pkgs.nodejs
+
+    <span class="hljs-comment">### Extensions</span>
+    pythonPackages.ipywidgets
+    pythonPackages.ipydatawidgets
+    pythonPackages.ipywebrtc
+    pythonPackages.pythreejs
+    pythonPackages.ipyvolume
+    pythonPackages.jupyterlab-git
+    pythonPackages.jupyterlab-latex
+    pythonPackages.ipyleaflet
+    pythonPackages.ipympl
+  ] <span class="hljs-operator">++</span> kernels;
+
+  <span class="hljs-attr">shellHook</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    TEMPDIR=$(mktemp -d -p /tmp)
+    mkdir -p $TEMPDIR
+    cp -r <span class="hljs-subst">${pkgs.python36Packages.jupyterlab}</span>/share/jupyter/lab/* $TEMPDIR
+    chmod -R 755 $TEMPDIR
+    echo &quot;$TEMPDIR is the app directory&quot;
+
+    # kernels
+    export JUPYTER_PATH=&quot;<span class="hljs-subst">${pkgs.lib.concatMapStringsSep <span class="hljs-string">&quot;:&quot;</span> (<span class="hljs-params">p:</span> <span class="hljs-string">&quot;<span class="hljs-subst">${p}</span>/share/jupyter/&quot;</span>) kernels}</span>&quot;
+
+# labextensions
+<span class="hljs-subst">${pkgs.lib.concatMapStrings
+     (<span class="hljs-params">s:</span> <span class="hljs-string">&quot;jupyter labextension install --no-build --app-dir=$TEMPDIR <span class="hljs-subst">${s}</span>; &quot;</span>)
+     (pkgs.lib.unique
+       ((pkgs.lib.concatMap
+           (<span class="hljs-params">d:</span> pkgs.lib.attrByPath [<span class="hljs-string">&quot;passthru&quot;</span> <span class="hljs-string">&quot;jupyterlabExtensions&quot;</span>] [] d)
+           buildInputs) <span class="hljs-operator">++</span> additionalExtensions))  }</span>
+jupyter lab build --app-dir=$TEMPDIR
+
+# start jupyterlab
+jupyter lab --app-dir=$TEMPDIR
+  &#x27;&#x27;</span>;
+
+}</code></pre>
+      </div><p>Some recent examples of work done on libraries:</p>
+<ul>
+<li><a href="https://github.com/NixOS/nixpkgs/pulls?utf8=%E2%9C%93&amp;q=is%3Apr+nlp+">nlp</a></li>
+<li><a href="https://github.com/NixOS/nixpkgs/pulls?utf8=%E2%9C%93&amp;q=is%3Apr+sklearn">scikit-learn</a></li>
+<li><a href="https://github.com/NixOS/nixpkgs/pulls?utf8=%E2%9C%93&amp;q=is%3Apr+tensorflow">tensorflow</a></li>
+</ul>
+<p>There has also been notable work on the data science infra :</p>
+<ul>
+<li><a href="https://github.com/NixOS/nixpkgs/pulls?utf8=%E2%9C%93&amp;q=is%3Apr+jupyter">Jupyter</a></li>
+<li><a href="https://github.com/NixOS/nixpkgs/pull/38566">Jupyterlab package</a></li>
+<li><a href="https://github.com/NixOS/nixpkgs/pulls?utf8=%E2%9C%93&amp;q=is%3Apr+jupyterhub">Jupyterhub</a></li>
+</ul>
+<p>with such highlights as <a href="https://github.com/NixOS/nixpkgs/blob/master/nixos/modules/services/development/jupyter/default.nix">Jupyter kernels written in Nix</a>:</p>
+<p>It looks like NixOS is well on its way to becoming a solid data science platform; the reproducible and language agnostic approach is a natural match to the task. But perhaps a coordinated effort be fruitful step up the game?</p>
+<p>Lets continue the discussion here and at #nixos-data.</p>
+<h2 id="channels">Channels</h2><p><a href="https://matrix.to/#/#datascience:nixos.org">#datascience:nixos.org on Matrix</a></p>
+<h2 id="people">People</h2><p><a href="user:Ixxie" class="wikilink" title="Ixxie">Ixxie</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

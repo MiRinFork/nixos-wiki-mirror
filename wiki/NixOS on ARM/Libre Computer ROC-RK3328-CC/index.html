@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NixOS on ARM/Libre Computer ROC-RK3328-CC</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM">NixOS on ARM</a><span aria-hidden="true"> / </span>Libre Computer ROC-RK3328-CC</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: NixOS on ARM/Libre Computer ROC-RK3328-CC -->
+
+<div class="infobox">
+
+<table>
+<thead>
+<tr>
+<th colspan="2" class="title"><p>Libre Computer ROC-RK3328-CC</p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td colspan="2"><figure>
+<img src="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/Libre%20Computer%20ROC-RK3328-CC/ROC-RK3328-CC.png" title="A Libre Computer ROC-RK3328-CC." width="256" />
+<figcaption>A Libre Computer ROC-RK3328-CC.</figcaption>
+</figure></td>
+</tr>
+<tr>
+<td><p>Manufacturer</p></td>
+<td><p>Firefly for Libre Computer</p></td>
+</tr>
+<tr>
+<td><p>Architecture</p></td>
+<td><p>AArch64</p></td>
+</tr>
+<tr>
+<td><p>Bootloader</p></td>
+<td><p>Upstream U-Boot</p></td>
+</tr>
+<tr>
+<td><p>Boot options</p></td>
+<td><p>microSD, eMMC, SPI NOR Flash</p></td>
+</tr>
+</tbody>
+</table>
+
+</div>
+
+<p>The ROC-RK3328-CC (Renegade) is a single board computer built around the Rockchip RK3328 SoC. It is very similar to the <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/Libre%20Computer%20ROC-RK3328-CC/NixOS_on_ARM/PINE64_ROCK64" class="wikilink" title="ROCK64">ROCK64</a>.</p>
+<p>There are three models of the board, with 1, 2 or 4 GB of RAM. It can boot from an microSD card or an eMMC. It also has a 128 Mbit SPI flash that can be used to store the bootloader.</p>
+<h2 id="status">Status</h2><p>This board has upstream U-Boot and kernel support, although the mainline kernel may still be missing some features. NixOS can be installed using manual partitioning and <code>nixos-install</code> or by modifying the aarch64 installation image as described in the next section.</p>
+<p>U-Boot for this board is packaged in nixpkgs, and Hydra builds can be found here:</p>
+<p><a href="https://hydra.nixos.org/job/nixpkgs/trunk/ubootRock64.aarch64-linux">https://hydra.nixos.org/job/nixpkgs/trunk/ubootRock64.aarch64-linux</a></p>
+<p>This bootloader is not entirely open, incorporating a binary blob for the tertiary program loader (TPL). If your have nix installed you can download the latest version with (This command also works on different architectures since it can be downloaded from the binary cache):</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-build <span class="hljs-string">&#x27;&lt;nixpkgs&gt;&#x27;</span> -A ubootRock64 --argstr system aarch64-linux</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">ls</span> -la result</span>
+-r--r--r-- 2 root root    107683 Jan  1  1970 idbloader.img
+dr-xr-xr-x 1 root root        40 Jan  1  1970 nix-support
+-r--r--r-- 2 root root    789504 Jan  1  1970 u-boot.itb</code></pre>
+      </div><h2 id="board-specific-installation-notes">Board-specific installation notes</h2><p>U-Boot needs to be copied to specific sectors on the microSD card, eMMC or image with <code>dd</code>.</p>
+<p>You can use <a href="https://github.com/Mic92/nixos-aarch64-images">nixos-aarch64-images</a> to get an rock64 compatible disk image or running the commands manually.</p>
+<p>Download/build U-Boot for the board, and write <code>idbloader.img</code> and <code>u-boot.itb</code>. Replace in the command below <code>/dev/mmcblkX</code> with the correct device to the sdcard i.e. <code>/dev/mmcblk0</code>. You can use the <code>lsblk</code> command to get a list of all devices:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">dd</span> <span class="hljs-keyword">if</span>=idbloader.img of=/dev/mmcblkX conv=fsync,notrunc bs=512 seek=64
+<span class="hljs-built_in">dd</span> <span class="hljs-keyword">if</span>=u-boot.itb of=/dev/mmcblkX conv=fsync,notrunc bs=512 seek=16384</code></pre>
+      </div><p>This will make the first partition of the installation device unmountable and it can be deleted, but the space needs to be kept to not overwrite the bootloader with another filesystem.</p>
+<h2 id="build-your-own-image-natively">Build your own image natively</h2><p>You can customize image by using the following snippet.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># save as sd-image.nix somewhere</span>
+{ ... }: {
+  <span class="hljs-comment"># only needed for crosscompilation</span>
+  <span class="hljs-attr">nixpkgs.crossSystem</span> <span class="hljs-operator">=</span> lib.systems.elaborate lib.systems.examples.aarch64-multiplatform;
+
+  <span class="hljs-attr">imports</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-operator">&lt;</span>nixpkgs<span class="hljs-operator">/</span>nixos<span class="hljs-operator">/</span>modules<span class="hljs-operator">/</span>installer<span class="hljs-operator">/</span>sd-card<span class="hljs-operator">/</span>sd-image-aarch64.nix<span class="hljs-operator">&gt;</span>
+  ];
+
+  <span class="hljs-attr">nixpkgs.config.allowUnfree</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; <span class="hljs-comment"># needed for ubootRock64</span>
+  <span class="hljs-comment"># at the time of writing the u-boot version from FireFly hasn&#x27;t been successfully ported yet</span>
+  <span class="hljs-comment"># so we use the one from Rock64</span>
+  <span class="hljs-attr">sdImage.postBuildCommands</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; <span class="hljs-string">&#x27;&#x27;
+    dd if=<span class="hljs-subst">${ubootRock64}</span>/idbloader.img of=$img conv=fsync,notrunc bs=512 seek=64
+    dd if=<span class="hljs-subst">${ubootRock64}</span>/u-boot.itb of=$img conv=fsync,notrunc bs=512 seek=16384
+  &#x27;&#x27;</span>;
+
+  <span class="hljs-comment"># put your own configuration here, for example ssh keys:</span>
+  <span class="hljs-attr">users.extraUsers.root.openssh.authorizedKeys.keys</span> <span class="hljs-operator">=</span> [
+     <span class="hljs-string">&quot;ssh-ed25519 AAAAC3NzaC1lZDI1.... username@tld&quot;</span>
+  ];
+}</code></pre>
+      </div><p>Then build with:</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-build <span class="hljs-string">&#x27;&lt;nixpkgs/nixos&gt;&#x27;</span> \
+    -A config.system.build.sdImage \
+    -I nixpkgs=https://github.com/NixOS/nixpkgs/archive/9bc841fec1c0e8b9772afa29f934d2c7ce57da8e.tar.gz \ <span class="hljs-comment"># pinned to nixos-unstable on 2022-03-23</span></span>
+    -I nixos-config=./sd-image.nix</code></pre>
+      </div><h2 id="usb">USB</h2><p>To enable USB power <em>GPIO1_D2</em> must be pulled high. D2 translates to 26 (D=4, 4*8+2=26). Normally this is configured in the device tree, which gets loaded at boot time. At the time of writing, the ROC-RK3328-CC version of u-boot hasn&#39;t been ported to nixpkgs yet, so this is most easily done with the following systemd service.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  systemd.services.<span class="hljs-string">&quot;usb-enable&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">script</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.libgpiod}</span>/bin/gpioset 1 26=1&quot;</span>;
+    <span class="hljs-attr">wantedBy</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;default.target&quot;</span> ];
+  };</code></pre>
+      </div><h2 id="serial-console">Serial console</h2><p>The ROC-RK3328-CC uses a GPIO pinout compatible with the Raspberry Pi 2 and newer. This means that the following pins can be used to connect a serial adapter:</p>
+<table>
+<thead>
+<tr>
+<th colspan="2" style="background: var(--color-inverted)"><p>Pi-2 Bus</p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><p>Pin</p></td>
+<td><p>Function</p></td>
+</tr>
+<tr>
+<td><p>6</p></td>
+<td><p>GND</p></td>
+</tr>
+<tr>
+<td><p>8</p></td>
+<td><p>UART0_TX</p></td>
+</tr>
+<tr>
+<td><p>10</p></td>
+<td><p>UART0_RX</p></td>
+</tr>
+</tbody>
+</table>
+
+<p>The serial console runs at 1500000 baud in the bootloader. When using the standard NixOS aarch64 sd image, set <code>console=tty1 console=ttyS2,1500000n8</code> as kernel option in <code>extlinux/extlinux.conf</code> on the boot partition of the sdimage to get a serial linux console (tty1 is for standard HDMI output and ttyS2 is for the serial, baud rate setting is optional, simple console=ttyS2 seems to be working fine too). For debugging, <code>console=uart8250,mmio32,0xff130000</code> should give you an early UART console, before the full serial console is up.</p>
+<p>From the host computer run (update /dev/ttyUSB0 with your USB-to-serial device)</p>
+<p><code>nix-shell -p python3Packages.pyserial --run &#39;python3 -m serial.tools.miniterm --exit-char 24 --raw /dev/ttyUSB0 1500000&#39;</code></p>
+<h2 id="compatibility-notes">Compatibility notes</h2><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td></td>
+<td>Mainline kernel</td>
+</tr>
+<tr>
+<td>Ethernet</td>
+<td>Works</td>
+</tr>
+<tr>
+<td>USB</td>
+<td>As of 5.4, USB 3.0 does not work</td>
+</tr>
+<tr>
+<td>HDMI</td>
+<td>Video works, Sound does not</td>
+</tr>
+</tbody></table>
+<h2 id="resources">Resources</h2><ul>
+<li><a href="https://www.libre.computer/products/rk3328/">Official product page</a></li>
+<li><a href="https://roc-rk3328-cc.readthedocs.io/en/latest/intro.html">Official Getting Started Guide</a></li>
+</ul>
+<p><a href="category:NixOS_on_ARM" class="wikilink" title="Category:NixOS on ARM">Category:NixOS on ARM</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NixOS on ARM/Allwinner/GPT Installation</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM">NixOS on ARM</a><span aria-hidden="true"> / </span><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/Allwinner">Allwinner</a><span aria-hidden="true"> / </span>GPT Installation</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: NixOS on ARM/Allwinner/GPT Installation -->
+
+<p>This guide is intended to demonstrate how to install NixOS on an Allwinner target device, using u-boot, allowing for use of the GPT partition scheme.</p>
+<p>The main advantage of going this way is the ability to boot using a UEFI-based bootloader from u-boot, on one single storage.</p>
+<p>This guide uses <a href="https://github.com/samueldr/holey">holey</a>, a script intended to make this easier. A manual method using <code>cgpt</code> and <code>gdisk</code> will be described at the end.</p>
+<h2 id="what-will-this-do">What will this do?</h2><p>This will create a GPT partitioned disk with a hole between the Primary GPT header and the Primary GPT Table. The location where the Allwinner SoC looks for the bootloader falls within that hole, and this is where u-boot will be installed. Without that hole, the u-boot bootloader would be installed over the end of the Primary GPT table.</p>
+<p>On a MBR partitioned disk, this location is at the beginning of the disk. As long as care is taken not to add a partition over it, there should be no clash.</p>
+<p>By using a hole in the GPT, the installed firmware is more resilient to re-partitioning, as long as the GPT table is not cleared and written anew. There is no risk of overwriting the bootloader by manipulating partitions.</p>
+<h2 id="preparations">Preparations</h2><p>You will need to boot the installation media from a different storage than the target storage (where you will install). On some, if not most, Allwinner systems, it is possible to boot from USB as long as you can boot u-boot in some manner. This means that you could flash the u-boot bootloader to an empty SD card, and boot from a USB drive containing either the UEFI iso or the SD image installer. Alternatively, some platforms will have multiple storage, and will boot from SD card before booting from the internal storage.</p>
+<p>This is needed because the target storage will be erased, while the usual SD image from NixOS expects the user to re-use the partitions from the booted system.</p>
+<p>Alternatively, it should be possible to install to a smaller storage, and <code>dd</code> it to the internal storage and resize the partitions. Though it is untested. Finally, it is possible to install on a USB connected storage, e.g. to another SD card in a USB SD reader, or a specialized eMMC USB adapter.</p>
+<h2 id="partitioning">Partitioning</h2><p>Once booted to the installer system, you will need to get the holey tool.</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">nix-shell -p 'import (fetchTarball https://github.com/samueldr/holey/archive/master.tar.gz) {}'</code></pre>
+      </div><p>This will drop you in a shell with holey available.</p>
+<p>Create a new GPT partition table on the target drive. By default it will leave a 2MiB gap which is plenty for the default u-boot builds, with spare space for further increase in size if needed.</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs"> $ holey /dev/$DISK init</code></pre>
+      </div><p>You can verify that it worked.</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs"> $ holey /dev/$DISK check
+Holey GPT looks fine!
+       start        size    part  contents
+           0           1          PMBR (Boot GUID: FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF)
+           1           1          Pri GPT header
+        4100          32          Pri GPT table
+    61071327          32          Sec GPT table
+    61071359           1          Sec GPT header</code></pre>
+      </div><p>At that point, the GPT has been split, there is a gap between the header and the table.</p>
+<p>You can continue either by using <code>holey</code> to add partitions, or partition like you want using tools like <code>cfdisk</code>, <code>fdisk</code> or <code>gdisk</code>.</p>
+<p>The next commands will prepare an ESP (EFI System Partition) and a root partition for the system. For the size of the ESP, 512MiB has been chosen, keep in mind that on ARM platforms the kernel is not compressed, and can be around 2-3 times bigger than on x86_64.</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">holey /dev/$DISK add esp 512
+holey /dev/$DISK add linux</code></pre>
+      </div><p>The last call will make the partition as big as it can fit.</p>
+<h2 id="installing-u-boot">Installing u-boot</h2><p>This is done as usually is done.</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">dd if=result/u-boot-sunxi-with-spl.bin of=/dev/$DISK bs=1024 seek=8 oflag=sync</code></pre>
+      </div><p>This is also how an update to u-boot would be installed.</p>
+<h2 id="finishing">Finishing</h2><p>From here, the installation process is as usual with NixOS.</p>
+<hr />
+
+<h2 id="using-other-tools">Using other tools</h2><h3 id="create-the-hole-using-gdisk">Create the hole using <code>gdisk</code></h3><p>Follows the transcript, starting from an empty disk.</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs"> $ gdisk /dev/$DISK
+GPT fdisk (gdisk) version 1.0.4
+
+Partition table scan:
+  MBR: not present
+  BSD: not present
+  APM: not present
+  GPT: not present
+
+Creating new GPT entries in memory.
+
+Command (? for help): o
+This option deletes all partitions and creates a new protective MBR.
+Proceed? (Y/N): y
+
+Command (? for help): x
+
+Expert command (? for help): j
+Currently, main partition table begins at sector 2 and ends at sector 33
+Enter new starting location (2 to 18446744073709551583; default is 2; 1 to abort): 4100
+
+Expert command (? for help): m
+
+Command (? for help): w
+
+Final checks complete. About to write GPT data. THIS WILL OVERWRITE EXISTING
+PARTITIONS!!
+
+Do you want to proceed? (Y/N): y
+OK; writing new GUID partition table (GPT) to disk.img.
+Warning: The kernel is still using the old partition table.
+The new table will be used at the next reboot or after you
+run partprobe(8) or kpartx(8)
+The operation has completed successfully.</code></pre>
+      </div><h3 id="create-the-hole-using-cgpt">Create the hole using <code>cgpt</code></h3><p><code>cgpt</code> is a GPT manipulation tool. We start by zeroing the GPT and continue by creating a new partition table, then add the protective MBR. Adding that PMBR is what is needed for the kernel and tools to see and understand the GPT properly.</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs"># Zeroes the GPTs, if it makes sense
+cgpt create -z /dev/$DISK
+
+# Creates new GPTs with space for the bootloader
+cgpt create -p 4100 /dev/$DISK
+
+# Creates the PMBR; also makes the GPT show up in most tools.
+cgpt boot -p /dev/$DISK</code></pre>
+      </div><p><a href="category:NixOS_on_ARM" class="wikilink" title="Category:NixOS on ARM">Category:NixOS on ARM</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

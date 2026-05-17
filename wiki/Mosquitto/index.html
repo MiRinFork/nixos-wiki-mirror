@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mosquitto</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Mosquitto</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Mosquitto -->
+
+<p><a href="https://mosquitto.org/">Mosquitto</a> is an open source message broker that implements the MQTT protocol, a lightweight and popular communication method for the Internet of Things (IoT). Mosquitto supports MQTT versions 5.0, 3.1.1 and 3.1, and can run on various devices, from low power single board computers to full servers.</p>
+<p>This article extends the documentation in the <a href="https://nixos.org/manual/nixos/stable/#module-services-mosquitto">NixOS manual</a>.</p>
+<h2 id="setup">Setup</h2><p>The following setup enables a local Mosquitto server listening on port <code>1883</code>, allowing anonymous access for demonstration purpose.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.mosquitto</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">listeners</span> <span class="hljs-operator">=</span> [
+    {
+      <span class="hljs-attr">acl</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;pattern readwrite #&quot;</span> ];
+      <span class="hljs-attr">omitPasswordAuth</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">settings.allow_anonymous</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    }
+  ];
+};
+
+<span class="hljs-attr">networking.firewall</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">allowedTCPPorts</span> <span class="hljs-operator">=</span> [ <span class="hljs-number">1883</span> ];
+};</code></pre>
+      </div><h2 id="advanced-setup">Advanced Setup</h2><p>The following more advanced setup also enables a local Mosquitto server listening on port <code>1883</code>, but with some setting overrides, a simple user definition containing ACL statements, and a bridge configuration that connects this Mosquitto instance to an AWS IoT Core broker using Mutual TLS. The configured topics are transparently copied between the two brokers (no local or remote prefixes are added to the topic names).</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.mosquitto</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">listeners</span> <span class="hljs-operator">=</span> [{
+    <span class="hljs-attr">address</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;192.168.0.1&quot;</span>;
+    <span class="hljs-attr">port</span> <span class="hljs-operator">=</span> <span class="hljs-number">1883</span>;
+    <span class="hljs-attr">users.iotdevice</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">acl</span> <span class="hljs-operator">=</span> [
+        <span class="hljs-string">&quot;read IoT/device/action&quot;</span>
+        <span class="hljs-string">&quot;write IoT/device/observations&quot;</span>
+        <span class="hljs-string">&quot;write IoT/device/LW&quot;</span>
+      ];
+      <span class="hljs-attr">password</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;mysweetpassword-or-use-hashedPassword&quot;</span>;
+    };
+  }];
+  bridges.<span class="hljs-string">&quot;aws_iot_core&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">addresses</span> <span class="hljs-operator">=</span> [{
+      <span class="hljs-attr">address</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;foobar.iot.us-west-2.amazonaws.com&quot;</span>;
+      <span class="hljs-attr">port</span> <span class="hljs-operator">=</span> <span class="hljs-number">8883</span>;
+    }];
+    <span class="hljs-attr">topics</span> <span class="hljs-operator">=</span> [
+      <span class="hljs-string">&quot;IoT/device/action in 1 <span class="hljs-char escape_">\&quot;</span><span class="hljs-char escape_">\&quot;</span>&quot;</span>
+      <span class="hljs-string">&quot;IoT/device/observations out 1 <span class="hljs-char escape_">\&quot;</span><span class="hljs-char escape_">\&quot;</span>&quot;</span>
+      <span class="hljs-string">&quot;IoT/device/LW out 0 <span class="hljs-char escape_">\&quot;</span><span class="hljs-char escape_">\&quot;</span>&quot;</span>
+    ];
+    <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">local_clientid</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;NiXOS-Mosquitto&quot;</span>;
+      <span class="hljs-attr">remote_clientid</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;NiXOS-Mosquitto&quot;</span>;
+      <span class="hljs-attr">cleansession</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">notifications</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+      <span class="hljs-attr">start_type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;automatic&quot;</span>;
+      <span class="hljs-attr">bridge_protocol_version</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;mqttv311&quot;</span>;
+      <span class="hljs-attr">bridge_outgoing_retain</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+      <span class="hljs-attr">bridge_insecure</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+      <span class="hljs-attr">bridge_cafile</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/persist/etc/mosquitto/AmazonRootCA1-RSA.pem&quot;</span>;
+      <span class="hljs-attr">bridge_certfile</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/persist/etc/mosquitto/certificate.pem&quot;</span>;
+      <span class="hljs-attr">bridge_keyfile</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/persist/etc/mosquitto/private.pem.key&quot;</span>;
+    };
+  };
+};
+
+<span class="hljs-attr">networking.firewall</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">allowedTCPPorts</span> <span class="hljs-operator">=</span> [ <span class="hljs-number">1883</span> ];
+};</code></pre>
+      </div><h2 id="configuration">Configuration</h2><h3 id="password-authentication">Password authentication</h3><p>The following command will generate a hashed password for the user <code>root</code> into the file <code>/tmp/passwd</code>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nix shell nixpkgs#mosquitto --<span class="hljs-built_in">command</span> mosquitto_passwd -c /tmp/passwd root
+<span class="hljs-built_in">cat</span> /tmp/passwd
+<span class="hljs-comment"># root:$7$101$KIGAc4K4Pj2zfump$a1s19bL++vN7RlUqJne869JZepEditIOTDPrmaRG2Jlg37/uNJcLzxjk6n5adwbc7COd3eyXuJ7T+CEI+wwxvQ==</span></code></pre>
+      </div><p>Use the hash after <code>root:</code> for the following configuration.</p>
+<p>Change the Mosquitto listeners configuration by adding a user, in this example called <code>root</code> with the hashed password.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">m<span class="hljs-attr">osquitto</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">listeners</span> <span class="hljs-operator">=</span> [
+    {
+      <span class="hljs-attr">users.root</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">acl</span> <span class="hljs-operator">=</span> [
+          <span class="hljs-string">&quot;readwrite #&quot;</span>
+        ];
+        <span class="hljs-attr">hashedPassword</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;$6$arZ0Sf.HKZGgSBRR$/cAB1gB4P9JQzZ6cEnIWbPNlit.PYQsbRTaRmfUsBePOtPN6P/L7TWNMaeFc2YTT904loeC3Xq3Qpdzxgen9Y/==&quot;</span>;
+      };
+    }
+  ];
+};</code></pre>
+      </div><h2 id="usage">Usage</h2><p>Testing the server is possible by running a listening comand. We also supply username <code>root</code> and password <code>mypasswd</code> from above.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nix shell nixpkgs#mosquitto --<span class="hljs-built_in">command</span> mosquitto_sub -h localhost -t <span class="hljs-built_in">test</span> -u root -P mypasswd</code></pre>
+      </div><p>On a different shell the second command sends a message which should be received by the command above</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nix shell nixpkgs#mosquitto --<span class="hljs-built_in">command</span> mosquitto_pub -h localhost -t <span class="hljs-built_in">test</span> -m <span class="hljs-string">&quot;Hello&quot;</span> -u root -P mypasswd</code></pre>
+      </div><p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

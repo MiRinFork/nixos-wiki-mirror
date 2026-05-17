@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Packaging/32bit Applications</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/Packaging">Packaging</a><span aria-hidden="true"> / </span>32bit Applications</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Packaging/32bit Applications -->
+
+<h2 id="building-software-with-32bit-gcc">Building software with 32bit <code>gcc</code></h2><p><strong>Question</strong>: I&#39;m invoking gcc with -m32 and it fails to find <code>`gnu/stubs-32.h`</code><br><strong>Answer (clever)</strong>: you want to use <code>pkgsi686Linux</code> instead of pkgs, so things like <code>pkgsi686Linux.stdenv.mkDerivation</code> or <code>pkgsi686Linux.callPackage</code> then nix will give you 32bit everything<sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Packaging/32bit%20Applications#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup></p>
+<h2 id="building-software-with-both-32--and-64-bit-executables">Building software with both 32- and 64-bit executables</h2><p>If a package wants to compile both 32/64-bit executables, you need a compiler with multilib support. Nixpkgs provides <code>multiStdenv.mkDerivation</code> that should be used instead <code>stdenv.mkDerivation</code>. This is equivalent to using <code>gcc-multilib</code> in debian derivatives.</p>
+<h3 id="rust">Rust</h3><div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nv</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-comment"># Use multilib clang as linker for i686 target.</span>
+  <span class="hljs-comment"># Required because Rust&#x27;s bundled LLD doesn&#x27;t know about Nix&#x27;s multilib sysroot paths.</span>
+  <span class="hljs-comment"># clang_multi has the correct 32-bit library paths (glibc_multi) baked into its driver.</span>
+  <span class="hljs-attr">CARGO_TARGET_I686_UNKNOWN_LINUX_GNU_LINKER</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.clang_multi}</span>/bin/clang&quot;</span>;
+};
+
+<span class="hljs-attr">packages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+  <span class="hljs-comment"># clang with multilib support (both 32-bit and 64-bit)</span>
+  <span class="hljs-comment"># This properly handles -m32 compilation with correct headers/libs</span>
+  clang_multi
+];</code></pre>
+      </div><p>An example that will let you build with <code>cargo test --target i686-unknown-linux-gnu</code> from an x86_64 machine.</p>
+<p>You will want something similar to the following in your <code>flake.nix</code>, <code>devenv.sh</code> , or whatever you&#39;re using as your entry point.</p>
+<h4 id="rust-lto-amp-cargo-bench">Rust LTO &amp; cargo bench</h4><p>If you are using LTO and are having trouble building benchmarks (<code>cargo bench</code>) you may need to disable it at the build step until someone documents a better workaround here.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nv</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-comment"># Disable LTO for C/C++ code compiled by the `cc` crate for i686.</span>
+  <span class="hljs-comment"># Some crates (like `alloca`) add -flto when CC=clang, but binutils ld can&#x27;t</span>
+  <span class="hljs-comment"># process LLVM IR bitcode. Using -fno-lto ensures native object files.</span>
+  <span class="hljs-attr">CFLAGS_i686_unknown_linux_gnu</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;-fno-lto&quot;</span>;
+  <span class="hljs-attr">CXXFLAGS_i686_unknown_linux_gnu</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;-fno-lto&quot;</span>;
+};</code></pre>
+      </div><p><a href="category:Development" class="wikilink" title="Category:Development">Category:Development</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p>[<a href="https://logs.nix.samueldr.com/nixos/2018-03-19#1521474071-1521474422">https://logs.nix.samueldr.com/nixos/2018-03-19#1521474071-1521474422</a>; clever, #nixos 2018-03-19] <a href="https://mirror.nixoscn.org/wiki/Packaging/32bit%20Applications#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

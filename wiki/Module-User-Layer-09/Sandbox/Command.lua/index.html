@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Module-User-Layer-09/Sandbox/Command.lua</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/Module-User-Layer-09">Module-User-Layer-09</a><span aria-hidden="true"> / </span><a href="https://mirror.nixoscn.org/wiki/Module-User-Layer-09/Sandbox">Sandbox</a><span aria-hidden="true"> / </span>Command.lua</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Module:User:Layer-09/Sandbox/Command.lua -->
+
+<p>local p = {}</p>
+<p>function p.main(frame)</p>
+<p><code>   local parent = frame:getParent()</code><br><code>   local args = parent.args</code><br><code>   </code><br><code>   local content = args[1] or &#39;&#39;</code><br><code>   local type = mw.text.trim(args.type or &#39;command&#39;)</code><br><code>   </code><br><code>   -- Handle empty content</code><br><code>   if content == &#39;&#39; then</code><br><code>       return &#39;</code></p>
+<div class="mw-command-block">
+
+<p><em>No command specified</em></p>
+</div>
+
+<p>&#39;</p>
+<p><code>   end</code><br><code>   </code><br><code>   local lines = mw.text.split(content, &#39;\n&#39;)</code><br><code>   local is_multiline = #lines &gt; 1</code><br><code>   </code><br><code>   -- Create the main container</code><br><code>   local root = mw.html.create(&#39;div&#39;)</code><br><code>   root:addClass(&#39;mw-command-block&#39;)</code><br><code>   </code><br><code>   -- Add the copy button</code><br><code>   local copyButton = root:tag(&#39;button&#39;)</code><br><code>   copyButton:addClass(&#39;mw-copy-button&#39;)</code><br><code>       :attr(&#39;type&#39;, &#39;button&#39;)</code><br><code>       :attr(&#39;title&#39;, &#39;Copy to clipboard&#39;)</code><br><code>       :wikitext(&#39;Copy&#39;)</code><br><code>       </code><br><code>   -- Create the area for all code lines</code><br><code>   local codeArea = root:tag(&#39;div&#39;)</code><br><code>   codeArea:addClass(&#39;mw-code-area&#39;)</code><br><code>   </code><br><code>   -- Loop through each line and build the structure</code><br><code>   for i, line in ipairs(lines) do</code><br><code>       local line_container = codeArea:tag(&#39;div&#39;)</code><br><code>       line_container:addClass(&#39;mw-code-line&#39;)</code><br><code>       </code><br><code>       -- Build the prefix string</code><br><code>       local prefix_str = &#39;&#39;</code><br><code>       if is_multiline then</code><br><code>           prefix_str = string.format(&#39;%2d&#39;, i) -- Right-align line numbers</code><br><code>       end</code><br><code>       </code><br><code>       if type == &#39;command&#39; then</code><br><code>           if is_multiline then</code><br><code>               prefix_str = prefix_str .. &#39;  $ &#39;</code><br><code>           else</code><br><code>               prefix_str = &#39;$ &#39;</code><br><code>           end</code><br><code>       elseif is_multiline then</code><br><code>           prefix_str = prefix_str .. &#39;   &#39; -- Add spacing for alignment</code><br><code>       end</code><br><code>       </code><br><code>       -- Create the prefix span</code><br><code>       if prefix_str ~= &#39;&#39; then</code><br><code>           line_container:tag(&#39;span&#39;)</code><br><code>               :addClass(&#39;mw-code-prefix&#39;)</code><br><code>               :wikitext(prefix_str)</code><br><code>       end</code><br><code>       </code><br><code>       -- Create the code element</code><br><code>       local code_element = line_container:tag(&#39;code&#39;)</code><br><code>       code_element:addClass(&#39;mw-code-text&#39;)</code><br><code>       </code><br><code>       -- Handle empty lines properly</code><br><code>       if mw.text.trim(line) == &#39;&#39; then</code><br><code>           code_element:wikitext(&#39;​&#39;) -- Zero-width space to maintain line height</code><br><code>       else</code><br><code>           -- Clean up the line and add it</code><br><code>           local clean_line = line:gsub(&#39;^%s+&#39;, </code><em><code>):gsub(&#39;%s+{{content}}#39;,</code></em><code>) -- Trim whitespace</code><br><code>           code_element:wikitext(line) -- Keep original spacing</code><br><code>       end</code><br><code>   end</code><br><code>   </code><br><code>   return tostring(root)</code></p>
+<p>end</p>
+<p>return p</p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

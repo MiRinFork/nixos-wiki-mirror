@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NFS</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / NFS</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: NFS -->
+
+<p>__FORCETOC__</p>
+<p><a href="wikipedia:Network_File_System" class="wikilink" title="NFS">NFS</a> is a distribute filesystem protocol to access directories and files over a network.</p>
+<h1 id="server">Server</h1><h2 id="nfs-share-setup">NFS share setup</h2><h3 id="using-bind-mounts">Using bind mounts</h3><p>Let&#39;s say that we&#39;ve got one server-machine with 2 directories that we want to share: <code>/mnt/tomoyo</code> and <code>/mnt/kotomi</code>.</p>
+<p>First, we have to create a dedicated directory from which our NFS server will access the data:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">mkdir</span> /export</span></code></pre>
+      </div><p>You may need to change ownership of the <code>/export</code> directory to <code>nobody:nogroup</code></p>
+<p>Then we have to either move our already-existing directories inside <code>/export</code> (using <code>mv</code> from the command line) or bind-mount them there:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  fileSystems.<span class="hljs-string">&quot;/export/tomoyo&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">device</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/mnt/tomoyo&quot;</span>;
+    <span class="hljs-attr">options</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;bind&quot;</span> ];
+  };
+
+  fileSystems.<span class="hljs-string">&quot;/export/kotomi&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">device</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/mnt/kotomi&quot;</span>;
+    <span class="hljs-attr">options</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;bind&quot;</span> ];
+  };
+}</code></pre>
+      </div><p>Refer to <a href="https://mirror.nixoscn.org/wiki/NFS/Filesystems#Bind_mounts" class="wikilink" title="Filesystems#Bind mounts">Filesystems#Bind mounts</a> for more information on bind mounts.</p>
+<h3 id="using-btrfs-subvolumes">Using btrfs subvolumes</h3><p>If you are using Btrfs, instead of moving existing directories or bind-mounting them into <code>/export</code>, you can create dedicated subvolumes directly under <code>/export</code>. This avoids the need for additional bind mounts and makes snapshotting or quota management easier. See <a href="https://mirror.nixoscn.org/wiki/NFS/btrfs#Subvolumes" class="wikilink" title="btrfs#Subvolumes">btrfs#Subvolumes</a> for details on creating subvolumes.</p>
+<h2 id="nfs-service-configuration">NFS service configuration</h2><p>Having the filesystem ready, we can proceed to configure the NFS server itself:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">services.nfs.server.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">services.nfs.server.exports</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    /export         192.168.1.10(rw,fsid=0,no_subtree_check) 192.168.1.15(rw,fsid=0,no_subtree_check)
+    /export/kotomi  192.168.1.10(rw,nohide,insecure,no_subtree_check) 192.168.1.15(rw,nohide,insecure,no_subtree_check)
+    /export/tomoyo  192.168.1.10(rw,nohide,insecure,no_subtree_check) 192.168.1.15(rw,nohide,insecure,no_subtree_check)
+  &#x27;&#x27;</span>;
+}</code></pre>
+      </div><p>This configuration exposes all our shares to 2 local IPs; you can find more examples at <a href="https://wiki.gentoo.org/wiki/NFSv4">Gentoo&#39;s wiki on NFS</a>.</p>
+<p>To list the current loaded exports, use: <code>exportfs -v</code></p>
+<p>Other options are available on the <a href="https://search.nixos.org/options?query=nfs">NixOS option page</a> or via the <code>nixos-option</code> command.</p>
+<p>12345</code>. See the <a href="https://btrfs.readthedocs.io/en/latest/Interoperability.html#nfs">btrfs interoperability docs</a> for more info.}}</p>
+<h3 id="firewall">Firewall</h3><p>If your server-machine has a firewall turned on (as NixOS does by default, for instance), don&#39;t forget to open appropriate ports; e.g. for NFSv4:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">etworking.firewall.allowedTCPPorts</span> <span class="hljs-operator">=</span> [ <span class="hljs-number">2049</span> ];</code></pre>
+      </div><p>Many clients only support NFSv3, which requires the server to have fixed ports:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">services.nfs.server</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-comment"># fixed rpc.statd port; for firewall</span>
+    <span class="hljs-attr">lockdPort</span> <span class="hljs-operator">=</span> <span class="hljs-number">4001</span>;
+    <span class="hljs-attr">mountdPort</span> <span class="hljs-operator">=</span> <span class="hljs-number">4002</span>;
+    <span class="hljs-attr">statdPort</span> <span class="hljs-operator">=</span> <span class="hljs-number">4000</span>;
+    <span class="hljs-attr">extraNfsdConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;&#x27;&#x27;</span>;
+  };
+  <span class="hljs-attr">networking.firewall</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-comment"># for NFSv3; view with `rpcinfo -p`</span>
+    <span class="hljs-attr">allowedTCPPorts</span> <span class="hljs-operator">=</span> [ <span class="hljs-number">111</span>  <span class="hljs-number">2049</span> <span class="hljs-number">4000</span> <span class="hljs-number">4001</span> <span class="hljs-number">4002</span> <span class="hljs-number">20048</span> ];
+    <span class="hljs-attr">allowedUDPPorts</span> <span class="hljs-operator">=</span> [ <span class="hljs-number">111</span> <span class="hljs-number">2049</span> <span class="hljs-number">4000</span> <span class="hljs-number">4001</span>  <span class="hljs-number">4002</span> <span class="hljs-number">20048</span> ];
+  };</code></pre>
+      </div><h1 id="client">Client</h1><p>To ensure the client has the necessary NFS utilities installed, add the following to your system configuration (for example, in <code>configuration.nix</code>).</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">boot.supportedFilesystems</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;nfs&quot;</span> ];</code></pre>
+      </div><p>NFS shares can be mounted on a client system using the standard <code>filesystem</code> option. Continuing the server example, to mount the <code>tomoyo</code> share:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  fileSystems.<span class="hljs-string">&quot;/mnt/tomoyo&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">device</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;server:/tomoyo&quot;</span>;
+    <span class="hljs-attr">fsType</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nfs&quot;</span>;
+  };
+}</code></pre>
+      </div><p>In the above configuration, replace &quot;server&quot; with the appropriate IP address or DNS entry of your NFS server. Other, regular <a href="https://search.nixos.org/options?query=filesystems.%3Cname%3E">filesystem options</a> apply.</p>
+<h2 id="specifying-nfs-version">Specifying NFS version</h2><p>You can specify NFS version by adding the <code>&quot;nfsvers=&quot;</code> option:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  fileSystems.<span class="hljs-string">&quot;/mnt/tomoyo&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-comment"># ...</span>
+    <span class="hljs-attr">options</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;nfsvers=4.2&quot;</span> ];
+  };
+}</code></pre>
+      </div><h2 id="lazy-mounting">Lazy-mounting</h2><p>By default, all shares will be mounted right when your machine starts - apart from being simply unwanted sometimes, this may also cause issues when your computer doesn&#39;t have a stable network connection or uses WiFi; you can fix this by telling systemd to mount your shares the first time they are <em>accessed</em> (instead of keeping them mounted at all times):</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  fileSystems.<span class="hljs-string">&quot;/mnt/tomoyo&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-comment"># ...</span>
+    <span class="hljs-attr">options</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;x-systemd.automount&quot;</span> <span class="hljs-string">&quot;noauto&quot;</span> ];
+  };
+}</code></pre>
+      </div><h2 id="auto-disconnecting">Auto-disconnecting</h2><p>You can tell systemd to disconnect your NFS-client from the NFS-server when the directory has not been accessed for some time:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  fileSystems.<span class="hljs-string">&quot;/mnt/tomoyo&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-comment"># ...</span>
+    <span class="hljs-attr">options</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;x-systemd.idle-timeout=600&quot;</span> ]; <span class="hljs-comment"># disconnects after 10 minutes (i.e. 600 seconds)</span>
+  };
+}</code></pre>
+      </div><h2 id="using-systemd-mounts-and-systemd-automounts">Using systemd.mounts and systemd.automounts</h2><p>This section provides an alternative approach for users who prefer to manage mounts using dedicated systemd units. Here is an example with auto-disconnecting and lazy-mounting implemented, and the <code>noatime</code> mount option added.</p>
+<p>Note that <code>wantedBy = [ &quot;multi-user.target&quot; ];</code> is required for the automount unit to start at boot.</p>
+<p>Also note that <code>x-systemd</code> mount options are unneeded, as they are a representation of systemd options in <code>fstab(5)</code> format. They get parsed and converted to unit files by <code>systemd-fstab-generator(8)</code> as mentioned in <code>systemd.mount(5)</code>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">services.rpcbind.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; <span class="hljs-comment"># needed for NFS</span>
+  <span class="hljs-attr">systemd.mounts</span> <span class="hljs-operator">=</span> [{
+    <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nfs&quot;</span>;
+    <span class="hljs-attr">mountConfig</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">Options</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;noatime&quot;</span>;
+    };
+    <span class="hljs-attr">what</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;server:/tomoyo&quot;</span>;
+    <span class="hljs-attr">where</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/mnt/tomoyo&quot;</span>;
+  }];
+
+  <span class="hljs-attr">systemd.automounts</span> <span class="hljs-operator">=</span> [{
+    <span class="hljs-attr">wantedBy</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;multi-user.target&quot;</span> ];
+    <span class="hljs-attr">automountConfig</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">TimeoutIdleSec</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;600&quot;</span>;
+    };
+    <span class="hljs-attr">where</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/mnt/tomoyo&quot;</span>;
+  }];
+}</code></pre>
+      </div><p>Multiple mounts with the exact same options can benefit from abstraction.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">services.rpcbind.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; <span class="hljs-comment"># needed for NFS</span>
+  <span class="hljs-attr">systemd.mounts</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">let</span> commonMountOptions <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nfs&quot;</span>;
+    <span class="hljs-attr">mountConfig</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">Options</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;noatime&quot;</span>;
+    };
+  };
+
+  <span class="hljs-keyword">in</span>
+
+  [
+    (commonMountOptions <span class="hljs-operator">//</span> {
+      <span class="hljs-attr">what</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;server:/tomoyo&quot;</span>;
+      <span class="hljs-attr">where</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/mnt/tomoyo&quot;</span>;
+    })
+
+    (commonMountOptions <span class="hljs-operator">//</span> {
+      <span class="hljs-attr">what</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;server:/kotomi&quot;</span>;
+      <span class="hljs-attr">where</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/mnt/kotomi&quot;</span>;
+    })
+  ];
+
+  <span class="hljs-attr">systemd.automounts</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">let</span> commonAutoMountOptions <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">wantedBy</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;multi-user.target&quot;</span> ];
+    <span class="hljs-attr">automountConfig</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">TimeoutIdleSec</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;600&quot;</span>;
+    };
+  };
+
+  <span class="hljs-keyword">in</span>
+
+  [
+    (commonAutoMountOptions <span class="hljs-operator">//</span> { <span class="hljs-attr">where</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/mnt/tomoyo&quot;</span>; })
+    (commonAutoMountOptions <span class="hljs-operator">//</span> { <span class="hljs-attr">where</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/mnt/kotomi&quot;</span>; })
+  ];
+}</code></pre>
+      </div><h1 id="nix-store-on-nfs">Nix store on NFS</h1><p>In a single-user setup (<strong>not on Nixos</strong>) the Nix store can be also exported over NFS (common in HPC clusters) to share package over the networks. The only requirement is to also pass <code>local_lock=flock</code> or <code>local_lock=all</code> as mount option to allow the nix packages to take locks on modifications. Example entry in <code>fstab</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs">&lt;host_or_ip&gt;/nix /nix nfs nofail,x-systemd.device-timeout=4,local_lock=all 0 0</code></pre>
+      </div><p><strong>TODO:</strong> Why this? That seems extremely unsafe. This disables NFS locks (which apply to all NFS clients), and makes locks <em>local</em>, meaning a lock taken by one NFS client isn&#39;t seen by another, and both can take their locks. So this removes protection against concurrent writes, which Nix assumes.</p>
+<p><a href="category:Filesystem" class="wikilink" title="Category:Filesystem">Category:Filesystem</a> <a href="category:Networking" class="wikilink" title="Category:Networking">Category:Networking</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

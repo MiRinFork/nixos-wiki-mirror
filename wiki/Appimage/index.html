@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Appimage</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Appimage</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Appimage -->
+
+<p><languages/> <translate> <a href="https://appimage.org/">AppImage</a> is a monolithic packaging format for linux applications. It contains all dependencies in one file that is composed of an executable with a tacked on filesystem.</p>
+<h2 id="usage">Usage</h2><h3 id="run">Run</h3><p>On most distros, all one has to do is download the <code>.AppImage</code> file, make it executable <code>chmod +x $AppImage</code>, and execute it. This doesn&#39;t work in NixOS out of the box though, as AppImage files usually (if not always) depend on certain system libraries in hardcoded paths. </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-shell -p appimage-run</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">appimage-run path/to/application.AppImage</span></code></pre>
+      </div><translate>
+
+<h5 id="additional-packages">Additional Packages</h5><p>Some appimages still have issues, so you can override for additional pkgs such as </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">p<span class="hljs-attr">rograms.appimage.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+<span class="hljs-attr">programs.appimage.binfmt</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+<span class="hljs-attr">programs.appimage.package</span> <span class="hljs-operator">=</span> pkgs.appimage-run.override 
+{
+  <span class="hljs-attr">extraPkgs</span> <span class="hljs-operator">=</span> <span class="hljs-params">pkgs:</span> 
+  [
+    pkgs.icu
+    pkgs.libxcrypt-legacy
+    pkgs.python312
+    pkgs.python312Packages.torch
+  ]; 
+};</code></pre>
+      </div><translate>
+
+<h3 id="packaging">Packaging</h3><p>See the <a href="https://nixos.org/manual/nixpkgs/stable/#sec-pkgs-appimageTools">nixpkgs manual on wrapping AppImage packages</a>. In short, the AppImage is extracted and any dependencies are added as Nix build dependencies. Following example is a derivation for the program Quba, which is also distributed as AppImage. </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  lib,
+  appimageTools,
+  fetchurl,
+}:
+
+<span class="hljs-keyword">let</span>
+  <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;1.4.0&quot;</span>;
+  <span class="hljs-attr">pname</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;quba&quot;</span>;
+
+  <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> fetchurl {
+    <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://github.com/ZUGFeRD/quba-viewer/releases/download/v<span class="hljs-subst">${version}</span>/Quba-<span class="hljs-subst">${version}</span>.AppImage&quot;</span>;
+    <span class="hljs-attr">hash</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sha256-EsTF7W1np5qbQQh3pdqsFe32olvGK3AowGWjqHPEfoM=&quot;</span>;
+  };
+
+  <span class="hljs-attr">appimageContents</span> <span class="hljs-operator">=</span> appimageTools.extractType1 { <span class="hljs-keyword">inherit</span> name src; };
+<span class="hljs-keyword">in</span>
+appimageTools.wrapType2 <span class="hljs-keyword">rec</span> {
+  <span class="hljs-keyword">inherit</span> pname version src;
+
+  <span class="hljs-attr">extraInstallCommands</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    substituteInPlace $out/share/applications/<span class="hljs-subst">${pname}</span>.desktop \
+      --replace-fail &#x27;Exec=AppRun&#x27; &#x27;Exec=<span class="hljs-subst">${meta.mainProgram}</span>&#x27;
+  &#x27;&#x27;</span>;
+
+  <span class="hljs-attr">meta</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Viewer for electronic invoices&quot;</span>;
+    <span class="hljs-attr">homepage</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://github.com/ZUGFeRD/quba-viewer&quot;</span>;
+    <span class="hljs-attr">downloadPage</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://github.com/ZUGFeRD/quba-viewer/releases&quot;</span>;
+    <span class="hljs-attr">license</span> <span class="hljs-operator">=</span> lib.licenses.asl20;
+    <span class="hljs-attr">sourceProvenance</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> lib.sourceTypes; [ binaryNativeCode ];
+    <span class="hljs-attr">maintainers</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> lib.maintainers; [ onny ];
+    <span class="hljs-attr">platforms</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;x86_64-linux&quot;</span> ];
+  };
+}</code></pre>
+      </div><translate>
+
+<h2 id="configuration">Configuration</h2><h3 id="register-appimage-files-as-a-binary-type-to-binfmt_misc">Register AppImage files as a binary type to binfmt_misc</h3><p>You can tell the <a href="https://mirror.nixoscn.org/wiki/Appimage/Linux_kernel" class="wikilink" title="Linux kernel">Linux kernel</a> to use an interpreter (e.g. <code>appimage-run</code>) when executing certain binary files through the use of <a href="https://en.wikipedia.org/wiki/Binfmt_misc#External_links">binfmt_misc</a>, either by filename extension or magic number matching. Below NixOS configuration registers AppImage files (ELF files with magic number &quot;AI&quot; + 0x02) to be run with <code>appimage-run</code> as interpreter: </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs">p<span class="hljs-attr">rograms.appimage</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">binfmt</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+};</code></pre>
+      </div><p><translate> This way AppImage files can be invoked directly as if they were normal programs. </translate></p>
+<p><a href="category:Software" class="wikilink" title="Category:Software">Category:Software</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

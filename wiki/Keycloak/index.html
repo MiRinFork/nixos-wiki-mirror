@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Keycloak</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Keycloak</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Keycloak -->
+
+<p><strong><a href="https://keycloak.org/">Keycloak</a></strong> (<a href="wikipedia:en:Keycloak" class="wikilink" title="Wikipedia">Wikipedia</a>) is identity and access management software, and can serve as an authentication server for applications (providing support for OpenID Connect, OAuth 2.0, and SAML).</p>
+<p>For official documentation on Keycloak please consult the <a href="https://nixos.org/manual/nixos/stable/index.html#module-services-keycloak">NixOS manual</a>.</p>
+<h2 id="setup">Setup</h2><p>Following configuration will enable a minimal and insecure Keycloak instance for <strong>testing purpose</strong>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">environment.etc.<span class="hljs-string">&quot;keycloak-database-pass&quot;</span>.text <span class="hljs-operator">=</span> <span class="hljs-string">&quot;PWD&quot;</span>;
+<span class="hljs-attr">services.keycloak</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">hostname</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;localhost&quot;</span>;
+    <span class="hljs-attr">http-enabled</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">hostname-strict-https</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+  };
+  <span class="hljs-attr">database.passwordFile</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/etc/keycloak-database-pass&quot;</span>;
+};</code></pre>
+      </div><p>After applying the configuration the Keycloak management interface will be available at <a href="http://localhost/">http://localhost</a>. Login with username <code>admin</code> and password <code>changeme</code>.</p>
+<h2 id="configuration">Configuration</h2><h3 id="importing-realms">Importing realms</h3><p>Using the realmFiles option, it is possible provision a realm from a JSON file or previous JSON export.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ ... }: <span class="hljs-keyword">let</span>
+
+  <span class="hljs-attr">realm</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">realm</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;OIDCDemo&quot;</span>;
+    <span class="hljs-attr">enabled</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">clients</span> <span class="hljs-operator">=</span> [{
+      <span class="hljs-attr">clientId</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;mydemo&quot;</span>;
+      <span class="hljs-attr">rootUrl</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;http://localhost:8080&quot;</span>;
+    }];
+    <span class="hljs-attr">users</span> <span class="hljs-operator">=</span> [{
+      <span class="hljs-attr">enabled</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">firstName</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Christian&quot;</span>;
+      <span class="hljs-attr">lastName</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Bauer&quot;</span>;
+      <span class="hljs-attr">username</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;cbauer&quot;</span>;
+      <span class="hljs-attr">email</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;cbauer@localhost&quot;</span>;
+      <span class="hljs-attr">credentials</span> <span class="hljs-operator">=</span> [{
+        <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;password&quot;</span>;
+        <span class="hljs-attr">temporary</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+        <span class="hljs-attr">value</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;changeme&quot;</span>;
+      }];
+    }];
+  };
+
+<span class="hljs-keyword">in</span> {
+
+  <span class="hljs-attr">services.keycloak</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">realmFiles</span> <span class="hljs-operator">=</span> [
+      (pkgs.writeText <span class="hljs-string">&quot;OIDCDemo.json&quot;</span> (<span class="hljs-built_in">builtins.toJSON</span> realm))
+    ];
+  };
+
+}</code></pre>
+      </div><h2 id="tips-and-tricks">Tips and tricks</h2><h3 id="installation-in-subdirectory">Installation in subdirectory</h3><p>Keycloak may be installed in a subdirectory of a domain. Thus you don&#39;t need to configure and expose a subdomain. For example with the following configuration, remember to edit <code>domain.tld</code>, reflecting your used domain.</p>
+<h3 id="keycloak-themes-on-nixos">Keycloak themes on NixOS</h3><p>You need to create a package for your custom theme and configure the keycloak service to use it</p>
+<p>Here is a what a basic theme will look like :</p>
+<p><code>   - configuration.nix</code><br><code>   - keycloak</code><br><code>       - custom_theme</code><br><code>           - login</code><br><code>               - resources</code><br><code>                   - css</code><br><code>                       - custom.css </code><br><code>                  - theme.properties</code><br><code>       - default.nix &lt;- set of packages to be imported in your configuration.nix</code><br><code>       - keycloak_custom_theme.nix &lt;- package for your theme</code></p>
+<h4 id="create-a-theme">Create a theme</h4><h4 id="create-a-package">Create a package</h4><h4 id="create-a-packages-set">Create a packages set</h4><h4 id="configure-your-keycloak-service">Configure your keycloak service</h4><p><a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="category:Security" class="wikilink" title="Category:Security">Category:Security</a> <a href="category:NixOS_Manual" class="wikilink" title="Category:NixOS Manual">Category:NixOS Manual</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

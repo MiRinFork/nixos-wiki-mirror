@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Xen Project Hypervisor</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Xen Project Hypervisor</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Xen Project Hypervisor -->
+
+<p><img src="https://mirror.nixoscn.org/wiki/Xen%20Project%20Hypervisor/Xen-project-logo.png" alt="The Xen Project Logo" title="The Xen Project Logo"> The <strong><a href="https://xenproject.org/">Xen Project Hypervisor</a></strong> is an open-source type-1 virtual machine manager, which allows multiple virtual machines, known as domains, to run concurrently with the host on the physical machine. This is unlike a typical type-2 hypervisor, such as <a href="https://mirror.nixoscn.org/wiki/Xen%20Project%20Hypervisor/QEMU" class="wikilink" title="QEMU">QEMU</a>, where the virtual machines run as applications on top of the host. NixOS runs as the privileged <b>Domain 0</b>, and can paravirtualise or fully virtualise Unprivileged Domains (<code>domUs</code>).</p>
+<p>Xen is well-known for its <a href="https://xenbits.xenproject.org/xsa">impeccable security record</a>, and is the go-to solution for hyper-scale cloud infrastructures.</p>
+<h2 id="installation">Installation</h2><p>Since <a href="https://nixos.org/manual/nixos/unstable/release-notes#sec-release-24.11-highlights">NixOS 24.11</a>, installing the Xen Hypervisor is as simple as adding the following to your <a href="https://mirror.nixoscn.org/wiki/Xen%20Project%20Hypervisor/Overview_of_the_NixOS_Linux_distribution#Declarative_Configuration" class="wikilink" title="NixOS configuration">NixOS configuration</a>:</p>
+<p>After a successful reboot, you should now be using a Xen kernel, and Xen&#39;s usual commands, such as <code>xl</code>, will begin working. Right after a fresh boot, there&#39;s usually only a single domain (virtual machine) running: the Domain 0.</p>
+<h3 id="about-the-domain-0">About the Domain 0</h3><p>The Domain 0, generically known as the <b>host machine</b>, is the most important virtual machine in a Xen system. It is responsible for orchestrating the Unprivileged Domains, and housing the <a href="https://mirror.nixoscn.org/wiki/Xen%20Project%20Hypervisor/Linux_kernel" class="wikilink" title="Linux kernel">Linux kernel</a> version that interacts with the bare-metal hardware. Here, you can use <code>libxenlight</code>, Xen&#39;s main interface system, through the aforementioned <code>xl</code> command. See the manual page for usage information.</p>
+<p>An important security feature of Xen is the ability to disaggregate the responsibilities given to the Domain 0. While it will normally be responsible for hosting Xen&#39;s shared database, the Xen Store, this responsibility can instead be assigned to a stubdomain: a special type of lightweight Xen virtual machine that runs a Domain 0 function in an isolated and secure manner.</p>
+<h2 id="configuration">Configuration</h2><p>There are many options available for configuring the Domain 0. Here is a recommended non-default configuration:</p>
+<h2 id="running-vms">Running VMs</h2><p>Currently, unprivileged domains can only be created/destroyed imperatively. See the usual <a href="https://xenbits.xenproject.org/docs/unstable/">Xen documentation</a> for more specific usage information. To get you started, here&#39;s an example Xen configuration file that can produce a fully virtualised domain:</p>
+<p>See for more configuration options.</p>
+<p>You can then start the domain using the following command:</p>
+<p>If you are interested in managing Xen domains declaratively, please take a look at pull request and everything else tagged with the <code>declarative libxenlight</code> title.</p>
+<h2 id="see-also">See also</h2><ul>
+<li>The option set.</li>
+<li>The <a href="https://matrix.to/#/#xen:nixos.org">Matrix Room</a> for further community support.</li>
+</ul>
+<p><a href="category:Virtualization" class="wikilink" title="Category:Virtualization">Category:Virtualization</a> <a href="category:Software" class="wikilink" title="Category:Software">Category:Software</a> <a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="category:Security" class="wikilink" title="Category:Security">Category:Security</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

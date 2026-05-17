@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hydra</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Hydra</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Hydra -->
+
+<p><languages /> <translate></p>
+<p>Hydra is a tool for continuous integration testing and software release that uses a purely functional language to describe build jobs and their dependencies. Continuous integration is a simple technique to improve the quality of the software development process. An automated system continuously or periodically checks out the source code of a project, builds it, runs tests, and produces reports for the developers. Thus, various errors that might accidentally be committed into the code base are automatically caught.</p>
+<p>The official Hydra servers provide pre-built binary packages to speed up the update time for Nixpkgs: Users do not have to compile them on their own computers.</p>
+<p>The <a href="https://nixos.org/hydra/manual/">Hydra manual</a> provides an overview of the functionality and features of Hydra, as well as an up-to-date installation guide.</p>
+<h2 id="installation">Installation</h2><p>A full deployment can be enabled as easy as:</p>
+</translate>
+
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">services.hydra</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">hydraURL</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;http://localhost:3000&quot;</span>; <span class="hljs-comment"># externally visible URL</span>
+    <span class="hljs-attr">notificationSender</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;hydra@localhost&quot;</span>; <span class="hljs-comment"># e-mail of Hydra service</span>
+    <span class="hljs-comment"># a standalone Hydra will require you to unset the buildMachinesFiles list to avoid using a nonexistant /etc/nix/machines</span>
+    <span class="hljs-attr">buildMachinesFiles</span> <span class="hljs-operator">=</span> [];
+    <span class="hljs-comment"># you will probably also want this, otherwise *everything* will be built from scratch</span>
+    <span class="hljs-attr">useSubstitutes</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  };</code></pre>
+      </div><translate>
+
+<p>The module will automatically enable <a href="https://mirror.nixoscn.org/wiki/Hydra/PostgreSQL" class="wikilink" title="postgresql">postgresql</a> if you do not change the <code>services.hydra.dbi</code> option. Database layout will be created automatically by the Hydra service, however keep in mind that some state will be stored in the database and a complete stateless configuration is currently not possible - do your backups.</p>
+<ul>
+<li>See nixos-option or the <a href="https://search.nixos.org/options?query=services.hydra">Nixos Options page</a> for all options</li>
+</ul>
+<h3 id="web-configuration">Web Configuration</h3><p>Hydra will provide the web interface <a href="http://localhost:3000/">at localhost</a> port 3000. However you need to create a new admin user (as UNIX user <code>hydra</code>) before being able to perform any changes:</p>
+</translate>
+
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-comment"># su - hydra</span>
+$ hydra-create-user alice --full-name <span class="hljs-string">&#x27;Alice Q. User&#x27;</span> \
+    --email-address <span class="hljs-string">&#x27;alice@example.org&#x27;</span> --password-prompt --role admin</code></pre>
+      </div><translate>
+
+<h3 id="virtual-machine">Virtual machine</h3><p>If not configured explicitly to do otherwise, Hydra will specify localhost as the default build machine. By default, system features enabling builds to be performed in virtual machines like &quot;kvm&quot; or &quot;nixos-test&quot; are not enabled. Such jobs will be queued indefinitely. Those options can be activated as follows:</p>
+</translate>
+
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">nix.buildMachines</span> <span class="hljs-operator">=</span> [
+    { <span class="hljs-attr">hostName</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;localhost&quot;</span>;
+      <span class="hljs-attr">protocol</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;
+      <span class="hljs-attr">system</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;x86_64-linux&quot;</span>;
+      <span class="hljs-attr">supportedFeatures</span> <span class="hljs-operator">=</span> [<span class="hljs-string">&quot;kvm&quot;</span> <span class="hljs-string">&quot;nixos-test&quot;</span> <span class="hljs-string">&quot;big-parallel&quot;</span> <span class="hljs-string">&quot;benchmark&quot;</span>];
+      <span class="hljs-attr">maxJobs</span> <span class="hljs-operator">=</span> <span class="hljs-number">8</span>;
+    }
+  ];
+}</code></pre>
+      </div><translate>
+
+<p>This option leads to the file /etc/nix/machines being created. If the hydra service config is still set to buildMachinesFiles = [], then it will be ignored, so remove this option again or add <code>/etc/nix/machines</code> to it.</p>
+<h2 id="flake-jobset">Flake jobset</h2><p>Configure jobset to the following:</p>
+<ul>
+<li>Type: <a href="https://mirror.nixoscn.org/wiki/Hydra/Flakes" class="wikilink" title="Flake">Flake</a></li>
+</ul>
+<!-- -->
+
+<ul>
+<li>Flake URI: an URI to a repo containing a Flake like git+<a href="https://git.myserver.net/user/repo.git">https://git.myserver.net/user/repo.git</a></li>
+</ul>
+<p>The Flake output should have the attribute <code>hydraJobs</code> containing an attribute set that may be nested and reference derivations.</p>
+<p>A sample Flake output that makes Hydra build all packages could look like this:</p>
+</translate>
+
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">inputs</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">nixpkgs.url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:NixOS/nixpkgs/nixos-unstable&quot;</span>;
+  };
+  <span class="hljs-attr">outputs</span> <span class="hljs-operator">=</span> { self, nixpkgs, ... }: {
+    <span class="hljs-attr">packages.x86_64-linux</span> <span class="hljs-operator">=</span> {
+      ...
+    };
+
+    <span class="hljs-attr">hydraJobs</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-keyword">inherit</span> (self)
+        packages;
+    };
+  };
+}</code></pre>
+      </div><translate>
+
+<h3 id="restricted-mode">Restricted Mode</h3><p>Hydra evaluates flakes in <a href="https://nixos.org/manual/nix/stable/command-ref/conf-file.html#conf-restrict-eval">restricted mode</a>. This prevents access to files outside of the nix store, including those fetched as flake inputs. Update your <code>nix.settings.allowed-uris</code> to include URI prefixes from which you expect flake inputs to be fetched:</p>
+</translate>
+
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">ix.settings.allowed-uris</span> <span class="hljs-operator">=</span> [
+  <span class="hljs-string">&quot;github:&quot;</span>
+  <span class="hljs-string">&quot;git+https://github.com/&quot;</span>
+  <span class="hljs-string">&quot;git+ssh://github.com/&quot;</span>
+];</code></pre>
+      </div><translate>
+
+<h2 id="build-a-single-package-from-nixpkgs">Build a single Package from nixpkgs</h2><p>Right now it is not possible to build a single package from nixpkgs with just that input. You will need to provide a supplementary repository which defines what to build. For examples you can check the <a href="https://github.com/makefu/hydra-example">hydra-example by makefu</a> and in the <a href="https://nixos.org/hydra/manual/#idm140737315920320">Hydra Manual</a>.</p>
+<h3 id="imperative-building">Imperative Building</h3><p>These steps are required to build the <code>hello</code> package.</p>
+<ol>
+<li>log into Hydra after creating a user with <code>hydra-create-user</code></li>
+</ol>
+<!-- -->
+
+<ol>
+<li>create new project</li>
+</ol>
+<ul>
+<li>identifier: example-hello</li>
+</ul>
+<!-- -->
+
+<ul>
+<li>display name: example-hello</li>
+</ul>
+<ol>
+<li>Actions -&gt; Create jobset</li>
+</ol>
+<ul>
+<li>identifier: hello</li>
+</ul>
+<!-- -->
+
+<ul>
+<li>Nix expression: <code>release.nix</code> in <code>hydra-example</code> -&gt; will evaluate the file release.nix in the given input</li>
+</ul>
+<!-- -->
+
+<ul>
+<li>check interval: 60</li>
+</ul>
+<!-- -->
+
+<ul>
+<li>scheduling shares: 1</li>
+</ul>
+<!-- -->
+
+<ul>
+<li>Inputs:</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Input Name</th>
+<th>Type</th>
+<th>Value</th>
+<th>Note</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>nixpkgs</td>
+<td>git checkout</td>
+<td><a href="https://github.com/nixos/nixpkgs">https://github.com/nixos/nixpkgs</a> nixos-21.11</td>
+<td>will check out branch nixos-21.11, will be made available to the nix expression via <nixpkgs>.</td>
+</tr>
+<tr>
+<td>hydra-example</td>
+<td>git checkout</td>
+<td><a href="https://github.com/makefu/hydra-example">https://github.com/makefu/hydra-example</a></td>
+<td>hydra-example is used by the jobset as input, <code>release.nix</code> is in the root directory</td>
+</tr>
+</tbody></table>
+<p>After creation, the jobset should be in the <strong>evaluation phase</strong> where inputs will be fetched. This phase may take some time as the complete <code>nixpkgs</code> repository needs to be downloaded before continuing. The result of the evaluation should be a single job which will get built.</p>
+<h3 id="declarative-building">Declarative Building</h3><p>Since 2016, Hydra supports declarative creation of jobsets. Check out the <a href="https://github.com/shlevy/declarative-hydra-example">example repository and description by Shea Levy</a>.</p>
+<h2 id="hydra-internals">Hydra Internals</h2><h3 id="definitions">Definitions</h3><p>This subsection provides an overview of the Hydra-specific definitions and how to configure them.</p>
+<h4 id="project">Project</h4><p>A cluster of Jobs which are all coming from a single input (like a git checkout), the first thing you will need to create. Every Job should be able to be built independently from another. Most of the time the project maps to a single repository like <code>nixpkgs</code>. It is comparable to the project definition in Jenkins.</p>
+<h4 id="jobsets">Jobsets</h4><p>A Jobset is a list of jobs which will be run. Often a jobset fits to a certain branch (master, staging, stable). A Jobset is defined by its inputs and will trigger if these inputs change. For example when a new commit onto a branch is added. Jobsets may depend on each other.</p>
+<h4 id="job">Job</h4><p>A closure which will be built as part of a job set (like a single package, iso image or tarball).</p>
+<h4 id="release-set">Release Set</h4><p>Defines all the jobs which are described in your release. By convention a file called<code>release.nix</code> is being used. See the <a href="https://nixos.org/hydra/manual/#idm140737315920320">Hydra manual for Build Recipes</a> for a thorough description of the structure.</p>
+<h4 id="evaluation">Evaluation</h4><p>The process of interpreting nix code into a list of <code>.drv files</code>. These files are the build recipes for all related outputs. You can introspect these files by running <code>nix show-derivation nixpkgs.hello</code>.</p>
+<h4 id="build">Build</h4><p>Instantiation of a Job which is being triggered by being part of the release set.</p>
+<h2 id="known-issues">Known Issues</h2><ul>
+<li>hydra-queue-runner sometimes gets stuck even with builds are in the queue, and the builds are not scheduled. The issue is being tracked <a href="https://github.com/NixOS/hydra/issues/366">here</a>. In the meantime, a workaround is to add a cron job that regularly restarts the hydra-queue-runner systemd service. Possible fix: <a href="https://github.com/NixOS/hydra/commit/73ca325d1c0f7914640a63764c9a6d448fde5bd0">1</a></li>
+</ul>
+<!-- -->
+
+<ul>
+<li>If you see <code>error: unexpected end-of-file</code> it can mean multiple things, some of them are:</li>
+</ul>
+<ol>
+<li>You have a miss-match between nix versions on the Hydra server and the builder</li>
+</ol>
+<!-- -->
+
+<ol>
+<li>It can also mean that <code>hydra-queue-runner</code> needs privileges on the build server. Reference: <a href="https://github.com/NixOS/nix/issues/2789">2</a></li>
+</ol>
+<ul>
+<li>The default timeout for git operations is 600 seconds <a href="https://github.com/NixOS/hydra/issues/1181">3</a>, which might cause fetches of large repositories like <a href="https://github.com/NixOS/nixpkgs">nixos/nixpkgs</a> to fail: <code>error fetching latest change from git repo at `https://github.com/nixos/nixpkgs&#39;: timeout</code>. The timeout can be increased with the following configuration.nix snippet:</li>
+</ul>
+</translate>
+
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">services.hydra.extraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    &lt;git-input&gt;
+      timeout = 3600
+    &lt;/git-input&gt;
+  &#x27;&#x27;</span>;
+}</code></pre>
+      </div><translate>
+
+<h2 id="hydra-for-nixos-releases">Hydra for NixOS releases</h2><p>Hydra is used for managing official Nix project releases. The project Hydra server: <a href="https://hydra.nixos.org/">https://hydra.nixos.org/</a></p>
+<p>Some Hydra trackers for Nix projects:</p>
+<ul>
+<li><a href="https://hydra.nixos.org/project/nixpkgs">Nixpkgs</a></li>
+</ul>
+<!-- -->
+
+<ul>
+<li><a href="https://hydra.nixos.org/project/nixos">NixOS</a></li>
+</ul>
+<h2 id="resources">Resources</h2><ul>
+<li><a href="https://www.youtube.com/watch?v=RXV0Y5Bn-QQ">Video: Setting up a Hydra Build Farm by Peter Simons (2016)</a></li>
+</ul>
+<!-- -->
+
+<ul>
+<li><a href="https://gist.github.com/joepie91/c26f01a787af87a96f967219234a8723">Hydra Caveats by Joepie91</a></li>
+</ul>
+</translate>
+
+<p><a href="category:Pedias" class="wikilink" title="Category:Pedias">Category:Pedias</a> <a href="category:Hydra" class="wikilink" title="Category:Hydra">Category:Hydra</a> <a href="category:Nix" class="wikilink" title="Category:Nix">Category:Nix</a> <a href="category:Incomplete" class="wikilink" title="Category:Incomplete">Category:Incomplete</a> <a href="category:Software" class="wikilink" title="Category:Software">Category:Software</a> <a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

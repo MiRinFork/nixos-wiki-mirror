@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Install NixOS on Hetzner Cloud</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Install NixOS on Hetzner Cloud</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Install NixOS on Hetzner Cloud -->
+
+<p>Hetzner Cloud in 2023 offers amd64 instances on both Intel and AMD hardware, as well as arm64 instanced based on the Ampere Altra Q80, in three locations in Europe, as well as two in America.</p>
+<p>The pricing of the arm64 instances is generally considered very competitive, compared to similarly specced amd64 instances.</p>
+<h2 id="installation">Installation</h2><p>There are several ways to install NixOS, such as the &quot;traditional&quot; ISO installation, <a href="https://mirror.nixoscn.org/wiki/Install%20NixOS%20on%20Hetzner%20Cloud/nixos-infect" class="wikilink" title="nixos-infect">nixos-infect</a> or <a href="https://mirror.nixoscn.org/wiki/Install%20NixOS%20on%20Hetzner%20Cloud/nixos-anywhere" class="wikilink" title="nixos-anywhere">nixos-anywhere</a>.</p>
+<h3 id="traditional-iso-installation">Traditional ISO installation</h3><p>In the Hetzner console, mount the NixOS minimal ISO into your server, and use the console to install NixOS.</p>
+<h4 id="x86_64">x86_64</h4><p>At time of writing, Hetnzer&#39;s x86_64 servers use legacy boot.</p>
+<p>First, create a new MBR partition table.</p>
+<p><code> parted /dev/sda --script mklabel msdos</code></p>
+<p>Then create a 512MB boot partition with ext4</p>
+<p><code> parted /dev/sda --script mkpart primary ext4 1MiB 513MiB</code><br><code> parted /dev/sda --script set 1 boot on</code><br><code> mkfs.ext4 -L boot /dev/sda1</code></p>
+<p>Create a swap partition. This example uses 8GB, you may want to research the correct amount for your server size. Note the end of the swap partition in this command is 8577MiB, this is the value used in the next command.</p>
+<p><code> parted /dev/sda --script mkpart primary linux-swap 513MiB 8577MiB</code><br><code> mkswap -L swap /dev/sda2</code><br><code> swapon /dev/sda2</code></p>
+<p>Create a root partition using the rest of the disk with ext4.</p>
+<p><code> parted /dev/sda --script mkpart primary ext4 8577MiB 100%</code><br><code> mkfs.ext4 -L nixos /dev/sda3</code></p>
+<p>If you don&#39;t mount the partitions you&#39;ve just created, the NixOS installer will produce an error in the form `Failed to get blkid info (returned 512) for on tmpfs at <path>/<prefix>-install-grub.pl`.</p>
+<p><code> # Mount the partitions to /mnt and /mnt/boot.</code><br><code> mount /dev/disk/by-label/nixos /mnt</code><br><code> mkdir /mnt/boot</code><br><code> mount /dev/disk/by-label/boot /mnt/boot</code></p>
+<p>Finally, install. Install from a remote flake:</p>
+<p><code> sudo nixos-install --flake github:</code><username><code>/</code><repo><code>#</code><id></p>
+<p>Once installed, unmount the ISO and reboot.</p>
+<h5 id="hetzner-base-configuration">Hetzner base configuration</h5><p>In the example below, the id would be `hetzner-x86_64`.</p>
+<p>The `flake.nix` file in the repo should be of the form:</p>
+<p><code> {</code><br><code>   inputs = {</code><br><code>     nixpkgs.url = &quot;github:NixOS/nixpkgs/nixos-24.11&quot;;</code><br><code>   };</code><br><code> </code><br><code>   outputs = { nixpkgs, ... }: {</code><br><code>     nixosConfigurations = {</code><br><code>       hetzner-x86_64 = nixpkgs.lib.nixosSystem {</code><br><code>         system = &quot;x86_64-linux&quot;;</code><br><code>         modules = [</code><br><code>           ./configuration.nix</code><br><code>         ];</code><br><code>       };</code><br><code>     };</code><br><code>   };</code><br><code> }</code></p>
+<p>With the referenced `configuration.nix` in the form.</p>
+<p>Note the filesystems configuration, which matches the partition scheme, and the `availableKernelModules` section which includes modules that enable ext4 at boot.</p>
+<p>Also note the user `username` which is configured to be part of the `wheel` group, and can therefore use `sudo`.</p>
+<p><code> { pkgs, ... }:</code><br><code> </code><br><code> {</code><br><code>   nix.settings = {</code><br><code>     experimental-features = &quot;nix-command flakes&quot;;</code><br><code>   };</code><br><code>   </code><br><code>   environment.systemPackages = [</code><br><code>     pkgs.vim</code><br><code>     pkgs.git</code><br><code>   ];</code><br><code>   </code><br><code>   fileSystems.&quot;/&quot; = {</code><br><code>     device = &quot;/dev/disk/by-label/nixos&quot;;</code><br><code>     fsType = &quot;ext4&quot;;</code><br><code>   };</code><br><code>   fileSystems.&quot;/boot&quot; = {</code><br><code>     device = &quot;/dev/disk/by-label/boot&quot;;</code><br><code>     fsType = &quot;ext4&quot;;</code><br><code>   };</code><br><code>   swapDevices = [</code><br><code>     {</code><br><code>       device = &quot;/dev/disk/by-label/swap&quot;;</code><br><code>     }</code><br><code>   ];</code><br><code>   </code><br><code>   time.timeZone = &quot;Europe/London&quot;;</code><br><code>   i18n.defaultLocale = &quot;en_US.UTF-8&quot;;</code><br><code>   console.keyMap = &quot;us&quot;;</code><br><code>   </code><br><code>   boot.loader.grub.enable = true;</code><br><code>   boot.loader.grub.device = &quot;/dev/sda&quot;;</code><br><code>   boot.initrd.availableKernelModules = [ &quot;ahci&quot; &quot;xhci_pci&quot; &quot;virtio_pci&quot; &quot;virtio_scsi&quot; &quot;sd_mod&quot; &quot;sr_mod&quot; &quot;ext4&quot; ];</code><br><code>   </code><br><code>   users.users = {</code><br><code>     root.hashedPassword = &quot;!&quot;; # Disable root login</code><br><code>     username = {</code><br><code>       isNormalUser = true;</code><br><code>       extraGroups = [ &quot;wheel&quot; ];</code><br><code>       openssh.authorizedKeys.keys = [</code><br><code>         </code><em><code>ssh-rsa </code><your_ssh_public_key></em><br><code>       ];</code><br><code>     };</code><br><code>   };</code><br><code>   </code><br><code>   security.sudo.wheelNeedsPassword = false;</code><br><code>   </code><br><code>   services.openssh = {</code><br><code>     enable = true;</code><br><code>     settings = {</code><br><code>       PermitRootLogin = &quot;no&quot;;</code><br><code>       PasswordAuthentication = false;</code><br><code>       KbdInteractiveAuthentication = false;</code><br><code>     };</code><br><code>   };</code><br><code>   </code><br><code>   networking.firewall.allowedTCPPorts = [ 22 ];</code><br><code>   </code><br><code>   system.stateVersion = &quot;24.11&quot;;</code><br><code> }</code></p>
+<p>To access the VM, you will need to ensure that port 22 on the VM is opened via the Hetzner firewall if that is configured.</p>
+<h3 id="nixos-anywhere">nixos-anywhere</h3><p>The tutorial assumes you already have an account on Hetzner Cloud, and no prior access to a system with NixOS or nix CLI utility installed.</p>
+<ol>
+<li>First upload your SSH key via the Hetzner Web UI</li>
+<li>Then click yourself a VM. For the OS choose Ubuntu but anything should work. This guide was tested with x86_64-linux but aarch64 should work with the note from below.</li>
+<li>Using a code editor on your host computer, create 4 files. File contents, as well as the location of where to put corresponding file are indicated below:</li>
+<li>/tmp/my-hetzner-vm/hardware-configuration.nix</li>
+</ol>
+<p>{ config, lib, pkgs, modulesPath, ... }:</p>
+<p>{</p>
+<p><code> imports = [</code><br><code>   (modulesPath + &quot;/profiles/qemu-guest.nix&quot;)</code><br><code> ];</code></p>
+<p><code> networking.useDHCP = lib.mkDefault true;</code><br><code> nixpkgs.hostPlatform = lib.mkDefault &quot;x86_64-linux&quot;;</code></p>
+<p>}</p>
+</syntaxhighlight>
+
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># /tmp/my-hetzner-vm/disko-config.nix</span>
+
+{
+  <span class="hljs-attr">disko.devices</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">disk</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">main</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;disk&quot;</span>;
+        <span class="hljs-attr">device</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/dev/sda&quot;</span>;
+        <span class="hljs-attr">content</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;gpt&quot;</span>;
+          <span class="hljs-attr">partitions</span> <span class="hljs-operator">=</span> {
+            <span class="hljs-attr">boot</span> <span class="hljs-operator">=</span> {
+              <span class="hljs-attr">size</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;1M&quot;</span>;
+              <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;EF02&quot;</span>;
+              <span class="hljs-attr">priority</span> <span class="hljs-operator">=</span> <span class="hljs-number">1</span>;
+            };
+            <span class="hljs-attr">ESP</span> <span class="hljs-operator">=</span> {
+              <span class="hljs-attr">size</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;512M&quot;</span>;
+              <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;EF00&quot;</span>;
+              <span class="hljs-attr">content</span> <span class="hljs-operator">=</span> {
+                <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;filesystem&quot;</span>;
+                <span class="hljs-attr">format</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;vfat&quot;</span>;
+                <span class="hljs-attr">mountpoint</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/boot&quot;</span>;
+              };
+            };
+            <span class="hljs-attr">root</span> <span class="hljs-operator">=</span> {
+              <span class="hljs-attr">size</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;100%&quot;</span>;
+              <span class="hljs-attr">content</span> <span class="hljs-operator">=</span> {
+                <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;filesystem&quot;</span>;
+                <span class="hljs-attr">format</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ext4&quot;</span>;
+                <span class="hljs-attr">mountpoint</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/&quot;</span>;
+              };
+            };
+          };
+        };
+      };
+    };
+  };
+}</code></pre>
+      </div><div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># /tmp/my-hetzner-vm/configuration.nix</span>
+
+{ config, lib, pkgs, ... }:
+
+{
+  <span class="hljs-attr">imports</span> <span class="hljs-operator">=</span>
+    [
+      <span class="hljs-symbol">./hardware-configuration.nix</span>
+      <span class="hljs-symbol">./disko-config.nix</span>
+    ];
+
+  <span class="hljs-attr">boot.loader.grub.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+  <span class="hljs-attr">services.openssh.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+  <span class="hljs-attr">users.users.eugene</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">isNormalUser</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">extraGroups</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;wheel&quot;</span> ];
+    <span class="hljs-attr">initialHashedPassword</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;$y$j9T$2DyEjQxPoIjTkt8zCoWl.0$3mHxH.fqkCgu53xa0vannyu4Cue3Q7xL4CrUhMxREKC&quot;</span>; <span class="hljs-comment"># Password.123</span>
+  };
+
+  <span class="hljs-attr">programs.neovim</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">defaultEditor</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  };
+
+  <span class="hljs-attr">system.stateVersion</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;24.11&quot;</span>;
+}        </code></pre>
+      </div><p><strong>Note</strong>: the value of <code>initialHashedPassword</code> above was obtained using <code>mkpasswd</code> command in Linux, and corresponds to <code>Password.123</code> string used as password.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># /tmp/my-hetzner-vm/flake.nix</span>
+
+{
+  <span class="hljs-attr">inputs</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">nixpkgs</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:NixOS/nixpkgs/nixos-24.11&quot;</span>;
+    };
+
+    <span class="hljs-attr">disko</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:nix-community/disko&quot;</span>;
+      <span class="hljs-attr">inputs</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">nixpkgs</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">follows</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nixpkgs&quot;</span>;
+        };
+      };
+    };
+  };
+
+  <span class="hljs-attr">outputs</span> <span class="hljs-operator">=</span> inputs@{ self, nixpkgs, ... }: {
+    <span class="hljs-attr">nixosConfigurations</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">my-hetzner-vm</span> <span class="hljs-operator">=</span> nixpkgs.lib.nixosSystem {
+        <span class="hljs-attr">system</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;x86_64-linux&quot;</span>;
+
+        <span class="hljs-attr">modules</span> <span class="hljs-operator">=</span> [
+          <span class="hljs-symbol">./configuration.nix</span>
+          inputs.disko.nixosModules.disko
+        ];
+      };
+    };
+  };
+}</code></pre>
+      </div><ol>
+<li>To build NixOS from the flake run:</li>
+</ol>
+<p>nix run --extra-experimental-features &#39;nix-command flakes&#39; github:nix-community/nixos-anywhere -- --flake /tmp/my-hetzner-vm#my-hetzner-vm --target-host <a href="mailto:root@0.0.0.0">root@0.0.0.0</a> --build-on-remote</p>
+</syntaxhighlight>
+
+<p><strong>Note</strong>: replace <code>0.0.0.0</code> with an IP address obtained during an earlier step. The NixOS on Hetzner is installed!</p>
+<h3 id="disko">disko</h3><p>TODO: it would be neat to document how to boot from the NixOS ISO and create the machine based on an online description including <a href="https://github.com/nix-community/disko">https://github.com/nix-community/disko</a> specs - should be a quick way to set up bespoke &#39;throwaway&#39; machines.</p>
+<p>references:</p>
+<ul>
+<li><a href="https://mirror.nixoscn.org/wiki/Install%20NixOS%20on%20Hetzner%20Cloud/Disko" class="wikilink" title="Disko">Disko</a></li>
+<li><a href="https://github.com/feelssexy/hetzner-auto-nixos/blob/main/hardware-configuration.nix">sample regular hardware config</a></li>
+<li><a href="https://github.com/LGUG2Z/nixos-hetzner-cloud-starter/blob/master/disk-config.nix">sample config using disko</a></li>
+</ul>
+<h3 id="nixos-infect">nixos-infect</h3><p>Beside the manual installation, one way to setup NixOS is to replace an existing installation, for example the latest Ubuntu image, with <a href="https://github.com/elitak/nixos-infect">nixos-infect</a>.</p>
+<h4 id="cloud-init">Cloud-init</h4><p>You don&#39;t even need to log into the Ubuntu image, you can run nixos-infect from the &#39;could-init&#39; as documented at <a href="https://github.com/elitak/nixos-infect/tree/master#hetzner-cloud">https://github.com/elitak/nixos-infect/tree/master#hetzner-cloud</a></p>
+<h4 id="manually">Manually</h4><ul>
+<li>Boot into the existing operating system, preferably Ubuntu or Debian</li>
+<li>Login as root or with root permissions</li>
+<li>Deploy your SSH public key for the current root user. This key will be used later for authentication into the NixOS system.</li>
+<li>Run following script. Replace <code>NIX_CHANNEL</code> variable with the version string you wish to install.</li>
+</ul>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">curl https://raw.githubusercontent.com/elitak/nixos-infect/master/nixos-infect | NIX_CHANNEL=nixos-24.11 bash -x</code></pre>
+      </div><ul>
+<li>Reboot into NixOS</li>
+</ul>
+<h3 id="declarative">Declarative</h3><ul>
+<li><a href="https://github.com/NixOS/nixops-hetzner">nixops</a></li>
+<li><a href="https://github.com/terranix/terranix-hcloud/">terranix-hcloud</a></li>
+<li><a href="https://github.com/aanderse/teraflops">teraflops</a></li>
+<li><a href="https://github.com/selaux/nixos-hcloud-packer">nixos-hcloud-packer</a></li>
+</ul>
+<h2 id="network-configuration">Network configuration</h2><p>Hetzner Cloud offers both IPv4 (/32 subnet) and IPv6 (/64 subnet) connectivity to each machine. The assigned addresses can be looked up on the <a href="https://console.hetzner.cloud/">Hetzner Cloud Console</a> from the &quot;Networking&quot; tab on the instance details. The public IPv4 address of the server can automatically obtained be via DHCP. For IPv6 you have to statically configure both address and gateway.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ystemd.network.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+systemd.network.networks.<span class="hljs-string">&quot;30-wan&quot;</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">matchConfig.Name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ens3&quot;</span>; <span class="hljs-comment"># either ens3 or enp1s0, check &#x27;ip addr&#x27;</span>
+  <span class="hljs-attr">networkConfig.DHCP</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ipv4&quot;</span>;
+  <span class="hljs-attr">address</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-comment"># replace this subnet with the one assigned to your instance</span>
+    <span class="hljs-string">&quot;2a01:4f8:aaaa:bbbb::1/64&quot;</span>
+  ];
+  <span class="hljs-attr">routes</span> <span class="hljs-operator">=</span> [
+    { <span class="hljs-attr">Gateway</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;fe80::1&quot;</span>; }
+  ];
+};</code></pre>
+      </div><h3 id="static-ipv4-configuration">Static IPv4 configuration</h3><p>The IPv4 address can also be configured statically. The trick here is, that the gateway needs to be configured with the <code>onlink</code> flag, because it is not in the same subnet as your public IP address, but still very much on that same link.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">systemd.network.networks.<span class="hljs-string">&quot;30-wan&quot;</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">matchConfig.Name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ens3&quot;</span>; <span class="hljs-comment"># either ens3 (amd64) or enp1s0 (arm64)</span>
+  <span class="hljs-attr">networkConfig.DHCP</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;no&quot;</span>;
+  <span class="hljs-attr">address</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-comment"># replace this address with the one assigned to your instance</span>
+    <span class="hljs-string">&quot;A.B.C.D/32&quot;</span>
+    <span class="hljs-comment"># replace this subnet with the one assigned to your instance</span>
+    <span class="hljs-string">&quot;2a01:4f8:AAAA:BBBB::1/64&quot;</span>
+  ];
+  <span class="hljs-attr">routes</span> <span class="hljs-operator">=</span> [
+    { <span class="hljs-attr">Gateway</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;172.31.1.1&quot;</span>; <span class="hljs-attr">GatewayOnLink</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; }
+    { <span class="hljs-attr">Gateway</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;fe80::1&quot;</span>; }
+  ];
+};</code></pre>
+      </div><h2 id="aarch64-cax-instance-type-specifics">AArch64 (CAX instance type) specifics</h2><p>If the screen goes blank after selecting the boot option in the bootloader, the following snippet makes sure that GPU drivers are available in initrd, and the correct device gets used for the serial console:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">b<span class="hljs-attr">oot.initrd.kernelModules</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;virtio_gpu&quot;</span> ];
+<span class="hljs-attr">boot.kernelParams</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;console=tty&quot;</span> ];</code></pre>
+      </div><p><a href="category:Cookbook" class="wikilink" title="Category:Cookbook">Category:Cookbook</a> <a href="category:Deployment" class="wikilink" title="Category:Deployment">Category:Deployment</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

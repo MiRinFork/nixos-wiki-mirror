@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Firefox/ru</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/Firefox">Firefox</a><span aria-hidden="true"> / </span>ru</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Firefox/ru -->
+
+<languages/>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p><strong>Firefox</strong><sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Firefox/ru#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup> is a free and open-source web browser developed by the Mozilla Foundation. It is known for its focus on privacy, security, and user freedom, offering a customizable experience through a rich ecosystem of add-ons and themes.</p>
+</div>
+
+<p><span id="Installation"></span></p>
+<h2 id="">Установка</h2><div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h4 id="shell">Shell</h4></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>The command above makes <code>firefox</code> available in your current shell without modifying any configuration files.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h4 id="system-setup">System setup</h4></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>After rebuilding with <code>nixos-rebuild switch</code>, Firefox will be installed system-wide.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h2 id="configuration">Configuration</h2></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h4 id="basic">Basic</h4></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>The snippet above enables Firefox for all users (or the current Home Manager profile, if placed in <code>home.nix</code>).</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h4 id="advanced">Advanced</h4></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Home Manager allows for deep customization of Firefox, including extensions, search engines, bookmarks, and themes. The example below shows a configuration for adding custom search engines with aliases.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p><a href="https://nix-community.github.io/home-manager/options.xhtml#opt-programs.firefox.enable">More options are available on Home Manager&#39;s site.</a></p>
+</div>
+
+<p><span id="Firefox_Variants"></span></p>
+<h2 id="firefox">Версии Firefox</h2><div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>There are several Firefox variants available. To choose one, set the <code>programs.firefox.package</code> option accordingly.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h3 id="variant-official-binaries">Variant: Official Binaries</h3></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Mozilla provides official pre-built Firefox binaries via the <code>firefox-bin</code> package, which are downloaded directly from Mozilla&#39;s servers.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h3 id="variant-extended-support-release-esr">Variant: Extended Support Release (ESR)</h3></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p><code>firefox-esr</code> is a variant that receives security updates for a longer period with a slower feature implementation cadence. It also allows for more extensive policy-based configuration.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h3 id="variant-nightly">Variant: Nightly</h3></div>
+
+<div class="mw-translate-fuzzy">
+
+<p>Nightly builds - это ежедневные сборки Firefox из центрального репозитория Mozilla.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h4 id="method-1-using-nix-community-flake-firefox-nightly">Method 1: Using nix-community/flake-firefox-nightly</h4></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>This method is reproducible but may lag behind the upstream version. First, add the input to your flake:</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Then, add the package to your system:</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h4 id="method-2-using-mozilla-nixpkgs-mozilla">Method 2: Using mozilla/nixpkgs-mozilla</h4></div>
+
+<div class="mw-translate-fuzzy">
+
+<p>Использование этого метода плохо сказывается на воспроизводимости, так как ресурсы берутся с URL-адресов, не относящихся к привязке, но это также означает, что вы всегда получаете последнюю Nightly версию, когда собираете свою систему.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Using this method requires the <code>--impure</code> flag for Nix commands, for example:</p>
+</div>
+
+<p><span id="Tips_and_Tricks"></span></p>
+<div class="mw-translate-fuzzy">
+
+<h2 id="">Советы</h2></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h4 id="force-xwayland-x11-instead-of-wayland">Force XWayland (X11) instead of Wayland</h4></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Firefox defaults to native Wayland when running under a Wayland compositor. To force it to use XWayland (X11) instead:</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>This is useful when troubleshooting Wayland-specific issues or when certain features work better under X11.</p>
+</div>
+
+<p><span id="Touchpad_Gestures_and_Smooth_Scrolling"></span></p>
+<div class="mw-translate-fuzzy">
+
+<h3 id="xinput2">Использовать Xinput2</h3></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Enable <code>xinput2</code> to improve touchscreen support and enable additional touchpad gestures and smooth scrolling.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h4 id="kde-plasma-integration">KDE Plasma Integration</h4></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>1. Add the native messaging host package to your configuration:</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>2. Install the corresponding <a href="https://addons.mozilla.org/en-US/firefox/addon/plasma-integration/">browser add-on</a>.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h4 id="use-kde-file-picker">Use KDE file picker</h4></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>To use the KDE file picker instead of the GTK one, set the following preference:</p>
+</div>
+
+<p><span id="Troubleshooting"></span></p>
+<div class="mw-translate-fuzzy">
+
+<h2 id="">Устранение неполадок</h2></div>
+
+<p><span id="Native_Messaging_Hosts_Fail_to_Load"></span></p>
+<div class="mw-translate-fuzzy">
+
+<h3 id="nativemessaginghosts"><code>nativeMessagingHosts</code> не работает</h3></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Native messaging hosts (used for extensions like Plasma Integration) do not work with the <code>-bin</code> variants of Firefox or with Firefox installed imperatively via <code>nix-env</code>. You must use a variant built from source via your NixOS or Home Manager configuration.</p>
+</div>
+
+<p><span id="ALSA_audio_instead_of_PulseAudio"></span></p>
+<div class="mw-translate-fuzzy">
+
+<h3 id="alsa-firefox-pulseaudio">Как использовать ALSA в Firefox вместо PulseAudio?</h3></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>To force Firefox to use ALSA, you can override it with a wrapper:</p>
+</div>
+
+<p><span id="Screen_Sharing_under_Wayland"></span></p>
+<div class="mw-translate-fuzzy">
+
+<h3 id="wayland">Поделиться Экраном через Wayland</h3></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Screen sharing on Wayland requires enabling PipeWire and the appropriate XDG Desktop Portals.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h2 id="see-also">See also</h2></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<ul>
+<li><a href="https://mirror.nixoscn.org/wiki/Firefox/ru/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> – Declarative per-user configuration</li>
+<li><a href="https://search.nixos.org/options?channel=unstable&amp;query=programs.firefox">NixOS options for Firefox</a></li>
+<li><a href="https://discourse.nixos.org/tag/firefox">Firefox topics on NixOS Discourse</a></li>
+</ul>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h2 id="references">References</h2></div>
+
+<p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="category:Web_Browser" class="wikilink" title="Category:Web Browser">Category:Web Browser</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p>Mozilla Foundation, &quot;Firefox&quot;, Official Website, Accessed June 2025. <a href="https://www.mozilla.org/firefox">https://www.mozilla.org/firefox</a> <a href="https://mirror.nixoscn.org/wiki/Firefox/ru#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Console Fonts</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Console Fonts</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Console Fonts -->
+
+<p>It is possible to change the <a href="https://mirror.nixoscn.org/wiki/Console%20Fonts/fonts" class="wikilink" title="fonts">fonts</a> used by the Linux console. The common fonts used by GUI applications cannot be used in the console. Instead, special console-specific fonts must be used. NixOS includes several such console fonts - links to them can be found in <code>/etc/static/kbd/consolefonts</code>.</p>
+<h3 id="setting-console-font-temporarily">Setting console font temporarily</h3><p>The command <code>setfont </code><file-path> can change the console font temporarily. For example:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">setfont /etc/static/kbd/consolefonts/Lat2-Terminus16.psfu.gz</code></pre>
+      </div><p>The command <code>showconsolefont</code> will generate a grid displaying the characters in the current font.</p>
+<p>Note that both of these commands will only work in a TTY; they will not function in a terminal emulator.</p>
+<h3 id="setting-console-font-via-configuration-nix">Setting console font via configuration.nix</h3><p>A console font can be set permanently via the option <code>console.font</code> in your <code>configuration.nix</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs">c<span class="hljs-attr">onsole.font</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Lat2-Terminus16&quot;</span>;</code></pre>
+      </div><p>In this option, use simply the filename of the font, without the path or file extensions.</p>
+<h4 id="setting-fonts-via-full-path">Setting fonts via full path</h4><p>Note: while it is possible to use the full path of a font for this option (e.g <code>/home/user/my-font.psfu.gz</code>), the font setting process cannot follow symlinks. So, for example, the following option would fail:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs">c<span class="hljs-attr">onsole.font</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/etc/static/kbd/consolefonts/Lat2-Terminus16.psfu.gz&quot;</span>;</code></pre>
+      </div><p>In order to use the direct path of a file found in this directory, the following would be necessary:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs">c<span class="hljs-attr">onsole.font</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.kbd}</span>/share/consolefonts/Lat2-Terminus16.psfu.gz&quot;</span>;</code></pre>
+      </div><p>The console fonts included in NixOS are provided by <code>pkgs.kbd</code>, which should be included by default.</p>
+<p><a href="category:Tutorial" class="wikilink" title="Category:Tutorial">Category:Tutorial</a> <a href="category:CLI" class="wikilink" title="Category:CLI">Category:CLI</a> <a href="category:Fonts" class="wikilink" title="Category:Fonts">Category:Fonts</a> <a href="category:Configuration" class="wikilink" title="Category:Configuration">Category:Configuration</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

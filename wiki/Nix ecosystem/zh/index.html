@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nix ecosystem/zh</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/Nix%20ecosystem">Nix ecosystem</a><span aria-hidden="true"> / </span>zh</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Nix ecosystem/zh -->
+
+<p><languages/> <strong>Nix 核心生态系统</strong>是一组技术的集合，旨在以可复现的方式构建、声明性地配置和管理软件包、系统及其依赖项。它通过将函数式编程范式从程序领域扩展到系统领域来实现这一目标，并使用一种动态的、函数式的、惰性求值的领域特定语言（DSL），即 <a href="special:MyLanguage/Overview_of_the_Nix_Language" class="wikilink" title="Nix 语言">Nix 语言</a>，来指定可复现的构建过程。</p>
+<p>此外，还有许多由 Nix 社区开发的<a href="special:MyLanguage/applications" class="wikilink" title="应用程序">应用程序</a>（<em><strong>Nix 扩展生态系统</strong></em>）利用并支持了这些核心技术。</p>
+<p><span id="Official_ecosystem"></span></p>
+<h2 id="官方生态系统">官方生态系统</h2><table>
+<thead>
+<tr>
+<th>组件</th>
+<th>手册(Manual)</th>
+<th>描述</th>
+<th>用途</th>
+<th>协议</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a href="special:MyLanguage/NixOS" class="wikilink" title="NixOS">NixOS</a></td>
+<td><a href="https://nixos.org/nixos/manual/">NixOS 手册</a></td>
+<td>一个由 Nix 构建<em>所有</em>组件的 Linux 发行版，因此支持可重现的、声明式的全系统配置管理以及原子升级和回滚。</td>
+<td>声明式配置桌面、服务器和集群。</td>
+<td>MIT</td>
+</tr>
+<tr>
+<td><a href="special:MyLanguage/Nixpkgs" class="wikilink" title="Nixpkgs">Nixpkgs</a></td>
+<td><a href="https://nixos.org/nixpkgs/manual/">Nixpkgs 手册</a></td>
+<td>最大的社区维护的 Nix 软件包和 NixOS 模块仓库，NixOS 的标准版本也托管在这里。</td>
+<td>分享 Nix 软件包和 NixOS 模块</td>
+<td>MIT</td>
+</tr>
+<tr>
+<td><a href="special:MyLanguage/Hydra" class="wikilink" title="Hydra">Hydra</a></td>
+<td><a href="https://nixos.org/hydra/manual/">Hydra 手册</a></td>
+<td>基于 Nix 的持续构建系统</td>
+<td>持续构建集群</td>
+<td>GPL-3.0</td>
+</tr>
+<tr>
+<td><a href="special:MyLanguage/Nix" class="wikilink" title="Nix">Nix</a></td>
+<td><a href="https://nixos.org/nix/manual/">Nix 手册</a></td>
+<td>一款软件包管理器，能解析指定可重现构建的 Nix 表达式，并将结果与依赖关系树的哈希值一起放入存储地址，从而避免依赖关系地狱，并支持多版本安装和回滚。</td>
+<td>Linux 和 Darwin 中的可重现构建和软件包管理</td>
+<td>LGPL-2.1</td>
+</tr>
+</tbody></table>
+<p>Nix 生态系统核心组件</p>
+<table style="width:20%;">
+<caption><strong>Nix 核心生态系统技术栈</strong></caption>
+<colgroup>
+<col style="width: 20%" />
+</colgroup>
+<tbody>
+<tr>
+<td style="text-align: center; border: 1px solid var(--border-color-base); background: var(--background-color-neutral); padding: 1.6rem" width="2%"><div style="font-size: 1.3em; font-weight: bold">
+<p>NixOS</p>
+</div>
+<p>一个用 Nixpkgs 构建的 Linux 发行版和配置系统。</p></td>
+</tr>
+<tr>
+<td style="text-align: center; border: 1px solid var(--border-color-base); background: var(--background-color-neutral); padding: 1.6rem" width="2%"><div style="font-size: 1.3em; font-weight: bold">
+<p>Nixpkgs</p>
+</div>
+<p>一个巨大的，社区维护的软件仓库。</p></td>
+</tr>
+<tr>
+<td style="text-align: center; border: 1px solid var(--border-color-base); background: var(--background-color-neutral); padding: 1.6rem" width="2%"><div style="font-size: 1.3em; font-weight: bold">
+<p>Nix</p>
+</div>
+<p>一个纯函数式的构建系统。</p></td>
+</tr>
+</tbody>
+</table>
+
+<p><span id="Usage_of_NixOS"></span></p>
+<h2 id="nixos-的使用方式">NixOS 的使用方式</h2><p>用户可以像安装其他 Linux 发行版一样，将 <em>NixOS</em> 发行版安装到他们的电脑上。他们通过 <a href="https://search.nixos.org/">https://search.nixos.org</a> 和本维基查阅有关 <em>Nixpkgs</em> 中可安装的软件包和配置选项的信息。他们使用 <em>Nix</em> 语言以声明式的方式，在一个文本文件中描述应该安装哪些软件包以及如何配置系统。然后，他们在终端中运行两个命令行程序，将系统转变为所描述的系统。此后，他们像使用任何其他 Linux 系统一样使用该系统。</p>
+<p><span id="Development_of_NixOS"></span></p>
+<h2 id="nixos-的开发">NixOS 的开发</h2><p><em>NixOS</em> 的开发者主要工作在 <em>Nixpkgs</em> 上。<em>NixOS</em> 本身的开发由三个主要领域组成，同时还有一些体量较小但同样重要的其他领域。主要领域包括打包、模块系统和文档。</p>
+<ul>
+<li>打包工作在 <em>Nixpkgs</em> 中进行，并不仅限于 <em>NixOS</em> 或基于 Linux 的平台。那些不专属于 <em>NixOS</em> 的软件包（例如运行发行版本身所需的工具）的维护者通常会照顾多个平台，尽管这并非严格要求。</li>
+</ul>
+<!-- -->
+
+<ul>
+<li>模块系统是配置运行在 <em>NixOS</em> 上服务的主要方式。该领域涵盖从“底层”配置（如 <em>systemd</em> 单元文件或提供自定义内核配置）到为特定服务生成配置文件的各个方面。模块系统是用户配置 <em>NixOS</em> 的主要途径，并位于 <em>Nixpkgs</em> 的 <code>nixos/</code> 子目录中。</li>
+</ul>
+<!-- -->
+
+<ul>
+<li>文档主要嵌入在打包和模块系统的数据中，尽管独立的 Markdown 文件也包含在 <em>Nixpkgs</em> 仓库中。文档还包括维护网站、维基以及更广泛生态系统的其他方面。前两个类别几乎完全由 <em>Nix</em> 语言代码组成，写在文本文件中，而后者则是 <em>Nix</em> 代码、Markdown 文件及其他各种格式的混合。</li>
+</ul>
+<p>对 <em>Nixpkgs</em> 的所有贡献，无论是否影响 <em>NixOS</em>，在被合并到 <em>Nixpkgs</em> 前都需经过同行评审。许多软件包以及文档和补充材料（如 ISO 或 tarball）会在 <em>Hydra</em> 上预先构建，以减少 <em>NixOS</em> 用户的更新等待时间。</p>
+<p>这三个类别按贡献量来看是最大的，但许多维护者也参与围绕 NixOS 基金会的活动，包括维护网站、<em>Hydra</em> 及其他工具运行所需的基础设施，或开发 NixOS 所需的工具。</p>
+<table>
+<thead>
+<tr>
+<th>开发类型</th>
+<th>开发所属</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>平台无关的打包</td>
+<td><em>Nixpkgs</em></td>
+<td><a href="https://github.com/NixOS/nixpkgs/blob/bf3287dac860542719fe7554e21e686108716879/pkgs/tools/misc/coreutils/default.nix">coreutils 软件包</a>, <a href="https://github.com/NixOS/nixpkgs/tree/5fe6820251dfab92c84ff356a7c7c336f8d8490c/pkgs/stdenv"><em>stdenv</em> 框架</a>, <a href="https://github.com/NixOS/nixpkgs/blob/5fe6820251dfab92c84ff356a7c7c336f8d8490c/pkgs/applications/office/libreoffice/default.nix">Libreoffice 软件包</a></td>
+</tr>
+<tr>
+<td>平台无关的工具</td>
+<td><em>Nixpkgs</em> 及其他多个仓库</td>
+<td><a href="https://github.com/NixOS/nix">上游/默认 Nix 实现（CppNix）</a>, <a href="https://github.com/NixOS/hydra"><em>Hydra</em> 源代码</a>, <a href="https://github.com/NixOS/nixpkgs-merge-bot"><em>Nixpkgs</em> 合并机器人</a></td>
+</tr>
+<tr>
+<td><em>NixOS</em> 工具</td>
+<td>主要是 <em>Nixpkgs</em></td>
+<td><a href="https://github.com/NixOS/nixpkgs/tree/5fe6820251dfab92c84ff356a7c7c336f8d8490c/pkgs/by-name/ni/nixos-rebuild-ng">nixos-rebuild-ng 源代码</a>, <a href="https://github.com/NixOS/nixpkgs/blob/5fe6820251dfab92c84ff356a7c7c336f8d8490c/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"><em>NixOS</em> 安装映像</a></td>
+</tr>
+<tr>
+<td><em>NixOS</em> 模块系统</td>
+<td><em>Nixpkgs</em></td>
+<td><a href="https://github.com/NixOS/nixpkgs/blob/master/nixos/modules/services/display-managers/default.nix">显示管理器配置</a>, <a href="https://github.com/NixOS/nixpkgs/blob/master/nixos/modules/services/databases/mysql.nix%EF%BC%88%E5%8F%8A%E5%85%B6%E8%A1%8D%E7%94%9F%EF%BC%89%E6%95%B0%E6%8D%AE%E5%BA%93%E9%85%8D%E7%BD%AE">1</a></td>
+</tr>
+<tr>
+<td>基础设施</td>
+<td></td>
+<td><a href="https://github.com/NixOS/nixos-wiki-infra">本维基的基础设施</a>, <a href="https://github.com/NixOS/infra"><em>NixOS</em> 基础设施</a></td>
+</tr>
+<tr>
+<td>文档</td>
+<td></td>
+<td><a href="https://wiki.nixos.org/">本维基</a>, <a href="https://github.com/NixOS/nixpkgs/blob/8d92119c540d78599ba208010c722a60958810f4/doc/stdenv/stdenv.chapter.md"><em>stdenv</em> 文档</a>, <a href="https://github.com/NixOS/nixpkgs/blob/master/nixos/doc/manual/configuration/ipv6-config.section.md"><em>NixOS</em> IPv6 配置</a>（可在 <a href="https://nixos.org/manual/nixos/stable/#sec-ipv6"><em>NixOS</em> 手册 IPv6 章节</a> 中查看）, <a href="https://github.com/NixOS/nixpkgs/blob/master/CONTRIBUTING.md"><em>Nixpkgs</em> 贡献指南</a></td>
+</tr>
+<tr>
+<td>技术组织</td>
+<td></td>
+<td><a href="https://github.com/NixOS/nixpkgs/issues/390768"><em>NixOS</em> RelEng</a>, <a href="https://github.com/NixOS/rfcs/"><em>Nix</em> 和 <em>NixOS</em> RFC</a></td>
+</tr>
+<tr>
+<td>其他</td>
+<td></td>
+<td><a href="https://github.com/NixOS/nixos-artwork"><em>NixOS</em> artwork</a>, <a href="https://discourse.nixos.org/"><em>NixOS</em>（及相关）讨论区</a>, <a href="https://github.com/NixOS/foundation"><em>NixOS 基金会</em></a></td>
+</tr>
+</tbody></table>
+<p><em>NixOS</em> 开发的各种示例及相关链接</p>
+<p>另请参见：<a href="https://github.com/NixOS/org">Nix 组织仓库</a></p>
+<p><a href="category:Pedias" class="wikilink" title="Category:Pedias">Category:Pedias</a> <a href="category:NixOS" class="wikilink" title="Category:NixOS">Category:NixOS</a> <a href="category:nix" class="wikilink" title="Category:nix">Category:nix</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

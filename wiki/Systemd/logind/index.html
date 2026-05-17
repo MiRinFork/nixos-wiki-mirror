@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Systemd/logind</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/Systemd">Systemd</a><span aria-hidden="true"> / </span>logind</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Systemd/logind -->
+
+<p><translate> <code>logind</code> is systemd’s login manager.</p>
+<p>Its main manual page is <code>systemd-logind.service(8)</code>. Its configuration options are described in <code>logind.conf(5)</code>.</p>
+<h2 id="handling-of-power-keys">Handling of power keys</h2><p><code>logind</code> handles power and standby hardware switches. The Arch wiki has a <a href="https://wiki.archlinux.org/index.php/Power_management#ACPI_events">good overview of which ACPI events are handled</a>.</p>
+<h3 id="don-t-shutdown-on-power-button-press">Don’t shutdown on power button press</h3><p>On a laptop, you often don’t want an accidental short press of the power button to shut down your system, but instead to <code>suspend</code> or <code>hibernate</code>. You can add the following snippet to your <code>logind</code> config: </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.logind.settings.Login.HandlePowerKey</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;suspend&quot;</span>;</code></pre>
+      </div><p><translate> If you want to ignore short presses of the power button entirely, you can use the following snippet instead: </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.logind.settings.Login.HandlePowerKey</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ignore&quot;</span>;</code></pre>
+      </div><p><translate> Long-pressing your power button (5 seconds or longer) to do a hard reset is handled by your machine’s BIOS/EFI and thus still possible.</p>
+<p>Similar to the power key, you can ignore the reboot, suspend and hibernate keys like this: </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs">s<span class="hljs-attr">ervices.logind.settings.Login.HandleRebootKey</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ignore&quot;</span>;
+<span class="hljs-attr">services.logind.settings.Login.HandleSuspendKey</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ignore&quot;</span>;
+<span class="hljs-attr">services.logind.settings.Login.HandleHibernateKey</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ignore&quot;</span>;</code></pre>
+      </div><p><translate> Or ignore the action of closing/opening the lid on laptops like this: </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs">s<span class="hljs-attr">ervices.logind.settings.Login.HandleLidSwitch</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ignore&quot;</span>;</code></pre>
+      </div><translate>
+
+<h3 id="ignore-hardware-keys-when-using-systemd-inhibit">Ignore hardware keys when using <code>systemd-inhibit</code></h3><p><code>systemd-inhibit</code> allows you to put a lock on e.g. shutdown or sleep that is in place as long the given process is running. By default, the hardware key actions configured in <code>logind</code> override such inhibits.</p>
+<p>Say you want your laptop to stay awake when closing the lid in some circumstances, for example if you want to listen to music. If you start your lock screen with an inhibit on the lid switch</p>
+<p><code>systemd-inhibit --what=handle-lid-switch lock-screen-tool</code></p>
+<p><code>logind</code> still overrides that user decision. For it to work, you need to tell logind to ignore the lid switch in your system config: </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.logind.settings.Login</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-comment"># If you want to listen to music while the lid is closed</span>
+  <span class="hljs-attr">HandleLidSwitch</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ignore&quot;</span>;
+};</code></pre>
+      </div><p><translate> </translate></p>
+<p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="category:systemd" class="wikilink" title="Category:systemd">Category:systemd</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

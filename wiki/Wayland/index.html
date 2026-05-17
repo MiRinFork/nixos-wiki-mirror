@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Wayland</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Wayland</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Wayland -->
+
+<p><a href="https://wayland.freedesktop.org/">Wayland</a> is a modern display server protocol intended as a replacement for the legacy <a href="https://mirror.nixoscn.org/wiki/Wayland/Xorg" class="wikilink" title=" X11"> X11</a> system.</p>
+<p>For additional details, see .</p>
+<h2 id="checking-for-wayland">Checking for Wayland</h2><p>To check if you are using Wayland, run the following command If is returned, you are running Wayland</p>
+<h2 id="setup">Setup</h2><p>Two things are required for running Wayland: a compatible Display Manager, and a compatible Compositor.</p>
+<h2 id="display-managers">Display Managers</h2><p>Display Managers are responsible for handling user login.</p>
+<p>The following Display Managers support using both X and Wayland protocols</p>
+<h4 id="graphical">Graphical</h4><ul>
+<li><a href="https://github.com/NixOS/nixpkgs/blob/592047fc9e4f7b74a4dc85d1b9f5243dfe4899e3/nixos/modules/services/x11/display-managers/gdm.nix">gdm</a> is the <a href="https://mirror.nixoscn.org/wiki/Wayland/GNOME" class="wikilink" title="GNOME">GNOME</a> Display Manager.</li>
+<li><a href="https://github.com/NixOS/nixpkgs/blob/592047fc9e4f7b74a4dc85d1b9f5243dfe4899e3/nixos/modules/services/x11/display-managers/sddm.nix">sddm</a> is the default Display Manager for <a href="https://mirror.nixoscn.org/wiki/Wayland/KDE" class="wikilink" title="KDE">KDE</a>. Wayland support is currently experimental.</li>
+</ul>
+<h4 id="text-based">Text-based</h4><ul>
+<li><a href="https://github.com/NixOS/nixpkgs/blob/592047fc9e4f7b74a4dc85d1b9f5243dfe4899e3/pkgs/applications/display-managers/ly/default.nix">ly</a></li>
+<li><a href="https://github.com/NixOS/nixpkgs/blob/592047fc9e4f7b74a4dc85d1b9f5243dfe4899e3/pkgs/applications/display-managers/emptty/default.nix">emptty</a></li>
+<li><a href="https://github.com/NixOS/nixpkgs/blob/592047fc9e4f7b74a4dc85d1b9f5243dfe4899e3/pkgs/applications/display-managers/lemurs/default.nix">lemurs</a></li>
+</ul>
+<h2 id="compositors">Compositors</h2><p>For the purposes of this basic overview, a compositor can be thought of as equivalent to an X Desktop Environment.</p>
+<h3 id="wayland-native">Wayland Native</h3><ul>
+<li><a href="https://mirror.nixoscn.org/wiki/Wayland/Sway" class="wikilink" title="Sway">Sway</a> is a i3-like compositor.</li>
+<li><a href="https://mirror.nixoscn.org/wiki/Wayland/Hyprland" class="wikilink" title="Hyprland">Hyprland</a> the dynamic tiling Wayland compositor that doesn&#39;t sacrifice on its looks.</li>
+</ul>
+<h3 id="x-and-wayland-support">X and Wayland support</h3><ul>
+<li><a href="https://github.com/NixOS/nixpkgs/blob/nixos-23.11/pkgs/desktops/gnome/core/mutter/default.nix">Mutter</a> is the default compositor for <a href="https://mirror.nixoscn.org/wiki/Wayland/GNOME" class="wikilink" title="GNOME">GNOME</a> Desktop Environment.</li>
+<li><a href="https://github.com/NixOS/nixpkgs/blob/nixos-23.11/pkgs/desktops/plasma-5/kwin/default.nix">KWin</a> is the default compositor for <a href="https://mirror.nixoscn.org/wiki/Wayland/KDE" class="wikilink" title="KDE">KDE</a> Desktop Environment.</li>
+</ul>
+<h2 id="applications">Applications</h2><p>Not all apps support running natively on Wayland. To work around this, Xwayland should be enabled.</p>
+<h3 id="electron-and-chromium">Electron and Chromium</h3><p>Ozone Wayland (which uses Wayland native instead of Xwayland) support in <a href="https://mirror.nixoscn.org/wiki/Wayland/Chromium" class="wikilink" title="Chromium">Chromium</a> and <a href="https://mirror.nixoscn.org/wiki/Wayland/Electron" class="wikilink" title="Electron">Electron</a> based applications can be enabled by setting the environment variable &quot;<code>NIXOS_OZONE_WL</code>&quot; with <code>NIXOS_OZONE_WL=1</code> <em>(also see <a href="https://github.com/NixOS/nixpkgs/commit/b2eb5f62a7fd94ab58acafec9f64e54f97c508a6">commit</a>)</em></p>
+<p>As of NixOS 25.05 (&quot;Warbler&quot;), if <code>XDG_SESSION_TYPE</code> is unset or set to &quot;wayland&quot;, <a href="https://issues.chromium.org/issues/40083534#comment599">chromium and electron apps will default to wayland native</a>. This ignores the <code>DISPLAY</code> environment variable.</p>
+<h4 id="declaratively-permanent">Declaratively (permanent)</h4><h5 id="nixos">NixOS</h5><h4 id="imperatively-each-time-an-application-is-launched">Imperatively (each time an application is launched)</h4><p>Example: to launch <code>code</code> <em>()</em></p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs">NIXOS_OZONE_WL=1 code</code></pre>
+      </div><h2 id="virtualization">Virtualization</h2><p>To have wayland work inside of <a href="https://mirror.nixoscn.org/wiki/Wayland/QEMU" class="wikilink" title="QEMU">QEMU</a>, you may need to pass <code>-vga qxl</code>.</p>
+<h2 id="see-also">See also</h2><ul>
+<li><a href="https://mirror.nixoscn.org/wiki/Wayland/Xorg" class="wikilink" title="Xorg">Xorg</a></li>
+</ul>
+<p><a href="category:Desktop" class="wikilink" title="Category:Desktop">Category:Desktop</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

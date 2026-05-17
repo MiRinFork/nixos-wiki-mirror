@@ -1,0 +1,545 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Matrix</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Matrix</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Matrix -->
+
+<p><a href="https://matrix.org/">Matrix</a> defines a set of open APIs for decentralised communication, suitable for securely publishing, persisting and subscribing to data over a global open federation of servers with no single point of control. Uses include Instant Messaging (IM), Voice over IP (VoIP) signalling, Internet of Things (IoT) communication, and bridging together existing communication silos - providing the basis of a new open real-time communication ecosystem.</p>
+<p>This article extends the documentation in <a href="https://nixos.org/manual/nixos/stable/#module-services-matrix">NixOS manual</a>.</p>
+<h2 id="joining-the-community-on-matrix">Joining the community on Matrix</h2><p>You can read more about the different rooms on <a href="https://mirror.nixoscn.org/wiki/Matrix/MatrixRooms" class="wikilink" title="MatrixRooms">MatrixRooms</a> and join them either from <a href="https://matrix.to/#/#community:nixos.org">https://matrix.to/#/#community:nixos.org</a> or directly from your client.</p>
+<p>An unofficial service provides Matrix accounts for members of the NixOS organization on GitHub: <a href="https://discourse.nixos.org/t/matrix-account-hosting-for-nix-os-hackers/14036">https://discourse.nixos.org/t/matrix-account-hosting-for-nix-os-hackers/14036</a></p>
+<h2 id="clients">Clients</h2><h3 id="desktop-clients">Desktop clients</h3><p>The clients <code>element-desktop</code> <a href="https://element.io/">1</a> and <code>fractal</code> <a href="https://gitlab.gnome.org/World/fractal">2</a> are known to work and are kept up to date.</p>
+<p>Other clients packaged in Nixpkgs, such as <code>matrix-commander</code>, <code>neochat</code>, <code>nheko</code>, depend on the insecure <code>olm</code> library susceptible to various security vulnerabilities.<a href="https://nvd.nist.gov/vuln/detail/CVE-2024-45191">3</a><a href="https://nvd.nist.gov/vuln/detail/CVE-2024-45193">4</a><a href="https://nvd.nist.gov/vuln/detail/CVE-2024-45192">5</a></p>
+<p>If this is not a concern, the guide to <a href="https://nixos.org/manual/nixpkgs/stable/#sec-allow-insecure">install insecure packages</a> may be followed.</p>
+<h3 id="web-clients">Web clients</h3><p>There is a web version of the client <a href="https://element.io/">Element</a>, <code>element-web</code> on Nixpkgs, which you can use as a regular web application. See <a href="https://nixos.org/nixos/manual/index.html#module-services-matrix-element-web">the NixOS manual entry</a>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs">{
+  <span class="hljs-attr">services.nginx.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+  <span class="hljs-comment"># See https://nixos.org/manual/nixos/stable/index.html#module-services-matrix-element-web</span>
+  services.nginx.virtualHosts.<span class="hljs-string">&quot;localhost&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">listen</span> <span class="hljs-operator">=</span> [{
+      <span class="hljs-attr">addr</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;[::1]&quot;</span>;
+      <span class="hljs-attr">port</span> <span class="hljs-operator">=</span> yourPort;
+    }];
+    <span class="hljs-attr">root</span> <span class="hljs-operator">=</span> pkgs.element-web.override {
+      <span class="hljs-comment"># See https://github.com/element-hq/element-web/blob/develop/config.sample.json</span>
+      <span class="hljs-attr">conf</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">default_theme</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;dark&quot;</span>;
+      };
+    };
+  };
+}</code></pre>
+      </div><p>Alternatively, you can write a script to start the web client on demand.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-keyword">let</span>
+  <span class="hljs-comment"># port = yourPort;</span>
+  <span class="hljs-attr">web-dir</span> <span class="hljs-operator">=</span> pkgs.element-web.override {
+    <span class="hljs-attr">conf</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">default_theme</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;dark&quot;</span>;
+      <span class="hljs-attr">show_labs_settings</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    };
+  };
+  <span class="hljs-attr">element-web</span> <span class="hljs-operator">=</span> pkgs.writeScriptBin <span class="hljs-string">&quot;element-web&quot;</span> <span class="hljs-string">&#x27;&#x27;
+    #!<span class="hljs-subst">${pkgs.bash}</span>/bin/bash
+    set -e
+    <span class="hljs-subst">${pkgs.python3}</span>/bin/python3 -m http.server <span class="hljs-subst">${port}</span> -b ::1 -d <span class="hljs-subst">${web-dir}</span>
+  &#x27;&#x27;</span>;
+<span class="hljs-keyword">in</span>
+{
+  <span class="hljs-attr">home.sessionPath</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;<span class="hljs-subst">${element-web}</span>/bin&quot;</span> ];
+}</code></pre>
+      </div><h2 id="homeservers">Homeservers</h2><h3 id="conduit">Conduit</h3><div class="code-container">
+        
+        <pre><code class="language-nixos hljs">{
+  <span class="hljs-comment"># See https://search.nixos.org/options?channel=unstable&amp;query=services.matrix-conduit.</span>
+  <span class="hljs-comment"># and https://docs.conduit.rs/configuration.html</span>
+  <span class="hljs-attr">services.matrix-conduit</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">settings.global</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-comment"># allow_registration = true;</span>
+      <span class="hljs-comment"># You will need this token when creating your first account.</span>
+      <span class="hljs-comment"># registration_token = &quot;A S3CR3T TOKEN&quot;;</span>
+      <span class="hljs-comment"># server_name = yourDomainName;</span>
+      <span class="hljs-comment"># port = yourPort;</span>
+      <span class="hljs-attr">address</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;::1&quot;</span>;
+      <span class="hljs-attr">database_backend</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;rocksdb&quot;</span>;
+      
+      <span class="hljs-comment"># See https://docs.conduit.rs/turn.html, and https://github.com/element-hq/synapse/blob/develop/docs/turn-howto.md for more details</span>
+      <span class="hljs-comment"># turn_uris = [</span>
+      <span class="hljs-comment">#  &quot;turn:your.turn.url?transport=udp&quot;</span>
+      <span class="hljs-comment">#  &quot;turn:your.turn.url?transport=tcp&quot;</span>
+      <span class="hljs-comment"># ];</span>
+      <span class="hljs-comment"># turn_secret = &quot;your secret&quot;;</span>
+    };
+  };
+}</code></pre>
+      </div><h3 id="synapse">Synapse</h3><p><a href="https://element-hq.github.io/synapse/latest/welcome_and_overview.html">Synapse</a> has an associated module exposing the <a href="https://search.nixos.org/options?query=services.matrix-synapse">services.matrix-synapse.* options</a>. See <a href="https://nixos.org/nixos/manual/index.html#module-services-matrix-synapse">the NixOS manual entry</a> for a complete configuration example.</p>
+<h4 id="coturn-with-synapse">Coturn with Synapse</h4><p>For WebRTC calls to work when both callers are behind a NAT, you need to provide a turn server for clients to use. Here is an example configuration, inspired from <a href="https://github.com/spantaleev/matrix-docker-ansible-deploy/blob/master/roles/custom/matrix-coturn/templates/turnserver.conf.j2">this configuration file</a>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{config, pkgs, lib, ...}: {
+  <span class="hljs-comment"># enable coturn</span>
+  <span class="hljs-attr">services.coturn</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">rec</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">no-cli</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">no-tcp-relay</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">min-port</span> <span class="hljs-operator">=</span> <span class="hljs-number">49000</span>;
+    <span class="hljs-attr">max-port</span> <span class="hljs-operator">=</span> <span class="hljs-number">50000</span>;
+    <span class="hljs-attr">use-auth-secret</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">static-auth-secret</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;will be world readable for local users :(&quot;</span>;
+    <span class="hljs-attr">realm</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;turn.example.com&quot;</span>;
+    <span class="hljs-attr">cert</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${config.security.acme.certs.${realm}</span>.directory}/full.pem&quot;</span>;
+    <span class="hljs-attr">pkey</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${config.security.acme.certs.${realm}</span>.directory}/key.pem&quot;</span>;
+    <span class="hljs-attr">extraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+      # for debugging
+      verbose
+      # ban private IP ranges
+      no-multicast-peers
+      denied-peer-ip=0.0.0.0-0.255.255.255
+      denied-peer-ip=10.0.0.0-10.255.255.255
+      denied-peer-ip=100.64.0.0-100.127.255.255
+      denied-peer-ip=127.0.0.0-127.255.255.255
+      denied-peer-ip=169.254.0.0-169.254.255.255
+      denied-peer-ip=172.16.0.0-172.31.255.255
+      denied-peer-ip=192.0.0.0-192.0.0.255
+      denied-peer-ip=192.0.2.0-192.0.2.255
+      denied-peer-ip=192.88.99.0-192.88.99.255
+      denied-peer-ip=192.168.0.0-192.168.255.255
+      denied-peer-ip=198.18.0.0-198.19.255.255
+      denied-peer-ip=198.51.100.0-198.51.100.255
+      denied-peer-ip=203.0.113.0-203.0.113.255
+      denied-peer-ip=240.0.0.0-255.255.255.255
+      denied-peer-ip=::1
+      denied-peer-ip=64:ff9b::-64:ff9b::ffff:ffff
+      denied-peer-ip=::ffff:0.0.0.0-::ffff:255.255.255.255
+      denied-peer-ip=100::-100::ffff:ffff:ffff:ffff
+      denied-peer-ip=2001::-2001:1ff:ffff:ffff:ffff:ffff:ffff:ffff
+      denied-peer-ip=2002::-2002:ffff:ffff:ffff:ffff:ffff:ffff:ffff
+      denied-peer-ip=fc00::-fdff:ffff:ffff:ffff:ffff:ffff:ffff:ffff
+      denied-peer-ip=fe80::-febf:ffff:ffff:ffff:ffff:ffff:ffff:ffff
+    &#x27;&#x27;</span>;
+  };
+  <span class="hljs-comment"># open the firewall</span>
+  <span class="hljs-attr">networking.firewall</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">interfaces.enp2s0</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">let</span>
+      <span class="hljs-attr">range</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> config.services.coturn; lib.singleton {
+        <span class="hljs-attr">from</span> <span class="hljs-operator">=</span> min-port;
+        <span class="hljs-attr">to</span> <span class="hljs-operator">=</span> max-port;
+      };
+    <span class="hljs-keyword">in</span>
+    {
+      <span class="hljs-attr">allowedUDPPortRanges</span> <span class="hljs-operator">=</span> range;
+      <span class="hljs-attr">allowedUDPPorts</span> <span class="hljs-operator">=</span> [ <span class="hljs-number">3478</span> <span class="hljs-number">5349</span> ];
+      <span class="hljs-attr">allowedTCPPortRanges</span> <span class="hljs-operator">=</span> [ ];
+      <span class="hljs-attr">allowedTCPPorts</span> <span class="hljs-operator">=</span> [ <span class="hljs-number">3478</span> <span class="hljs-number">5349</span> ];
+    };
+  };
+  <span class="hljs-comment"># get a certificate</span>
+  security.acme.certs.${config.services.coturn.realm} <span class="hljs-operator">=</span> {
+    <span class="hljs-comment">/* insert here the right configuration to obtain a certificate */</span>
+    <span class="hljs-attr">postRun</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;systemctl restart coturn.service&quot;</span>;
+    <span class="hljs-attr">group</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;turnserver&quot;</span>;
+  };
+  <span class="hljs-comment"># configure synapse to point users to coturn</span>
+  <span class="hljs-attr">services.matrix-synapse.settings</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> config.services.coturn; {
+    <span class="hljs-attr">turn_uris</span> <span class="hljs-operator">=</span> [<span class="hljs-string">&quot;turn:<span class="hljs-subst">${realm}</span>:3478?transport=udp&quot;</span> <span class="hljs-string">&quot;turn:<span class="hljs-subst">${realm}</span>:3478?transport=tcp&quot;</span>];
+    <span class="hljs-attr">turn_shared_secret</span> <span class="hljs-operator">=</span> static-auth-secret;
+    <span class="hljs-attr">turn_user_lifetime</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;1h&quot;</span>;
+  };
+}</code></pre>
+      </div><h4 id="synapse-with-workers">Synapse with Workers</h4><p>There&#39;s an external module to automatically set up synapse and configure nginx with workers: <a href="https://github.com/dali99/nixos-matrix-modules">https://github.com/dali99/nixos-matrix-modules</a></p>
+<h4 id="synapse-admin-with-caddy">Synapse Admin with Caddy</h4><p>Setting up <a href="https://github.com/etkecc/synapse-admin">Synapse Admin</a> with <a href="https://mirror.nixoscn.org/wiki/Matrix/Caddy" class="wikilink" title="Caddy">Caddy</a> is quite easy!</p>
+<p>The example uses the newer <code>pkgs.synapse-admin-etkecc</code> which may not be what you want if you have heard of the old one which is available at: <code>pkgs.synapse-admin</code></p>
+<h2 id="homeserver-independent">Homeserver Independent</h2><h3 id="livekit">Livekit</h3><p>In order to set up element call or for calls to work in Element X it is necessary to set up and announce livekit. To set up livekit for matrix in nixos use</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ config, lib, pkgs, ... }: <span class="hljs-keyword">let</span>
+  <span class="hljs-attr">keyFile</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/run/livekit.key&quot;</span>;
+<span class="hljs-keyword">in</span> {
+  <span class="hljs-attr">services.livekit</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">openFirewall</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">settings.room.auto_create</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+    <span class="hljs-keyword">inherit</span> keyFile;
+  };
+  <span class="hljs-attr">services.lk-jwt-service</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-comment"># can be on the same virtualHost as synapse</span>
+    <span class="hljs-attr">livekitUrl</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;wss://domain.tld/livekit/sfu&quot;</span>;
+    <span class="hljs-keyword">inherit</span> keyFile;
+  };
+  <span class="hljs-comment"># generate the key when needed</span>
+  <span class="hljs-attr">systemd.services.livekit-key</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">before</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;lk-jwt-service.service&quot;</span> <span class="hljs-string">&quot;livekit.service&quot;</span> ];
+    <span class="hljs-attr">wantedBy</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;multi-user.target&quot;</span> ];
+    <span class="hljs-attr">path</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [ livekit coreutils gawk ];
+    <span class="hljs-attr">script</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        echo &quot;Key missing, generating key&quot;
+        echo &quot;lk-jwt-service: $(livekit-server generate-keys | tail -1 | awk &#x27;{print $3}&#x27;)&quot; &gt; &quot;<span class="hljs-subst">${keyFile}</span>&quot;
+    &#x27;&#x27;</span>;
+    <span class="hljs-attr">serviceConfig.Type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;oneshot&quot;</span>;
+    <span class="hljs-attr">unitConfig.ConditionPathExists</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;!<span class="hljs-subst">${keyFile}</span>&quot;</span>;
+  };
+  <span class="hljs-comment"># restrict access to livekit room creation to a homeserver</span>
+  <span class="hljs-attr">systemd.services.lk-jwt-service.environment.LIVEKIT_FULL_ACCESS_HOMESERVERS</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;domain.tld&quot;</span>;
+  services.nginx.virtualHosts.<span class="hljs-string">&quot;domain.tld&quot;</span>.locations <span class="hljs-operator">=</span> {
+    <span class="hljs-string">&quot;^~ /livekit/jwt/&quot;</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">priority</span> <span class="hljs-operator">=</span> <span class="hljs-number">400</span>;
+      <span class="hljs-attr">proxyPass</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;http://[::1]:<span class="hljs-subst">${<span class="hljs-built_in">toString</span> config.services.lk-jwt-service.port}</span>/&quot;</span>;
+    };
+    <span class="hljs-string">&quot;^~ /livekit/sfu/&quot;</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">extraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        proxy_send_timeout 120;
+        proxy_read_timeout 120;
+        proxy_buffering off;
+
+        proxy_set_header Accept-Encoding gzip;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection &quot;upgrade&quot;;
+      &#x27;&#x27;</span>;
+      <span class="hljs-attr">priority</span> <span class="hljs-operator">=</span> <span class="hljs-number">400</span>;
+      <span class="hljs-attr">proxyPass</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;http://[::1]:<span class="hljs-subst">${<span class="hljs-built_in">toString</span> config.services.livekit.settings.port}</span>/&quot;</span>;
+      <span class="hljs-attr">proxyWebsockets</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    };
+  };
+}</code></pre>
+      </div><p>Furthermore, it is necessary to announce the service with a <code>domain.tld/.well-known/matrix/client</code> which needs to be served as <code>Content-Type application/json</code> (calls in Element X might not work without the content-type) and contain</p>
+<div class="code-container">
+        
+        <pre><code class="language-json hljs"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;m.homeserver&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;base_url&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;https://domain.tld&quot;</span>
+  <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;m.identity_server&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;base_url&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;https://vector.im&quot;</span>
+  <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;org.matrix.msc3575.proxy&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;url&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;https://domain.tld&quot;</span>
+  <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;org.matrix.msc4143.rtc_foci&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+    <span class="hljs-punctuation">{</span>
+       <span class="hljs-attr">&quot;type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;livekit&quot;</span><span class="hljs-punctuation">,</span>    <span class="hljs-attr">&quot;livekit_service_url&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;https://domain.tld/livekit/jwt&quot;</span>
+    <span class="hljs-punctuation">}</span>
+  <span class="hljs-punctuation">]</span>
+<span class="hljs-punctuation">}</span></code></pre>
+      </div><h2 id="application-services-a-k-a-bridges">Application services (a.k.a. bridges)</h2><p>Bridges allow you to connect Matrix to a third-party platform (like Discord, Telegram, etc.), and interact seamlessly. See <a href="https://matrix.org/ecosystem/bridges/">here</a> for a list of currently supported bridges.</p>
+<h3 id="mautrix-telegram">mautrix-telegram</h3><p>Full configuration reference: <a href="https://github.com/tulir/mautrix-telegram/blob/master/mautrix_telegram/example-config.yaml">https://github.com/tulir/mautrix-telegram/blob/master/mautrix_telegram/example-config.yaml</a></p>
+<p>Example NixOS config:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">services.matrix-synapse</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">settings.app_service_config_files</span> <span class="hljs-operator">=</span> [
+      <span class="hljs-comment"># The registration file is automatically generated after starting the</span>
+      <span class="hljs-comment"># appservice for the first time.</span>
+      <span class="hljs-comment"># cp /var/lib/mautrix-telegram/telegram-registration.yaml \</span>
+      <span class="hljs-comment">#   /var/lib/matrix-synapse/</span>
+      <span class="hljs-comment"># chown matrix-synapse:matrix-synapse \</span>
+      <span class="hljs-comment">#   /var/lib/matrix-synapse/telegram-registration.yaml</span>
+      <span class="hljs-string">&quot;/var/lib/matrix-synapse/telegram-registration.yaml&quot;</span>
+    ];
+    <span class="hljs-comment"># ...</span>
+  };
+
+  <span class="hljs-attr">services.mautrix-telegram</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+    <span class="hljs-comment"># file containing the appservice and telegram tokens</span>
+    <span class="hljs-attr">environmentFile</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/etc/secrets/mautrix-telegram.env&quot;</span>;
+
+    <span class="hljs-comment"># The appservice is pre-configured to use SQLite by default.</span>
+    <span class="hljs-comment"># It&#x27;s also possible to use PostgreSQL.</span>
+    <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">homeserver</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">address</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;http://localhost:8008&quot;</span>;
+        <span class="hljs-attr">domain</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;domain.tld&quot;</span>;
+      };
+      <span class="hljs-attr">appservice</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">provisioning.enabled</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+        <span class="hljs-attr">id</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;telegram&quot;</span>;
+        <span class="hljs-attr">public</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">enabled</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+          <span class="hljs-attr">prefix</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/public&quot;</span>;
+          <span class="hljs-attr">external</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;http://domain.tld:8080/public&quot;</span>;
+        };
+
+        <span class="hljs-comment"># The service uses SQLite by default, but it&#x27;s also possible to use</span>
+        <span class="hljs-comment"># PostgreSQL instead:</span>
+        <span class="hljs-comment">#database = &quot;postgresql:///mautrix-telegram?host=/run/postgresql&quot;;</span>
+      };
+      <span class="hljs-attr">bridge</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">relaybot.authless_portals</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+        <span class="hljs-attr">permissions</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-string">&quot;@someadmin:domain.tld&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;admin&quot;</span>;
+        };
+
+        <span class="hljs-comment"># Animated stickers conversion requires additional packages in the</span>
+        <span class="hljs-comment"># service&#x27;s path.</span>
+        <span class="hljs-comment"># If this isn&#x27;t a fresh installation, clearing the bridge&#x27;s uploaded</span>
+        <span class="hljs-comment"># file cache might be necessary (make a database backup first!):</span>
+        <span class="hljs-comment"># delete from telegram_file where \</span>
+        <span class="hljs-comment">#   mime_type in (&#x27;application/gzip&#x27;, &#x27;application/octet-stream&#x27;)</span>
+        <span class="hljs-attr">animated_sticker</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">target</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;gif&quot;</span>;
+          <span class="hljs-attr">args</span> <span class="hljs-operator">=</span> {
+            <span class="hljs-attr">width</span> <span class="hljs-operator">=</span> <span class="hljs-number">256</span>;
+            <span class="hljs-attr">height</span> <span class="hljs-operator">=</span> <span class="hljs-number">256</span>;
+            <span class="hljs-attr">fps</span> <span class="hljs-operator">=</span> <span class="hljs-number">30</span>;               <span class="hljs-comment"># only for webm</span>
+            <span class="hljs-attr">background</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;020202&quot;</span>;  <span class="hljs-comment"># only for gif, transparency not supported</span>
+          };
+        };
+      };
+    };
+  };
+
+  <span class="hljs-attr">systemd.services.mautrix-telegram.path</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+    lottieconverter  <span class="hljs-comment"># for animated stickers conversion, unfree package</span>
+    ffmpeg           <span class="hljs-comment"># if converting animated stickers to webm (very slow!)</span>
+  ];
+}</code></pre>
+      </div><h3 id="mautrix-whatsapp">mautrix-whatsapp</h3><p>Packaged as <a href="https://search.nixos.org/packages?query=mautrix-whatsapp">mautrix-whatsapp</a>.</p>
+<h3 id="matrix-appservice-irc">matrix-appservice-irc</h3><p>NixOS-specific module options: TODO link to the search results once it&#39;s landed</p>
+<p>Full configuration reference: <a href="https://github.com/matrix-org/matrix-appservice-irc/blob/develop/config.sample.yaml">https://github.com/matrix-org/matrix-appservice-irc/blob/develop/config.sample.yaml</a></p>
+<p>Upstream documentation: <a href="https://matrix-org.github.io/matrix-appservice-irc/latest/introduction.html">https://matrix-org.github.io/matrix-appservice-irc/latest/introduction.html</a></p>
+<p>Example configuration:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.matrix-appservice-irc</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">registrationUrl</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://ircbridge.mydomain.com&quot;</span>; <span class="hljs-comment"># Or localhost</span>
+
+  <span class="hljs-comment"># Everything from here is passed to the appservice</span>
+  <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">homeserver.url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://matrix.mydomain.com&quot;</span>; <span class="hljs-comment"># Or localhost</span>
+    <span class="hljs-attr">homeserver.domain</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;mydomain.com&quot;</span>;
+
+    <span class="hljs-comment"># Bridge settings for Freenode. You can bridge multiple services.</span>
+    ircService.servers.<span class="hljs-string">&quot;chat.freenode.net&quot;</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;freenode&quot;</span>;
+      <span class="hljs-attr">port</span> <span class="hljs-operator">=</span> <span class="hljs-number">6697</span>;
+      <span class="hljs-attr">ssl</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">dynamicChannels</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">enabled</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+        <span class="hljs-attr">aliasTemplate</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;#irc_$CHANNEL&quot;</span>;
+        <span class="hljs-attr">groupId</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;+irc:localhost&quot;</span>;
+      };
+      <span class="hljs-attr">matrixClients</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">userTemplate</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;@irc_$NICK&quot;</span>;
+      };
+      <span class="hljs-attr">ircClients</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">nickTemplate</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;$LOCALPART[m]&quot;</span>;
+        <span class="hljs-attr">allowNickChanges</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      };
+
+      <span class="hljs-attr">membershipLists</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">enabled</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+        <span class="hljs-attr">global</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">ircToMatrix</span> <span class="hljs-operator">=</span> {
+            <span class="hljs-attr">initial</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+            <span class="hljs-attr">incremental</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+          };
+          <span class="hljs-attr">matrixToIrc</span> <span class="hljs-operator">=</span> {
+            <span class="hljs-attr">initial</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+            <span class="hljs-attr">incremental</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+          };
+        };
+      };
+    };
+  };
+};</code></pre>
+      </div><p>This example configuration creates a bridge for only one IRC network, Freenode. Some options are set to make an example, but you absolutely *should* read the whole configuration documentation and set all options you want before starting. The example options show you how to adapt the room/user name space template for the use case where you only have one IRC server bridged, and also enables increased membership sync because it is disabled on the official Freenode bridge.</p>
+<p>The appservice automatically creates a registration file under <code>/var/lib/matrix-appservice-irc/registration.yml</code> and keeps it up to date. If your homeserver is not located on the same machine and NixOS installation, you must absolutely make sure to synchronize that file over to the home server after each modification and keep both in sync.</p>
+<h3 id="matrix-appservice-discord">matrix-appservice-discord</h3><p>Full configuration reference: <a href="https://github.com/Half-Shot/matrix-appservice-discord/blob/master/config/config.sample.yaml">https://github.com/Half-Shot/matrix-appservice-discord/blob/master/config/config.sample.yaml</a></p>
+<p>Example NixOS config:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">services.matrix-synapse</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">app_service_config_files</span> <span class="hljs-operator">=</span> [
+      <span class="hljs-comment"># The registration file is automatically generated after starting the</span>
+      <span class="hljs-comment"># appservice for the first time.</span>
+      <span class="hljs-comment"># cp /var/lib/matrix-appservice-discord/discord-registration.yaml \</span>
+      <span class="hljs-comment">#   /var/lib/matrix-synapse/</span>
+      <span class="hljs-comment"># chown matrix-synapse:matrix-synapse \</span>
+      <span class="hljs-comment">#   /var/lib/matrix-synapse/discord-registration.yaml</span>
+      <span class="hljs-string">&quot;/var/lib/matrix-synapse/discord-registration.yaml&quot;</span>
+    ];
+    <span class="hljs-comment"># ...</span>
+  };
+
+  <span class="hljs-attr">services.matrix-appservice-discord</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">environmentFile</span> <span class="hljs-operator">=</span> <span class="hljs-symbol">/etc/keyring/matrix-appservice-discord/tokens.env</span>;
+    <span class="hljs-comment"># The appservice is pre-configured to use SQLite by default.</span>
+    <span class="hljs-comment"># It&#x27;s also possible to use PostgreSQL.</span>
+    <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">bridge</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">domain</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;test.tld&quot;</span>;
+        <span class="hljs-attr">homeserverUrl</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://public.endpoint.test.tld&quot;</span>;
+      };
+
+      <span class="hljs-comment"># The service uses SQLite by default, but it&#x27;s also possible to use</span>
+      <span class="hljs-comment"># PostgreSQL instead:</span>
+      <span class="hljs-comment">#database = {</span>
+      <span class="hljs-comment">#  filename = &quot;&quot;; # empty value to disable sqlite</span>
+      <span class="hljs-comment">#  connString = &quot;socket:/run/postgresql?db=matrix-appservice-discord&quot;;</span>
+      <span class="hljs-comment">#};</span>
+    };
+  };
+}</code></pre>
+      </div><h2 id="see-also">See also</h2><ul>
+<li><a href="https://mirror.nixoscn.org/wiki/Matrix/Mjolnir" class="wikilink" title="Mjolnir">Mjolnir</a> - a Matrix moderation tool</li>
+<li><a href="https://matrix.to/#/!vxTmkuJzhGPsMdkAOc:transformierende-gesellschaft.org?via=transformierende-gesellschaft.org">The Nix Matrix Subsystem chat room, on Matrix</a></li>
+</ul>
+<p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="category:NixOS_Manual" class="wikilink" title="Category:NixOS Manual">Category:NixOS Manual</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

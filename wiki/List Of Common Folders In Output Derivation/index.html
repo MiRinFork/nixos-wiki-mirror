@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>List Of Common Folders In Output Derivation</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / List Of Common Folders In Output Derivation</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: List Of Common Folders In Output Derivation -->
+
+<h2 id="goal-of-this-page">Goal of this page</h2><p><strong>IMPORTANT: this page is under development, and was created to support <a href="https://discourse.nixos.org/t/list-and-role-of-all-special-folders-in-out/12292">this thread</a>.</strong></p>
+<p>When creating a package, one need to copy stuff in various subfolders in the <code>$out</code> directory. The most useful subfolder is certainly <code>$out/bin</code> in which all executable must stay. However, there is many more such folders: <code>$out/share</code>, <code>$out/lib</code>... and some folders are also quite specific to some programs (python, emacs, ...).</p>
+<p>This page is an attempt to give a (a non-exhaustive) list of these &quot;special&quot; folders: they could be here either because they receive a special treatment by nix or by any famous program, or because the name is a well used convention.</p>
+<h2 id="how-to-add-a-new-entry">How to add a new entry</h2><p>To add a new entry, you can start by copy pasting an existing entry. Ideally, each folder in this page would come with</p>
+<ul>
+<li>a very short description that says who consider this folder as special (nix, python, or just a convention), what kind of people can be interested by that folder (everybody, kernel developpers, python developpers...), how popular this folder is among these users (let&#39;s say 3 is &quot;much nix packager will need to write into that folder at some point&quot;, 2 is &quot;quite useful, but only if you create special derivations, like graphical programs, python...&quot;, 1 is &quot;used in very specialized application&quot;, 0 is &quot;very rare and specialized&quot;) and if we usually expect the user to directly write manually into that folder or if it will be done automatically by some helpers.</li>
+<li>a description of why it is useful</li>
+<li>an example of a file that could be put here (for instance, one can put a library in <code>$out/lib/mylib.so</code>)</li>
+<li>a description of the special treatment they receive by nix or by the software, and if possible a link to the code that is doing this treatment. The treatment could be to be linked in some <code>/run/</code> folders, if the files are read recursively or not (for example can I put an executable in <code>$out/bin/myprogram/myexec</code>), and if the files are expected to live in <code>$out/subfolder</code> directly or in some sub-subfolders like <code>$out/subfolder/myprogram</code> (or if it does not matter)...</li>
+<li>typical way to populate that folder (copy or helpers LIKE <code>makeWrapper</code>, <code>makeDesktopItem</code>... Put most common first.)</li>
+<li>a simple example or a link to a (if possible simple) derivation in nixpkgs that uses this folder.</li>
+</ul>
+<p>In order to keep the list ordered, we try to put the group these folder in different sections. If you add a folder, try to put it in a meaningful section, and put the most important ones first. If you describe a folder and its children, like <code>$out/share</code> and <code>$out/share/applications</code>, put the two next to each other.</p>
+<h2 id="generic-nix-related-folders">Generic Nix-related folders</h2><h3 id="folder-out-bin">Folder <code>$out/bin</code></h3><ul>
+<li><p><strong>Name of the folder</strong>: <code>$out/bin</code></p>
+</li>
+<li><p><strong>Handled by:</strong> nix, <strong>Concerning:</strong> everybody, <strong>Popularity:</strong> 3, <strong>How to populate</strong>: manually (often) or via helpers (often)</p>
+</li>
+<li><p><strong>Description:</strong> It contains all the executables of a given software that will be included in the <code>PATH</code>. Executables are put directly at the root of the <code>$out/bin</code> folder.</p>
+</li>
+<li><p><strong>Example of a filename</strong>: <code>$out/bin/mysoftware</code> where <code>mysoftware</code> is usually a script (bash...) or a binary.</p>
+</li>
+<li><p><strong>Treatment</strong>: Nix will add the <code>$out/bin</code> folder of the installed packaged in the <code>PATH</code> variable environment. TODO: check Nix is not doing anything else, and link to code.</p>
+</li>
+<li><p><strong>How to populate</strong>:</p>
+<ul>
+<li><p>Manually: after a build succeed, you can usually just copy the executables via <code>cp yourbinary $out/yourbinary</code> (or using the <code>install -Dm755 -t $out/bin yourbinary</code> program; if you use the <code>cp</code> version, just ensure the program is executable. Nix should automatically setup the permission propertly for read and write part.). Note that if you choose to follow the more standard <code>configure</code>/<code>make install</code> scheme, then the <code>configure</code> file will be run with <code>--prefix=$out</code> by default. You can read how to change the default flags in configure and Makefile <a href="https://nixos.org/manual/nixpkgs/stable/#ssec-configure-phase">here</a>.</p>
+</li>
+<li><p><code>writeShellScriptBin &quot;my-file&quot; </code><em><code>echo &#39;my bash code&#39;;</code></em> to create quickly a whole derivation with a simple bash script. See more <a href="https://nixos.org/manual/nixpkgs/stable/#chap-trivial-builders">in the manual</a>, and see variants/source/examples <a href="https://github.com/NixOS/nixpkgs/blob/master/pkgs/build-support/trivial-builders.nix">here</a> (you have for example <code>writeCBin</code> if you want to compile a C code).</p>
+</li>
+<li><p><code>wrapProgram $out/bin/MYPROGRAM --set FOOBAR baz</code> or <code>makeWrapper</code>to wrap a given binary in order to add some environment variables. See more <a href="https://nixos.org/manual/nixpkgs/stable/#ssec-stdenv-functions">here</a> and in the <a href="https://github.com/NixOS/nixpkgs/blob/master/pkgs/build-support/setup-hooks/make-wrapper.sh">source code</a>.</p>
+</li>
+<li><p><code>symlinkJoin { name = &quot;myexample&quot;; paths = [ pkgs.hello pkgs.stack ];}</code> will merge both derivations <code>pkgs.hello</code> and <code>pkgs.stack</code> into a single derivation using symlinks (practical to combine it with <code>writeShellScriptBin</code> in order to quickly add a script to an existing derivation). See more <a href="https://nixos.org/manual/nixpkgs/stable/#chap-trivial-builders">in the manual</a> or longer description and examples <a href="https://github.com/NixOS/nixpkgs/blob/de78745bddf32e69db0bdc2fb30fd282eaaeff3c/pkgs/build-support/trivial-builders.nix#L273">in the source</a>.</p>
+</li>
+<li><p>Usual bash commands, like</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">cat</span> &gt; <span class="hljs-variable">$out</span>/yourcode &lt;&lt;<span class="hljs-string">EOF
+your code
+EOF</span></code></pre>
+      </div><p>can be useful to add a script to an existing derivation.</p>
+</li>
+</ul>
+</li>
+<li><p><strong>Example of use</strong>:
+To create a simple derivation with a bash script in <code>$out/myprogram</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">{ pkgs ? import &lt;nixpkgs&gt; {} }:
+pkgs.writeShellScriptBin <span class="hljs-string">&quot;myprogram&quot;</span> <span class="hljs-string">&#x27;&#x27;</span>
+  <span class="hljs-built_in">echo</span> <span class="hljs-string">&quot;Hello world&quot;</span>
+<span class="hljs-string">&#x27;&#x27;</span></code></pre>
+      </div><p>To see example of use with <code>install</code>, see for instance the <a href="https://github.com/NixOS/nixpkgs/blob/7d0ba0850fe9f0a520c6c8fb2f5db8f71f323627/pkgs/applications/misc/qcad/default.nix#L50">qcad derivation</a>.</p>
+</li>
+</ul>
+<h2 id="for-some-specific-language">For some specific language</h2><h3 id="python">Python</h3><h2 id="specific-to-kernel-development">Specific to Kernel development</h2>
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

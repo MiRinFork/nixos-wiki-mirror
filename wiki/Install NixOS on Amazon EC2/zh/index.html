@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Install NixOS on Amazon EC2/zh</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/Install%20NixOS%20on%20Amazon%20EC2">Install NixOS on Amazon EC2</a><span aria-hidden="true"> / </span>zh</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Install NixOS on Amazon EC2/zh -->
+
+<p><languages /> Amazon EC2 是一个广泛使用的云部署平台，隶属于亚马逊网络服务 (AWS)。NixOS 主要通过 AMI 和 <a href="https://github.com/nix-community/nixos-generators">nixos-generators</a> 项目支持该平台。</p>
+<p><span id="Public_NixOS_AMIs"></span></p>
+<h2 id="公共-nixos-amis">公共 NixOS AMIs</h2><p>AWS 上可用的 NixOS AMI 列表位于 <a href="https://github.com/NixOS/nixpkgs/blob/master/nixos/modules/virtualisation/amazon-ec2-amis.nix">此处</a>，更新的列表位于：<a href="https://nixos.github.io/amis/">此处</a>（参见 <a href="https://discourse.nixos.org/t/ami-for-nixos-23-11/36860/7">此讨论线程</a>）。</p>
+<p>这些 AMI 的默认用户是 <code>root</code>。没有默认密码，而是使用在 EC2 创建过程中选择的 SSH 密钥进行身份验证。</p>
+<p><span id="Creating_a_NixOS_AMI"></span></p>
+<h2 id="创建-nixos-ami">创建 NixOS AMI</h2><p>目前，<a href="https://github.com/nix-community/nixos-generators">nixos-generators</a> 项目是创建您自己的 NixOS AMI 的最佳方法。请遵循 <code>nixos-generators</code> 提供的说明，然后遵循 <a href="https://docs.aws.amazon.com/vm-import/latest/userguide/what-is-vmimport.html">AWS 提供的介绍</a>。</p>
+<p><span id="Additional_Resources"></span></p>
+<h2 id="其他资源">其他资源</h2><p><a href="http://jackkelly.name/blog/archives/2020/08/30/building_and_importing_nixos_amis_on_ec2/">在 EC2 上构建和导入 NixOS AMI</a> 作者：Jack Kelly</p>
+<p><span id="Troubleshooting"></span></p>
+<h2 id="故障排除">故障排除</h2><p><span id="SSH_Asks_For_Password"></span></p>
+<h3 id="ssh-要求输入密码">SSH 要求输入密码</h3><p>通过 SSH 连接到新启动的 EC2 实例时，可能会要求输入密码。这似乎是因为 <code>amazon-init</code> systemd 服务仍在读取用户数据。请退出当前的 SSH 连接，并在几分钟后重试。</p>
+<p><a href="category:Deployment" class="wikilink" title="Category:Deployment">Category:Deployment</a> <a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

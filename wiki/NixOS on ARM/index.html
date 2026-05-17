@@ -1,0 +1,701 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NixOS on ARM</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / NixOS on ARM</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: NixOS on ARM -->
+
+<p><languages/> <translate></p>
+<div style="font-size: 1.5rem; text-align: center;padding-bottom: 0.5rem;">
+
+<p><strong>NixOS supports 64-bit ARM.</strong></p>
+</div>
+
+<p>The support level for ARM overall varies depending on the architecture and the specific ecosystems and boards.</p>
+<p>The way the ARM integration is built into NixOS is by making <strong>generic builds the first-class citizens</strong>. This means that as soon as there is upstream support for the board in the kernel and platform firmware, NixOS should work once those are updated.</p>
+<p>It is still possible, when needed, to build and use a customized platform firmware and kernel for specific boards<sup><a href="talk:NixOS_on_ARM#NixOS_.22support.22_for_board-specific_kernels_or_bootloaders" class="wikilink" title="[reference needed">[reference needed</a>]</sup>.</p>
+<p>At this moment in time (early 2024) <strong>only AArch64</strong> has full support upstream. With that said, neither armv6l or armv7l are being ignored, fixes are worked on and approved as needed. What&#39;s missing is support and builds being maintained in binary form. At the time of writing, no publicly available caches for armv6l or armv7l are available.</p>
+<p><strong>For images links, including UEFI install</strong>, skip to the <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/Installation" class="wikilink" title="Installation page">Installation page</a>.</p>
+<h2 id="supported-devices">Supported devices</h2><p>Table legend:</p>
+<ul>
+<li>SoC - <a href="https://en.wikipedia.org/wiki/System_on_a_chip">https://en.wikipedia.org/wiki/System_on_a_chip</a></li>
+<li>ISA - <a href="https://en.wikipedia.org/wiki/Instruction_set_architecture">https://en.wikipedia.org/wiki/Instruction_set_architecture</a></li>
+</ul>
+<h3 id="upstream-nixos-supported-devices">Upstream (NixOS) supported devices</h3><p>NixOS has support for these boards using AArch64 architecture on the nixpkgs-unstable and stable channel.</p>
+<p>Support for those board assumes as much is supported as Mainline Linux supports.</p>
+<div class="table">
+
+<table>
+<thead>
+<tr>
+<th>Manufacturer</th>
+<th>Board</th>
+<th>SoC</th>
+<th>ISA</th>
+<th>CPU</th>
+<th>RAM</th>
+<th>Storage</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Raspberry Pi Foundation</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/Raspberry_Pi_3" class="wikilink" title="Raspberry Pi 3">Raspberry Pi 3</a></td>
+<td>Broadcom BCM2837</td>
+<td>AArch64 / ARMv7</td>
+<td>4× Cortex-A53 @ 1.2 - 1.4 GHz</td>
+<td>1 GB</td>
+<td>SD/microSD</td>
+</tr>
+<tr>
+<td>Raspberry Pi Foundation</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/Raspberry_Pi_4" class="wikilink" title="Raspberry Pi 4">Raspberry Pi 4</a></td>
+<td>Broadcom BCM2711</td>
+<td>AArch64 / ARMv7</td>
+<td>4× Cortex-A72 @ 1.5 - 1.8 GHz</td>
+<td>1-8 GB</td>
+<td>microSD, eMMC</td>
+</tr>
+</tbody></table>
+</div>
+
+<h3 id="community-supported-devices">Community supported devices</h3><p>These boards are not routinely verified as working.</p>
+<p>The baseline support level expected is “Just as much as mainline Linux and U-Boot supports them”, except if specified otherwise.</p>
+<div class="table">
+
+<table>
+<thead>
+<tr>
+<th>Manufacturer</th>
+<th>Board</th>
+<th>SoC</th>
+<th>ISA</th>
+<th>CPU</th>
+<th>RAM</th>
+<th>Storage</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Apple</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/Apple_Silicon_Macs" class="wikilink" title="Apple Silicon Macs">Apple Silicon Macs</a></td>
+<td>M1/M1 Pro/M1 Max</td>
+<td>AArch64</td>
+<td>—</td>
+<td>—</td>
+<td>NVMe</td>
+</tr>
+<tr>
+<td>ASUS</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/ASUS_Tinker_Board" class="wikilink" title="Tinker Board">Tinker Board</a></td>
+<td>Rockchip RK3288</td>
+<td>ARMv7</td>
+<td>4× Cortex-A17</td>
+<td>2 GB</td>
+<td>microSD</td>
+</tr>
+<tr>
+<td>Banana Pi</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/Banana_Pi" class="wikilink" title="Banana Pi">Banana Pi</a></td>
+<td>Allwinner A20</td>
+<td>ARMv7</td>
+<td>2× Cortex-A7</td>
+<td>1 GB</td>
+<td>SD, SATA</td>
+</tr>
+<tr>
+<td>Banana Pi M64</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/Banana_Pi_M64" class="wikilink" title="Banana Pi M64">Banana Pi M64</a></td>
+<td>Allwinner A64</td>
+<td>AArch64</td>
+<td>4× Cortex-A53</td>
+<td>2 GB</td>
+<td>microSD, 8GB eMMc</td>
+</tr>
+<tr>
+<td>Banana Pi BPI-M5</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/Banana_Pi_BPI-M5" class="wikilink" title="Banana Pi BPI-M5">Banana Pi BPI-M5</a></td>
+<td>Amlogic S905X3</td>
+<td>AArch64</td>
+<td>4× Cortex-A55</td>
+<td>4 GB LPDDR4</td>
+<td>microSD, 16G eMMC</td>
+</tr>
+<tr>
+<td>BeagleBoard.org</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/BeagleBone_Black" class="wikilink" title="BeagleBone Black">BeagleBone Black</a></td>
+<td>TI AM335x <a href="https://git.beagleboard.org/beagleboard/beaglebone-black">(src)</a></td>
+<td>ARMv7</td>
+<td>1× Cortex-A8 @ 1 GHz</td>
+<td>512 MB</td>
+<td>4 GB eMMC, microSD</td>
+</tr>
+<tr>
+<td>Firefly</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/Firefly_AIO-3399C" class="wikilink" title="AIO-3399C">AIO-3399C</a></td>
+<td>Rockchip RK3399</td>
+<td>AArch64</td>
+<td>2× Cortex-A72 @ 2.0 GHz, 4× Cortex-A53 @ 1.5 Ghz</td>
+<td>2/4 GB</td>
+<td>8/16 GB eMMC, microSD</td>
+</tr>
+<tr>
+<td>FriendlyElec</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/NanoPC-T4" class="wikilink" title="NanoPC-T4">NanoPC-T4</a></td>
+<td>Rockchip RK3399</td>
+<td>AArch64</td>
+<td>2× Cortex-A72 @ 2.0 GHz, 4× Cortex-A53 @ 1.5 Ghz</td>
+<td>4 GB</td>
+<td>16 GB eMMC, microSD, NVMe</td>
+</tr>
+<tr>
+<td>FriendlyElec</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/NanoPi-M4" class="wikilink" title="NanoPi-M4">NanoPi-M4</a></td>
+<td>Rockchip RK3399</td>
+<td>AArch64</td>
+<td>2× Cortex-A72 @ 2.0 GHz, 4× Cortex-A53 @ 1.5 Ghz</td>
+<td>4 GB</td>
+<td>optional eMMC, microSD</td>
+</tr>
+<tr>
+<td>FriendlyElec</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/NanoPi-R6C" class="wikilink" title="NanoPi-R6C">NanoPi-R6C</a></td>
+<td>Rockchip RK3588S</td>
+<td>AArch64</td>
+<td>4× ARM Cortex-A76 @ 2.4 GHz, 4× Cortex-A55 @ 1.8 Ghz</td>
+<td>4 GB / 8 GB</td>
+<td>optional eMMC, microSD, NVMe</td>
+</tr>
+<tr>
+<td>Hardkernel</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/ODROID-HC1" class="wikilink" title="ODROID-HC1 &amp; ODROID-HC2">ODROID-HC1 &amp; ODROID-HC2</a></td>
+<td>Samsung Exynos 5422</td>
+<td>ARMv7</td>
+<td>4× Cortex-A15 @ 2GHz, 4× Cortex-A7 @ 1.4GHz</td>
+<td>2 GB</td>
+<td>microSD</td>
+</tr>
+<tr>
+<td>Hardkernel</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/ODROID-C2" class="wikilink" title="ODROID-C2">ODROID-C2</a></td>
+<td>Amlogic S905</td>
+<td>AArch64</td>
+<td>4× Cortex-A53 @ 1.5GHz</td>
+<td>2 GB</td>
+<td>eMMC, microSD</td>
+</tr>
+<tr>
+<td>Hardkernel</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/ODROID-HC4" class="wikilink" title="ODROID-HC4">ODROID-HC4</a></td>
+<td>Amlogic S905X3</td>
+<td>AArch64</td>
+<td>4× Cortex-A55 @ 1.8GHz</td>
+<td>4 GB</td>
+<td>microSD, SATA</td>
+</tr>
+<tr>
+<td>Kosagi</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/Kosagi_Novena" class="wikilink" title="Kosagi Novena">Kosagi Novena</a></td>
+<td>i.MX6</td>
+<td>ARMv7</td>
+<td>4× Cortex-A9 @ 1.2 GHz</td>
+<td>4 GB</td>
+<td>microSD, SATA</td>
+</tr>
+<tr>
+<td>Libre Computer</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/Libre_Computer_ROC-RK3399-PC" class="wikilink" title="ROC-RK3399-PC">ROC-RK3399-PC</a></td>
+<td>Rockchip RK3399</td>
+<td>AArch64</td>
+<td>2× Cortex-A72 @ 2.0 GHz, 4× Cortex-A53 @ 1.5 Ghz</td>
+<td>4 GB</td>
+<td>eMMC, microSD, NVMe</td>
+</tr>
+<tr>
+<td>Libre Computer</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/Libre_Computer_ROC-RK3328-CC" class="wikilink" title="ROC-RK3328-CC">ROC-RK3328-CC</a></td>
+<td>Rockchip RK3328</td>
+<td>AArch64</td>
+<td>4× Cortex-A53 @ 1.4GHz</td>
+<td>4 GB</td>
+<td>eMMC, microSD</td>
+</tr>
+<tr>
+<td>Libre Computer</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/Libre_Computer_AML-S905X-CC-V2" class="wikilink" title="AML-S905X-CC-V2">AML-S905X-CC-V2</a></td>
+<td>Amlogic S905X</td>
+<td>AArch64</td>
+<td>4× Cortex-A53 @ 1.512 GHz</td>
+<td>1/2GB</td>
+<td>eMMC, microSD</td>
+</tr>
+<tr>
+<td>Linksprite</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/PcDuino3_Nano" class="wikilink" title="pcDuino3 Nano">pcDuino3 Nano</a></td>
+<td>Allwinner A20</td>
+<td>ARMv7</td>
+<td>2× Cortex-A7 @ 1 GHz</td>
+<td>1 GB</td>
+<td>4 GB NAND, microSD, SATA</td>
+</tr>
+<tr>
+<td>NVIDIA</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/Jetson_TK1" class="wikilink" title="Jetson TK1">Jetson TK1</a></td>
+<td>Tegra K1/T124</td>
+<td>ARMv7</td>
+<td>4× Cortex-A15 @ 2.3 GHz</td>
+<td>2 GB</td>
+<td>16 GB eMMC, SD, SATA</td>
+</tr>
+<tr>
+<td>NXP</td>
+<td><a href="https://github.com/NiklasGollenstede/nixos-imx/">i.MX 8M Plus EVK</a></td>
+<td>i.MX 8M Plus</td>
+<td>AArch64</td>
+<td>4× Cortex-A53 @ 1.8 Ghz</td>
+<td>6 GB</td>
+<td>32 GB eMMC, microSD</td>
+</tr>
+<tr>
+<td>NXP</td>
+<td><a href="https://github.com/gangaram-tii/nixos-imx8mq/">i.MX 8M Quad EVK</a></td>
+<td>i.MX 8M Quad</td>
+<td>AArch64</td>
+<td>4× Cortex-A53 @ 1.5 Ghz + 1× Cortex-M4</td>
+<td>3 GB</td>
+<td>16 GB eMMC, microSD</td>
+</tr>
+<tr>
+<td>OLIMEX</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/OLIMEX_Teres-A64" class="wikilink" title="Teres-A64">Teres-A64</a></td>
+<td>AllWinner A64</td>
+<td>AArch64</td>
+<td>4× Cortex-A53 @ 1.1 GHz</td>
+<td>2GB</td>
+<td>16 GB eMMC, microSD</td>
+</tr>
+<tr>
+<td>Orange Pi</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/Orange_Pi_One" class="wikilink" title="Orange Pi One">Orange Pi One</a></td>
+<td>Allwinner H3</td>
+<td>ARMv7</td>
+<td>4× Cortex-A7 @ 1.2 GHz</td>
+<td>512 MB</td>
+<td>microSD</td>
+</tr>
+<tr>
+<td>Orange Pi</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/Orange_Pi_PC" class="wikilink" title="Orange Pi PC">Orange Pi PC</a></td>
+<td>Allwinner H3</td>
+<td>ARMv7</td>
+<td>4× Cortex-A7 @ 1.6 GHz</td>
+<td>1 GB</td>
+<td>SD/microSD</td>
+</tr>
+<tr>
+<td>Orange Pi</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/Orange_Pi_Zero_Plus2_H5" class="wikilink" title="Orange Pi Zero Plus2 (H5)">Orange Pi Zero Plus2 (H5)</a></td>
+<td>Allwinner H5</td>
+<td>AArch64</td>
+<td>4× Cortex-A53 @ 1.2 GHz</td>
+<td>1 GB</td>
+<td>SD/microSD + 8GB eMMC</td>
+</tr>
+<tr>
+<td>Orange Pi</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/Orange_Pi_Zero2_H616" class="wikilink" title="Orange Pi Zero2 (H616)">Orange Pi Zero2 (H616)</a></td>
+<td>Allwinner H616</td>
+<td>AArch64</td>
+<td>4× Cortex-A53 @ 1.2 GHz</td>
+<td>1 GB</td>
+<td>SD/microSD + 2MB SPI Flash</td>
+</tr>
+<tr>
+<td>Orange Pi</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/Orange_Pi_R1_Plus_LTS" class="wikilink" title="Orange Pi R1 Plus LTS">Orange Pi R1 Plus LTS</a></td>
+<td>Rockchip RK3328</td>
+<td>AArch64</td>
+<td>4× Cortex-A53 @ 1.5 GHz</td>
+<td>1 GB</td>
+<td>microSD</td>
+</tr>
+<tr>
+<td>Orange Pi</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/Orange_Pi_5" class="wikilink" title="Orange Pi 5">Orange Pi 5</a></td>
+<td>Rockchip RK3588s</td>
+<td>AArch64</td>
+<td>4× Cortex-A76 @ 2.4GHz, 4×Cortex-A55 @ 1.8 GHz</td>
+<td>4/8/16 GB</td>
+<td>microSD, NVMe</td>
+</tr>
+<tr>
+<td>Orange Pi</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/Orange_Pi_5_Plus" class="wikilink" title="Orange Pi 5 Plus">Orange Pi 5 Plus</a></td>
+<td>Rockchip RK3588</td>
+<td>AArch64</td>
+<td>4× Cortex-A76 @ 2.4GHz, 4×Cortex-A55 @ 1.8 GHz</td>
+<td>4/8/16 GB</td>
+<td>eMMC, microSD, NVMe</td>
+</tr>
+<tr>
+<td>Orange Pi</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/Orange_Pi_6_Plus" class="wikilink" title="Orange Pi 6 Plus">Orange Pi 6 Plus</a></td>
+<td>CIX CD8180/CD8160 (Sky1)</td>
+<td>AArch64</td>
+<td>12-core 64-bit processor</td>
+<td>16/32/64 GB</td>
+<td>microSD, 2× NVMe, 8MB SPI Flash</td>
+</tr>
+<tr>
+<td>PINE64</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/PINE_A64-LTS" class="wikilink" title="PINE A64-LTS">PINE A64-LTS</a></td>
+<td>Allwinner R18</td>
+<td>AArch64</td>
+<td>4× Cortex-A53 @ ? GHz</td>
+<td>2 GB</td>
+<td>microSD &amp; eMMC</td>
+</tr>
+<tr>
+<td>PINE64</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/PINE64_Pinebook" class="wikilink" title="Pinebook">Pinebook</a></td>
+<td>Allwinner A64</td>
+<td>AArch64</td>
+<td>4× Cortex-A53 @ ? Ghz</td>
+<td>2 GB</td>
+<td>microSD &amp; eMMC</td>
+</tr>
+<tr>
+<td>PINE64</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/PINE64_Pinebook_Pro" class="wikilink" title="Pinebook Pro">Pinebook Pro</a></td>
+<td>Rockchip RK3399</td>
+<td>AArch64</td>
+<td>2× Cortex-A72 @ 2.0 GHz, 4× Cortex-A53 @ 1.5 Ghz</td>
+<td>4 GB</td>
+<td>microSD &amp; eMMC</td>
+</tr>
+<tr>
+<td>PINE64</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/PINE64_ROCK64" class="wikilink" title="ROCK64">ROCK64</a></td>
+<td>Rockchip RK3328</td>
+<td>AArch64</td>
+<td>4× Cortex-A53 @ 1.5 GHz</td>
+<td>1/2/4 GB</td>
+<td>microSD/eMMC</td>
+</tr>
+<tr>
+<td>PINE64</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/PINE64_ROCKPro64" class="wikilink" title="ROCKPro64">ROCKPro64</a></td>
+<td>Rockchip RK3399</td>
+<td>AArch64</td>
+<td>2× Cortex-A72 @ 2.0 GHz, 4× Cortex-A53 @ 1.5 Ghz</td>
+<td>2/4 GB</td>
+<td>microSD/eMMC</td>
+</tr>
+<tr>
+<td>Clockworkpi</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/Clockworkpi_A06_uConsole" class="wikilink" title="uConsole A06">uConsole A06</a></td>
+<td>Rockchip RK3399</td>
+<td>AArch64</td>
+<td>2× Cortex-A72 @ 2.0 GHz, 4× Cortex-A53 @ 1.5 Ghz</td>
+<td>4 GB</td>
+<td>microSD</td>
+</tr>
+<tr>
+<td>Radxa</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/Radxa_ROCK_4" class="wikilink" title="ROCK 4">ROCK 4</a></td>
+<td>Rockchip RK3399</td>
+<td>AArch64</td>
+<td>2× Cortex-A72, 4×Cortex-A53</td>
+<td>2/4 GB</td>
+<td>eMMC, microSD, NVMe via expansion board</td>
+</tr>
+<tr>
+<td>Radxa</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/Radxa_ROCK_5_ITX" class="wikilink" title="ROCK 5 ITX">ROCK 5 ITX</a></td>
+<td>Rockchip RK3588</td>
+<td>AArch64</td>
+<td>4× Cortex-A76 @ 2.4GHz, 4×Cortex-A55 @ 1.8 GHz</td>
+<td>4/8/16/32 GB</td>
+<td>eMMC, microSD, NVMe, SATA</td>
+</tr>
+<tr>
+<td>Radxa</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/Radxa_ROCK5_Model_B" class="wikilink" title="ROCK5 Model B">ROCK5 Model B</a></td>
+<td>Rockchip RK3588</td>
+<td>AArch64</td>
+<td>4× Cortex-A76 @ 2.4GHz, 4×Cortex-A55 @ 1.8 GHz</td>
+<td>4/8/16 GB</td>
+<td>eMMC, microSD, NVMe</td>
+</tr>
+<tr>
+<td>Radxa</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/Radxa_ROCK5_Model_A" class="wikilink" title="ROCK5 Model A">ROCK5 Model A</a></td>
+<td>Rockchip RK3588s</td>
+<td>AArch64</td>
+<td>4× Cortex-A76 @ 2.4GHz, 4×Cortex-A55 @ 1.8 GHz</td>
+<td>4/8/16 GB</td>
+<td>eMMC, microSD, NVMe</td>
+</tr>
+<tr>
+<td>Raspberry Pi Foundation</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/Raspberry_Pi" class="wikilink" title="Raspberry Pi">Raspberry Pi</a></td>
+<td>Broadcom BCM2835</td>
+<td>ARMv6</td>
+<td>1 × ARM1176 @ 700 MHz</td>
+<td>256 MB / 512 MB</td>
+<td>SD/microSD</td>
+</tr>
+<tr>
+<td>Raspberry Pi Foundation</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/Raspberry_Pi" class="wikilink" title="Raspberry Pi 2">Raspberry Pi 2</a></td>
+<td>Broadcom BCM2836</td>
+<td>ARMv7</td>
+<td>4× Cortex-A7 @ 900 MHz</td>
+<td>1 GB</td>
+<td>SD/microSD</td>
+</tr>
+<tr>
+<td>Raspberry Pi Foundation</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/Raspberry_Pi_3" class="wikilink" title="Raspberry Pi 3">Raspberry Pi 3</a></td>
+<td>Broadcom BCM2837</td>
+<td>AArch64 / ARMv7</td>
+<td>4× Cortex-A53 @ 1.2 GHz</td>
+<td>1 GB</td>
+<td>SD/microSD</td>
+</tr>
+<tr>
+<td>Raspberry Pi Foundation</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/Raspberry_Pi_4" class="wikilink" title="Raspberry Pi 4">Raspberry Pi 4</a></td>
+<td>Broadcom BCM2711</td>
+<td>AArch64 / ARMv7</td>
+<td>4× Cortex-A53 @ 1.5 GHz</td>
+<td>1-8 GB</td>
+<td>microSD</td>
+</tr>
+<tr>
+<td>Raspberry Pi Foundation</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/Raspberry_Pi_5" class="wikilink" title="Raspberry Pi 5">Raspberry Pi 5</a></td>
+<td>Broadcom BCM2712</td>
+<td>AArch64</td>
+<td>4× Cortex-A76 @ 2.4 GHz</td>
+<td>4-8 GB</td>
+<td>microSD</td>
+</tr>
+<tr>
+<td>Toshiba</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/Toshiba_AC100" class="wikilink" title="AC100 (mini laptop)">AC100 (mini laptop)</a></td>
+<td>Tegra 2 250 (T20)</td>
+<td>ARMv7</td>
+<td>2× Cortex-A9 @ 1 GHz</td>
+<td>512 MB</td>
+<td>8­­–32 GB eMMC, SD</td>
+</tr>
+<tr>
+<td>Wandboard</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/Wandboard" class="wikilink" title="Wandboard Solo/Dual/Quad">Wandboard Solo/Dual/Quad</a></td>
+<td>Freescale i.MX6</td>
+<td>ARMv7</td>
+<td>1×/2×/4× Cortex-A9 @ 1000 MHz</td>
+<td>512 MB / 1 GB / 2 GB</td>
+<td>microSD, SATA</td>
+</tr>
+</tbody></table>
+</div>
+
+<h4 id="special-devices">Special Devices</h4><p>It is possible to emulate an ARM platform with QEMU.</p>
+<div class="table">
+
+<table>
+<thead>
+<tr>
+<th>Manufacturer</th>
+<th>Board</th>
+<th>SoC</th>
+<th>ISA</th>
+<th>CPU</th>
+<th>RAM</th>
+<th>Storage</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>QEMU</td>
+<td><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/QEMU" class="wikilink" title="QEMU">QEMU</a></td>
+<td>—</td>
+<td>ARMv7</td>
+<td>up to 8</td>
+<td>up to 2 GB</td>
+<td>Anything QEMU supports</td>
+</tr>
+</tbody></table>
+</div>
+
+<h2 id="installation">Installation</h2><h2 id="initial-configuration">Initial configuration</h2><h2 id="troubleshooting">Troubleshooting</h2><h3 id="hanging-at-starting-kernel">Hanging at <code>Starting kernel ...</code></h3><p>When booting a NixOS system, it may look like it is hung at <code>Starting kernel ...</code>.</p>
+<p>It is unlikely to be hung at this part. This is the last message printed by U-Boot. U-Boot prints to both the display and the console at once.</p>
+<p>To view the kernel messages and boot output, the “<code>stdout</code>” of the kernel needs to be configured appropriately.</p>
+<p>The kernel&#39;s <code>stdout</code> will differ depending on semantics.</p>
+<ul>
+<li>When there are no valid <code>console=</code> kernel command-line arguments, it will default to the <code>/chosen/stdout-path</code> device tree property. (Generally a serial console.)</li>
+<li>When valid <code>console=</code> parameters are present, the kernel picks the leftmost valid one as <code>stdout</code>.</li>
+</ul>
+<p>In other words, the solution may be to enable the appropriate <code>console=</code> parameters according to your hardware configuration and system.</p>
+<ul>
+<li>For the display, add <code>console=tty0</code>.</li>
+<li>For a serial console, refer to the target device configuration.</li>
+</ul>
+<h3 id="details-about-the-boot-process">Details about the boot process</h3><p>NixOS can also be booted through <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/UEFI" class="wikilink" title="UEFI">UEFI</a> on ARM. The semantics are generally the same as on other architectures. Do note that the common use of Device Tree instead of ACPI in consumer-class hardware <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NixOS_on_ARM/UEFI#Device_Trees" class="wikilink" title="may make this a bit more awkward"><em>may</em> make this a bit more awkward</a>.</p>
+<p>Otherwise, in SBC-class hardware, it is common that boards are generally expected to use U-Boot as the platform firmware and bootloader. See the section about <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/U-Boot#Using_NixOS_with_U-Boot" class="wikilink" title="using NixOS with U-Boot">using NixOS with U-Boot</a>.</p>
+<h2 id="binary-caches">Binary caches</h2><h3 id="aarch64">AArch64</h3><p>The <a href="https://hydra.nixos.org/">official NixOS Hydra</a> instance builds a full set of binaries (available on <a href="https://cache.nixos.org/">https://cache.nixos.org</a>) for the AArch64 architecture on the nixpkgs-unstable and stable channels.</p>
+<h3 id="armv6l-and-armv7l">armv6l and armv7l</h3><p>Some <em><strong>users</strong></em> have provided best effort caches in the past for 32 bit ARM, but none are currently available.</p>
+<h2 id="getting-support">Getting Support</h2><p>There is a dedicated room for the upstream NixOS effort on Matrix, <a href="https://matrix.to/#/#nixos-on-arm:nixos.org">#nixos-on-arm:nixos.org</a>.</p>
+<p>Don&#39;t hesitate to ask questions. Note that reply times may vary greatly, depending on the provided information.</p>
+<h2 id="resources">Resources</h2><h3 id="see-also">See also</h3><ul>
+<li><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/U-Boot" class="wikilink" title="U-Boot">U-Boot</a>, as it is often paired with SBC-class hardware.</li>
+<li><a href="https://mobile.nixos.org/">Mobile NixOS</a>, which provides enhanced semantic around some non-standard boot semantics.</li>
+</ul>
+<h3 id="subpages">Subpages</h3><p>The following is a list of all sub-pages of the <em>NixOS on ARM</em> topic.</p>
+</translate>
+
+<p><a href="category:NixOS_on_ARM" class="wikilink" title="Category:NixOS on ARM">Category:NixOS on ARM</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

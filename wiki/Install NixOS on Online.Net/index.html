@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Install NixOS on Online.Net</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Install NixOS on Online.Net</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Install NixOS on Online.Net -->
+
+<p>I&#39;ve tested this with the Dedibox SC2 and the Dedibox XC, but see no reason for it not to work with all of their configurations.</p>
+<p>Start by installing a flavor of Linux (don&#39;t care which, since we&#39;ll be blowing it away) using the standard Online.net control panel. Make sure the partition layout is as you&#39;d like it, because I&#39;m not including instructions below for changing that.</p>
+<p>You don&#39;t even need to wait for it to finish booting; click the rescue button on the right and tell it to boot into the ubuntu rescue console. It&#39;ll give you a temporary password for the rescue ssh session. Ssh into the rescue image and let&#39;s get started!</p>
+<h2 id="preparation">Preparation</h2><h3 id="be-root">Be root</h3><p>No reason not to be:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">sudo</span> su
+<span class="hljs-built_in">cd</span> </code></pre>
+      </div><h3 id="create-builders">Create builders</h3><div class="code-container">
+        
+        <pre><code class="language-bash hljs">groupadd nixbld
+useradd nixbld1
+useradd nixbld2
+useradd nixbld3
+useradd nixbld4
+gpasswd -a nixbld1 nixbld
+gpasswd -a nixbld2 nixbld
+gpasswd -a nixbld3 nixbld
+gpasswd -a nixbld4 nixbld</code></pre>
+      </div><h3 id="add-missing-packages">Add missing packages</h3><div class="code-container">
+        
+        <pre><code class="language-bash hljs">apt install bzip2 btrfs-tools</code></pre>
+      </div><h3 id="change-the-ui-language">Change the UI language</h3><p>All the Online.net images are set to French by default, which I don&#39;t want:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">export</span> LANG=POSIX
+<span class="hljs-built_in">export</span> LC_ALL=POSIX</code></pre>
+      </div><h3 id="check-your-partitions">Check your partitions</h3><p>Now, make sure your partitions are where you expect them, on /dev/sda.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">fdisk -l /dev/sda</code></pre>
+      </div><p>Here&#39;s what mine look like on a Dedibox XC:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">/dev/sda1 *          2048     391167    194560  83 Linux
+/dev/sda2          391168 1949523967 974566400  83 Linux
+/dev/sda3      1949523968 1953523711   1999872  82 Linux swap / Solaris</code></pre>
+      </div><h3 id="format-your-partitions">Format your partitions</h3><p>This will blast away any existing data on your main disk, so make sure you&#39;re okay with that.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">mkfs.ext2 /dev/sda1
+mkfs.ext4 /dev/sda2 -L nixos
+
+swapoff -a
+mkswap /dev/sda3</code></pre>
+      </div><h3 id="mount-your-freshly-minted-filesystems">Mount your freshly minted filesystems</h3><p>and mount the new ones we made:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">mount /dev/sda2 /mnt
+<span class="hljs-built_in">mkdir</span> /mnt/boot
+mount /dev/sda1 /mnt/boot
+swapon /dev/sda3</code></pre>
+      </div><h2 id="nix-flavored-stuff">Nix-flavored stuff</h2><h3 id="get-nix-onto-the-rescue-system">Get nix onto the rescue system</h3><p>We&#39;ll need some nix packages to install nix on the target:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">bash &lt;(curl https://nixos.org/nix/install)
+. /root/.nix-profile/etc/profile.d/nix.sh
+nix-channel --remove nixpkgs
+nix-channel --add http://nixos.org/channels/nixos-17.09 nixos
+nix-channel --update
+
+<span class="hljs-built_in">cat</span> &lt;&lt;<span class="hljs-string">EOF &gt; configuration.nix
+{ fileSystems.&quot;/&quot; = {};
+  boot.loader.grub.enable = false;
+} 
+EOF</span>
+
+<span class="hljs-built_in">export</span> NIX_PATH=nixpkgs=/root/.nix-defexpr/channels/nixos:nixos=/root/.nix-defexpr/channels/nixos/nixos
+<span class="hljs-built_in">export</span> NIXOS_CONFIG=/root/configuration.nix
+nix-env -i -A config.system.build.nixos-install -A config.system.build.nixos-option -A config.system.build.nixos-generate-config -f <span class="hljs-string">&quot;&lt;nixos&gt;&quot;</span></code></pre>
+      </div><h3 id="make-configuration-for-your-target-system">Make configuration for your target system</h3><p>Generate a default configuration:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nixos-generate-config --root /mnt</code></pre>
+      </div><p>This will generate <code>/mnt/etc/nixos/configuration.nix</code> and <code>/mnt/etc/nixos/hardware-configuration.nix</code>. Eyeball the latter (nano is preinstalled) to make sure the filesystem config looks reasonable and that it&#39;s detected your cores correctly. Then customize the former to your liking. By default it&#39;ll use DHCP, which didn&#39;t seem to work for me on online.net (please tinker and tell me if you got it working with DHCP though), so make sure to customize the network settings if you don&#39;t change anything else.</p>
+<p>If you need to figure out your current network settings to fill in the gaps in my settings file, try <code>cat /etc/resolv.conf</code> and <code>cat /etc/network/interfaces</code>.</p>
+<p>Here&#39;s a sample config from my box:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ config, pkgs, ... }:
+
+{
+  <span class="hljs-attr">imports</span> <span class="hljs-operator">=</span>
+    [ <span class="hljs-comment"># Include the results of the hardware scan.</span>
+      <span class="hljs-symbol">./hardware-configuration.nix</span>
+    ];
+  
+  <span class="hljs-attr">boot.loader.grub</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span>  <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-number">2</span>;
+    <span class="hljs-attr">device</span>  <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/dev/sda&quot;</span>;
+  };
+  
+  <span class="hljs-comment"># Not strictly required, but useful to be able to use the serial console</span>
+  <span class="hljs-attr">boot.kernelParams</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;console=ttyS1&quot;</span> ];
+
+  <span class="hljs-attr">networking.hostName</span>        <span class="hljs-operator">=</span> <span class="hljs-string">&quot;yourhostname&quot;</span>;
+  <span class="hljs-attr">networking.interfaces.eth0</span> <span class="hljs-operator">=</span> { <span class="hljs-attr">ipAddress</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;your ip address&quot;</span>; <span class="hljs-attr">prefixLength</span> <span class="hljs-operator">=</span> <span class="hljs-number">24</span>; };
+  <span class="hljs-attr">networking.defaultGateway</span>  <span class="hljs-operator">=</span> <span class="hljs-string">&quot;your gateway&quot;</span>;
+  <span class="hljs-attr">networking.nameservers</span>     <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;62.210.16.6&quot;</span> <span class="hljs-string">&quot;62.210.16.7&quot;</span> ];
+ 
+  <span class="hljs-comment"># By default, systemd &quot;predictable interface names&quot; are used for network interfaces.</span>
+  <span class="hljs-comment"># Since the Dedibox SC only has one network interface, it is safe to disable this,</span>
+  <span class="hljs-comment"># and simply use eth0 as above. </span>
+  <span class="hljs-comment"># If you remove this line, you need to replace &quot;eth0&quot; above by the correct interface name.</span>
+  <span class="hljs-attr">networking.usePredictableInterfaceNames</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+
+  <span class="hljs-attr">i18n.defaultLocale</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;en_US.UTF-8&quot;</span>;
+
+  <span class="hljs-comment"># environment.systemPackages = with pkgs; [</span>
+  <span class="hljs-comment">#   wget</span>
+  <span class="hljs-comment"># ];</span>
+
+  <span class="hljs-attr">time.timeZone</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;America/New_York&quot;</span>;
+
+  <span class="hljs-attr">services.openssh.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+  <span class="hljs-attr">security.sudo.wheelNeedsPassword</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+
+  <span class="hljs-attr">users.extraUsers.youruser</span> <span class="hljs-operator">=</span> 
+    { <span class="hljs-attr">createHome</span>      <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">home</span>            <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/home/youruser&quot;</span>;
+      <span class="hljs-attr">description</span>     <span class="hljs-operator">=</span> <span class="hljs-string">&quot;your name&quot;</span>;
+      <span class="hljs-attr">extraGroups</span>     <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;wheel&quot;</span> ];
+      <span class="hljs-attr">useDefaultShell</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">openssh.authorizedKeys.keys</span> <span class="hljs-operator">=</span> [
+        <span class="hljs-string">&quot;&lt;your pubkey here&gt;&quot;</span>
+      ];
+    };
+}</code></pre>
+      </div><h3 id="actually-install-the-system">Actually install the system</h3><div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">unset</span> NIXOS_CONFIG
+nixos-install</code></pre>
+      </div><p>That should spend some time downloading and copying stuff around, and then should fail without error. After that, tell the web console to reboot back into normal mode and your machine will be beautifully nixified. Except for the logo stuck on the Online.net console page. Let me know if you figure out how to get rid of that!</p>
+<h2 id="troubleshooting">Troubleshooting</h2><p>If <code>nixos-install</code> fails to download files from the internet, check that your rescue image&#39;s <code>/etc/resolv.conf</code>is not a symlink. The issue should be fixed now, but at some point the <code>nixos-install</code> chroot process would not copy symlinks appropriately, so things would not resolve in the jail.</p>
+<p>See <a href="https://github.com/NixOS/nixpkgs/commit/6ebe4a6a523bbab3388453ac119ab08e295a7e06">this commit</a> for the fix.</p>
+<p><a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

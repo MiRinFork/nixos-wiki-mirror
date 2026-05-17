@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Libimobiledevice</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Libimobiledevice</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Libimobiledevice -->
+
+<p>The <a href="https://libimobiledevice.org/">libimobiledevice</a> project provides libraries and tools to connect and transfer data between iOS devices and Linux machines.</p>
+<h2 id="usage">Usage</h2><h3 id="preparation">Preparation</h3><p>In order to be able to automatically mount your iOS device (such as an iPhone) when connecting it or to enable USB tethering, you need to install <code>libimobiledevice</code> and to activate the <code>usbmuxd</code> service.</p>
+<p>Add the following to your <code>configuration.nix</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.usbmuxd.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+<span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+  libimobiledevice
+  ifuse <span class="hljs-comment"># optional, to mount using &#x27;ifuse&#x27;</span>
+];</code></pre>
+      </div><p>If you experience issues mounting or pairing your device (for example as described <a href="https://github.com/NixOS/nixpkgs/issues/152592">here</a>), you can try to switch the <code>usbmuxd</code> daemon package to an alternative more updated implementation, <code>usbmuxd2</code>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.usbmuxd</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">package</span> <span class="hljs-operator">=</span> pkgs.usbmuxd2;
+};</code></pre>
+      </div><h3 id="mounting">Mounting</h3><p>Mounting the device via iFuse is possible with the following commands</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">$ mkdir /tmp/iphone
+$ ifuse /tmp/iphone</code></pre>
+      </div><h3 id="tethering">Tethering</h3><p>Tethering on iOS is possible via Wifi hotspot, Bluetooth or USB. In order to enable USB tethering, first enable tethering in the iOS networking settings. After that run following command</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">$ idevicepair pair</code></pre>
+      </div><p>Confirm pairing by accepting the connection on your iOS device. After that an ethernet device will appear in your network device list.</p>
+<h2 id="maintenance">Maintenance</h2><h3 id="factory-reset">Factory reset</h3><p>The following section describes how to perform a hard/factory reset and reinstalling the latest firmware. First install and enable the required daemon and package.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.usbmuxd.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+<span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+  idevicerestore
+];</code></pre>
+      </div><p>Shutdown your iDevice and put it into DFU/recovery mode. How to achieve this depends on your iDevice model. See <a href="https://www.theiphonewiki.com/wiki/DFU_Mode">DFU Mode on the iPhone Wiki</a> for more details.</p>
+<p>Once your iDevice is in recovery mode, run following command to reset your device. You will get asked which firmware to install and a final confirmation that everything will be erased.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-built_in">sudo</span> idevicerestore --erase --latest</span>
+Found device in DFU mode
+Identified device as n69ap, iPhone8,4
+The following firmwares are currently being signed for iPhone8,4:
+  [1] 15.7 (build 19H12)
+Select the firmware you want to restore: 1
+Selected firmware 15.7 (build 19H12)
+Downloading firmware (https://updates.cdn-apple.com/...)
+downloading: 99% ...
+Verifying &#x27;iPhone_****.ipsw&#x27;...
+Checksum matches.
+Extracting BuildManifest from IPSW
+Product Version: 15.7
+Product Build: 19H12 Major: 19
+Device supports Image4: true
+Variant: Customer Erase Install (IPSW)
+This restore will erase your device data.
+<span class="hljs-meta prompt_">#</span><span class="language-bash"><span class="hljs-comment">############################### [ WARNING ] #################################</span></span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">You are about to perform an *ERASE* restore. ALL DATA on the target device</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">will be IRREVERSIBLY DESTROYED. If you want to update your device without</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">erasing the user data, hit CTRL+C now and restart without -e or --erase</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-built_in">command</span> line switch.</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">If you want to <span class="hljs-built_in">continue</span> with the ERASE, please <span class="hljs-built_in">type</span> YES and press ENTER.</span>
+<span class="hljs-meta prompt_">#</span><span class="language-bash"><span class="hljs-comment">############################################################################</span></span>
+<span class="hljs-meta prompt_">&gt; </span><span class="language-bash">YES</span>
+Checking IPSW for required components...
+All required components found in IPSW
+Extracting filesystem from IPSW: 078-69441-013.dmg
+[========================                          ]  46.9%</code></pre>
+      </div>
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

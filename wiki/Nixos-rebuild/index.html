@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nixos-rebuild</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Nixos-rebuild</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Nixos-rebuild -->
+
+<p><strong>nixos-rebuild</strong> is the NixOS command used to apply changes made to the system configuration. It can also be used for a variety of other tasks related to managing the state of a NixOS system.</p>
+<p><code>nixos-rebuild-ng</code> is a rewrite of <code>nixos-rebuild</code> in Python instead of Bash which has better performance and more features, and will become the default in NixOS 25.11.</p>
+<h2 id="usage">Usage</h2><p>NixOS follows a &quot;declarative configuration&quot; approach, which means that the proper way to modify your system is to make changes to your system configuration (typically <code>/etc/nixos/configuration.nix</code>), and then <em>rebuild</em> your system with <code>nixos-rebuild</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-comment"># Edit your configuration</span></span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">sudo</span> nano /etc/nixos/configuration.nix</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-comment"># Rebuild your system</span></span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">sudo</span> nixos-rebuild switch</span></code></pre>
+      </div><p>The <code>switch</code> subcommand will rebuild your system, activate the new generation immediately and make it the default boot option. There are also a couple of other sub-commands available:</p>
+<ul>
+<li><code>boot</code>: Build the configuration and make it the default boot option, but don&#39;t activate it until the next reboot</li>
+<li><code>test</code>: Build the configuration and activate it, but don&#39;t add it to the bootloader menu</li>
+<li><code>build</code>: Build the configuration and place a symlink called <code>result</code> pointing to the derivation in the Nix store in the current directory</li>
+<li><code>dry-activate</code>: Build the configuration, but do not activate it. Instead, show the changes that would be performed by activating the new generation.</li>
+<li><code>build-vm</code>: Build a QEMU VM that runs the new configuration. It leaves a symlink called <code>result</code> in the current directory that contains the built VM. To run it, use <code>result/bin/run-</code><hostname><code>-vm</code></li>
+</ul>
+<p>Useful options include:</p>
+<ul>
+<li><code>--rollback</code>: Don&#39;t build the new configuration, but use the previous generation instead. Useful for quickly reverting erroneous changes, i. e. <code>nixos-rebuild --rollback switch</code></li>
+<li><code>--upgrade</code>: Update the <code>nixos</code> channel of the root user before building the configuration.</li>
+</ul>
+<h3 id="deploying-on-other-machines">Deploying on other machines</h3><p><code>nixos-rebuild</code> can also be used to build and deploy system configurations on remote hosts via SSH. To use a remote host to build your system and deploy it on the current host, use:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">nixos-rebuild --build-host user@example.com switch</span></code></pre>
+      </div><p>Add the flag <code>--use-substitutes</code> to make the remote host use substitutes instead of copying from your host to the remote host.</p>
+<p>To build the system locally and deploy it on a remote host, use:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nixos-rebuild --target-host user@example.com switch</span></code></pre>
+      </div><p>Note that this will often require using a different configuration than the one in <code>/etc/nixos</code>. See the <strong>Specifying a different configuration location</strong> section for details. <code>--build-host</code> and <code>--target-host</code> can be used simultaneously, even with different hosts.</p>
+<p>If you are rebuilding a remote host as a non-root user, use the <code>--sudo</code> option to elevate on the remote machine during the rebuilding process:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nixos-rebuild --target-host user@example.com --<span class="hljs-built_in">sudo</span> switch</span></code></pre>
+      </div><p>To enter a password while using remote sudo, prefix the command with <code>NIX_SSHOPTS=&quot;-o RequestTTY=force&quot;</code>, or add <code>--ask-sudo-password</code> with <code>nixos-rebuild-ng</code>.</p>
+<p>For a full list of sub-commands and options, see the <code>nixos-rebuild</code> man page.</p>
+<h4 id="deploying-on-a-different-architecture">Deploying on a different architecture</h4><p>There is currently a regression within <code>nixos-rebuild</code> that causes the local <code>nixos-rebuild</code> to invoke the binaries for the target architecture on the local system. This will naturally fail, throwing an <em>&quot;Exec format error&quot;.</em><sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Nixos-rebuild#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup> This can be bypassed by running <code>nixos-rebuild</code> with the <code>--fast</code> flag.</p>
+<h3 id="rolling-back-to-a-specific-generation">Rolling back to a specific generation</h3><p>As noted earlier, it possible to switch to the previous generation using the command <code>nixos-rebuild switch --rollback</code></p>
+<p>As of December 2024, <code>nixos-rebuild</code> doesn&#39;t have built-in functionality to switch to a generation earlier than the previous. However, there is an <a href="https://github.com/NixOS/nixpkgs/pull/105910/files">open pull request</a> that adds this functionality.</p>
+<p>It is possible to manually simulate the behavior from this PR in the meantime. Run the following command to list your generations:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nixos-rebuild list-generations</span>
+Generation    Build-date           NixOS version           Kernel  Configuration Revision  Specialisation
+1054 current  2024-12-02 08:47:16  24.11.20241130.62c435d  6.12.1                          *
+1053          2024-12-02 08:44:23  24.11.20241130.62c435d  6.12.1                          *
+1052          2024-12-02 08:25:54  24.11.20241130.62c435d  6.12.1                          *
+...</code></pre>
+      </div><p>Run the command <code>/nix/var/nix/profiles/system-N-link/bin/switch-to-configuration switch</code> where <code>N</code> is the generation number you want to switch to.</p>
+<p>You can manually see that <code>/nix/var/nix/profiles/</code> contains symlinks to the system closures associated with the listed generations by <code>nixos-rebuild list-generations</code> above:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">ls</span> -l /nix/var/nix/profiles/</span>
+lrwxrwxrwx - root root  2 12月 08:25 system-1052-link -&gt; /nix/store/a5sh1kam9j42gcgca11ax5wg0iaiccab-nixos-system-onyx-24.11.20241130.62c435d
+lrwxrwxrwx - root root  2 12月 08:44 system-1053-link -&gt; /nix/store/nhba65kybj6y0gyd307mf9wj3089rf08-nixos-system-onyx-24.11.20241130.62c435d
+lrwxrwxrwx - root root  2 12月 08:47 system-1054-link -&gt; /nix/store/97wrfk1dmgbivw35wrkmrg0d0c1zhviw-nixos-system-onyx-24.11.20241130.62c435d</code></pre>
+      </div><h3 id="specifying-a-different-configuration-location">Specifying a different configuration location</h3><h4 id="without-flakes">without Flakes</h4><p>By default, <code>nixos-rebuild</code> builds the configuration in the file specified by the <code>nixos-config</code> field in the <code>NIX_PATH</code> environment variable, which is set to <code>/etc/nixos/configuration.nix</code> by default. This can be overwritten with:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">nixos-rebuild switch -I nixos-config=path/to/configuration.nix</span></code></pre>
+      </div><p>To permanently change the location of the configuration, modify the <code>NIX_PATH</code> variable of your system with the <code>nix.nixPath</code> config option:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">nix.nixPath</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;nixos-config=/path/to/configuration.nix&quot;</span> ];
+}</code></pre>
+      </div><h4 id="with-flakes">with Flakes</h4><p><code>nixos-rebuild</code> will look for the file <code>/etc/nixos/flake.nix</code> by default and build the <code>nixosConfigurations</code> item matching the current host name of the system. To specify a different flake directory, use:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">nixos-rebuild switch --flake path/to/flake/directory</span></code></pre>
+      </div><p>To specify a different host name, use:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">nixos-rebuild switch --flake /etc/nixos#hostname</span></code></pre>
+      </div><h3 id="internals">Internals</h3><p><code>nixos-rebuild</code> is a Bash script that performs a relatively simple sequence of tasks. In the case of <code>nixos-rebuild switch</code>, these are:</p>
+<ul>
+<li>Build the <code>config.system.build.toplevel</code> derivation of the current configuration. This can be manually done by:</li>
+</ul>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-comment"># without Flakes</span></span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-build &lt;nixpkgs/nixos&gt; -A config.system.build.toplevel -I nixos-config=path/to/configuration.nix</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-comment"># with Flakes</span></span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">nix build /etc/nixos#nixosConfigurations.hostname.config.system.build.toplevel</span></code></pre>
+      </div><ul>
+<li>Add the resulting derivation to the system profile in <code>/nix/var/nix/profiles</code>, i. e. create a new generation in the system profile.</li>
+<li>Add the new generation to the bootloader menu as the new default and activate it. If you&#39;ve manually built the system derivation, this can also be done with <code>result/bin/switch-to-configuration switch</code>.</li>
+</ul>
+<h2 id="see-also">See also</h2><ul>
+<li><a href="https://nixcademy.com/posts/nixos-rebuild/">Magic Deployments with nixos-rebuild, Nixcademy</a></li>
+<li><a href="https://nixcademy.com/posts/nixos-rebuild-remote-deployment/">Remote Deployments with nixos-rebuild, Nixcademy</a></li>
+</ul>
+<h2 id="references">References</h2><references />
+
+<p><a href="category:NixOS" class="wikilink" title="Category:NixOS">Category:NixOS</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p><a href="https://github.com/NixOS/nixpkgs/issues/166499">https://github.com/NixOS/nixpkgs/issues/166499</a> <a href="https://mirror.nixoscn.org/wiki/Nixos-rebuild#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

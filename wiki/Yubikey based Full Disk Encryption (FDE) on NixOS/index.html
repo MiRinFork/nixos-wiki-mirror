@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Yubikey based Full Disk Encryption (FDE) on NixOS</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Yubikey based Full Disk Encryption (FDE) on NixOS</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Yubikey based Full Disk Encryption (FDE) on NixOS -->
+
+<p>This page is a minimalistic guide for setting up LUKS-based full disk encryption with <a href="https://mirror.nixoscn.org/wiki/Yubikey%20based%20Full%20Disk%20Encryption%20(FDE)%20on%20NixOS/Yubikey" class="wikilink" title="Yubikey">Yubikey</a> pre-boot authentication (PBA) on a <a href="https://mirror.nixoscn.org/wiki/Yubikey%20based%20Full%20Disk%20Encryption%20(FDE)%20on%20NixOS/UEFI" class="wikilink" title="UEFI">UEFI</a> system. The YubiKey PBA in NixOS currently utilizes YubiKey&#39;s <a href="https://docs.yubico.com/yesdk/users-manual/application-otp/challenge-response.html">(HMAC-SHA1) challenge response mode</a>. Two-factor authentication using a (secret) user passphrase as an additional layer of security is also available (and is recommended for more security).</p>
+<p>In the 19.03 release (and prior) this method will change the LUKS authentication key on each boot that passes the LVM mount stage by altering a salt value contained on the boot partition.</p>
+<p>This guide was tested to work on NixOS 25.05.</p>
+<p>This guide utilizes this <a href="https://github.com/sgillespie/nixos-yubikey-luks">nix-shell expression</a> which provides the environment for setting up LUKS-based full disk encryption with YubiKey PBA.</p>
+<h3 id="encrypting-multiple-drives">Encrypting Multiple drives</h3><p>If you intend to encrypt multiple drives following this guide, be advised that the file mentioned in steps 6 and 7 is per-drive and using the same file for two drives will result in an un-bootable system. Instead you should create a small partition (a tiny FAT32 partition will do) on every secondary drive and follow the same steps you would for the salt file on those. Obviously you will also need to encrypt the other drives like you would the main drive. See <a href="https://discourse.nixos.org/t/yubikey-2fa-fde-with-multiple-drives/10046">this post</a> for some more (somewhat outdated) information.</p>
+<h2 id="requirements">Requirements</h2><ul>
+<li>A NixOS live system booted in <a href="https://mirror.nixoscn.org/wiki/Yubikey%20based%20Full%20Disk%20Encryption%20(FDE)%20on%20NixOS/UEFI" class="wikilink" title="UEFI">UEFI</a> mode on the target machine. (i.e. Booting from an installation medium)</li>
+<li>A YubiKey with <strong>challenge response mode support</strong> into the target machine for the <strong>non modern setup</strong>.</li>
+</ul>
+<h2 id="setup">Setup</h2><p>Install the packages required by the next steps to the live system and make two bash helper functions available.</p>
+<h3 id="modern-setup">Modern Setup</h3><p>You <strong>do not</strong> need a YubiKey with challenge response mode support for this, any key that supports FIDO or WebAuthn can work with this (including the Bio Series and the Security Series). This is specifically for FIDO.</p>
+<p>Using <code>systemd-cryptenroll</code> and <code>systemd-initrd</code>, it is much easier and faster to setup. Just fill in where it wants you to put the device and filesystem type.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">boot.initrd</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">systemd.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;  
+    <span class="hljs-attr">luks.fido2Support</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;  
+    luks.devices.<span class="hljs-string">&quot;put-device-here&quot;</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">device</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;put-device-here&quot;</span>;
+      <span class="hljs-attr">crypttabExtraOpts</span> <span class="hljs-operator">=</span> [<span class="hljs-string">&quot;fido2-device=auto&quot;</span>];  
+    };
+  };
+  fileSystems.<span class="hljs-string">&quot;/&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">device</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/dev/mapper/put-device-here&quot;</span>;
+    <span class="hljs-attr">fsType</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;put-fs-here&quot;</span>;
+  };
+}</code></pre>
+      </div><p>Enroll your Yubikey: <code>systemd-cryptenroll --fido2-device=auto put-device-here</code>. Additional customization can be done like user presence, pin, and user verification (for bio-metric models). Credit to this <a href="https://discourse.nixos.org/t/fde-using-systemd-cryptenroll-with-fido2-key/47762#accepted-label">1</a></p>
+<h3 id="automatic-setup">Automatic Setup</h3><p>Enter the nix-shell expression defined by this <a href="https://github.com/sgillespie/nixos-yubikey-luks">repository</a>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-shell https://github.com/sgillespie/nixos-yubikey-luks/archive/master.tar.gz</span></code></pre>
+      </div><p>Now go to <a href="https://mirror.nixoscn.org/wiki/Yubikey%20based%20Full%20Disk%20Encryption%20(FDE)%20on%20NixOS#Set_up_the_YubiKey" class="wikilink" title="#Set up the YubiKey">#Set up the YubiKey</a>.</p>
+<h3 id="manual-setup">Manual Setup</h3><p>Alternatively, you can manually set up the dependencies.</p>
+<p>Packages:</p>
+<ul>
+<li><p>A C compiler, e.g.</p>
+</li>
+<li><p>The command line tool</p>
+</li>
+<li></li>
+</ul>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-shell -p gcc yubikey-personalization openssl</span></code></pre>
+      </div><p>Helper functions:</p>
+<ul>
+<li>Convert a raw binary string to a hexadecimal string</li>
+<li>Convert a hexadecimal string to a raw binary string</li>
+</ul>
+<p>Note that you can copy and paste these functions into the bash shell directly to define them.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-function"><span class="hljs-title">rbtohex</span></span>() {
+    ( <span class="hljs-built_in">od</span> -An -vtx1 | <span class="hljs-built_in">tr</span> -d <span class="hljs-string">&#x27; \n&#x27;</span> )
+}
+
+<span class="hljs-function"><span class="hljs-title">hextorb</span></span>() {
+    ( <span class="hljs-built_in">tr</span> <span class="hljs-string">&#x27;[:lower:]&#x27;</span> <span class="hljs-string">&#x27;[:upper:]&#x27;</span> | sed -e <span class="hljs-string">&#x27;s/\([0-9A-F]\{2\}\)/\\\\\\x\1/gI&#x27;</span>| xargs <span class="hljs-built_in">printf</span> )
+}</code></pre>
+      </div><p>We need to compile OpenSSL&#39;s key derivation function, which is the same one as run on start up. To compile, run the following command.</p>
+<p><strong>Note:</strong> <em>Because this will put the program in the current directory (rather than your PATH), replace pbkdf2-sha512 commands with ./pbkdf2-sha512.</em></p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">cc -O3 \
+   -I$(nix-build <span class="hljs-string">&quot;&lt;nixpkgs&gt;&quot;</span> --no-build-output -A openssl.dev)/include \
+   -L$(nix-build <span class="hljs-string">&quot;&lt;nixpkgs&gt;&quot;</span> --no-build-output -A openssl.out)/lib \
+   $(nix <span class="hljs-built_in">eval</span> <span class="hljs-string">&quot;(with import &lt;nixpkgs&gt; {}; pkgs.path)&quot;</span>)/nixos/modules/system/boot/pbkdf2-sha512.c \
+   -o ./pbkdf2-sha512 -lcrypto</code></pre>
+      </div><p>If the newlines in the above snippet are problematic for your terminal, you can use the snippet below. It is the same command but as one line.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">cc -O3 -I$(nix-build <span class="hljs-string">&quot;&lt;nixpkgs&gt;&quot;</span> --no-build-output -A openssl.dev)/include -L$(nix-build <span class="hljs-string">&quot;&lt;nixpkgs&gt;&quot;</span> --no-build-output -A openssl.out)/lib $(nix <span class="hljs-built_in">eval</span> <span class="hljs-string">&quot;(with import &lt;nixpkgs&gt; {}; pkgs.path)&quot;</span>)/nixos/modules/system/boot/pbkdf2-sha512.c -o ./pbkdf2-sha512 -lcrypto</code></pre>
+      </div><h2 id="set-up-the-yubikey">Set up the YubiKey</h2><p><strong>Step 1</strong>: Program the YubiKey&#39;s Configuration Slot 2 in Challenge-Response mode (HMAC-SHA1) if you haven&#39;t done yet.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">SLOT=2</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">ykpersonalize -<span class="hljs-string">&quot;<span class="hljs-variable">$SLOT</span>&quot;</span> -ochal-resp -ochal-hmac <span class="hljs-comment"># This will overwrite existing configuration!</span></span></code></pre>
+      </div><p>Alternatively, YubiKey Personalization Tool (GUI) may be suitable for more complicated operations, such as programming multiple keys at the same time or setting configuration protection.</p>
+<p><strong>Step 2</strong>: Gather the initial salt for the PBA (set its length to what you find time-feasible on your machine).</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">SALT_LENGTH=16</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">SALT=<span class="hljs-string">&quot;<span class="hljs-subst">$(dd if=/dev/random bs=1 count=$SALT_LENGTH 2&gt;/dev/null | rbtohex)</span>&quot;</span></span></code></pre>
+      </div><p><strong>Step 3</strong>: Get the user passphrase used as the second factor in the PBA.</p>
+<p>If you plan on using a user password during the boot process (instead of an unassisted boot), enter a user password. Your choice here will change the command you run in step 8.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-built_in">read</span> -s USER_PASSPHRASE</span></code></pre>
+      </div><p><strong>Step 4</strong>: Calculate the initial challenge and response to the YubiKey.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">CHALLENGE=<span class="hljs-string">&quot;<span class="hljs-subst">$(echo -n $SALT | openssl dgst -binary -sha512 | rbtohex)</span>&quot;</span></span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">RESPONSE=$(ykchalresp -2 -x <span class="hljs-variable">$CHALLENGE</span> 2&gt;/dev/null)</span></code></pre>
+      </div><p><strong>Step 5</strong>: Derive the Luks slot key from the two factors.</p>
+<p>Set the length of the Luks slot key and the cipher appropriately.</p>
+<p>As an example, we will use AES-256, so we set the Luks device slot key length to 512 bit.</p>
+<p>Set the iteration count used for PBKDF2 to a high value still time-feasible for your machine.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">KEY_LENGTH=512</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">ITERATIONS=1000000</span></code></pre>
+      </div><p>If you choose to authenticate with a user password, use the following line to generate the luks key.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">LUKS_KEY=<span class="hljs-string">&quot;<span class="hljs-subst">$(echo -n $USER_PASSPHRASE | pbkdf2-sha512 $(($KEY_LENGTH / 8)</span>) <span class="hljs-variable">$ITERATIONS</span> <span class="hljs-variable">$RESPONSE</span> | rbtohex)&quot;</span></span></code></pre>
+      </div><p>If you choose to authenticate without a user passphrase (not recommended), use this instead of the line above</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">LUKS_KEY=<span class="hljs-string">&quot;<span class="hljs-subst">$(echo | pbkdf2-sha512 $(($KEY_LENGTH / 8)</span>) <span class="hljs-variable">$ITERATIONS</span> <span class="hljs-variable">$RESPONSE</span> | rbtohex)&quot;</span></span></code></pre>
+      </div><p>To test if the key is programmed correctly, you can challenge the yubikey and check that the response is the expected response previously generated (<code>echo $RESPONSE</code>).</p>
+<h2 id="partitioning">Partitioning</h2><p>Create a GPT partition table and two partitions on the target disk.</p>
+<ul>
+<li>Partition 1: This will be the EFI system partition: FAT32 etc., EF00 Linux filesystem (boot/esp), &gt;100MB</li>
+<li>Partition 2: This will be the Luks-encrypted partition, aka the &quot;luks device&quot;: 8300 Linux filesystem, Rest of your disk</li>
+</ul>
+<p>See for details. For example in :</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-built_in">sudo</span> parted /dev/sda</span>
+GNU Parted 3.6
+Using /dev/sda
+Welcome to GNU Parted! Type &#x27;help&#x27; to view a list of commands.
+(parted) mklabel gpt
+(parted) mkpart ESP fat32 1MB 512MB
+(parted) set 1 esp on
+(parted) mkpart primary 512MB 100%
+(parted) print
+Model:
+Disk /dev/sda:
+Sector size (logical/physical):
+Partition Table: gpt
+Disk Flags: 
+
+Number  Start   End    Size   File system  Name     Flags
+ 1      1049kB  512MB  511MB  fat32        ESP      boot, esp
+ 2      512MB   512GB  512GB               primary
+(parted) quit</code></pre>
+      </div><p>In the following we will use variables for identification, so set them to match your partition setup, e.g. like this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">EFI_PART=/dev/sda1</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">LUKS_PART=/dev/sda2</span></code></pre>
+      </div><p>If you use an nvme drive your partition names will be something like /dev/nvme0n1p1 instead of /dev/sda1.</p>
+<h3 id="setup-the-luks-device">Setup the LUKS device</h3><p><strong>Step 6</strong>: Create the necessary filesystem on the efi system partition, which will store the current salt for the PBA, and mount it.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-built_in">sudo</span> mkfs.vfat -F 32 <span class="hljs-string">&quot;<span class="hljs-variable">$EFI_PART</span>&quot;</span> <span class="hljs-comment"># format with FAT32 if you haven&#x27;t</span></span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">EFI_MNT=/mnt/boot</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-built_in">sudo</span> <span class="hljs-built_in">mkdir</span> <span class="hljs-string">&quot;<span class="hljs-variable">$EFI_MNT</span>&quot;</span> <span class="hljs-comment"># make mount point</span></span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-built_in">sudo</span> mount <span class="hljs-string">&quot;<span class="hljs-variable">$EFI_PART</span>&quot;</span> <span class="hljs-string">&quot;<span class="hljs-variable">$EFI_MNT</span>&quot;</span> <span class="hljs-comment"># mount to store salt and iteration later</span></span></code></pre>
+      </div><p><strong>Step 7</strong>: Decide where on the efi system partition to store the salt and prepare the directory layout accordingly.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">STORAGE=/crypt-storage/default</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-built_in">mkdir</span> -p <span class="hljs-string">&quot;<span class="hljs-subst">$(dirname $EFI_MNT$STORAGE)</span>&quot;</span></span></code></pre>
+      </div><p><strong>Step 8</strong>: Store the salt and iteration count to the EFI systems partition.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-built_in">echo</span> -ne <span class="hljs-string">&quot;<span class="hljs-variable">$SALT</span>\n<span class="hljs-variable">$ITERATIONS</span>&quot;</span> | <span class="hljs-built_in">sudo</span> <span class="hljs-built_in">tee</span> $EFI_MNT<span class="hljs-variable">$STORAGE</span></span></code></pre>
+      </div><p><strong>Step 9</strong>: Create the LUKS device.</p>
+<ul>
+<li>Set the cipher used by LUKS appropriately</li>
+<li>Set the hash used by LUKS appropriately</li>
+</ul>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">CIPHER=aes-xts-plain64</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">HASH=sha512</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-built_in">echo</span> -n <span class="hljs-string">&quot;<span class="hljs-variable">$LUKS_KEY</span>&quot;</span> | hextorb | <span class="hljs-built_in">sudo</span> cryptsetup luksFormat --cipher=<span class="hljs-string">&quot;<span class="hljs-variable">$CIPHER</span>&quot;</span> --key-size=<span class="hljs-string">&quot;<span class="hljs-variable">$KEY_LENGTH</span>&quot;</span> --<span class="hljs-built_in">hash</span>=<span class="hljs-string">&quot;<span class="hljs-variable">$HASH</span>&quot;</span> --key-file=- <span class="hljs-string">&quot;<span class="hljs-variable">$LUKS_PART</span>&quot;</span></span></code></pre>
+      </div><p><strong>Step 10</strong>: Open the LUKS device.</p>
+<p>Open the LUKS device.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">LUKSROOT=encrypted</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-built_in">echo</span> -n <span class="hljs-string">&quot;<span class="hljs-variable">$LUKS_KEY</span>&quot;</span> | hextorb | <span class="hljs-built_in">sudo</span> cryptsetup luksOpen <span class="hljs-variable">$LUKS_PART</span> <span class="hljs-variable">$LUKSROOT</span> --key-file=-</span></code></pre>
+      </div><p>We can now access the volume at <code>/dev/mapper/$LUKSROOT</code>. For example, to format it as <a href="https://mirror.nixoscn.org/wiki/Yubikey%20based%20Full%20Disk%20Encryption%20(FDE)%20on%20NixOS/ext4" class="wikilink" title="ext4">ext4</a></p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-built_in">sudo</span> mkfs.ext4 /dev/mapper/<span class="hljs-variable">$LUKSROOT</span></span></code></pre>
+      </div><p>Now go to <a href="https://mirror.nixoscn.org/wiki/Yubikey%20based%20Full%20Disk%20Encryption%20(FDE)%20on%20NixOS#NixOS_installation" class="wikilink" title="#NixOS_installation">#NixOS_installation</a>.</p>
+<h3 id="lvm-setup-optional">LVM setup (optional)</h3><p>The following is one of many methods for setting up the LVM partition. For more information on creating logical volumes, see <a href="https://mirror.nixoscn.org/wiki/Yubikey%20based%20Full%20Disk%20Encryption%20(FDE)%20on%20NixOS/LVM" class="wikilink" title="LVM">LVM</a>.</p>
+<p><strong>Step 1</strong>: Setup the LUKS device as a physical volume.</p>
+<p>The physical volume map can then be created.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">pvcreate <span class="hljs-string">&quot;/dev/mapper/<span class="hljs-variable">$LUKSROOT</span>&quot;</span></span></code></pre>
+      </div><p><strong>Step 2</strong>: Setup a volume group on the LUKS device.</p>
+<p>Set the name for the volume group appropriately</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">VGNAME=partitions</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">vgcreate <span class="hljs-string">&quot;<span class="hljs-variable">$VGNAME</span>&quot;</span> <span class="hljs-string">&quot;/dev/mapper/<span class="hljs-variable">$LUKSROOT</span>&quot;</span></span></code></pre>
+      </div><p><strong>Step 3</strong>: Setup two logical volumes on the Luks device.</p>
+<ul>
+<li>Volume 1: This will be the swap partition: choose appropriate size, 2GB for example</li>
+<li>Volume 2: This will be the main btrfs volume, of which all filesystem partitions will be subvolumes: Rest of the free space</li>
+</ul>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">lvcreate -L 2G -n swap <span class="hljs-string">&quot;<span class="hljs-variable">$VGNAME</span>&quot;</span></span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">FSROOT=fsroot</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">lvcreate -l 100%FREE -n <span class="hljs-string">&quot;<span class="hljs-variable">$FSROOT</span>&quot;</span> <span class="hljs-string">&quot;<span class="hljs-variable">$VGNAME</span>&quot;</span></span>
+<span class="hljs-meta prompt_">
+# </span><span class="language-bash">vgchange -ay</span></code></pre>
+      </div><p><strong>Step 4</strong>: Create the <a href="https://mirror.nixoscn.org/wiki/Yubikey%20based%20Full%20Disk%20Encryption%20(FDE)%20on%20NixOS/swap" class="wikilink" title="swap">swap</a> filesystem.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">mkswap -L swap /dev/partitions/swap</span></code></pre>
+      </div><h3 id="btrfs-setup-optional">Btrfs setup (optional)</h3><p>These steps can mostly be followed the same for other filesystem types except calls to the <a href="https://mirror.nixoscn.org/wiki/Yubikey%20based%20Full%20Disk%20Encryption%20(FDE)%20on%20NixOS/btrfs" class="wikilink" title="btrfs">btrfs</a> command can be ignored.</p>
+<p><strong>Step 1</strong>: Create the main btrfs volume&#39;s filesystem.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">mkfs.btrfs -L <span class="hljs-string">&quot;<span class="hljs-variable">$FSROOT</span>&quot;</span> <span class="hljs-string">&quot;/dev/partitions/<span class="hljs-variable">$FSROOT</span>&quot;</span></span></code></pre>
+      </div><p>Should the above fail, you might have encountered a bug that can be solved with doing the following, then attempting the above again:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-built_in">mkdir</span> /mnt-root</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-built_in">touch</span> /mnt-root/nix-store.squashfs</span></code></pre>
+      </div><p><strong>Step 2</strong>: Mount the main btrfs volume.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">mount <span class="hljs-string">&quot;/dev/partitions/<span class="hljs-variable">$FSROOT</span>&quot;</span> /mnt</span></code></pre>
+      </div><p><strong>Step 3</strong>: Create the subvolumes, for example &quot;root&quot; and &quot;home&quot;.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-built_in">cd</span> /mnt</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">btrfs subvolume create root</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">btrfs subvolume create home</span></code></pre>
+      </div><p><strong>Step 4</strong>: Create mountpoints on the root subvolume and finalise things for NixOS installation.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">umount /mnt</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">mount -o subvol=root <span class="hljs-string">&quot;/dev/partitions/<span class="hljs-variable">$FSROOT</span>&quot;</span> /mnt</span>
+<span class="hljs-meta prompt_">
+# </span><span class="language-bash"><span class="hljs-built_in">mkdir</span> /mnt/home</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">mount -o subvol=home <span class="hljs-string">&quot;/dev/partitions/<span class="hljs-variable">$FSROOT</span>&quot;</span> /mnt/home</span>
+<span class="hljs-meta prompt_">
+# </span><span class="language-bash"><span class="hljs-built_in">mkdir</span> /mnt/boot</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">mount <span class="hljs-string">&quot;<span class="hljs-variable">$EFI_PART</span>&quot;</span> /mnt/boot</span>
+<span class="hljs-meta prompt_">
+# </span><span class="language-bash">swapon /dev/partitions/swap</span></code></pre>
+      </div><h2 id="nixos-installation">NixOS installation</h2><p>See for details.</p>
+<p><strong>Step 1</strong>: Mount drives.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-built_in">sudo</span> umount <span class="hljs-variable">$EFI_PART</span></span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-built_in">sudo</span> mount <span class="hljs-string">&quot;/dev/mapper/<span class="hljs-variable">$LUKSROOT</span>&quot;</span> /mnt <span class="hljs-comment"># mount luks device first</span></span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-built_in">sudo</span> <span class="hljs-built_in">mkdir</span> /mnt/boot <span class="hljs-comment"># create mount point</span></span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-built_in">sudo</span> mount <span class="hljs-string">&quot;<span class="hljs-variable">$EFI_PART</span>&quot;</span> /mnt/boot <span class="hljs-comment"># mount efi partition next</span></span></code></pre>
+      </div><p><strong>Step 2</strong>: Generate (hardware) config.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-built_in">sudo</span> nixos-generate-config --root /mnt</span></code></pre>
+      </div><p><strong>Step 3</strong>: Modify config.</p>
+<p>Replace anything that looks like a Bash variable with the value that it currently holds for in your shell and modify as needed.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs">sudo nano /mnt/etc/nixos/configuration.nix</code></pre>
+      </div><p><strong>Step 4</strong>: Install NixOS.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-built_in">sudo</span> nixos-install</span></code></pre>
+      </div><h3 id="headless-setup-note">Headless setup note</h3><p>If you have set up your system to not use a user password and attempt to boot the system, you may find the system stalls with the following message:</p>
+<p>&quot;Gathering entropy for new salt (please enter random keys to generate entropy if this blocks for long)...&quot;</p>
+<p>If you see this message and no more dots appear after a while, you have run into a situation where the random number generator does not have enough entropy stored up. You can mitigate this by starting a network interface (assuming the device is on a network), which should fill the entropy pool and allow the computer to boot headless. Below is an example configuration that has been tested to work in a headless configuration.</p>
+<p>Finally, clean up and you should be ready to reboot into your new system.</p>
+<h2 id="maintenance">Maintenance</h2><p>Prerequisite: You&#39;ll need the environment, defined in <a href="https://mirror.nixoscn.org/wiki/Yubikey%20based%20Full%20Disk%20Encryption%20(FDE)%20on%20NixOS#Automatic_Setup" class="wikilink" title="#Automatic Setup">#Automatic Setup</a>.</p>
+<p>To modify your LUKS setup, <code>$LUKS_KEY</code>, which was generated in <a href="https://mirror.nixoscn.org/wiki/Yubikey%20based%20Full%20Disk%20Encryption%20(FDE)%20on%20NixOS#Setup_the_LUKS_device" class="wikilink" title="#Setup_the_LUKS_device">#Setup_the_LUKS_device</a>, may be needed. The following commands (values from above assumed, replace them to match your configuration) will help you in generating the LUKS key.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">KEY_LENGTH=512</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">ITERATIONS=1000000</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">SALT=$(<span class="hljs-built_in">head</span> -n1 /boot/crypt-storage/default)</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-built_in">read</span> -s USER_PASSPHRASE</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">CHALLENGE=$(<span class="hljs-built_in">echo</span> -n <span class="hljs-variable">$SALT</span> | <span class="hljs-built_in">tr</span> -d <span class="hljs-string">&#x27;\n&#x27;</span> | openssl dgst -binary -sha512 | rbtohex)</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">RESPONSE=<span class="hljs-string">&quot;<span class="hljs-subst">$(sudo ykchalresp -2 -x $CHALLENGE 2&gt;/dev/null)</span>&quot;</span></span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">LUKS_KEY=<span class="hljs-string">&quot;<span class="hljs-subst">$(echo -n $USER_PASSPHRASE | pbkdf2-sha512 $(($KEY_LENGTH / 8)</span>) <span class="hljs-variable">$ITERATIONS</span> <span class="hljs-variable">$RESPONSE</span> | rbtohex)&quot;</span></span></code></pre>
+      </div><p>Now, you can pass <code>$LUKS_KEY</code> via stdin to any <code>cryptsetup</code> command with <code>--key-file=-</code> option.</p>
+<p>For instance, if you want to add another key to your setup:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">echo</span> -n <span class="hljs-string">&quot;<span class="hljs-variable">$LUKS_KEY</span>&quot;</span> | hextorb | cryptsetup luksAddKey /dev/nvme0n1p2 --key-file=-</code></pre>
+      </div><p><a href="category:NixOS" class="wikilink" title="Category:NixOS">Category:NixOS</a> <a href="category:Security" class="wikilink" title="Category:Security">Category:Security</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

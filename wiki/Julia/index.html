@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Julia</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Julia</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Julia -->
+
+<p><a href="https://julialang.org/">Julia</a> is a programming language, that aims to create an unprecedented combination of ease-of-use, power, and efficiency in a single language.</p>
+<h2 id="installation-and-versions">Installation And Versions</h2><p>You can install the newest version of Julia either with <code>julia-bin</code> (the derivation which downloads the binary) or <code>julia</code> (the derivation which builds Julia from the source). From the end-user perspective, -bin packages should be indistinguishable from source-built ones.</p>
+<h2 id="packages">Packages</h2><p>Julia packages can be installed via nix using the <code>julia.withPackages</code> function. For example:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{pkgs, ...}:
+<span class="hljs-keyword">let</span>
+  <span class="hljs-attr">myjulia</span> <span class="hljs-operator">=</span> (pkgs.julia.withPackages [
+    <span class="hljs-string">&quot;Plots&quot;</span>
+  ]);
+<span class="hljs-keyword">in</span>
+{
+
+<span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> [ myjulia ];
+
+<span class="hljs-attr">home.packages</span> <span class="hljs-operator">=</span> [ myjulia ]; <span class="hljs-comment"># if using home manager</span>
+}</code></pre>
+      </div><p>You can also install packages the <a href="https://docs.julialang.org/en/v1/stdlib/Pkg/">without nix.</a></p>
+<p>Some Julia packages expect binaries to be installed on your system. Until a better solution is found, you can run Julia inside <a href="https://mirror.nixoscn.org/wiki/Julia/Distrobox" class="wikilink" title="Distrobox">Distrobox</a>.</p>
+<p>Most notably, Julia Plots does not work. You can use <a href="http://gadflyjl.org/stable/">Gadfly</a> instead.</p>
+<p>As of April 2026, the above statement is no longer accurate. <a href="https://docs.juliaplots.org/stable/">Julia Plots</a> does seem to work with no additional configuration.</p>
+<p>Another solution is to enable <a href="https://github.com/nix-community/nix-ld">nix-ld</a>, see also <a href="https://nix.dev/guides/faq#how-to-run-non-nix-executables">here</a>.</p>
+<p><a href="category:Languages" class="wikilink" title="Category:Languages">Category:Languages</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NixOS on ARM/QEMU</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM">NixOS on ARM</a><span aria-hidden="true"> / </span>QEMU</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: NixOS on ARM/QEMU -->
+
+<h2 id="status">Status</h2><p>NixOS on ARM through QEMU is possible, by using qemu-system-arm on QEMU&#39;s &#39;virt&#39; machine, and the u-boot image for qemu.</p>
+<h2 id="board-specific-installation-notes">Board-specific installation notes</h2><h3 id="required-images">Required images</h3><p>First get some recent <code>sd-image-armv7l-linux.img</code> and <code>uboot-qemu_arm_defconfig-*_u-boot.bin</code> as described <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/QEMU/NixOS_on_ARM" class="wikilink" title="the main NixOS on ARM page">the main NixOS on ARM page</a>.</p>
+<h3 id="creating-qcow-image">Creating qcow image</h3><p>Convert the sd card image to qcow, and resize it a bit:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">qemu-img convert -f raw -O qcow2 sd-image-armv7l-linux.img sd-image-armv7l-linux.qcow2
+qemu-img resize sd-image-armv7l-linux.qcow2 +5G</code></pre>
+      </div><h2 id="booting-using-qemu">Booting using qemu</h2><p>The following command will boot QEMU&#39;s &#39;virt&#39; machine with u-boot and the converted sdcard image, exposing four cpu cores and 2GB of RAM:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">qemu-system-arm -machine virt,highmem=off -bios uboot-qemu_arm_defconfig-2018.03_u-boot.bin -drive if=none,file=sd-image-armv7l-linux.qcow2,id=mydisk -device ich9-ahci,id=ahci -device ide-drive,drive=mydisk,bus=ahci.0 -netdev user,id=net0 -device virtio-net-pci,netdev=net0 -nographic -smp 4 -m 2G
+
+U-Boot 2018.03 (Mar 13 2018 - 12:02:19 +0000)
+
+DRAM:  2 GiB
+WARNING: Caches not enabled
+In:    pl011@9000000
+Out:   pl011@9000000
+Err:   pl011@9000000
+Net:   No ethernet found.
+Hit any key to stop autoboot:  0 
+scanning bus for devices...
+Target spinup took 0 ms.
+SATA link 1 timeout.
+SATA link 2 timeout.
+SATA link 3 timeout.
+SATA link 4 timeout.
+SATA link 5 timeout.
+AHCI 0001.0000 32 slots 6 ports 1.5 Gbps 0x3f impl SATA mode
+flags: 64bit ncq only 
+  Device 0: (0:0) Vendor: ATA Prod.: QEMU HARDDISK Rev: 2.5+
+            Type: Hard Disk
+            Capacity: 7137.4 MB = 6.9 GB (14617528 x 512)
+
+Device 0: (0:0) Vendor: ATA Prod.: QEMU HARDDISK Rev: 2.5+
+            Type: Hard Disk
+            Capacity: 7137.4 MB = 6.9 GB (14617528 x 512)
+... is now current device
+Scanning scsi 0:1...
+Found /extlinux/extlinux.conf
+Retrieving file: /extlinux/extlinux.conf
+847 bytes read in 7 ms (118.2 KiB/s)
+------------------------------------------------------------
+1:  NixOS - Default
+Enter choice: 1:    NixOS - Default
+Retrieving file: /extlinux/../nixos/b44d5kfyaixzkzy780br46ls3812cfx3-initrd-initrd
+7084057 bytes read in 122 ms (55.4 MiB/s)
+Retrieving file: /extlinux/../nixos/ajja3hfl2p4dadbg93rrs0zqrclisrwj-linux-4.16.1-zImage
+6550016 bytes read in 112 ms (55.8 MiB/s)
+append: systemConfig=/nix/store/km910m22ibjl6rjzfjiivn2mp71d86d6-nixos-system-nixos-18.09.git.1034aa8e9cb init=/nix/store/km910m22ibjl6rjzfjiivn2mp71d86d6-nixos-system-nixos-18.09.git.1034aa8e9cb/init loglevel=7 console=ttyS0,115200n8 console=ttymxc0,115200n8 console=ttyAMA0,115200n8 console=ttyO0,115200n8 console=ttySAC2,115200n8 console=tty0
+Kernel image @ 0x40400000 [ 0x000000 - 0x63f200 ]
+## Flattened Device Tree blob at 40000000
+   Booting using the fdt blob at 0x40000000
+   Using Device Tree in place at 40000000, end 40012fff
+
+Starting kernel ...
+
+[    0.000000] Booting Linux on physical CPU 0x0
+[    0.000000] Linux version 4.16.1 (nixbld@localhost) (gcc version 7.3.0 (GCC)) #1-NixOS SMP Sun Apr 8 12:29:52 UTC 2018
+[    0.000000] CPU: ARMv7 Processor [412fc0f1] revision 1 (ARMv7), cr=10c5387d
+[…]
+
+&lt;&lt;&lt; Welcome to NixOS 18.09.git.1034aa8e9cb (armv7l) - ttyAMA0 &gt;&gt;&gt;
+
+The &quot;root&quot; account has an empty password.  
+
+
+Run `nixos-help` or press &lt;Alt-F8&gt; for the NixOS manual.
+
+nixos login: root (automatic login)
+
+
+[root@nixos:~]# </code></pre>
+      </div><h2 id="qemu-aarch64">QEMU AArch64</h2><div class="code-container">
+        
+        <pre><code class="language- hljs"> $ nix-build -A pkgsCross.aarch64-multiplatform.ubootQemuAarch64
+ $ qemu-system-aarch64 -nographic \
+    -machine virt -cpu cortex-a57 \
+    -bios result/u-boot.bin \
+    ./nixos-sd-image-21.03pre262561.581232454fd-aarch64-linux.img \
+    -m 4G</code></pre>
+      </div><p><a href="category:Virtualization" class="wikilink" title="Category:Virtualization">Category:Virtualization</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

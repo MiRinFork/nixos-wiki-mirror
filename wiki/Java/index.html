@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Java</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Java</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Java -->
+
+<p>This article is about <a href="https://en.wikipedia.org/wiki/Java_(programming_language)">Java</a>, the programming language.</p>
+<p>__TOC__</p>
+<h2 id="java-web-start">Java Web Start</h2><p>Available as <code>javaws</code> in package <code>adoptopenjdk-icedtea-web</code>.</p>
+<h2 id="jdk-options">JDK options</h2><p>Your default choice should probably be to install <code>jdk</code>, which is an alias to the latest <a href="https://en.wikipedia.org/wiki/Long-term_support">LTS</a>. If you&#39;re in a server environment, go for <code>jdk21_headless</code>. Java 21 is the currently-maintained LTS version of OpenJDK as of April 2024.</p>
+<p>As you might expect, though, many flavors of Java are available in NixOS.</p>
+<ul>
+<li>OpenJDK, by far the most popular non-Oracle JVM implementation<ul>
+<li><code>jdk8[_headless]</code> for a legacy Java 8 VM required by some older apps</li>
+<li><code>jdk21[_headless]</code>, the currently-supported LTS version of OpenJDK</li>
+<li><code>jdk22[_headless]</code>, the current version of OpenJDK</li>
+</ul>
+</li>
+<li>Temurin, formerly AdoptOpenJDK, prebuilt binaries for OpenJDK<ul>
+<li><code>temurin-bin</code> points to the latest version of Temurin, which is version 21 at the time of writing.</li>
+<li><code>temurin-jre-bin</code> is available if you want to avoid downloading the compiler and only require the runtime environment.</li>
+</ul>
+</li>
+<li>JetBrains JDK (<code>jetbrains.jdk</code>), a fork of OpenJDK with modifications made by JetBrains</li>
+<li>Oracle&#39;s JDK (<code>oraclejdk</code>), only version 8 is available.</li>
+</ul>
+<h2 id="vscode-language-support-for-java-tm-by-red-hat-extension">VSCode + Language Support for Java (TM) by Red Hat extension</h2><p>Unfortunately the extension contains and uses a version of the JRE which makes use of dynamically loaded libraries, which nix cannot accomodate out-of-the-box. Fortunately there&#39;s a simple solution in the use of <a href="https://github.com/Mic92/nix-ld">nix-ld</a>. Here&#39;s a simple <code>flake.nix</code> snippet to get you started (I&#39;ll focus on the <code>devShell</code> part for brevity):</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># flake.nix</span>
+d<span class="hljs-attr">evShell</span> <span class="hljs-operator">=</span> pkgs.mkShell {
+  <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> [
+    pkgs.gradle
+    pkgs.jdk17
+  ];
+  <span class="hljs-attr">NIX_LD_LIBRARY_PATH</span> <span class="hljs-operator">=</span> pkgs.lib.makeLibraryPath [
+    pkgs.stdenv.cc.cc
+    pkgs.openssl
+  ];
+  <span class="hljs-attr">NIX_LD</span> <span class="hljs-operator">=</span> pkgs.lib.fileContents <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.stdenv.cc}</span>/nix-support/dynamic-linker&quot;</span>; 
+  <span class="hljs-comment"># ^--- when using direnv, this line will require the &#x27;use flake --impure&#x27; option.</span>
+};</code></pre>
+      </div><p>The important lines above are the two starting with <code>NIX_LD...</code>. They will let nix-ld wrap the required, dynamically loaded libraries so that they are found when building the <code>devShell</code>.</p>
+<p>Another solution is to use the <a href="https://github.com/redhat-developer/vscode-java?tab=readme-ov-file#supported-vs-code-settings"><code>java.jdt.ls.java.home</code></a> VSCode setting to point to a nix-built Java 17. For example, using home-manager&#39;s settings:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">p<span class="hljs-attr">rograms.vscode.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+<span class="hljs-attr">programs.vscode.extensions</span> <span class="hljs-operator">=</span> [ pkgs.vscode-extensions.redhat.java ];
+
+<span class="hljs-attr">programs.vscode.userSettings</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-string">&quot;java.jdt.ls.java.home&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.jdk17}</span>/lib/openjdk&quot;</span>;
+};</code></pre>
+      </div><p>Note that this will still result in the extension downloading its own JRE, it just will not be used.</p>
+<h2 id="using-oracle-jdk-instead-of-open-jdk">Using Oracle JDK instead of Open JDK</h2><p>Almost all Java packages in nixpkgs use Open JDK in form of a <strong>jre</strong> dependency. If you use Oracle JDK and also want other applications to use it, you can simply tweak your <code>nixpkgs/config.nix</code> so that your desired application uses Oracles JDK or JRE.</p>
+<p>Example with UMLet with JRE</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">allowUnfree</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">packageOverrides</span> <span class="hljs-operator">=</span> <span class="hljs-params">pkgs:</span> <span class="hljs-keyword">rec</span> {
+    <span class="hljs-attr">umlet</span> <span class="hljs-operator">=</span> pkgs.umlet.override {
+      <span class="hljs-attr">jre</span> <span class="hljs-operator">=</span> pkgs.oraclejre8;
+    };
+  };
+}</code></pre>
+      </div><p>To install the Oracle JRE system-wide, you need to explicitly accept the license in addition to allowing unfree modules:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># /etc/nixos/configuration.nix</span>
+{
+  <span class="hljs-attr">nixpkgs.config.allowUnfree</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">programs.java</span> <span class="hljs-operator">=</span> { <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; <span class="hljs-attr">package</span> <span class="hljs-operator">=</span> pkgs.oraclejre8; };
+}</code></pre>
+      </div><p>Working with <code>requireFile</code> (manual downloading the tarballs and manual adding in to the nix store) might be annoying and nixops-unfriendly, so it can be overridden in overlays</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">ixpkgs.overlays</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">let</span>
+  <span class="hljs-attr">files</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-string">&quot;jdk-8u241-linux-linux-arm32-vfp-hflt.tar.gz&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-symbol">/home/user/blobs/java/jdk-8u241-linux-linux-arm32-vfp-hflt.tar.gz</span>;
+    <span class="hljs-string">&quot;jdk-8u241-linux-linux-arm64-vfp-hflt.tar.gz&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-symbol">/home/user/blobs/java/jdk-8u241-linux-linux-arm64-vfp-hflt.tar.gz</span>;
+    <span class="hljs-string">&quot;jdk-8u241-linux-i586.tar.gz&quot;</span>                 <span class="hljs-operator">=</span> <span class="hljs-symbol">/home/user/blobs/java/jdk-8u241-linux-i586.tar.gz</span>;
+    <span class="hljs-string">&quot;jdk-8u241-linux-x64.tar.gz&quot;</span>                  <span class="hljs-operator">=</span> <span class="hljs-symbol">/home/user/blobs/java/jdk-8u241-linux-x64.tar.gz</span>;
+  };
+<span class="hljs-keyword">in</span> [
+  (<span class="hljs-params">self:</span> <span class="hljs-params">super:</span> {
+    <span class="hljs-attr">requireFile</span> <span class="hljs-operator">=</span> args @ {name, url, sha1 <span class="hljs-operator">?</span> <span class="hljs-literal">null</span>, sha256 <span class="hljs-operator">?</span> <span class="hljs-literal">null</span>}:
+      <span class="hljs-keyword">if</span> files<span class="hljs-operator">?</span>${name} <span class="hljs-keyword">then</span>
+        self.stdenvNoCC.mkDerivation {
+          <span class="hljs-keyword">inherit</span> name;
+          <span class="hljs-attr">outputHashMode</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;flat&quot;</span>;
+          <span class="hljs-attr">outputHashAlgo</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">if</span> sha256 <span class="hljs-operator">!=</span> <span class="hljs-literal">null</span> <span class="hljs-keyword">then</span> <span class="hljs-string">&quot;sha256&quot;</span> <span class="hljs-keyword">else</span> <span class="hljs-string">&quot;sha1&quot;</span>;
+          <span class="hljs-attr">outputHash</span>     <span class="hljs-operator">=</span> <span class="hljs-keyword">if</span> sha256 <span class="hljs-operator">!=</span> <span class="hljs-literal">null</span> <span class="hljs-keyword">then</span>  sha256  <span class="hljs-keyword">else</span>  sha1 ;
+          <span class="hljs-attr">buildCommand</span>   <span class="hljs-operator">=</span> <span class="hljs-string">&quot;cp <span class="hljs-subst">${files.${name}</span>} $out&quot;</span>;
+        }
+      <span class="hljs-keyword">else</span>
+        super.requireFile args;
+  })
+];</code></pre>
+      </div><h2 id="better-font-rendering">Better font rendering</h2><p>By default java does not enable anti-aliasing for font rendering. By exporting environment variables, this can be fixed:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">export</span> _JAVA_OPTIONS=<span class="hljs-string">&#x27;-Dawt.useSystemAAFontSettings=lcd&#x27;</span></span></code></pre>
+      </div><p>More options can be found in the <a href="https://wiki.archlinux.org/index.php/Java_Runtime_Environment_fonts">archlinux wiki</a></p>
+<h2 id="overriding-java-jks-certificate-store">Overriding java jks Certificate Store</h2><p>Overriding the java certificate store may be required for adding your own Root certificates in case your company uses an internal PKI or the company utilizes an intercepting proxy.</p>
+<h3 id="jdk8">jdk8</h3><p>Overriding the jdk8 certificate store is possible by overriding the <strong>cacert</strong> parameter of the package:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs, ... }:
+<span class="hljs-keyword">let</span> 
+  <span class="hljs-attr">myjdk</span> <span class="hljs-operator">=</span> pkgs.jdk8.override {
+    <span class="hljs-attr">cacert</span> <span class="hljs-operator">=</span> pkgs.runCommand <span class="hljs-string">&quot;mycacert&quot;</span> {} <span class="hljs-string">&#x27;&#x27;
+      mkdir -p $out/etc/ssl/certs
+      cat <span class="hljs-subst">${pkgs.cacert}</span>/etc/ssl/certs/ca-bundle.crt \
+        <span class="hljs-subst">${.<span class="hljs-operator">/</span>my-company-root-certificate.crt}</span> &gt; $out/etc/ssl/certs/ca-bundle.crt
+    &#x27;&#x27;</span>;
+  };
+<span class="hljs-keyword">in</span> {
+  <span class="hljs-attr">programs.java</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">package</span> <span class="hljs-operator">=</span> myjdk
+  };
+}</code></pre>
+      </div><p>the java package build will use the <strong>ca-bundle</strong> to run keytool and transform it into <strong>jks</strong> format.</p>
+<p>you could also use</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">nixpkgs.overlays</span> <span class="hljs-operator">=</span> [(<span class="hljs-params">self:</span> <span class="hljs-params">super:</span> {<span class="hljs-attr">jdk</span> <span class="hljs-operator">=</span> super.jdk8.override { };} )];
+}</code></pre>
+      </div><p>to override the default jdk so all packages use the patched java version.</p>
+<h3 id="jdk11">jdk11</h3><p>JDK11 does not provide the cacert overridable and therefore it is not possible to use the same technique to override the truststore.</p>
+<p>As an alternative solution you can either set an environment variable, <code>JAVAX_NET_SSL_TRUSTSTORE</code>, or pass an argument to your program, <code>-Djavax.net.ssl.trustStore</code>, with the location of your cacert. See <a href="https://discourse.nixos.org/t/custom-ssl-certificates-for-jdk/18297/9">discussion</a>.</p>
+<h2 id="building-and-packaging">Building and Packaging</h2><p>See the <a href="https://nixos.org/manual/nixpkgs/#sec-language-java">Java section in the Nixpkgs manual</a>.</p>
+<h3 id="maven">Maven</h3><p><a href="https://maven.apache.org/run.html">Maven</a> is a build tool for Java. The typical build command is</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">mvn verify</code></pre>
+      </div><p><a href="https://github.com/fzakaria/mvn2nix">mvn2nix</a>, <a href="https://nixos.org/manual/nixpkgs/stable/#maven-buildmavenpackage">buildMavenPackage</a> (recommended) can be used to build Maven projects with Nix</p>
+<p>See also: <a href="https://fzakaria.com/2020/07/20/packaging-a-maven-application-with-nix.html">Packaging a Maven application with Nix</a> and <a href="https://github.com/NixOS/nixpkgs/blob/master/pkgs/by-name/ma/maven/build-maven-package.nix">buildMavenPackage source</a></p>
+<h3 id="ant">Ant</h3><p><a href="https://ant.apache.org/manual/running.html">Ant</a> is a build tool for Java. To build the <code>compile</code> target, run</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">ant compile</code></pre>
+      </div><p>To list available build targets, run</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">ant -p</code></pre>
+      </div><h4 id="ivy">Ivy</h4><p><a href="https://ant.apache.org/ivy/">Ivy</a> is a package manager for Ant, not to be confused with <a href="https://github.com/NixOS/nixpkgs/blob/master/pkgs/by-name/iv/ivy/package.nix">ivy</a> - an APL-like calculator</p>
+<p>To fetch ivy sources manually, see for example <a href="https://github.com/NixOS/nixpkgs/blob/master/pkgs/by-name/je/jedit/package.nix">pkgs/applications/editors/jedit</a></p>
+<p>To fetch ivy sources in a fixed-output-derivation, see for example <a href="https://github.com/milahu/nur-packages/blob/master/pkgs/yacy/yacy.nix">yacy.nix</a></p>
+<h2 id="javafx-and-webkit-support">JavaFX and Webkit support</h2><p>To include support for JavaFX and Webkit, use the <code>enableJavaFX</code> and <code>withWebKit</code> options:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs, ... }:
+<span class="hljs-keyword">let</span>
+  <span class="hljs-attr">jdkWithFX</span> <span class="hljs-operator">=</span> pkgs.openjdk.override {
+    <span class="hljs-attr">enableJavaFX</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; <span class="hljs-comment"># for JavaFX</span>
+    <span class="hljs-comment"># include following line if JavaFX with Webkit is needed</span>
+    <span class="hljs-attr">openjfx_jdk</span> <span class="hljs-operator">=</span> pkgs.openjfx.override { <span class="hljs-attr">withWebKit</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; };
+  };
+<span class="hljs-keyword">in</span>
+...</code></pre>
+      </div><h2 id="further-reading">Further reading</h2><p><a href="category:Languages" class="wikilink" title="Category:Languages">Category:Languages</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

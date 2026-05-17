@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Haskell</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Haskell</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Haskell -->
+
+<p><a href="https://www.haskell.org/">Haskell</a> is a statically-typed, purely functional programming language with strong support for type inference and lazy evaluation.</p>
+<p>For detailed information on Haskell support in Nixpkgs, refer to the official .</p>
+<h2 id="how-to-develop-with-haskell-and-nix">How to develop with Haskell and Nix</h2><h3 id="scripting">Scripting</h3><p>For redistributable Haskell scripts on any Nix system, you can use a nix-shell shebang.</p>
+<div class="code-container">
+        
+        <pre><code class="language-haskell hljs"><span class="hljs-meta">#!/usr/bin/env nix-shell</span>
+<span class="hljs-meta">#!  nix-shell --pure -i runghc -p &quot;ghc.withPackages (pkgs: [ pkgs.turtle ])&quot;</span>
+<span class="hljs-meta">{-# LANGUAGE OverloadedStrings #-}</span>
+<span class="hljs-keyword">import</span> Turtle
+
+<span class="hljs-title">main</span> = <span class="hljs-keyword">do</span>
+  <span class="hljs-comment">-- do stuff</span>
+  echo <span class="hljs-string">&quot;Hello world from a distributable Haskell script!&quot;</span></code></pre>
+      </div><p>To remove the additional latency overhead of a nix-shell, add GHC to <code>environment.systemPackages</code> and call <code>runghc</code> in the shebang.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+    ...
+    (ghc.withPackages (<span class="hljs-params">hsPkgs:</span> <span class="hljs-keyword">with</span> hsPkgs; [
+      turtle      <span class="hljs-comment"># Faster startup time with all external shell commands</span>
+      shh         <span class="hljs-comment"># Piping operators and other goodies</span>
+      shh-extras  <span class="hljs-comment"># Try shh as an interactive shell</span>
+      ...         <span class="hljs-comment"># ...anything else you want!</span>
+    ])
+  ]; </code></pre>
+      </div><p>Here&#39;s a basic example using the Shh module rather than Turtle, so it can use the pipe operator:</p>
+<div class="code-container">
+        
+        <pre><code class="language-haskell hljs"><span class="hljs-meta">#!/usr/bin/env runghc</span>
+<span class="hljs-meta">{-# LANGUAGE TemplateHaskell #-}</span>
+<span class="hljs-meta">{-# LANGUAGE ExtendedDefaultRules #-}</span>
+<span class="hljs-meta">{-# LANGUAGE OverloadedStrings #-}</span>
+<span class="hljs-keyword">import</span> Shh
+
+<span class="hljs-comment">-- $(loadEnv SearchPath) -- Loads entire PATH, may be slow</span>
+<span class="hljs-title">load</span> <span class="hljs-type">SearchPath</span> [ <span class="hljs-string">&quot;dd&quot;</span>, <span class="hljs-string">&quot;sha512sum&quot;</span> ]
+
+<span class="hljs-title">main</span> = <span class="hljs-keyword">do</span>
+  dd <span class="hljs-string">&quot;if=/dev/urandom&quot;</span> <span class="hljs-string">&quot;bs=4K&quot;</span> <span class="hljs-string">&quot;count=1&quot;</span> |&gt; sha512sum</code></pre>
+      </div><p>To write inline Haskell scripts in nix-code, refer to <a href="https://mirror.nixoscn.org/wiki/Haskell/Nix-writers#Haskell" class="wikilink" title="Nix-writers#Haskell">Nix-writers#Haskell</a>.</p>
+<p>Read <a href="https://mirror.nixoscn.org/wiki/Haskell#Overrides" class="wikilink" title="#Overrides">#Overrides</a> if some packages are broken.</p>
+<h3 id="directly-using-cabal-no-nix-caching-reproducibility">Directly using cabal (no nix caching/reproducibility)</h3><p><a href="https://www.haskell.org/cabal/">Cabal</a> is the basic Haskell tool used to configure builds and is internally used by all the Haskell&#39;s packaging methods (including stack and nix). If one does not care about the reproducibility/caching offered by nix, it is always possible to use cabal like in a normal system:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash"> nix-shell -p <span class="hljs-string">&quot;ghc.withPackages (pkgs: [ pkgs.cabal-install ])&quot;</span></span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">cabal init</span>
+…
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">cabal run</span>
+Up to date
+Hello, Haskell!</code></pre>
+      </div><h3 id="using-stack-no-nix-caching">Using Stack (no nix caching)</h3><p>Similarly you can use <a href="https://docs.haskellstack.org/en/stable/">Stack</a> that let you find the appropriate version of the libraries for you if you do not want the caching offered by nix (stack will build all the dependencies):</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-shell -p <span class="hljs-string">&quot;ghc.withPackages (pkgs: [ pkgs.stack ])&quot;</span></span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">stack new my-project</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">cd</span> my-project</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">stack build</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">stack <span class="hljs-built_in">exec</span> my-project-exe</span></code></pre>
+      </div><p>You can also use the features offered by stack to enable nix integration in order to use nix to install the non-haskell dependencies. You can read more <a href="https://docs.haskellstack.org/en/stable/topics/nix_integration/">here</a>.</p>
+<p>If you want to package your program using stack in nix, you can actually use <code>haskell.lib.buildStackProject</code> that is a wrapper around <code>stdenv.mkDerivation</code> that will <a href="https://github.com/NixOS/nixpkgs/blob/350fd0044447ae8712392c6b212a18bdf2433e71/pkgs/development/haskell-modules/generic-stack-builder.nix#L56">call <code>stack build</code> for you</a>… However because stack needs to download stuff you need to disable the sandbox using <code>nix-build --option sandbox false</code>. For instance if you want to compile a stack project that needs R, zeromq and zlib you can put the following into <code>default.nix</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-keyword">with</span> (<span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> { });
+haskell.lib.buildStackProject {
+  <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;HaskellR&quot;</span>;
+  <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> [ R zeromq zlib ];
+}</code></pre>
+      </div><h3 id="using-developpackage-use-the-nix-packages-set-for-haskell">Using developPackage (use the nix packages set for haskell)</h3><p>You can also use nix in place of stack to keep track of the dependencies in a reproducible way (note that while stack uses a solver to find a working set of dependencies, nix uses a fixed set of packages). Additionally you can benefit from the caching system offered by Nix. To that end, first create a cabal repository (nix also uses cabal internally):</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-shell -p <span class="hljs-string">&quot;ghc.withPackages (pkgs: [ pkgs.cabal-install ])&quot;</span> --run <span class="hljs-string">&quot;cabal init&quot;</span></span>
+… </code></pre>
+      </div><p>And create a file <code>default.nix</code> containing:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-keyword">let</span>
+  <span class="hljs-attr">pkgs</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> { }; <span class="hljs-comment"># pin the channel to ensure reproducibility!</span>
+<span class="hljs-keyword">in</span>
+pkgs.haskellPackages.developPackage {
+  <span class="hljs-attr">root</span> <span class="hljs-operator">=</span> <span class="hljs-symbol">./.</span>;
+}</code></pre>
+      </div><p>(You can find a list of options and documentation for <code>developPackage</code> in <a href="https://github.com/NixOS/nixpkgs/blob/0ba44a03f620806a2558a699dba143e6cf9858db/pkgs/development/haskell-modules/make-package-set.nix#L230">pkgs/development/haskell-modules/make-package-set.nix</a>, note that it is a wrapper around <code>callCabal2nixWithOptions</code> with some additional functions to setup a development shell.)</p>
+<p>Then you can build and run the program using:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-build</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">./result/bin/yourprogram</span> </code></pre>
+      </div><p>or run a nix-shell to use the standard development tools provided by cabal:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-shell</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">cabal run</span></code></pre>
+      </div><p>Nix will automatically read the <code>build-depends</code> field in the <code>*.cabal</code> file to get the name of the dependencies and use the haskell packages provided in the configured package set provided by nix. Note that some of the packages present in the nix repository are broken (for instance because a package requires an older version of a library while nix only provides a recent version). For this reason it may be necessary to override some packages present in the nix package set as described below using the <code>overrides</code> and <code>source-overrides</code> attribute. Note that the <code>source-overrides</code> attribute can also turn out to be useful to load local libraries:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-keyword">let</span>
+  <span class="hljs-attr">pkgs</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> { }; <span class="hljs-comment"># pin the channel to ensure reproducibility!</span>
+<span class="hljs-keyword">in</span>
+pkgs.haskellPackages.developPackage {
+  <span class="hljs-attr">root</span> <span class="hljs-operator">=</span> <span class="hljs-symbol">./.</span>;
+  <span class="hljs-attr">source-overrides</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">mylibrary</span> <span class="hljs-operator">=</span> <span class="hljs-symbol">./mylibrary</span>;
+  };
+}</code></pre>
+      </div><p>However as I understand I guess that you will not be able to enter the shell before `mylibrary` fully compiles… hence the need for `shellFor` to work simultaneously on multiple projects.</p>
+<p>Note that you may want to add tools needed either at compile time or a library at run time. For that, you can use the <code>modifier</code> field that is an arbitrary function to apply to the final haskell package (in particular you can apply the <code>overrideCabal</code> that we saw above). Notably, you can add nativeBuildInputs using <a href="https://github.com/NixOS/nixpkgs/blob/0ba44a03f620806a2558a699dba143e6cf9858db/pkgs/development/haskell-modules/lib/compose.nix#L156">pkgs.haskell.lib.addBuildTools</a> and buildInputs using <a href="https://github.com/NixOS/nixpkgs/blob/0ba44a03f620806a2558a699dba143e6cf9858db/pkgs/development/haskell-modules/lib/compose.nix#L159">pkgs.haskell.lib.addExtraLibraries</a> (for those of you that are curious to see how they are used in the final derivation, see <a href="https://github.com/NixOS/nixpkgs/blob/0ba44a03f620806a2558a699dba143e6cf9858db/pkgs/development/haskell-modules/generic-builder.nix#L653">here</a>):</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-keyword">let</span>
+  <span class="hljs-attr">pkgs</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> { }; <span class="hljs-comment"># pin the channel to ensure reproducibility!</span>
+<span class="hljs-keyword">in</span>
+pkgs.haskellPackages.developPackage {
+  <span class="hljs-attr">root</span> <span class="hljs-operator">=</span> <span class="hljs-symbol">./.</span>;
+  <span class="hljs-attr">modifier</span> <span class="hljs-operator">=</span> <span class="hljs-params">drv:</span>
+    pkgs.haskell.lib.addBuildTools drv (<span class="hljs-keyword">with</span> pkgs.haskellPackages;
+      [ cabal-install
+        ghcid
+      ]);
+}</code></pre>
+      </div><p>You can also get more details in <a href="https://github.com/NixOS/nixpkgs/blob/0ba44a03f620806a2558a699dba143e6cf9858db/pkgs/development/haskell-modules/make-package-set.nix#L230">pkgs/development/haskell-modules/make-package-set.nix</a>.</p>
+<h3 id="using-shellfor-multiple-packages">Using shellFor (multiple packages)</h3><p><a href="https://nixos.org/manual/nixpkgs/stable/#haskell-shellFor">shellFor</a> is similar to <code>developPackage</code> but (slightly) more complicated to also allow you to develop multiples packages at the same time (it can work in conjuction with <a href="https://cabal.readthedocs.io/en/stable/cabal-project-description-file.html">cabal.project</a>). Note that contrary to <code>developPackage</code> I don&#39;t think that <code>shellFor</code> can output a derivation.</p>
+<p>The idea is to first extend/override the set of haskell packages in order to add your projects as additional haskell packages (for instance using <code>haskellPackages.extend</code> and <code>packageSourceOverrides</code> that just need the path of the project to compile it), and then to use <code>haskellPackages.shellFor {packages= p: [p.myproject1 p.myproject2]}</code> to create a shell with all wanted packages.</p>
+<p>For instance you can define your various projects in subfolders <code>./frontend</code> and <code>./backend</code> (you can use cabal init to create the content in each folder), then create a file <code>cabal.project</code> containing:</p>
+<p>Finally you define a nix shell in <code>shell.nix</code> containing:</p>
+<p>then you can use cabal to develop incrementally your projects using for instance:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-shell</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">cabal build all</span></code></pre>
+      </div><p>If you want to be able to compile a project non-incrementally with <code>nix-build</code> (say the backend in the above example) you can put in <code>default.nix</code>:</p>
+<p>or if you want to create a single derivation file, you can use <code>if pkgs.lib.inNixShell then … else …</code> to output the shell when we start a shell and the packages when we want to build them. You can find <a href="https://github.com/kowainik/summoner/blob/60de4f2f087e5bd2beaad9253e7eded731cfbaaf/default.nix">here</a> an example.</p>
+<h3 id="using-haskell-nix-for-complex-projects">Using haskell.nix (for complex projects)</h3><p>The <a href="https://github.com/input-output-hk/haskell.nix">haskell.nix</a> project allows you to have maximum flexibility (to create your own package set or use in teams with diverse people, some of them using stack, other using cabal, other using nix…). But this comes at the price of additional complexity.</p>
+<h3 id="using-haskell-flake-flake-parts">Using haskell-flake (flake-parts)</h3><p><a href="https://community.flake.parts/haskell-flake">haskell-flake</a> is a project that aims to simplify writing Nix for Haskell development through use of <a href="https://mirror.nixoscn.org/wiki/Haskell/Flake_Parts" class="wikilink" title="flake-parts module system">flake-parts module system</a>. It uses <code>callCabal2nix</code> and <code>shellFor</code> under the hood while exposing friendly module options API. For an overview of Flakes, see the <a href="https://mirror.nixoscn.org/wiki/Haskell/Flakes" class="wikilink" title="Flakes">Flakes</a> wiki page.</p>
+<ul>
+<li>For existing Haskell projects, initialize with:</li>
+</ul>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nix flake init -t github:srid/haskell-flake</code></pre>
+      </div><ul>
+<li>For new Haskell projects, use the example template:</li>
+</ul>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">mkdir</span> example &amp;&amp; <span class="hljs-built_in">cd</span> ./example
+nix flake init -t github:srid/haskell-flake#example</code></pre>
+      </div><p>This command will generate a project template with additional configuration details, comments, and examples. Below is an example minimal flake definition for a simple project:</p>
+<p>Once configured, you can build and run the project with:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix build <span class="hljs-comment"># Build the project; the binary will be placed in ./result/bin</span></span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">./result/bin/example</span>
+<span class="hljs-meta prompt_">
+$ </span><span class="language-bash">nix run <span class="hljs-comment"># Alternatively, run the default executable directly</span></span></code></pre>
+      </div><p>or enter a development shell to use the standard development tools provided by the flake:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix develop</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">cabal run</span></code></pre>
+      </div><p>The build process will use the <code>example.cabal</code> file and run the executable defined within it. A current limitation is that if your Cabal file contains multiple <code>executable</code> blocks, you can only assign one as the default package. This limitation also applies when using a <code>cabal.project</code>. To run a specific executable by name, use the following command <code>nix run .#another-example</code>. Below is an example cabal file defining two executables:</p>
+<h4 id="further-reading">Further reading</h4><ul>
+<li><a href="https://github.com/srid/haskell-template/tree/master">Example Haskell project with a development environment</a></li>
+</ul>
+<!-- -->
+
+<ul>
+<li><a href="https://github.com/srid/haskell-multi-nix/tree/master">Example cabal.project multi-package Haskell project</a></li>
+</ul>
+<!-- -->
+
+<ul>
+<li><a href="https://community.flake.parts/haskell-flake/start">Getting started with haskell-flake</a>.</li>
+</ul>
+<!-- -->
+
+<ul>
+<li><a href="https://community.flake.parts/haskell-flake/dependency">Overriding dependencies in a haskell-flake</a></li>
+</ul>
+<!-- -->
+
+<ul>
+<li><a href="https://flake.parts/options/haskell-flake">haskell-flake haskell-flake options reference</a></li>
+</ul>
+<h2 id="overrides">Overrides</h2><p>Since nixpkgs tries to maintain a single package set (based on the package set of stackage, while the remaining packages are picked from the latest version on Hackage) instead of using a solver to meet all version constraints for a specific project, it turns out that sometimes packages are broken (they can also be broken for various other reasons). However, you may be able to unbreak this package yourself.</p>
+<p>The first thing to check to try to unbreak a package is to check which GHC version is compatible with the package you want to use. You are maybe using a too old version… or too new. You can change the version of ghc using <code>haskell.packages.ghcXYZ</code> in place of <code>haskellPackages</code> as explained above.</p>
+<p>Then, you will surely need to change some packages. If you are using <code>developPackage</code> as explained above you can either use a normal override that will be described below or a simpler source override to override only the source as:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">pkgs.haskellPackages.developPackage {
+  <span class="hljs-attr">root</span> <span class="hljs-operator">=</span> <span class="hljs-symbol">./.</span>;
+  <span class="hljs-attr">source-overrides</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-comment"># Let&#x27;s say the GHC haskellPackages uses 1.6.0.0 and your test suite is incompatible with &gt;= 1.6.0.0</span>
+    <span class="hljs-attr">HUnit</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;1.5.0.0&quot;</span>;
+  };
+};  </code></pre>
+      </div><p>You can provide to <code>source-overrides</code> either:</p>
+<ul>
+<li>a version number (it will be <a href="https://github.com/NixOS/nixpkgs/blob/b794e83b395253fc46df958a0a12e1fc7b80d069/pkgs/development/haskell-modules/lib/compose.nix#L48">forwarded internally</a> to <code>callHackage</code>, note that you do not need to specify any hash as nix is using a package <code>all-cabal-hashes</code> that contains all the cabal hashes, see <code>callHackageDirect</code> below if your package is not yet in <code>all-cabal-hashes</code>)</li>
+<li>a path (that will be forwarded internally to <code>callCabal2nix</code>), you can use the usual fetchers like <code>fetchurl</code> or <code>fetchFromGitHub</code> to generate that path, or a local path if you want to use a local library.</li>
+</ul>
+<p>You can also use the more powerful override system to change any property of the derivation. This works for instance with <code>developPackage</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">pkgs.haskellPackages.developPackage {
+  <span class="hljs-attr">root</span> <span class="hljs-operator">=</span> <span class="hljs-symbol">./.</span>;
+  <span class="hljs-attr">overrides</span> <span class="hljs-operator">=</span> <span class="hljs-params">self:</span> <span class="hljs-params">super:</span> { <span class="hljs-comment"># self is the new package set, super is the old package set</span>
+    <span class="hljs-attr">random</span> <span class="hljs-operator">=</span> pkgs.haskell.lib.overrideCabal super.random {
+      <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;1.1&quot;</span>;
+      <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sha256-txikEFfiWjpx32k6sP4iY9SS51lnmzwv6m6jOxcdOlo=&quot;</span>; <span class="hljs-comment"># Use an empty string before knowing the hash</span>
+      <span class="hljs-attr">doCheck</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+    };
+  };
+};  </code></pre>
+      </div><p>but you can also use overrides with <code>ghcWithPackages</code>. This example will for instance create a nix-shell where the library quipper is available:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs <span class="hljs-operator">?</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> {} }:
+<span class="hljs-keyword">with</span> pkgs;
+pkgs.mkShell {
+  <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span>
+    <span class="hljs-keyword">let</span>
+      <span class="hljs-comment"># Quipper does not work with GHC 7.10 or 8.10. The versions currently supported are GHC 8.0, 8.2, 8.4, 8.6, and 8.8.</span>
+      <span class="hljs-attr">myHaskell</span> <span class="hljs-operator">=</span> pkgs.haskell.packages.ghc884.override {
+        <span class="hljs-attr">overrides</span> <span class="hljs-operator">=</span> <span class="hljs-params">self:</span> <span class="hljs-params">super:</span> {
+          <span class="hljs-comment"># fixedprec needs random 1.1 or below</span>
+          <span class="hljs-attr">random</span> <span class="hljs-operator">=</span> pkgs.haskell.lib.overrideCabal super.random {
+            <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;1.1&quot;</span>;
+            <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sha256-txikEFfiWjpx32k6sP4iY9SS51lnmzwv6m6jOxcdOlo=&quot;</span>;
+          };
+          <span class="hljs-attr">fixedprec</span> <span class="hljs-operator">=</span> haskell.lib.markUnbroken super.fixedprec;
+          <span class="hljs-attr">quipper</span> <span class="hljs-operator">=</span> haskell.lib.markUnbroken super.quipper;
+        };
+      };
+    <span class="hljs-keyword">in</span>
+      [
+        (myHaskell.ghcWithPackages (<span class="hljs-params">hpkgs:</span> [
+          hpkgs.quipper
+        ]))
+      ];
+}</code></pre>
+      </div><p>Note that <code>overrideCabal</code> takes as input the old package and the new attributes of the new package and outputs the new package. To see the full list of parameters that can be overridden, you can refer to <a href="https://github.com/NixOS/nixpkgs/blob/0ba44a03f620806a2558a699dba143e6cf9858db/pkgs/development/haskell-modules/generic-builder.nix#L13">this file</a>.</p>
+<p>Because some operations are very common, there exists some functions that call <code>overrideCabal</code> for you. For instance if you only want to disable checks and test suits for a package you can do <code>mypackage = pkgs.haskell.lib.dontCheck super.mypackage</code> and the above code also shows how to mark a package as unbroken. These functions are listed and documented in <a href="https://github.com/NixOS/nixpkgs/blob/master/pkgs/development/haskell-modules/lib/compose.nix">pkgs/development/haskell-modules/lib/compose.nix</a>.</p>
+<p>You can also use <code>callHackageDirect</code> (source and documentation <a href="https://github.com/NixOS/nixpkgs/blob/master/pkgs/development/haskell-modules/make-package-set.nix#L196">here</a>, you can see that it is a wrapper around <code>callCabal2nix</code>) to create a package using the hackage repository:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">m<span class="hljs-attr">yHaskell</span> <span class="hljs-operator">=</span> pkgs.haskellPackages.override {
+  <span class="hljs-attr">overrides</span> <span class="hljs-operator">=</span> <span class="hljs-params">self:</span> <span class="hljs-params">super:</span> {
+    <span class="hljs-attr">mypackage</span> <span class="hljs-operator">=</span> self.callHackageDirect {
+      <span class="hljs-attr">pkg</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;mypackage&quot;</span>;
+      <span class="hljs-attr">ver</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;0.1.2.3&quot;</span>;
+      <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;</span>; <span class="hljs-comment"># The first time it will give you an error, replace the &quot;&quot; with the hash given in the error</span>
+    } {};
+  };
+};</code></pre>
+      </div><p>Finally, if your package is not in hackage, you can simply use <a href="https://github.com/NixOS/nixpkgs/blob/0ba44a03f620806a2558a699dba143e6cf9858db/pkgs/development/haskell-modules/make-package-set.nix#L228"><code>callCabal2nix</code></a>, or the more advanced <a href="https://github.com/NixOS/nixpkgs/blob/0ba44a03f620806a2558a699dba143e6cf9858db/pkgs/development/haskell-modules/make-package-set.nix#L212">callCabal2nixWithOptions</a>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">m<span class="hljs-attr">ypackage</span> <span class="hljs-operator">=</span> self.callCabal2nix <span class="hljs-string">&quot;mypackage&quot;</span> <span class="hljs-symbol">/path/to/package/or/fetcher</span> {};</code></pre>
+      </div><p>This can be useful also when your package needs some libraries.</p>
+<h2 id="limitations">Limitations</h2><h3 id="cabal2nix">cabal2nix</h3><p>When using the <code>cabal2nix</code> tool, Nix does not pull a cabal package by respecting the constraint specified in the cabal file (see <a href="https://github.com/chrissound/Cabal2NixLimitationExample">example</a>). Issue is discussed <a href="https://stackoverflow.com/questions/57441156/pulling-in-specific-haskell-packages-cabal-dependencies-with-nix">here</a>. You should be using <code>callCabal2nix</code> anyway.</p>
+<h3 id="ifd-and-haskell">IFD and Haskell</h3><p><code>callCabal2nix</code>, which is implicitly used for building Haskell projects, uses IFD. Refer to this <a href="https://github.com/NixOS/templates/issues/28">github issue</a> and <a href="https://discourse.nixos.org/t/another-simple-flake-for-haskell-development/18164/6">discourse thread</a> for additional context. This means that since IFD is disabled by default in certain nix commands,<a href="https://github.com/NixOS/nix/pull/5253">1</a> the following commands will be broken for Haskell projects whose flake output specifies multiple system attributes:</p>
+<ul>
+<li><code>nix flake show</code></li>
+<li><code>nix flake check</code></li>
+</ul>
+<h3 id="ghcup">GHCup</h3><p><a href="https://www.haskell.org/ghcup/">GHCup</a> does not work properly on NixOS out of the box. NixOS cannot run dynamically linked executables built for generic Linux environments due to its runtime linker setup. For details and a workaround, see <a href="https://nix.dev/guides/faq#how-to-run-non-nix-executables">nix.dev&#39;s explanation of stub-ld</a>.</p>
+<p>In most cases there is little reason to use GHCup when working within a Nix-based system, as Nixpkgs can achieve the same goals such as managing multiple GHC versions and other Haskell tooling.</p>
+<h2 id="faq-and-resources">FAQ and resources</h2><ul>
+<li><strong>Official Docs:</strong> <a href="https://nixos.org/manual/nixpkgs/unstable/#haskell"><strong>The Haskell section in the nixpkgs manual</strong></a></li>
+</ul>
+<!-- -->
+
+<ul>
+<li><a href="https://nixos.asia/en/nixify-haskell-nixpkgs"><strong>Nixifying a Haskell project using nixpkgs</strong></a> explains how to use Nix to package and develop Haskell projects using nothing but nixpkgs.</li>
+</ul>
+<!-- -->
+
+<ul>
+<li><a href="https://github.com/mhwombat/nix-for-numbskulls/blob/78bcc186f79931c0e4a1e445e2f6b1f12f6d46be/Haskell/ss-haskell-dev.md"><strong>Super-Simple Haskell Development with Nix</strong></a> (and <a href="https://discourse.nixos.org/t/super-simple-haskell-development-with-nix/14287/2">discussion</a> that provides interesting alternative methods together with there pro and cons)</li>
+</ul>
+<!-- -->
+
+<ul>
+<li><a href="https://discourse.nixos.org/t/nix-haskell-development-2020/6170"><strong>Nix Haskell Development (2020)</strong></a></li>
+</ul>
+<!-- -->
+
+<ul>
+<li><a href="https://discourse.nixos.org/t/haskellpackages-stm-containers-fails-to-build/5416/4"><strong>How are Haskell packages managed in nixpkgs?</strong></a></li>
+</ul>
+<!-- -->
+
+<ul>
+<li><a href="https://www.youtube.com/watch?v=KLhkAEk8I20"><strong>How to fix broken Haskell packages?</strong> (video)</a></li>
+</ul>
+<p><a href="category:Languages" class="wikilink" title="Category:Languages">Category:Languages</a> <a href="category:Haskell" class="wikilink" title="Category:Haskell">Category:Haskell</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FAQ/Bare Metal Deployment</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/FAQ">FAQ</a><span aria-hidden="true"> / </span>Bare Metal Deployment</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: FAQ/Bare Metal Deployment -->
+
+<p>Non-Nix bare metal deployments are typically maintained with a &quot;converging&quot; configuration manager like Puppet or Chef. NixOS&#39;s <a href="https://nixos.org/nixos/manual/index.html#sec-writing-modules">module system</a> replaces these tools for per-host configuration mechanisms, like declaring various services, monitoring options, and configuration file contents. This makes the installation and configuration of your deployment fully declarative.</p>
+<p>This module system can also be used to easily create virtual machines equivalent to the finally deployed image. This VM can then be used to run testing to ensure the service would behave as required.</p>
+<p>Hydra is the Nix ecosystem&#39;s build server, which can provide a nice breakdown of dependencies and more naturally (when compared to Jenkins etc.) understands the robust build dependency tree inherent to Nix&#39;s build model: <a href="https://hydra.nixos.org/"><a href="https://hydra.nixos.org/">https://hydra.nixos.org/</a></a> and <a href="https://github.com/nixos/hydra/"><a href="https://github.com/nixos/hydra/">https://github.com/nixos/hydra/</a></a>.</p>
+<p>For example, this page tracks the specific tests required to pass before a new version of NixOS is released: <a href="https://hydra.nixos.org/job/nixos/trunk-combined/tested#tabs-constituents"><a href="https://hydra.nixos.org/job/nixos/trunk-combined/tested#tabs-constituents">https://hydra.nixos.org/job/nixos/trunk-combined/tested#tabs-constituents</a></a>.</p>
+<p>The VMs that are built from a machine&#39;s configuration can easily be integrated with <a href="https://nixos.org/nixos/manual/index.html#sec-nixos-tests">NixOS&#39;s test infrastructure</a> and Hydra to automatically verify package updates and system configurations behave as expected.</p>
+<p>These integration tests and builds can be robustly distributed across a build fleet using <a href="https://nix.dev/manual/nix/stable/advanced-topics/distributed-builds">Nix&#39;s built in distributed build mechanism</a>. Unlike Jenkins and many other CI tools, the remote builders require no additional setup or specific software installed, beyond the standard Nix daemon configuration.</p>
+<p>NixOps can be used to implement orchestration, though for dedicated hardware is not yet capable of handling the provisioning step of the hardware.</p>
+<p>Handling initial hardware intake and burn-in would need to be handled separately, however NixOS&#39;s support for generating PXE images should make this not too difficult.</p>
+<p>Kickstart&#39;s disk provisioning portion doesn&#39;t have an equal in the NixOS ecosystem, however can be accomplished using PXE-boot images and auto-run boot up phases which run disk formatting steps. For some prior work, check out <a href="https://github.com/grahamc/packet-provision-nixos-ipxe/"><a href="https://github.com/grahamc/packet-provision-nixos-ipxe/">https://github.com/grahamc/packet-provision-nixos-ipxe/</a></a>. The parts around system configuration and package installation is completely and thoroughly covered by the module system and system configuration options that exist.</p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

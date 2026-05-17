@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>U-Boot</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / U-Boot</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: U-Boot -->
+
+<p><a href="https://www.u-boot.org/">U-Boot</a> is a common <em><strong>platform firmware</strong></em> implementation for embedded and embedded-like devices.</p>
+<p>It may also be used as a bootloader, but with modern U-Boot, <a href="https://mirror.nixoscn.org/wiki/U-Boot/UEFI" class="wikilink" title="UEFI">UEFI</a> boot is generally possible too.</p>
+<h2 id="u-boot-in-nixpkgs">U-Boot in Nixpkgs</h2><p>Mainline U-Boot is packaged in Nixpkgs.</p>
+<p>- </p>
+<p>Vendor forks of U-Boot are generally not packaged in Nixpkgs, and generally unwelcome.</p>
+<p>U-Boot may be patched for compatibility reasons mainly, and work should be taken to send them to mainline U-Boot.</p>
+<h3 id="building-a-packaged-u-boot">Building a packaged U-Boot</h3><p>You need to know two things:</p>
+<ol>
+<li>The target ISA (<em>Instruction Set Architecture</em>)</li>
+<li>If you need to cross-compile</li>
+</ol>
+<p>The target ISA is the ISA of the <em>target board</em>. This would be defined by the CPU used on the board.</p>
+<p>You will need to cross-compile if you are not building on the same <em>architecture</em> as the target board. For example, if you are building for an <code>AArch64</code> <em>target board</em> on a standard <code>x86_64</code> laptop, you would need to cross-compile.</p>
+<p>With those facts known, you can build the appropriate attribute from a Nixpkgs checkout.</p>
+<p>The general format is:</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell-session hljs">$ nix-build -A [pkgsCross.$cross_name.]$packageName
+$ # Where the part in [brackets] is needed for cross-compilation.</code></pre>
+      </div><table>
+<thead>
+<tr>
+<th>Architecture</th>
+<th>Package Set</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>aarch64</code></td>
+<td><code>aarch64-multiplatform</code></td>
+</tr>
+<tr>
+<td><code>armv7l</code></td>
+<td><code>armv7l-hf-multiplatform</code></td>
+</tr>
+<tr>
+<td><code>armv6l</code></td>
+<td><code>raspberryPi</code> <em>[sic]</em></td>
+</tr>
+</tbody></table>
+<p><code>pkgsCross</code> attribute name cheat sheet</p>
+<h4 id="example-build">Example build</h4><p>The following examples use the U-Boot package for a <em>LibreTech CC ‘LePotato’</em>, which uses an <em>S905X</em> SoC. This SoC uses an <code>AArch64</code> ISA.</p>
+<p>To build the package with cross-compilation, you need to prefix with the correct cross-compilation package set:</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell-session hljs">$ # Example running on x86_64.
+$ uname -m 
+x86_64
+$ nix-build -A pkgsCross.aarch64-multiplatform.ubootLibreTechCC</code></pre>
+      </div><p>If, instead, you are building natively (same architecture) you can refer to the package attribute name directly:</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell-session hljs">$ # Example output for an AArch64 system.
+$ uname -m 
+aarch64
+$ nix-build -A ubootLibreTechCC</code></pre>
+      </div><h3 id="installing-u-boot">Installing U-Boot</h3><p>You will need to consult either the <a href="https://docs.u-boot.org/">Official U-Boot documentation</a>, or a board-specific page to find out how to use the produced output.</p>
+<p>The large variety of ecosystems supported by U-Boot makes it impossible to document succinctly.</p>
+<h4 id="sbc-and-related-projects-in-nixos">SBC and related projects in NixOS</h4><ul>
+<li><a href="https://mirror.nixoscn.org/wiki/U-Boot/NixOS_on_ARM" class="wikilink" title="NixOS on ARM">NixOS on ARM</a></li>
+<li><a href="https://mirror.nixoscn.org/wiki/U-Boot/NixOS_on_RISCV/VisionFive_2" class="wikilink" title="NixOS on RISCV">NixOS on RISCV</a></li>
+</ul>
+<h2 id="using-nixos-with-u-boot">Using NixOS with U-Boot</h2><p>With U-Boot, NixOS currently still assumes use of <a href="https://docs.u-boot.org/en/v2024.04/develop/distro.html">U-Boot&#39;s Generic Distro Configuration Concept</a> as the mechanism for discoverable boot. The preferred scheme is <em>extlinux-compatible</em>. This is how the kernel <code>Image</code>, <code>initrd</code>, dtb, and Kernel command-line arguments are provided with complete support for the lifecycles of generations.</p>
+<p>Note that U-Boot is moving to <a href="https://docs.u-boot.org/en/v2024.04/develop/bootstd.html"><em>U-Boot Standard Boot</em></a>. How it affects the assumptions from NixOS is still not documented.</p>
+<p>Booting through UEFI with U-Boot should work. Booting with UEFI is tentatively supported, with intent of being the only fully supported boot method in the future. See <a href="https://mirror.nixoscn.org/wiki/U-Boot/NixOS_on_ARM/UEFI" class="wikilink" title="NixOS on ARM/UEFI">NixOS on ARM/UEFI</a>, which describes part of the drawbacks.</p>
+<h3 id="quick-overview-about-the-generic-distro-configuration-support">Quick overview about the Generic Distro Configuration support</h3><p>U-Boot is scripted to scan all attached storage devices and partitions, and look for a file named <code>/extlinux/extlinux.conf</code> or <code>/boot/extlinux/extlinux.conf</code>. This will will be generated by NixOS when configured with .</p>
+<p>The partition also needs to <strong>have its &quot;bootable&quot; flag set</strong>. This is true for <em>both MBR and GPT partitioning schemes</em>.</p>
+<h2 id="vendor-u-boot">Vendor U-Boot</h2><p>The term <em>vendor U-Boot</em> means the provided pre-built U-Boot binaries and the source as well. It generally implies use of an older fork of U-Boot from a <em>BSP</em> (<em>Board Support Package</em>).</p>
+<p>Vendor U-Boot may or may not work to boot and use NixOS.</p>
+<p>The answer is actually really complicated, and depends not only about U-Boot, but the intended Linux kernel to be booted, and the boot method in use.</p>
+<p>The <code>buildUBoot</code> implementation in Nixpkgs may or may not work to build a vendor U-Boot, and this usage is unsupported.</p>
+<p>A few vendors ship good pre-built modern U-Boot implementations. Booting NixOS with those <em>should work</em>. If it does not, things may need to be fixed on any of the end. But also, this depends on the kernel, and boot method in use.</p>
+<h2 id="other-u-boot-distributions">Other U-Boot distributions</h2><p>There exists other pre-built U-Boot distributions. As long as they follow the mainline U-Boot semantics, and are close enough in age to the current releases, they should work to boot NixOS.</p>
+<h3 id="tow-boot">Tow-Boot</h3><p>Stock NixOS should be assumed to work with Tow-Boot, always depending on the boot method and kernel in use.</p>
+<p><a href="https://tow-boot.org/">Tow-Boot</a> is currently used as a reference as the only distro-agnostic U-Boot build, for support purposes.</p>
+<h2 id="see-also">See also</h2><ul>
+<li><a href="https://mirror.nixoscn.org/wiki/U-Boot/NixOS_on_ARM/UEFI" class="wikilink" title="NixOS on ARM/UEFI">NixOS on ARM/UEFI</a></li>
+<li><a href="https://source.denx.de/u-boot/u-boot">Official U-Boot source repo</a></li>
+<li><a href="https://docs.u-boot.org/">Official U-Boot documentation</a></li>
+</ul>
+<p><a href="category:Booting" class="wikilink" title="Category:Booting">Category:Booting</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

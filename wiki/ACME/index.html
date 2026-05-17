@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ACME</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / ACME</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: ACME -->
+
+<p>NixOS supports automatic domain validation &amp; certificate retrieval and renewal using the ACME protocol. Any provider can be used, but by default NixOS uses Let&#39;s Encrypt. The alternative ACME client <a href="https://go-acme.github.io/lego/">lego</a> is used under the hood.</p>
+<h1 id="basics">Basics</h1><p>This process should generate three key files. The naming and usage of the three key files is common to all programs and services in NixOS.</p>
+<p>We let <code>sslCertDir = config.security.acme.certs.${domainName}.directory;</code> in the following paragraph.</p>
+<p>The three key files and their location are</p>
+<ul>
+<li><code>sslServerCert = &quot;/var/host.cert&quot;;</code> Path to server SSL certificate. Located at <code>&quot;${sslCertDir}/fullchain.pem&quot;</code>.</li>
+</ul>
+<!-- -->
+
+<ul>
+<li><code>sslServerChain = &quot;/var/ca.pem&quot;;</code> Path to server SSL chain file. Located at <code>&quot;${sslCertDir}/chain.pem&quot;</code>.</li>
+</ul>
+<!-- -->
+
+<ul>
+<li><code>sslServerKey = &quot;/var/host.key&quot;;</code> Path to server SSL certificate key. Located at <code>&quot;${sslCertDir}/key.pem&quot;</code>.</li>
+</ul>
+<p>The <code>useACMEHost</code> option can be used with a wide variety of services<a href="https://search.nixos.org/options?channel=25.05&amp;query=useACMEHost">1</a>, which simplifies the configuration and enables the automatic checking of correct private and public key permissions during nixos-rebuild.</p>
+<h1 id="obtaining-a-new-certificate">Obtaining a new certificate</h1><h2 id="basics">Basics</h2><p>You need to agree to the Terms of Service, provide an email address, provide a domain name, and, if any, extra domain names.</p>
+<p>DNS challenge supports obtaining certificates for wildcard domains, such as <code>*.example.org</code>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-keyword">let</span>
+  <span class="hljs-attr">domainName</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;example.org&quot;</span>;
+<span class="hljs-keyword">in</span>
+{
+  <span class="hljs-attr">security.acme</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">acceptTerms</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">defaults.email</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;admin@<span class="hljs-subst">${domainName}</span>&quot;</span>;
+    <span class="hljs-attr">certs</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-string">&quot;<span class="hljs-subst">${domainName}</span>&quot;</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">group</span> <span class="hljs-operator">=</span> config.services.nginx.group;
+        <span class="hljs-attr">extraDomainNames</span> <span class="hljs-operator">=</span> [
+          <span class="hljs-string">&quot;mail.<span class="hljs-subst">${domainName}</span>&quot;</span>
+          <span class="hljs-string">&quot;www.<span class="hljs-subst">${domainName}</span>&quot;</span>
+        ];
+      };
+    };
+  };
+}</code></pre>
+      </div><h2 id="http-challenge">HTTP challenge</h2><p>To use HTTP challenge, you need to have your DNS record pointing to this computer. You also need to enable a web server and allow plaintext traffic on port 80. This example is based on the previous section:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">security.acme</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">defaults.webroot</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/var/lib/acme/acme-challenge/&quot;</span>;
+    <span class="hljs-comment"># We are using nginx as webserver, therefore set correct key permissions</span>
+    certs.${domainName}.group <span class="hljs-operator">=</span> config.services.nginx.group;
+  };
+
+  <span class="hljs-comment"># for acme plain http challenge</span>
+  <span class="hljs-attr">networking.firewall.allowedTCPPorts</span> <span class="hljs-operator">=</span> [ <span class="hljs-number">80</span> ];
+
+  <span class="hljs-comment"># webserver for http challenge</span>
+  <span class="hljs-attr">services.nginx</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    virtualHosts.${domainName} <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">forceSSL</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">useACMEHost</span> <span class="hljs-operator">=</span> domainName;
+      locations.<span class="hljs-string">&quot;/.well-known/&quot;</span>.root <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/var/lib/acme/acme-challenge/&quot;</span>;
+    };
+  };</code></pre>
+      </div><h2 id="dns-challenge">DNS challenge</h2><p>If you want to use the DNS challenge with nginx, you should also set <a href="https://search.nixos.org/options?show=services.nginx.virtualHosts.%3Cname%3E.acmeRoot">service.nginx.virtualHosts.<name>.acmeRoot</a> to <code>null</code>. <sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/ACME#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup></p>
+<h3 id="with-inwx-as-dns-provider">With inwx as DNS provider</h3><p>Following example setup generates certificates using DNS validation. <a href="https://letsencrypt.org/repository/">Let&#39;s Encrypt ToS</a> has to be accepted. Further the contact mail <code>admin+acme@example.com</code> is defined.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ecurity.acme</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">acceptTerms</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">defaults.email</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;admin+acme@example.org&quot;</span>;
+  certs.<span class="hljs-string">&quot;mx1.example.org&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">dnsProvider</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;inwx&quot;</span>;
+    <span class="hljs-comment"># Supplying password files like this will make your credentials world-readable</span>
+    <span class="hljs-comment"># in the Nix store. This is for demonstration purpose only, do not use this in production.</span>
+    <span class="hljs-attr">environmentFile</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.writeText <span class="hljs-string">&quot;inwx-creds&quot;</span> <span class="hljs-string">&#x27;&#x27;
+      INWX_USERNAME=xxxxxxxxxx
+      INWX_PASSWORD=yyyyyyyyyy
+    &#x27;&#x27;</span>}</span>&quot;</span>;
+  };
+};</code></pre>
+      </div><p>Certificates are getting generated for the domain <code>mx1.example.org</code> using the DNS provider <code>inwx</code>. See [<a href="https://go-acme.github.io/lego/dns">https://go-acme.github.io/lego/dns</a> upstream documentation] on available providers and their specific configuration for the <code>credentialsFile</code> option.</p>
+<h3 id="with-cloudflare-as-dns-provider">With Cloudflare as DNS provider</h3><p>The next example issues a wildcard certificate and uses Cloudflare for validation. We&#39;re also adding the group &quot;nginx&quot; here so that the certificate files can be used by nginx later on.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ecurity.acme</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">acceptTerms</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">defaults.email</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;admin@example.org&quot;</span>;
+  <span class="hljs-attr">certs</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-string">&quot;example.org&quot;</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">domain</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;*.example.org&quot;</span>;
+      <span class="hljs-attr">group</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nginx&quot;</span>;
+      <span class="hljs-attr">dnsProvider</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;cloudflare&quot;</span>;
+      <span class="hljs-comment"># location of your CLOUDFLARE_DNS_API_TOKEN=[value]</span>
+      <span class="hljs-comment"># https://www.freedesktop.org/software/systemd/man/latest/systemd.exec.html#EnvironmentFile=</span>
+      <span class="hljs-attr">environmentFile</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/home/admin/cloudflare&quot;</span>;
+    };
+  };
+};</code></pre>
+      </div><h2 id="tls-challenge">TLS challenge</h2><p>Todo.</p>
+<h1 id="integration-with-service-modules">Integration with service modules</h1><h2 id="setting-file-permission-with-postrun">Setting file permission with postRun</h2><p>Use the <code>security.acme.certs.*.postRun</code> to set permissions on the key directory and the key files:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">security.acme.certs.${domainName}.postRun <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+  # set permission on dir
+  <span class="hljs-subst">${pkgs.acl}</span>/bin/setfacl -m \
+  u:nginx:rx,u:turnserver:rx,u:prosody:rx,u:dovecot2:rx,u:postfix:rx \
+  /var/lib/acme/<span class="hljs-subst">${domainName}</span>
+
+  # set permission on key file
+  <span class="hljs-subst">${pkgs.acl}</span>/bin/setfacl -m \
+  u:nginx:r,u:turnserver:r,u:prosody:r,u:dovecot2:r,u:postfix:r \
+  /var/lib/acme/<span class="hljs-subst">${domainName}</span>/*.pem
+&#x27;&#x27;</span>;</code></pre>
+      </div><h2 id="reload-services-after-renewal">Reload services after renewal</h2><div class="code-container">
+        
+        <pre><code class="language-nix hljs">security.acme.certs.${domainName}.reloadServices <span class="hljs-operator">=</span> [
+  <span class="hljs-string">&quot;prosody&quot;</span>
+  <span class="hljs-string">&quot;coturn&quot;</span>
+  <span class="hljs-string">&quot;nginx&quot;</span>
+  <span class="hljs-string">&quot;dovecot2&quot;</span>
+  <span class="hljs-string">&quot;postfix&quot;</span>
+];</code></pre>
+      </div><h2 id="using-useacmehost">Using useACMEHost</h2><p>Many service modules support obtaining certificates. But if you were to configure certificate options separately for each service module, it would be time-consuming and risks hitting the certificate renewal limits of the service provider.</p>
+<p>Instead, centrally manage certificate options within the security.acme module; then point other services to security.acme with <code>useACMEHost</code> option.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">security.acme.certs.<span class="hljs-string">&quot;example.org&quot;</span>.extraDomainNames <span class="hljs-operator">=</span> [
+  <span class="hljs-string">&quot;syncplay.example.org&quot;</span>
+  <span class="hljs-string">&quot;reposilite.example.org&quot;</span>
+  <span class="hljs-string">&quot;site2.example.org&quot;</span>
+];
+
+<span class="hljs-attr">services.syncplay.useACMEHost</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;example.org&quot;</span>;
+<span class="hljs-attr">services.reposilite.useACMEHost</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;example.org&quot;</span>;
+services.nginx.virtualHosts.<span class="hljs-string">&quot;site2.example.org&quot;</span>.useACMEHost <span class="hljs-operator">=</span> <span class="hljs-string">&quot;example.org&quot;</span>;</code></pre>
+      </div><h1 id="using-let-39-s-encrypt-staging">Using Let&#39;s Encrypt Staging</h1><p>For testing your Let&#39;s Encrypt configuration it makes sense to use their <a href="https://letsencrypt.org/docs/staging-environment/">staging environment</a>, because it offers less stringent rate limits.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ecurity.acme.defaults.server</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://acme-staging-v02.api.letsencrypt.org/directory&quot;</span>;</code></pre>
+      </div><h1 id="see-also">See also</h1><ul>
+<li>NixOS manual on <a href="https://nixos.org/manual/nixos/stable/index.html#module-security-acme">SSL/TLS Certificates with ACME</a></li>
+</ul>
+<p><a href="category:_Server" class="wikilink" title="Category: Server">Category: Server</a> <a href="category:_Networking" class="wikilink" title="Category: Networking">Category: Networking</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p>From <a href="https://nixos.org/manual/nixos/stable/#module-security-acme-config-dns-with-vhosts">NixOS Manual: <em>Using DNS validation with web server virtual hosts</em></a>. <a href="https://github.com/NixOS/nixpkgs/issues/210807">Issue #210807</a> provides some detail on why this is needed. <a href="https://mirror.nixoscn.org/wiki/ACME#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Yubikey</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Yubikey</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Yubikey -->
+
+<p>This article describes how you can integrate <a href="https://yubico.com/">Yubico</a>&#39;s <a href="wikipedia:YubiKey" class="wikilink" title="YubiKey">YubiKey</a> with NixOS.</p>
+<h2 id="gpg-and-ssh">GPG and SSH</h2><p>Based on <a href="https://github.com/drduh/YubiKey-Guide">a guide</a> by <a href="https://github.com/drduh">@drduh</a>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.udev.packages</span> <span class="hljs-operator">=</span> [ pkgs.yubikey-personalization ];
+
+<span class="hljs-attr">programs.gnupg.agent</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">enableSSHSupport</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+};</code></pre>
+      </div><h2 id="logging-in">Logging-in</h2><p>To use your yubikey as a user login or for sudo access you&#39;ll have to install a PAM (Pluggable Authentication Module) for your yubikey.</p>
+<h3 id="pam_u2f">pam_u2f</h3><p>The <code>pam_u2f</code> module implements the U2F (universal second factor) protocol. The protocol was initially developed by Yubico, Google and NXP and is nowadays hosted as an open-standard by the FIDO Alliance. All current and most legacy Yubikeys support the U2F protocol making this the preferred way to use Yubikeys for user login.</p>
+<p>Use this page to check whether your Yubikey supports <strong>FIDO U2F</strong> before starting: <a href="https://www.yubico.com/products/identifying-your-yubikey/">https://www.yubico.com/products/identifying-your-yubikey/</a></p>
+<p>1. Connect your Yubikey</p>
+<p>2. Create an authorization mapping file for your user. The authorization mapping file is like <code>~/.ssh/known_hosts</code> but for Yubikeys.</p>
+<ol>
+<li><code>nix-shell -p pam_u2f</code></li>
+<li><code>mkdir -p ~/.config/Yubico</code></li>
+<li><code>pamu2fcfg &gt; ~/.config/Yubico/u2f_keys</code></li>
+<li>add another yubikey (optional): <code>pamu2fcfg -n &gt;&gt; ~/.config/Yubico/u2f_keys</code></li>
+</ol>
+<p>3. Verify that <code>~/.config/Yubico/u2f_keys</code> contains one line in the following style:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">&lt;username&gt;:&lt;KeyHandle1&gt;,&lt;UserKey1&gt;,&lt;CoseType1&gt;,&lt;Options1&gt;:&lt;KeyHandle2&gt;,&lt;UserKey2&gt;,&lt;CoseType2&gt;,&lt;Options2&gt;:...</code></pre>
+      </div><p>4. Enable the u2f PAM module for login and sudo requests</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ecurity.pam.services</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">login.u2fAuth</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">sudo.u2fAuth</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+};</code></pre>
+      </div><p>PAM U2F Docs: <a href="https://developers.yubico.com/pam-u2f/">https://developers.yubico.com/pam-u2f/</a></p>
+<p>5. Verify PAM configuration</p>
+<p>See chapter <em>Test PAM configuration</em> an the end of this page.</p>
+<p>6. (optional) Only allow Yubikey for login and sudo authentication</p>
+<p>If you don&#39;t want to be able to use your password to login to your user account or access sudo, you can modify the pam service as follows.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs">  <span class="hljs-attr">security.pam.services</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">login</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">u2fAuth</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">unixAuth</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+    };
+    <span class="hljs-attr">sudo</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">u2fAuth</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">unixAuth</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+    };
+  };</code></pre>
+      </div><h3 id="yubico-pam">yubico-pam</h3><p>The <code>yubico-pam</code> module uses a OTP (one time password) challenge response to authenticate users.</p>
+<p>Use this page to check whether your Yubikey supports <strong>Yubico OTP</strong> before starting: <a href="https://www.yubico.com/products/identifying-your-yubikey/">https://www.yubico.com/products/identifying-your-yubikey/</a></p>
+<p>You&#39;ll first need to install the necessary udev packages to your NixOS configuration:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.udev.packages</span> <span class="hljs-operator">=</span> [ pkgs.yubikey-personalization ];</code></pre>
+      </div><p>You can program the Yubikey for challenge-response on slot 2 and setup the current user for logon:</p>
+<ol>
+<li><code>nix-shell -p yubico-pam -p yubikey-manager</code></li>
+<li><code>ykman otp chalresp --touch --generate 2</code></li>
+<li><code>ykpamcfg -2 -v</code></li>
+</ol>
+<p>Finally, you can enable challenge-response logins with the following commands:</p>
+<p><strong>1.)</strong> run: <code>nix-shell --command &#39;ykinfo -s&#39; -p yubikey-personalization</code> to get the serial code and enter it into <code>yubico.id = [ &quot;12345678&quot; ];</code></p>
+<p><strong>2.)</strong></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ecurity.pam.yubico</span> <span class="hljs-operator">=</span> {
+   <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+   <span class="hljs-attr">debug</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+   <span class="hljs-attr">mode</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;challenge-response&quot;</span>;
+   <span class="hljs-attr">id</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;12345678&quot;</span> ];
+};</code></pre>
+      </div><p>To automatically login, without having to touch the key, omit the <code>--touch</code> option.</p>
+<p>Having that, you should be able to use your Yubikey to login and for sudo. You can also set <code>security.pam.yubico.control</code> to &quot;required&quot; in order to have multi-factor authentication.</p>
+<p>See also: <a href="https://developers.yubico.com/yubico-pam/Authentication_Using_Challenge-Response.html">https://developers.yubico.com/yubico-pam/Authentication_Using_Challenge-Response.html</a>.</p>
+<h2 id="smartcard-mode">Smartcard mode</h2><p>To use the smart card mode (CCID) of Yubikey, you will need the PCSC-Lite daemon:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.pcscd.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><p>Please note that the PCSC-Lite daemon <a href="https://ludovicrousseau.blogspot.com/2019/06/gnupg-and-pcsc-conflicts.html">sometimes conflicts</a> with gpg-agent. This can be solved by putting the line <code>disable-ccid</code> into <code>~/.gnupg/scdaemon.conf</code>. There is also a <a href="https://nix-community.github.io/home-manager/options.xhtml#opt-programs.gpg.scdaemonSettings">Home Manager Option</a> for that.</p>
+<h2 id="otp">OTP</h2><p>In order to manage OTP keys, you should install the <code>yubioath-flutter</code> package in your profile. This application will also require both the udev rules as well as pcscd enabled.</p>
+<h2 id="key-generation">Key generation</h2><p>It is best practice to create the keys on a system without network connection to avoid leakages. This <a href="https://github.com/drduh/YubiKey-Guide">guide</a> explains in depth the steps needed for that. There is also a <a href="https://github.com/Mic92/dotfiles/blob/ed0ac1af816a7ebb7c5d4f040b77fa88e3ec1c79/nixos/images/yubikey-image.nix">nix expression</a> that creates a nixos live image with all necessary dependencies pre-installed. The image can be created with the <a href="https://github.com/nix-community/nixos-generators">nixos-generator tool</a> and depending on the image copied onto a usb stick or executed directly using <code>kexec</code></p>
+<h2 id="multiple-keys">Multiple keys</h2><p>If you want to use GPG with multiple keys, containing the same subkeys, you have to do this routine when swapping the key</p>
+<ol>
+<li><code>killall gpg-agent</code></li>
+<li><code>rm -r ~/.gnupg/private-keys-v1.d/</code></li>
+<li>Plug in the new YubiKey</li>
+<li><code>gpg --card-status</code> (optional, to see if key is visibile)</li>
+</ol>
+<h2 id="test-pam-configuration">Test PAM configuration</h2><p>Test user and/or sudo authentication. Replace <username> by your users account name.</p>
+<ol>
+<li><code>nix-shell -p pamtester</code></li>
+<li><code>pamtester login </code><username><code> authenticate</code></li>
+<li><code>pamtester sudo </code><username><code> authenticate</code></li>
+</ol>
+<p>If the result is <code>pamtester: successfully authenticated</code> then everything should work as expected.</p>
+<h2 id="locking-the-screen-when-a-yubikey-is-unplugged">Locking the screen when a Yubikey is unplugged</h2><p>This can be achieved with a <code>udev</code> rule, which can be added to your <code>configuration.nix</code></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.udev.extraRules</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+      ACTION==&quot;remove&quot;,\
+       ENV{ID_BUS}==&quot;usb&quot;,\
+       ENV{ID_MODEL_ID}==&quot;0407&quot;,\
+       ENV{ID_VENDOR_ID}==&quot;1050&quot;,\
+       ENV{ID_VENDOR}==&quot;Yubico&quot;,\
+       RUN+=&quot;<span class="hljs-subst">${pkgs.systemd}</span>/bin/loginctl lock-sessions&quot;
+  &#x27;&#x27;</span>;</code></pre>
+      </div><p>This will lock all sessions if any Yubikey matching the rule is unplugged.</p>
+<p>If this does not work with your Yubikey take a look at the output of this command when you plug-in/unplug your Yubikey <code>udevadm monitor --udev --environment</code> and adjust the rule accordingly. This rule should work with most Yubikey 5 series models. The Yubikey Security series <code>ID_MODEL_ID</code> is <code>0402</code>.</p>
+<h2 id="links">Links</h2><ul>
+<li><a href="https://rzetterberg.github.io/yubikey-gpg-nixos.html">GPG-keys for SSH authentication on NixOS</a></li>
+<li><a href="https://mirror.nixoscn.org/wiki/Yubikey/Yubikey_based_Full_Disk_Encryption_(FDE)_on_NixOS" class="wikilink" title="Yubikey_based_Full_Disk_Encryption_(FDE)_on_NixOS">Yubikey_based_Full_Disk_Encryption_(FDE)_on_NixOS</a></li>
+</ul>
+<p><a href="category:Cookbook" class="wikilink" title="Category:Cookbook">Category:Cookbook</a> <a href="category:Security" class="wikilink" title="Category:Security">Category:Security</a> <a href="category:Hardware" class="wikilink" title="Category:Hardware">Category:Hardware</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

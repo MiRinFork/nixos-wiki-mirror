@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MediaWiki</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / MediaWiki</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: MediaWiki -->
+
+<p><a href="https://mediawiki.org/"></a> (<a href="wikipedia:en:```{{PAGENAME}}```" class="wikilink" title="wikipedia:en:```
+{{PAGENAME}}
+```">wikipedia:en:```
+{{PAGENAME}}</p>
+<div class="code-container">
+        <div class="code-header"><span class="code-filename">is available as a <a href="https://mirror.nixoscn.org/wiki/MediaWiki/module" class="wikilink" title="module">module</a>.</span></div>
+        <pre><code class="language-</a>) hljs">
+## Configuration Examples
+
+### Small Configuration
+
+``` nix
+services.mediawiki = {
+  enable = true;
+  name = &quot;Sample MediaWiki&quot;;
+  httpd.virtualHost = {
+    hostName = &quot;example.com&quot;;
+    adminAddr = &quot;admin@example.com&quot;;
+  };
+  # Administrator account username is admin.
+  # Set initial password to &quot;cardbotnine&quot; for the account admin.
+  passwordFile = pkgs.writeText &quot;password&quot; &quot;cardbotnine&quot;;
+  extraConfig = ''
+    # Disable anonymous editing
+    $wgGroupPermissions['*']['edit'] = false;
+  '';
+
+  extensions = {
+    # some extensions are included and can enabled by passing null
+    VisualEditor = null;
+
+    # https://www.mediawiki.org/wiki/Extension:TemplateStyles
+    TemplateStyles = pkgs.fetchzip {
+      url = &quot;https://extdist.wmflabs.org/dist/extensions/TemplateStyles-REL1_40-5c3234a.tar.gz&quot;;
+      hash = &quot;sha256-IygCDgwJ+hZ1d39OXuJMrkaxPhVuxSkHy9bWU5NeM/E=&quot;;
+    };
+  };
+};</code></pre>
+      </div><h2 id="web-server">Web Server</h2><p>By default, the <code>services.mediawiki</code> module creates a <code>services.httpd.virtualHost</code> which can be configured via the <code>services.mediawiki.httpd.virtualHost</code> submodule.</p>
+<p>If you are using another web server (like <a href="https://mirror.nixoscn.org/wiki/MediaWiki/Nginx" class="wikilink" title="Nginx">Nginx</a>), you can configure MediaWiki for a reverse proxy with the <code>services.mediawiki.virtualHost.listen</code> option:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.mediawiki.httpd.virtualHost.listen</span> <span class="hljs-operator">=</span> [
+  {
+    <span class="hljs-attr">ip</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;127.0.0.1&quot;</span>;
+    <span class="hljs-attr">port</span> <span class="hljs-operator">=</span> <span class="hljs-number">8080</span>;
+    <span class="hljs-attr">ssl</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+  }
+];</code></pre>
+      </div><p>Alternatively, <code>services.mediawiki.webserver</code> can be set to <code>&quot;nginx&quot;</code> to use nginx instead of <a href="https://mirror.nixoscn.org/wiki/MediaWiki/Apache_HTTP_Server" class="wikilink" title="apache">apache</a>.</p>
+<h2 id="troubleshooting">Troubleshooting</h2><h3 id="edit-php-ini">Edit php.ini</h3><p>A <a href="https://mirror.nixoscn.org/wiki/MediaWiki/Phpfpm" class="wikilink" title="php-fpm">php-fpm</a> pool is automatically created when Mediawiki is enabled. The <code>php.ini</code> file can be modified by using <code>phpOptions</code>. The following example shows how to increase the allowed file upload size.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.phpfpm.pools.mediawiki.phpOptions</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    upload_max_filesize = 10M
+    post_max_size = 15M
+&#x27;&#x27;</span>;</code></pre>
+      </div><h2 id="see-also">See Also</h2><ul>
+<li><a href="https://github.com/NixOS/nixos-wiki-infra">Configuration of the NixOS wiki</a></li>
+<li><a href="https://github.com/NixOS/nixpkgs/blob/master/nixos/tests/mediawiki.nix">nixos/tests/mediawiki.nix</a></li>
+<li><a href="https://mirror.nixoscn.org/wiki/MediaWiki/Dokuwiki" class="wikilink" title="Dokuwiki">Dokuwiki</a>, simple PHP- and web-based wiki software which uses file based storage for its content.</li>
+<li><a href="https://mirror.nixoscn.org/wiki/MediaWiki/Outline" class="wikilink" title="Outline">Outline</a>, a modern web based wiki and knowledge base for teams.</li>
+</ul>
+<p><a href="category:Guide" class="wikilink" title="Category:Guide">Category:Guide</a> <a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="category:Web_Applications" class="wikilink" title="Category:Web Applications">Category:Web Applications</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

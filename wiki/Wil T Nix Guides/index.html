@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Wil T Nix Guides</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Wil T Nix Guides</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Wil T Nix Guides -->
+
+<h2 id="about">About</h2><p>In early 2021, Wilfred Taylor (<em>Wil T</em>), produced a series of eight video guides covering the Nix ecosystem from the ground up. This page is an overview with information about each guide. These guides are perhaps currently the best available video resource for getting an early understanding of Nix, and will step you through getting a working NixOS machine.</p>
+<p>The series runs for a total of 3 hours and 32 minutes. It starts with a general overview, progresses to setting up a NixOS desktop, covers managing NixOS config repositories, gives a general overview of the Nix ecosystem and enough hands-on exploration to get oriented, and ends with coverage of Flakes and migration of configurations to a Flake based system.</p>
+<p>At the time of production, <a href="https://nixos.org/blog/announcements.html#20.09">NixOS 20.09</a> was the latest release, so the guides are using it. Currently, i.e. on 21.05 or unstable, not much has changed that would impact following the guides as produced.</p>
+<h2 id="guide-series">Guide series</h2><p>For convenience, a page with the playlist in order is available: <a href="https://enia.cc/r/nixos-linktree">Wil T&#39;s Nix Guides Playlist</a></p>
+<h3 id="introduction-to-nix-and-nixos">Introduction To Nix and NixOS</h3><p><a href="https://www.youtube.com/watch?v=QKoQ1gKJY5A">Video Link</a> Playtime: ~11 minutes</p>
+<p>In this introductory video, Wil opens with an overview of Nix, and a slide:</p>
+<h4 id="what-is-nix">What is Nix?</h4><ul>
+<li>Package build system</li>
+<li>Reproducible builds</li>
+<li>Build isolation</li>
+<li>Nix Store</li>
+<li>Nixpkgs</li>
+</ul>
+<p>Starting at 3:32, he moves on to ...</p>
+<h4 id="what-is-nixos">What is NixOS?</h4><ul>
+<li>Linux distro built on Nix</li>
+<li>Nix Modules</li>
+<li>Profiles and Generations</li>
+</ul>
+<p>... at 5:30 ...</p>
+<h4 id="so-why-nixos">So why NixOS?</h4><ul>
+<li>Infrastructure as Code</li>
+<li>Easily tinker and recover</li>
+<li>Modify packages and add your own</li>
+<li>Development Shells</li>
+</ul>
+<h3 id="nixos-installation-guide">NixOS Installation Guide</h3><p><a href="https://www.youtube.com/watch?v=axOxLJ4BWmY">Video Link</a> Playtime: ~55 minutes</p>
+<p>This video opens with an install guide, using a graphical KDE Plasma ISO.</p>
+<p>Beginning around 27:22, most of the rest of the guide covers using Home Manager to manage your configuration (e.g. dotfiles).</p>
+<p>Remaining marks...</p>
+<ul>
+<li>48:44, he presents the search tools and documentation on the main <a href="https://nixos.org/">nixos.org</a> site.</li>
+<li>51:50, he introduces this NixOS community wiki.</li>
+<li>52:57, he introduces <a href="https://nixos.org/guides/nix-pills/">Nix Pills</a> for getting a deeper understanding of Nix.</li>
+<li>53:38, he begins coverage of the <a href="https://nixos.org/community/index.html">community resources</a> available.</li>
+</ul>
+<h3 id="how-to-put-nixos-config-into-a-git-repository">How to put NixOS config into a git repository</h3><p><a href="https://www.youtube.com/watch?v=Dy3KHMuDNS8">Video Link</a> Playtime: ~31 minutes</p>
+<p>This guide opens with a recap of where all NixOS configurations are managed. After the first minute, it covers initializing a git repo with all the configuration files and some convenience scripts for updates.</p>
+<p>At 14:25, he begins coverage of using <em>git crypt</em> to manage secrets (e.g. passwords and private keys) in the repository, which spans the rest of the video.</p>
+<h3 id="nixos-filesystem-overview">NixOS Filesystem Overview</h3><p><a href="https://www.youtube.com/watch?v=jf0nIn2oS8A">Video Link</a> Playtime: ~20 minutes</p>
+<p>In this video, Wil covers details of where things are stored and how the filesystem is structured.</p>
+<p>At 1:22 ...</p>
+<h4 id="nixos-filesystem">NixOS Filesystem</h4><ul>
+<li>Missing directories or very few files</li>
+<li>Can&#39;t directly modify files in <em>/etc</em></li>
+<li>Where are all the files?</li>
+<li>Path<ul>
+<li><em>/home/wil/.nix-profile/bin</em></li>
+<li><em>/run/current-system/sw/bin</em></li>
+</ul>
+</li>
+</ul>
+<p>... at 3:34 he moves on to explaining the Nix Store (&quot;store,&quot; as in, &quot;a place for things,&quot; not as in, &quot;buy things&quot;) ...</p>
+<h4 id="nix-store">Nix Store</h4><ul>
+<li>Located at <em>/nix/store</em></li>
+<li>Read only</li>
+<li>Derivations</li>
+<li>Garbage Collection</li>
+</ul>
+<p>... from 9:24 ...</p>
+<h4 id="nix-profiles">Nix Profiles</h4><ul>
+<li>Located at <em>/nix/profiles</em></li>
+<li>System (also at <em>/run/current-system</em>&#39;)</li>
+<li>Per User (also at <em>~/.nix-profile</em>)</li>
+</ul>
+<p>... from 14:29 ...</p>
+<h4 id="nix-configuration">Nix Configuration</h4><ul>
+<li>Located at <em>/etc/nix/nix.conf</em></li>
+<li>NixOS configure in configuration.nix</li>
+<li>Non NixOS systems you can modify</li>
+</ul>
+<p>... from 17:16 ...</p>
+<h4 id="log-files">Log Files</h4><ul>
+<li><em>nix log</em></li>
+<li>Will give you the command to run when a build fails</li>
+<li>You can run it with <em>nix log /nix/store/<path to folder></em></li>
+</ul>
+<h3 id="nix-language-overview">Nix Language Overview</h3><p><a href="https://www.youtube.com/watch?v=eCapIx9heBw">Video Link</a> Playtime: ~31 minutes</p>
+<p>Wil presents the <a href="https://mirror.nixoscn.org/wiki/Wil%20T%20Nix%20Guides/Nix" class="wikilink" title="Nix">Nix</a> language itself. He reiterates early that the language is quite simple and not &quot;scary&quot; ...</p>
+<h4 id="scary-terms">Scary terms</h4><ul>
+<li>Functional</li>
+<li>Lazy Evaluation</li>
+<li>Immutable</li>
+<li>Derivations</li>
+</ul>
+<p>... from 6:07 ...</p>
+<h4 id="language-structures">Language Structures</h4><ul>
+<li>Variables</li>
+<li>Sets</li>
+<li>Lists</li>
+<li>Functions</li>
+<li>Derivations</li>
+</ul>
+<!-- -->
+
+<ul>
+<li>Derivation wrappers<ul>
+<li>mkDerivation</li>
+<li>runCommand</li>
+<li>writeScriptBin</li>
+</ul>
+</li>
+</ul>
+<p>... from 14:11 ...</p>
+<h4 id="language-special-statements">Language Special Statements</h4><ul>
+<li><strong>with</strong></li>
+<li><strong>import</strong></li>
+<li><strong>inherit</strong></li>
+<li><strong>if</strong></li>
+<li><strong>let</strong></li>
+</ul>
+<p>... from 20:46 ...</p>
+<h4 id="helpful-resources">Helpful Resources</h4><ul>
+<li>Repl</li>
+<li>Language Server</li>
+<li>Manuals</li>
+</ul>
+<p>... 21:08 ...</p>
+<h4 id="repl">REPL</h4><ul>
+<li>Can open with <em>nix repl</em></li>
+<li>Can close with <strong>ctrl + d</strong></li>
+<li>Set variables to values and output them to the repl</li>
+<li>import files</li>
+</ul>
+<p>... from 22:08, he covers integrating understanding of the Nix language for text editors and IDEs ...</p>
+<h4 id="language-server">Language Server</h4><ul>
+<li><a href="https://github.com/nix-community/rnix-lsp">https://github.com/nix-community/rnix-lsp</a></li>
+<li>Supports:<ul>
+<li>vim (COC, LSP Client, vim-lsp)</li>
+<li>Emacs (lsp-mode, eglot)</li>
+<li>Kakoune (kak-lsp)</li>
+<li>VSCode (vscode-nix-ide)</li>
+</ul>
+</li>
+</ul>
+<p>... from 23:49 ...</p>
+<h4 id="manuals">Manuals</h4><ul>
+<li><a href="https://nixos.org/learn.html">https://nixos.org/learn.html</a></li>
+<li><a href="https://nixos.org/manual/nix/stable/">Nix Manual</a></li>
+<li><a href="https://nixos.org/manual/nixpkgs/stable/">Nixpkgs Manual</a></li>
+</ul>
+<h3 id="nix-shell">Nix Shell</h3><p><a href="https://www.youtube.com/watch?v=SGekN4pDExY">Video Link</a> Playtime: ~11 minutes</p>
+<p>Wil quickly explains using Nix Shell to create isolated development environments (comparing it to Docker). From 1:40 ...</p>
+<h4 id="what-is-a-nix-shell">What is a Nix Shell?</h4><ul>
+<li>Originally designed to debug nix</li>
+<li>Can be used as a development environment</li>
+</ul>
+<p>... from 2:29: &quot;Simple shell&quot; ... from 4:17: &quot;More complicated shell&quot; ... from 7:38: &quot;How to add scripts to shell&quot;</p>
+<h3 id="intro-to-flakes">Intro to Flakes</h3><p><a href="https://www.youtube.com/watch?v=K54KKAx2wNc">Video Link</a> Playtime: ~20 minutes</p>
+<p>Wil opens with warning that <a href="https://nixos.org/manual/nix/unstable/command-ref/new-cli/nix3-flake.html">Flakes</a> are still under heavy development as a relatively new feature, and also iterates that they are very awesome.</p>
+<p>From 0:56 ...</p>
+<h4 id="what-are-flakes">What are Flakes?</h4><ul>
+<li>Project file</li>
+<li>Dependency Management</li>
+<li>Updates</li>
+</ul>
+<p>... from 2:52 ...</p>
+<h4 id="setup-for-flakes">Setup for Flakes</h4><ul>
+<li>Nix client update - 2.4 Pre (pkgs.nixFlakes)</li>
+<li>Nix Shell</li>
+</ul>
+<p>... from 4:42: &quot;Creating a flake&quot; ... from 8:08: &quot;Nix inputs and registry&quot; ... from 12:16: &quot;Nix outputs&quot; ... from 13:14 ...</p>
+<h4 id="what-can-you-put-in-outputs">What can you put in outputs?</h4><ul>
+<li>Packages</li>
+<li>Modules</li>
+<li>Applications</li>
+<li>Shells</li>
+<li>Home Manager Configuration</li>
+<li>Nix System Configuration</li>
+<li>Anything else</li>
+</ul>
+<h3 id="moving-nixos-system-configuration-into-a-flake">Moving NixOS System Configuration into a Flake</h3><p><a href="https://www.youtube.com/watch?v=mJbQ--iBc1U">Video Link</a> Playtime: ~33 minutes</p>
+<p>In the last video, Wil explains how to move your NixOS system configuration and Home Manager configuration into a nix flake file. This can help you with control of which versions of packages you are pointing to and make it easier to manage your system changes over time. In the first few minutes he explains how to modify your NixOS system configuration in order to enable the experimental flakes feature.</p>
+<p>From 4:22, he does <em>nix flake init</em>, and begins setting up the flake file.</p>
+<p>From 16:08, he starts <em>nixos-rebuild build ...</em> after migrating basic configurations from the previous videos into the flake setup. Most of the rest of the video goes into detail about building out helper scripts and re-integrating setup using the flake structure.</p>
+<p>From 28:54, he summarizes the change and outlines examples of how flakes make it more logical and convenient to expand and modularize your system configurations going forward (e.g., by creating roles that apply to different types of systems).</p>
+<p>From 30:10, he presents his own <a href="https://github.com/wiltaylor/dotfiles">flake-based configuration on Github</a>.</p>
+<p><a href="category:Desktop" class="wikilink" title="Category:Desktop">Category:Desktop</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

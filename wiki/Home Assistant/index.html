@@ -1,0 +1,618 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Home Assistant</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Home Assistant</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Home Assistant -->
+
+<figure>
+<img src="https://mirror.nixoscn.org/wiki/Home%20Assistant/New_Home_Assistant_logo.svg" title="New_Home_Assistant_logo.svg" width="250" />
+<figcaption>New_Home_Assistant_logo.svg</figcaption>
+</figure>
+
+<p><a href="https://www.home-assistant.io/">Home Assistant</a> is an open source home automation software that puts local control and privacy first. Powered by a worldwide community of tinkerers and DIY enthusiasts.</p>
+<p>NixOS provides native support for <a href="https://www.home-assistant.io/faq/ha-vs-hassio/">Home Assistant Core</a> and offers integration facilities for most pieces of its comprehensive ecosystem:</p>
+<ul>
+<li>As of the 2026.5.1 release we support 100% (1450/1450) of the built-in integrations</li>
+<li>We support <a href="https://github.com/NixOS/nixpkgs/tree/master/pkgs/servers/home-assistant/custom-components">custom components</a> through the <a href="https://search.nixos.org/options?channel=unstable&amp;show=services.home-assistant.customComponents&amp;from=0&amp;size=50&amp;sort=relevance&amp;type=packages&amp;query=services.home-assistant.customComponents"><code>services.home-assistant.customComponents</code></a> option</li>
+<li>We support source-built <a href="https://github.com/NixOS/nixpkgs/tree/master/pkgs/servers/home-assistant/custom-lovelace-modules">custom lovelace modules</a> mostly through <a href="https://search.nixos.org/options?channel=unstable&amp;show=services.home-assistant.customLovelaceModules&amp;from=0&amp;size=50&amp;sort=relevance&amp;type=packages&amp;query=services.home-assistant.customLovelaceModules">services.home-assistant.customLovelaceModules</a> option</li>
+<li>We support themes through the <a href="https://search.nixos.org/options?channel=unstable&amp;show=services.home-assistant.customLovelaceModules&amp;from=0&amp;size=50&amp;sort=relevance&amp;type=packages&amp;query=services.home-assistant.themes">services.home-assistant.themes</a> option.</li>
+<li>We do not support <a href="https://www.home-assistant.io/addons/">apps</a> (previously addons), which are used to deploy additional services, that are configurable from Home Assistant on their operating system<ul>
+<li>NixOS has native support for various services, that integrate with Home Assistant, e.g. <a href="https://mirror.nixoscn.org/wiki/Home%20Assistant/EVCC" class="wikilink" title="EVCC">EVCC</a>, <a href="https://mirror.nixoscn.org/wiki/Home%20Assistant/Frigate" class="wikilink" title="Frigate">Frigate</a>, <a href="https://mirror.nixoscn.org/wiki/Home%20Assistant/Mosquitto" class="wikilink" title="Mosquitto">Mosquitto</a>, <a href="https://mirror.nixoscn.org/wiki/Home%20Assistant/Music-Assistant" class="wikilink" title="Music-Assistant">Music-Assistant</a>, <a href="https://mirror.nixoscn.org/wiki/Home%20Assistant/Openthread" class="wikilink" title="Openthread">Openthread</a>, <a href="https://mirror.nixoscn.org/wiki/Home%20Assistant/Wyoming" class="wikilink" title="Wyoming">Wyoming</a>, <a href="https://mirror.nixoscn.org/wiki/Home%20Assistant/zigbee2mqtt" class="wikilink" title="zigbee2mqtt">zigbee2mqtt</a>, <a href="https://mirror.nixoscn.org/wiki/Home%20Assistant/Z-Wave_JS" class="wikilink" title="Z-Wave JS">Z-Wave JS</a></li>
+</ul>
+</li>
+</ul>
+<h2 id="support">Support</h2><p>Depending on the installation method one of various support channels should be used.</p>
+<p>If you rely on the NixOS package and/or module, issues should be reported on the <a href="https://github.com/NixOS/nixpkgs/issues/new/choose">nixpkgs Issue tracker</a> or the <a href="https://matrix.to/#/#homeautomation:nixos.org?via=lossy.network&amp;via=matrix.org&amp;via=kack.it">#homeautomation:nixos.org</a> Matrix room.</p>
+<p>Only if you rely on one of the <a href="https://mirror.nixoscn.org/wiki/Home%20Assistant/Home_Assistant#Upstream_supported" class="wikilink" title="upstream supported">upstream supported</a> deployment methods issues can be directly reported to the upstream project. Make sure to follow their guide on <a href="https://www.home-assistant.io/help/reporting_issues/">reporting issues</a>.</p>
+<h2 id="upstream-installation-methods">Upstream installation methods</h2><p>If you intend for Home Assistant to be an end-user configurable experience, as opposed to the declarative configuration experience NixOS offers, then consider these setups. They have the benefit of full upstream support.</p>
+<h3 id="virtual-machine">Virtual machine</h3><p><img src="https://mirror.nixoscn.org/wiki/Home%20Assistant/Home_Assistant_OS_in_Virtualbox.png" alt="HAOS in Virtualbox" title="HAOS in Virtualbox"> Home Assistant maintains their own operating system and provides <a href="https://mirror.nixoscn.org/wiki/Home%20Assistant/QEMU" class="wikilink" title="QEMU">QEMU</a> (qcow2) and <a href="https://mirror.nixoscn.org/wiki/Home%20Assistant/Virtualbox" class="wikilink" title="Virtualbox">Virtualbox</a> (vdi) compatible <a href="https://www.home-assistant.io/installation/linux#install-home-assistant-operating-system">images</a>. NixOS supports virtualization solutions like <a href="https://mirror.nixoscn.org/wiki/Home%20Assistant/libvirt" class="wikilink" title="libvirt">libvirt</a> and <a href="https://mirror.nixoscn.org/wiki/Home%20Assistant/Incus" class="wikilink" title="Incus">Incus</a>, both of which wrap QEMU, and <a href="https://mirror.nixoscn.org/wiki/Home%20Assistant/Virtualbox" class="wikilink" title="Virtualbox">Virtualbox</a>.</p>
+<p>Example:</p>
+<ul>
+<li><a href="https://myme.no/posts/2021-11-25-nixos-home-assistant.html">NixOS: Headless Home Assistant VM (myme.no)</a> using libvirt</li>
+<li><a href="https://balisong.dev/blog/running-home-assistant-os-as-a-vm-in-a-nixos-host/">Running Home Assistant OS as a VM in a NixOS Host</a> using incus</li>
+</ul>
+<h3 id="oci-container">OCI container</h3><p>Home Assistant also provides a <a href="https://www.home-assistant.io/installation/linux#install-home-assistant-container">container image</a> for OCI compatible runtimes.</p>
+<p>The following example configuration uses <a href="https://mirror.nixoscn.org/wiki/Home%20Assistant/podman" class="wikilink" title="podman">podman</a> to download and run the <code>home-assistant:stable</code> image. The frontend will be available via HTTP on port <code>tcp/8123</code> in the host network namespace and can be reverse proxied from there.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{  
+  <span class="hljs-attr">virtualisation.oci-containers</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">backend</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;podman&quot;</span>;
+    <span class="hljs-attr">containers.homeassistant</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">volumes</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;home-assistant:/config&quot;</span> ];
+      <span class="hljs-attr">environment.TZ</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Europe/Berlin&quot;</span>;
+      <span class="hljs-comment"># Note: The image will not be updated on rebuilds, unless the version label changes</span>
+      <span class="hljs-attr">image</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ghcr.io/home-assistant/home-assistant:stable&quot;</span>;
+      <span class="hljs-attr">extraOptions</span> <span class="hljs-operator">=</span> [ 
+        <span class="hljs-comment"># Use the host network namespace for all sockets</span>
+        <span class="hljs-string">&quot;--network=host&quot;</span>
+        <span class="hljs-comment"># Pass devices into the container, so Home Assistant can discover and make use of them</span>
+        <span class="hljs-string">&quot;--device=/dev/ttyACM0:/dev/ttyACM0&quot;</span>
+      ];
+    };
+  };
+}</code></pre>
+      </div><h2 id="native-installation">Native installation</h2><ul>
+<li>There is full support for the YAML configuration through the <a href="https://search.nixos.org/options?channel=unstable&amp;from=0&amp;size=50&amp;sort=relevance&amp;type=packages&amp;query=services.home-assistant.config"><code>services.home-assistant.config</code></a> option.</li>
+<li>This is also the case for the <a href="https://www.home-assistant.io/dashboards/dashboards/#adding-more-dashboards-with-yaml">Lovelace YAML configuration</a> through the <a href="https://search.nixos.org/options?channel=unstable&amp;from=0&amp;size=50&amp;sort=relevance&amp;type=packages&amp;query=services.home-assistant.lovelace"><code>services.home-assistant.lovelace</code></a> option.<ul>
+<li>Custom Lovelace modules can be configured through <a href="https://search.nixos.org/options?channel=unstable&amp;show=services.home-assistant.customLovelaceModules&amp;from=0&amp;size=50&amp;sort=relevance&amp;type=packages&amp;query=services.home-assistant.customLovelaceModules"><code>services.home-assistant.customLovelaceModules</code></a>. The <a href="https://www.home-assistant.io/dashboards/dashboards/#resources"><code>resources</code></a> section of your Lovelace configuration will automatically be populated.</li>
+</ul>
+</li>
+<li>Custom components can be enabled through the <a href="https://search.nixos.org/options?channel=unstable&amp;show=services.home-assistant.customComponents&amp;from=0&amp;size=50&amp;sort=relevance&amp;type=packages&amp;query=services.home-assistant.customComponents"><code>services.home-assistant.customComponents</code></a>.</li>
+</ul>
+<h3 id="declarative-configuration">Declarative configuration</h3><p>Set up your home-assistant by configuring the <code>services.home-assistant.config</code> attribute set as if it were your home-assistant <a href="https://www.home-assistant.io/docs/configuration/yaml/">YAML configuration</a>. The module parses the root and platforms level to automatically discover integrations used and will provide their dependencies to your home-assistant package.</p>
+<p>The following is a minimal configuration, that has all the dependencies that are required to complete the initial configuration flow, that creates your first user:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">services.home-assistant</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">extraComponents</span> <span class="hljs-operator">=</span> [
+      <span class="hljs-comment"># Components required to complete the onboarding</span>
+      <span class="hljs-string">&quot;analytics&quot;</span>
+      <span class="hljs-string">&quot;google_translate&quot;</span>
+      <span class="hljs-string">&quot;met&quot;</span>
+      <span class="hljs-string">&quot;radio_browser&quot;</span>
+      <span class="hljs-string">&quot;shopping_list&quot;</span>
+      <span class="hljs-comment"># Recommended for fast zlib compression</span>
+      <span class="hljs-comment"># https://www.home-assistant.io/integrations/isal</span>
+      <span class="hljs-string">&quot;isal&quot;</span>
+    ];
+    <span class="hljs-attr">config</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-comment"># Includes dependencies for a basic setup</span>
+      <span class="hljs-comment"># https://www.home-assistant.io/integrations/default_config/</span>
+      <span class="hljs-attr">default_config</span> <span class="hljs-operator">=</span> {};
+    };
+  };
+}</code></pre>
+      </div><h3 id="imperative-configuration">Imperative configuration</h3><p>Alternatively, If you would like to manage your configuration outside your NixOS configuration, you can set up the module to pass a configuration directory. This kind of setup is useful if you want to gradually migrate your existing configuration over.</p>
+<p>Using a custom configuration has the drawback, that we cannot automatically recognize and install component dependencies, and it is unlikely that we will continue to support these kinds of setups going forward.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">services.home-assistant</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-comment"># opt-out from declarative configuration management</span>
+    <span class="hljs-attr">config</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;
+    <span class="hljs-attr">lovelaceConfig</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;
+    <span class="hljs-comment"># configure the path to your config directory</span>
+    <span class="hljs-attr">configDir</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/etc/home-assistant&quot;</span>;
+    <span class="hljs-comment"># specify list of components required by your configuration</span>
+    <span class="hljs-attr">extraComponents</span> <span class="hljs-operator">=</span> [
+      <span class="hljs-string">&quot;esphome&quot;</span>
+      <span class="hljs-string">&quot;met&quot;</span>
+      <span class="hljs-string">&quot;radio_browser&quot;</span>
+    ];
+  };
+}</code></pre>
+      </div><h3 id="firewalling">Firewalling</h3><p>Home Assistant by default listens on port 8123. It is customary to put services behind a <a href="https://mirror.nixoscn.org/wiki/Home%20Assistant/Home_Assistant#Reverse_Proxying_with_nginx" class="wikilink" title="reverse-proxy">reverse-proxy</a>, which allows sharing ports 80/443 (http/https) and offers TLS termination.</p>
+<p>If you don&#39;t plan on using a reverse-proxy, you can allow unencrypted access by opening up the port home-assistant is running on in your firewall. This is not generally recommended, since credentials will be transmitted in plain text and browsers tend to limit certain functionality (e.g. geolocation) to HTTPS.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  config,
+  ...
+}:
+
+{
+  <span class="hljs-attr">networking.firewall.allowedTCPPorts</span> <span class="hljs-operator">=</span> [
+    config.services.home-assistant.config.http.server_port
+  ];
+}</code></pre>
+      </div><h3 id="first-start">First start</h3><p>On your first start you may see multiple <code>ModuleNotFoundError</code> in Home Assistants journal log. These are dependencies required to set up devices Home Assistant already discovered on the local network.</p>
+<p>The appropriate component to load can be looked up in the <a href="https://github.com/NixOS/nixpkgs/blob/master/pkgs/servers/home-assistant/component-packages.nix"><code>component-packages.nix</code></a> file, that gets auto-generated as part of the packaging process.</p>
+<p>For example, we can map the following error to</p>
+<p><code> ModuleNotFoundError: No module named &#39;aioesphomeapi&#39;</code></p>
+<p>the <code>esphome</code> module quite easily.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;2022.8.0&quot;</span>;
+  <span class="hljs-attr">components</span> <span class="hljs-operator">=</span> {
+    [...]
+    <span class="hljs-string">&quot;esphome&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-params">ps:</span> <span class="hljs-keyword">with</span> ps; [
+      aioesphomeapi
+      aiohttp-cors
+      ifaddr
+      zeroconf
+    ];
+    [...]</code></pre>
+      </div><h4 id="using-components-without-yaml-configuration">Using components without YAML configuration</h4><p>When a component offers no YAML configuration its dependencies could in theory be installed by mentioning its component name in <code>services.home-assistant.config.wled = {};</code>. This is deprecated, since Home Assistant will usually complain about the config having been migrated into the graphical user interface.</p>
+<p>In recent versions of the home-assistant this use case has become more prominent and therefore received a more straightforward implementation, that also ensures that the component is still provided by Home Assistant.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">services.home-assistant.extraComponents</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-string">&quot;wled&quot;</span>
+  ];
+}</code></pre>
+      </div><h4 id="provide-additional-python-packages-to-home-assistant">Provide additional Python packages to Home Assistant</h4><p>We control the dependencies we pass into the Home Assistant python environment through module options that make the dependencies available, when their relative component was declaratively mentioned.</p>
+<p>For other use cases like PostgreSQL support in the recorder component or the use of custom components, we provide an option to inject arbitrary dependencies from nixpkgs available python package set.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">services.home-assistant.extraPackages</span> <span class="hljs-operator">=</span> <span class="hljs-params">python3Packages:</span> <span class="hljs-keyword">with</span> python3Packages; [
+    <span class="hljs-comment"># recorder postgresql support</span>
+    psycopg2
+
+    <span class="hljs-comment"># miele@home</span>
+    flatdict
+    (callPackage .<span class="hljs-operator">/</span>pymiele.nix)
+  ];
+}</code></pre>
+      </div><h4 id="using-custom-components">Using custom components</h4><p>We provide a way to declaratively manage custom components through the NixOS module with the <a href="https://search.nixos.org/options?channel=unstable&amp;show=services.home-assistant.customComponents&amp;from=0&amp;size=50&amp;sort=relevance&amp;type=packages&amp;query=home-assistant">services.home-assistant.customComponents</a> option.</p>
+<p>Custom components can be found under <a href="https://search.nixos.org/packages?channel=unstable&amp;from=0&amp;size=50&amp;sort=relevance&amp;type=packages&amp;query=home-assistant-custom-components">pkgs.home-assistant-custom-components</a>.</p>
+<h4 id="using-custom-lovelace-modules">Using custom lovelace modules</h4><p>We provide a way to declaratively manage custom lovelace modules through the NixOS module with the <a href="https://search.nixos.org/options?channel=unstable&amp;show=services.home-assistant.customLovelaceModules&amp;from=0&amp;size=50&amp;sort=relevance&amp;type=packages&amp;query=home-assistant">services.home-assistant.customLovelaceModules</a> option.</p>
+<p>When a custom module is configured, the generated Home Assistant configuration file (eg. <code>/var/lib/hass/configuration.yaml</code>) will list the module in the <code>lovelace</code> config section as a new resource. If your lovelace configuration mode is <code>yaml</code>, the custom module should be loaded automatically.</p>
+<p>However, if your lovelace configuration mode is <code>storage</code> (the default), then the Home Assistant lovelace module will ignore the custom module resource. In that case you additionally need to add the custom module through the lovelace UI in the Resources tab with its path like <code>/local/nixos-lovelace-modules/</code><module-entrypoint>.</p>
+<p>Available custom components can be found under <a href="https://search.nixos.org/packages?channel=unstable&amp;from=0&amp;size=50&amp;sort=relevance&amp;type=packages&amp;query=home-assistant-custom-lovelace-modules">pkgs.home-assistant-custom-lovelace-modules</a>.</p>
+<h1 id="tracking-the-latest-release">Tracking the latest release</h1><p>Home Assistant is a fast-paced open source project, that currently features one major release every month, and a handful of minor ones in between. Firmwares and API endpoints tend to change from time to time, so Home Assistant and its bindings need to keep up to keep things work. The version we provide at the branch off is just a snapshot in time, and does not receive any updates, because there would just be too many dependencies and breaking changes to backport. But with NixOS it is still possible to use the version in nixpkgs/unstable by creating an overlay and using the module from <a href="https://mirror.nixoscn.org/wiki/Home%20Assistant/Channel_branches" class="wikilink" title="nixos-unstable">nixos-unstable</a>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-keyword">let</span>
+  <span class="hljs-comment"># Track NixOS unstable via nix-channel, or replace it with something like niv at your own discretion</span>
+  <span class="hljs-comment"># nix-channel --add http://nixos.org/channels/nixos-unstable nixos-unstable</span>
+  <span class="hljs-attr">unstable</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixos-unstable&gt;</span> {};
+<span class="hljs-keyword">in</span>
+{
+  <span class="hljs-attr">nixpkgs.overlays</span> <span class="hljs-operator">=</span> [
+    (<span class="hljs-params">self:</span> <span class="hljs-params">super:</span> {
+      <span class="hljs-keyword">inherit</span> (unstable) home-assistant;
+    })
+  ];
+
+  <span class="hljs-attr">disabledModules</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-string">&quot;services/home-automation/home-assistant.nix&quot;</span>
+  ];
+
+  <span class="hljs-attr">imports</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-operator">&lt;</span>nixos-unstable<span class="hljs-operator">/</span>nixos<span class="hljs-operator">/</span>modules<span class="hljs-operator">/</span>services<span class="hljs-operator">/</span>home-automation<span class="hljs-operator">/</span>home-assistant.nix<span class="hljs-operator">&gt;</span>
+  ];
+}</code></pre>
+      </div><h1 id="snippets">Snippets</h1><h2 id="reverse-proxying-with-nginx">Reverse Proxying with nginx</h2><p>If you run a public Home Assistant instance it is a good idea to enable SSL/TLS. The following configuration generates a certificate using letsencrypt:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">services.home-assistant.config.http</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">server_host</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;::1&quot;</span>;
+    <span class="hljs-attr">trusted_proxies</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;::1&quot;</span> ];
+    <span class="hljs-attr">use_x_forwarded_for</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  };
+
+  <span class="hljs-attr">services.nginx</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">recommendedProxySettings</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    virtualHosts.<span class="hljs-string">&quot;home.example.com&quot;</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">forceSSL</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">enableACME</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">extraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        proxy_buffering off;
+      &#x27;&#x27;</span>;
+      locations.<span class="hljs-string">&quot;/&quot;</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">proxyPass</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;http://[::1]:8123&quot;</span>;
+        <span class="hljs-attr">proxyWebsockets</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      };
+    };
+  };</code></pre>
+      </div><h2 id="using-postgresql">Using PostgreSQL</h2><p>Home Assistant supports PostgreSQL as a database backend for, among other things, its logger and history components. It&#39;s a lot more scalable and typically provides faster response times than the SQLite database, that is used by default.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">services.home-assistant</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">extraPackages</span> <span class="hljs-operator">=</span> <span class="hljs-params">ps:</span> <span class="hljs-keyword">with</span> ps; [ psycopg2 ];
+    <span class="hljs-attr">config.recorder.db_url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;postgresql://@/hass&quot;</span>;
+  };
+
+  <span class="hljs-attr">services.postgresql</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">ensureDatabases</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;hass&quot;</span> ];
+    <span class="hljs-attr">ensureUsers</span> <span class="hljs-operator">=</span> [{
+      <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;hass&quot;</span>;
+      <span class="hljs-attr">ensureDBOwnership</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    }];
+  };</code></pre>
+      </div><h2 id="updating-zigbee-firmware-over-the-air">Updating Zigbee Firmware over the air</h2><p>To allow ZHA OTA updates you need to configure the z2m_remote_index setting for ZHA. Before doing any updates, you should read the official integration documentation <a href="https://www.home-assistant.io/integrations/zha/#ota-firmware-updates">https://www.home-assistant.io/integrations/zha/#ota-firmware-updates</a></p>
+<p>Before updating a device, you should do some research. Some firmware updates break certain features you might use (e.g., group binding for IKEA devices). Some updates may also require changes to ZHA. In rare cases, you can even brick devices by installing a firmware update.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.home-assistant.config</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">zha.zigpy_config.ota.z2m_remote_index</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://raw.githubusercontent.com/Koenkk/zigbee-OTA/master/index.json&quot;</span>;
+};</code></pre>
+      </div><h2 id="automations-scenes-and-scripts-from-the-ui">Automations, Scenes, and Scripts from the UI</h2><p>These can be created from the user interface, but the files generated from it need to be included in your configuration.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs">{
+  <span class="hljs-attr">services.home-assistant.config</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-string">&quot;automation ui&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;!include automations.yaml&quot;</span>;
+    <span class="hljs-string">&quot;scene ui&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;!include scenes.yaml&quot;</span>;
+    <span class="hljs-string">&quot;script ui&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;!include scripts.yaml&quot;</span>;
+  };
+};</code></pre>
+      </div><p>It is also possible to mix declarative and generated configuration for these components, by creating multiple configuration sections with the automation, scenes, or scripts prefix:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.home-assistant.config</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-string">&quot;automation nixos&quot;</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-comment"># YAML automations go here</span>
+  ];
+  <span class="hljs-string">&quot;automation ui&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;!include automations.yaml&quot;</span>;
+}</code></pre>
+      </div><h1 id="examples">Examples</h1><h3 id="entity-customization">Entity Customization</h3><p>You can declaratively define how entities appear in the GUI with respect to their display names (friendly_name) the &quot;show as&quot; (<code>device_class</code>) and the icon displayed (<code>icon</code>). See this page for more documentation and how the YAML will ultimately be generated: <a href="https://www.home-assistant.io/docs/configuration/customizing-devices/">https://www.home-assistant.io/docs/configuration/customizing-devices/</a>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">    <span class="hljs-attr">config</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">default_config</span> <span class="hljs-operator">=</span> {};
+      <span class="hljs-attr">homeassistant</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-comment"># MUST be at the top or will break entire configuration</span>
+        <span class="hljs-attr">customize</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-comment"># Declare all &quot;entity_id&quot; objects here at this level to customize them</span>
+          <span class="hljs-string">&quot;binary_sensor.name&quot;</span> <span class="hljs-operator">=</span> {
+            <span class="hljs-comment"># Custom name however you want the entity to appear in the GUI</span>
+            <span class="hljs-attr">friendly_name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;friendlyname&quot;</span>;
+            <span class="hljs-comment"># See https://www.home-assistant.io/integrations/binary_sensor/ for documentation</span>
+            <span class="hljs-attr">device_class</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;deviceclass&quot;</span>; 
+            <span class="hljs-comment"># See https://www.home-assistant.io/docs/configuration/customizing-devices/#icon for documentation</span>
+            <span class="hljs-attr">icon</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;mdi:iconname&quot;</span>;
+          };
+        };
+      };
+    };</code></pre>
+      </div><h3 id="alarm-control-panel">Alarm Control Panel</h3><p>You can declaratively define your own Alarm Control Panel which will appear on the GUI and have entities available to be changed via declaratively created automations. See <a href="https://www.home-assistant.io/integrations/manual/">https://www.home-assistant.io/integrations/manual/</a> for more documentation.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">    <span class="hljs-attr">config</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">default_config</span> <span class="hljs-operator">=</span> {};
+      <span class="hljs-attr">homeassistant</span> <span class="hljs-operator">=</span> {
+
+      <span class="hljs-comment"># On same level as automations</span>
+      <span class="hljs-string">&quot;alarm_control_panel&quot;</span> <span class="hljs-operator">=</span> [
+        {
+          <span class="hljs-attr">platform</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;manual&quot;</span>;
+          <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Home Alarm&quot;</span>;
+          <span class="hljs-attr">code_arm_required</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;false&quot;</span>;
+          <span class="hljs-attr">arming_time</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;30&quot;</span>;
+          <span class="hljs-attr">delay_time</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;20&quot;</span>;
+          <span class="hljs-attr">trigger_time</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;4&quot;</span>;
+          <span class="hljs-attr">disarmed</span> <span class="hljs-operator">=</span> {
+            <span class="hljs-attr">trigger_time</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;0&quot;</span>;
+          };
+          <span class="hljs-attr">armed_home</span> <span class="hljs-operator">=</span> {
+            <span class="hljs-attr">arming_time</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;0&quot;</span>;
+            <span class="hljs-attr">delay_time</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;0&quot;</span>;
+          };
+          <span class="hljs-attr">armed_night</span> <span class="hljs-operator">=</span> {
+            <span class="hljs-attr">arming_time</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;0&quot;</span>;
+            <span class="hljs-attr">delay_time</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;0&quot;</span>;
+          };
+        }
+      ];</code></pre>
+      </div><h3 id="groups-helpers">Groups / Helpers</h3><p>You can declaratively define groups rather than setting them up in the GUI, and customize their unique_id, platform, type, and entitiy_id&#39;s associated. See <a href="https://www.home-assistant.io/integrations/group/">https://www.home-assistant.io/integrations/group/</a> for more documentation. Can be used in conjunction with “Entity Customization” section above for additional flexibility by plugging in the <code>unique_id</code> then changing the <code>friendly_name</code>, <code>icon</code>, <code>device_class</code> etc.</p>
+<h4 id="binary-sensor-group">Binary Sensor Group</h4><p>Example of Door and Window Sensor Group that could be used in an Automation for triggering an alarm system if any door or window is opened.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">      <span class="hljs-comment"># Door and Window Sensor Group</span>
+      <span class="hljs-string">&quot;binary_sensor&quot;</span> <span class="hljs-operator">=</span> [
+        {
+          <span class="hljs-attr">unique_id</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;binary_sensor.all_door_and_window_sensors&quot;</span>;
+          <span class="hljs-attr">platform</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;group&quot;</span>;
+          <span class="hljs-attr">device_class</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;door&quot;</span>;
+          <span class="hljs-attr">entities</span> <span class="hljs-operator">=</span> [
+            <span class="hljs-string">&quot;binary_sensor.sensor_1&quot;</span>
+            <span class="hljs-string">&quot;binary_sensor.sensor_2&quot;</span>
+            <span class="hljs-string">&quot;binary_sensor.sensor_3&quot;</span>
+          ];
+        }
+      ];</code></pre>
+      </div><h4 id="sensor-group">Sensor Group</h4><p>Example of Sensor group using “min” mode that could be used in an Automation to trigger a Low Battery Alert across all batteries in the group.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">      <span class="hljs-comment"># Sensor Battery Group</span>
+      <span class="hljs-string">&quot;sensor&quot;</span> <span class="hljs-operator">=</span> [
+        {
+          <span class="hljs-attr">unique_id</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sensor.all_batteries&quot;</span>;
+          <span class="hljs-attr">platform</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;group&quot;</span>;
+          <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;min&quot;</span>;
+          <span class="hljs-comment"># Use this or else if any go to &quot;unknown&quot; the group will show unknown</span>
+          <span class="hljs-attr">ignore_non_numeric</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;true&quot;</span>;
+          <span class="hljs-attr">device_class</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;battery&quot;</span>;
+          <span class="hljs-attr">entities</span> <span class="hljs-operator">=</span> [
+            <span class="hljs-string">&quot;sensor.battery_1&quot;</span>
+            <span class="hljs-string">&quot;sensor.battery_2&quot;</span>
+            <span class="hljs-string">&quot;sensor.battery_3&quot;</span>
+          ];
+        }
+      ];</code></pre>
+      </div><h3 id="automations">Automations</h3><h4 id="automation-with-a-condition">Automation with a Condition</h4><div class="code-container">
+        
+        <pre><code class="language-nix hljs">        {
+          <span class="hljs-attr">alias</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Name To Display in Automations List&quot;</span>;
+          <span class="hljs-attr">triggers</span> <span class="hljs-operator">=</span> {
+            <span class="hljs-attr">trigger</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;state&quot;</span>;
+            <span class="hljs-attr">entity_id</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;binary_sensor.someid1&quot;</span>;
+            <span class="hljs-attr">to</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;off&quot;</span>;
+            <span class="hljs-attr">for</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;00:10:00&quot;</span>;
+          };
+          <span class="hljs-attr">conditions</span> <span class="hljs-operator">=</span> {
+            <span class="hljs-attr">condition</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;state&quot;</span>;
+            <span class="hljs-attr">entity_id</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;binary_sensor.someid2&quot;</span>;
+            <span class="hljs-attr">state</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;on&quot;</span>;
+          };
+          <span class="hljs-attr">actions</span> <span class="hljs-operator">=</span> {
+            <span class="hljs-attr">action</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;light.turn_off&quot;</span>;
+            <span class="hljs-attr">entity_id</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;light.someid&quot;</span>;
+          };
+        }</code></pre>
+      </div><h4 id="automation-with-multiple-conditions-multiple-actions">Automation with Multiple Conditions, Multiple Actions</h4><div class="code-container">
+        
+        <pre><code class="language-nix hljs">        {
+          <span class="hljs-attr">alias</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Name in Automations GUI&quot;</span>;
+          <span class="hljs-attr">triggers</span> <span class="hljs-operator">=</span> {
+            <span class="hljs-attr">trigger</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;state&quot;</span>;
+            <span class="hljs-attr">entity_id</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;binary_sensor.someid&quot;</span>;
+            <span class="hljs-attr">to</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;on&quot;</span>;
+          };
+          <span class="hljs-attr">conditions</span> <span class="hljs-operator">=</span> [
+            {
+              <span class="hljs-attr">condition</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;state&quot;</span>;
+              <span class="hljs-attr">entity_id</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sun.sun&quot;</span>;
+              <span class="hljs-attr">state</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;below_horizon&quot;</span>;
+            }
+            {
+              <span class="hljs-attr">condition</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;state&quot;</span>;
+              <span class="hljs-attr">entity_id</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;light.someid&quot;</span>;
+              <span class="hljs-attr">state</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;off&quot;</span>;
+            }
+          ];
+          <span class="hljs-attr">actions</span> <span class="hljs-operator">=</span> [
+            {
+              <span class="hljs-attr">action</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;notify.notify&quot;</span>;
+              <span class="hljs-attr">data</span> <span class="hljs-operator">=</span> {
+                <span class="hljs-attr">message</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Some Notification&quot;</span>;
+              };
+            }
+            {
+              <span class="hljs-attr">action</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;siren.turn_on&quot;</span>;
+              <span class="hljs-attr">entity_id</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;siren.someid&quot;</span>;
+            }
+          ];
+        }</code></pre>
+      </div><h4 id="trigger-using-numeric-state">Trigger Using Numeric State</h4><div class="code-container">
+        
+        <pre><code class="language-nix hljs">        {
+          <span class="hljs-attr">alias</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Some Name&quot;</span>;
+          <span class="hljs-attr">triggers</span> <span class="hljs-operator">=</span> {
+            <span class="hljs-attr">trigger</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;numeric_state&quot;</span>;
+            <span class="hljs-attr">entity_id</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sensor.batteries&quot;</span>;
+            <span class="hljs-attr">below</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;45&quot;</span>;
+          };
+          <span class="hljs-attr">actions</span> <span class="hljs-operator">=</span> {
+            <span class="hljs-attr">action</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;notify.notify&quot;</span>;
+            <span class="hljs-attr">data</span> <span class="hljs-operator">=</span> {
+              <span class="hljs-attr">message</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Low Battery Detected&quot;</span>;
+            };
+          };
+        }</code></pre>
+      </div><h4 id="trigger-checking-for-entity-state-missing-changing-to-unknown">Trigger Checking for Entity State Missing / Changing to Unknown</h4><div class="code-container">
+        
+        <pre><code class="language-nix hljs">        {
+          <span class="hljs-attr">alias</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Object Went Unknown&quot;</span>;
+          <span class="hljs-attr">triggers</span> <span class="hljs-operator">=</span> {
+            <span class="hljs-attr">trigger</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;state&quot;</span>;
+            <span class="hljs-attr">entity_id</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;switch.someid&quot;</span>;
+            <span class="hljs-attr">to</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;unknown&quot;</span>;
+            <span class="hljs-attr">for</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;00:5:00&quot;</span>;
+          };
+          <span class="hljs-attr">actions</span> <span class="hljs-operator">=</span> {
+            <span class="hljs-attr">action</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;notify.notify&quot;</span>;
+            <span class="hljs-attr">data</span> <span class="hljs-operator">=</span> {
+              <span class="hljs-attr">message</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Object Went Offline&quot;</span>;
+            };
+          };
+        }</code></pre>
+      </div><h4 id="time-based-trigger-setting-data-field-on-entity-such-as-thermostat">Time Based Trigger, Setting Data Field On Entity Such as Thermostat</h4><div class="code-container">
+        
+        <pre><code class="language-nix hljs">        {
+          <span class="hljs-attr">alias</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Do Something At Certain Time&quot;</span>;
+          <span class="hljs-attr">triggers</span> <span class="hljs-operator">=</span> {
+            <span class="hljs-attr">trigger</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;time&quot;</span>;
+            <span class="hljs-attr">at</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;23:00:00&quot;</span>;
+          };
+          <span class="hljs-attr">actions</span> <span class="hljs-operator">=</span> {
+            <span class="hljs-attr">action</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;climate.set_temperature&quot;</span>;
+            <span class="hljs-attr">entity_id</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;climate.thermostat&quot;</span>;
+            <span class="hljs-attr">data</span> <span class="hljs-operator">=</span> {
+              <span class="hljs-attr">temperature</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;68&quot;</span>;
+            };
+          };
+        }</code></pre>
+      </div><p>If you did not create any automations through the UI, Home Assistant will fail loading because the <code>automations.yaml</code> file does not exist yet, and it will fail including it. To avoid that, add a systemd tmpfiles.d rule:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ystemd.tmpfiles.rules</span> <span class="hljs-operator">=</span> [
+  <span class="hljs-string">&quot;f <span class="hljs-subst">${config.services.home-assistant.configDir}</span>/automations.yaml 0644 hass hass&quot;</span>
+];</code></pre>
+      </div><h2 id="trust-a-private-certificate-authority">Trust a private certificate authority</h2><p>Home Assistant does not natively support adding a private CA to the certificate store (see <a href="https://community.home-assistant.io/t/add-private-cas-to-certificate-store/267452">this thread</a> for more details).</p>
+<p>Home Assistant trusts certificates provided by the <code>certifi</code> python package, which nix overwrites with the <code>cacert</code> package. Using overrides you can append your root CA certificate to the certificates provided by <code>certifi</code>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">services.home-assistant.package</span> <span class="hljs-operator">=</span> (pkgs.home-assistant.override {
+    <span class="hljs-attr">extraPackages</span> <span class="hljs-operator">=</span> <span class="hljs-params">py:</span> <span class="hljs-keyword">with</span> py; [ ];
+    <span class="hljs-attr">packageOverrides</span> <span class="hljs-operator">=</span> <span class="hljs-params">final:</span> <span class="hljs-params">prev:</span> {
+      <span class="hljs-attr">certifi</span> <span class="hljs-operator">=</span> prev.certifi.override {
+        <span class="hljs-attr">cacert</span> <span class="hljs-operator">=</span> pkgs.cacert.override {
+          <span class="hljs-attr">extraCertificateFiles</span> <span class="hljs-operator">=</span> [ <span class="hljs-symbol">./my_custom_root_ca.crt</span> ];
+        };
+      };
+  }).overrideAttrs (<span class="hljs-params">oldAttrs:</span> {
+    <span class="hljs-attr">doInstallCheck</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+  });</code></pre>
+      </div><h1 id="example-configurations">Example configurations</h1><ul>
+<li><a href="https://github.com/Mic92/dotfiles/tree/393539385b0abfc3618e886cd0bf545ac24aeb67/machines/eve/modules/home-assistant">Mic92&#39;s config</a></li>
+</ul>
+<h1 id="misc">Misc</h1><h2 id="run-home-assistant-from-github-repository">Run Home Assistant from GitHub repository</h2><p>When developing Home Assistant for some test dependencies additional libraries are needed. A nix-shell expression for this is available <a href="https://github.com/nix-community/nix-environments/tree/master/envs/home-assistant">here</a>.</p>
+<h1 id="further-reading">Further reading</h1><ul>
+<li><a href="https://nixcademy.com/posts/auto-update-containers/">Run and Auto-Update Docker (Home Assistant) Containers on NixOS</a>, Nixcademy</li>
+</ul>
+<p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

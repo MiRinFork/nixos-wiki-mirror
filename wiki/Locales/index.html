@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Locales</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Locales</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Locales -->
+
+<p>NixOS allows to set the default <a href="https://en.wikipedia.org/wiki/Locale_(computer_software)">locale</a> as well as individual locales in the system configuration file:</p>
+<p>will set the language and the character set systemwide to the desired value. Specifically, defaultLocale will define the <code>LANG</code> environment variable.</p>
+<p>In addition, with , the system will also support Venezuelan Spanish. The value <code>&quot;all&quot;</code> means that all locales supported by Glibc will be installed. A full list of supported locales can be found at <a href="https://sourceware.org/git/?p=glibc.git;a=blob;f=localedata/SUPPORTED">https://sourceware.org/git/?p=glibc.git;a=blob;f=localedata/SUPPORTED</a>.</p>
+<p>And in the , it is possible to set the LC locales individually. This does allow fine-grained adjustments of the used locales. In the above example a mix of American English and Venezuelan Spanish is used. It is also possible to find these settings at <a href="https://search.nixos.org/options">NixOS options</a>. Just search for i18 locale.</p>
+<h2 id="troubleshooting-when-using-nix-on-non-nixos-linux-distributions">Troubleshooting when using nix on non-NixOS linux distributions</h2><p>You may need to set the environmental variable LOCALE_ARCHIVE to point to your system&#39;s locale-archive. The following can be added to your .zshenv (zsh) or .profile (bash) and applies to Debian, Red Hat, and Arch derivatives:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">export</span> LOCALE_ARCHIVE=/usr/lib/locale/locale-archive</code></pre>
+      </div><p>And if that file from the local system is somehow broken:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-comment"># May require a one-time installation with:</span>
+nix profile install nixpkgs#glibcLocales
+<span class="hljs-comment"># Using nix profile</span>
+<span class="hljs-built_in">export</span> LOCALE_ARCHIVE=<span class="hljs-string">&quot;<span class="hljs-subst">$(nix profile list --json | jq &#x27;.elements[] | select(.attrPath? and (.attrPath | type == <span class="hljs-string">&quot;string&quot;</span>)</span> and (.attrPath | endswith(&quot;</span>glibcLocales<span class="hljs-string">&quot;))) | .storePaths[0]&#x27;)/lib/locale/locale-archive&quot;</span>
+
+<span class="hljs-comment"># Legacy usage with `nix-env`: May require a one-time installation with: nix-env -iA nixpkgs.glibcLocales</span>
+<span class="hljs-built_in">export</span> LOCALE_ARCHIVE=<span class="hljs-string">&quot;<span class="hljs-subst">$(nix-env --installed --no-name --out-path --query glibc-locales)</span>/lib/locale/locale-archive&quot;</span></code></pre>
+      </div><h2 id="enable-locale-support-in-nix-shell">Enable locale support in Nix shell</h2><p>To support locales within a Nix shell, for example to get localised command output, you need to do something similar:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">pkgs.mkShell {
+  <span class="hljs-comment"># [other code omitted]</span>
+  LOCALE_ARCHIVE = <span class="hljs-string">&quot;<span class="hljs-variable">${pkgs.glibcLocales}</span>/lib/locale/locale-archive&quot;</span>;
+}</code></pre>
+      </div><p><a href="category:Configuration" class="wikilink" title="Category:Configuration">Category:Configuration</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

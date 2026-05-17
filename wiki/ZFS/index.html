@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ZFS</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / ZFS</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: ZFS -->
+
+<p><a href="https://zfsonlinux.org/"></a> (<a href="wikipedia:en:```{{PAGENAME}}```" class="wikilink" title="wikipedia:en:```
+{{PAGENAME}}
+```">wikipedia:en:```
+{{PAGENAME}}</p>
+<div class="code-container">
+        <div class="code-header"><span class="code-filename">also known as [OpenZFS](https://openzfs.org/) (<a href="wikipedia:en:OpenZFS" class="wikilink" title="wikipedia:en:OpenZFS">wikipedia:en:OpenZFS</a>), is a modern filesystem which is well supported on <a href="https://mirror.nixoscn.org/wiki/ZFS/NixOS" class="wikilink" title="NixOS">NixOS</a>. <a href="category:filesystem" class="wikilink" title="category:filesystem">category:filesystem</a> Besides the package (*ZFS Filesystem Linux Kernel module*) itself, there are many packages in the ZFS ecosystem available.</span></div>
+        <pre><code class="language-</a>), hljs">
+ZFS integrates into NixOS via the and options.
+
+## Limitations
+
+#### Latest Kernel compatible with ZFS
+
+ZFS often does not support the latest Kernel versions. It is recommended to use an LTS Kernel version whenever possible; the NixOS default Kernel is generally suitable. See &lt;a href=&quot;Linux_kernel&quot; class=&quot;wikilink&quot; title=&quot;Linux Kernel&quot;&gt;Linux Kernel&lt;/a&gt; for more information about configuring a specific Kernel version.
+
+If your config specifies a Kernel version that is not officially supported by upstream ZFS, the ZFS module will fail to evaluate with an error that the ZFS package is &quot;broken&quot;. Upstream ZFS changed in 2.3 to refuse to build by default, regardless of Nixpkgs’ broken marking (or ignoring).
+
+##### Selecting the latest ZFS-compatible Kernel
+
+To use the latest ZFS-compatible Kernel currently available, the following configuration may be used.
+
+``` nix
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+
+let
+  zfsCompatibleKernelPackages = lib.filterAttrs (
+    name: kernelPackages:
+    (builtins.match &quot;linux_[0-9]+_[0-9]+&quot; name) != null
+    &amp;&amp; (builtins.tryEval kernelPackages).success
+    &amp;&amp; (!kernelPackages.${config.boot.zfs.package.kernelModuleAttribute}.meta.broken)
+  ) pkgs.linuxKernel.packages;
+  latestKernelPackage = lib.last (
+    lib.sort (a: b: (lib.versionOlder a.kernel.version b.kernel.version)) (
+      builtins.attrValues zfsCompatibleKernelPackages
+    )
+  );
+in
+{
+  # Note this might jump back and forth as kernels are added or removed.
+  boot.kernelPackages = latestKernelPackage;
+}</code></pre>
+      </div><h5 id="using-unstable-pre-release-zfs">Using unstable, pre-release ZFS</h5><p>In some cases, a pre-release version of ZFS may be available that supports a newer Kernel. Use it with <code>boot.zfs.package = pkgs.zfs_unstable;</code>. Using zfs_unstable may allow the use of an unsupported Kernel; as warned above, <a href="https://github.com/openzfs/zfs/blob/6a2f7b38442b42f4bc9a848f8de10fc792ce8d76/config/kernel.m4#L473-L487">upstream considers this experimental</a>.</p>
+<h4 id="partial-support-for-swap-on-zfs">Partial support for swap on ZFS</h4><p>ZFS does not support swapfiles. swap devices can be used instead. Additionally, hibernation is disabled by default due to a <a href="https://github.com/NixOS/nixpkgs/pull/208037">high risk</a> of data corruption. Note that even if that pull request is merged, it does not fully mitigate the risk. If you wish to enable hibernation regardless and made sure that swapfiles on ZFS are not used, set <code>boot.zfs.allowHibernation = true</code>.</p>
+<h4 id="zpool-not-found">Zpool not found</h4><p>If NixOS fails to import the zpool on reboot, you may need to add</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">b<span class="hljs-attr">oot.zfs.devNodes</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/dev/disk/by-path&quot;</span>;</code></pre>
+      </div><p>or</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">b<span class="hljs-attr">oot.zfs.devNodes</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/dev/disk/by-partuuid&quot;</span>;</code></pre>
+      </div><p>to your configuration.nix file.</p>
+<p>The differences can be tested by running <code>zpool import -d /dev/disk/by-id</code> when none of the pools are discovered, eg. a live iso.</p>
+<h4 id="zfs-conflicting-with-systemd">ZFS conflicting with systemd</h4><p>ZFS will manage mounting non-legacy ZFS filesystems, but NixOS tries to manage mounting with systemd. ZFS native mountpoints are not managed as part of the system configuration (but better support hibernation with a separate swap partition). This can lead to conflicts if the ZFS mount service is also enabled for the same datasets.</p>
+<p>Disable the mount service with <code>systemd.services.zfs-mount.enable = false;</code> or remove the <code>fileSystems</code> entries in hardware-configuration.nix. Otherwise, use legacy mountpoints (created with e.g. <code>zfs create -o mountpoint=legacy</code>). Mountpoints must be specified with <code>fileSystems.&quot;/mount/point&quot; = {};</code> or with <code>nixos-generate-config</code>.</p>
+<h4 id="nix-builds-and-zfs-properties-like-normalization-or-utf8only">Nix builds and ZFS properties like normalization or utf8only</h4><p>These options are often suggested in guides to setting up ZFS. <code>normalization</code> makes filenames compare the same in cases where there exists more than one UTF8 bytestring that represents the same characters. <code>utf8only</code> prevents the creation of files with non-UTF8 filenames, e.g. filenames using a Latin1 character set. These are non-POSIX and will make the tests for certain packages fail, which may interfere with builds. After nix 2.30, builds no longer happen in /tmp by default, instead they happen in <code>/nix/var/nix/builds</code>. On any system where you plan to run nix builds, you should ensure that this filesystem is POSIX-compliant. Either mounting a tmpfs in that directory (if you have lots of RAM + swap) or creating a zfs dataset there which does not have these or other non-POSIX settings like <code>noatime</code>, <code>snapdir=visible</code>, <code>acltype=nfsv4</code>, or <code>caseinsensitivity=insensitive</code>. Many of these cannot be changed after dataset creation so if this is your root filesystem, you will need to restore from a backup in order to recreate them.</p>
+<h2 id="guides">Guides</h2><h3 id="root-on-zfs-with-disko">Root on ZFS with disko</h3><p>disko<a href="https://github.com/nix-community/disko/blob/master/example/zfs.nix">1</a> can partition disks declaratively and handle mount points at install time.</p>
+<p>Don&#39;t follow the Root on ZFS guide found in OpenZFS documentation. It was abandoned and has not been updated in years. See commit log for the openzfs-docs repo for details.</p>
+<h3 id="simple-nixos-zfs-on-root-installation">Simple NixOS ZFS on root installation</h3><p>Start from here in the NixOS manual: <a href="https://nixos.org/manual/nixos/stable/#sec-installation-manual">2</a>. Under manual partitioning <a href="https://nixos.org/manual/nixos/stable/#sec-installation-manual-partitioning">3</a> do this instead:</p>
+<h4 id="partition-the-disk">Partition the disk</h4><p>We need the following partitions:</p>
+<ul>
+<li>1G for boot partition with &quot;boot&quot; as the partition label (also called name in some tools) and ef00 as partition code</li>
+<li>4G for a swap partition with &quot;swap&quot; as the partition label and 8200 as partition code. We will encrypt this with a random secret on each boot.</li>
+<li>The rest of disk space for zfs with &quot;root&quot; as the partition label and 8300 as partition code (default code)</li>
+</ul>
+<p>Reason for swap partition: ZFS does use a caching mechanism that is different from the normal Linux cache infrastructure. In low-memory situations, ZFS therefore might need a bit longer to free up memory from its cache. The swap partition will help with that.</p>
+<p>Example with gdisk using <code>/dev/nvme0n1</code> as the device (use <code>lsblk</code> to find the device</code>):</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">sudo</span> gdisk /dev/nvme0n1
+GPT fdisk (gdisk) version 1.0.10
+...
+<span class="hljs-comment"># boot partition</span>
+Command (? <span class="hljs-keyword">for</span> <span class="hljs-built_in">help</span>): n
+Partition number (1-128, default 1): 
+First sector (2048-1000215182, default = 2048) or {+-}size{KMGTP}: 
+Last sector (2048-1000215182, default = 1000215175) or {+-}size{KMGTP}: +1G
+Current <span class="hljs-built_in">type</span> is 8300 (Linux filesystem)
+Hex code or GUID (L to show codes, Enter = 8300): ef00
+Changed <span class="hljs-built_in">type</span> of partition to <span class="hljs-string">&#x27;EFI system partition&#x27;</span>
+
+<span class="hljs-comment"># Swap partition</span>
+Command (? <span class="hljs-keyword">for</span> <span class="hljs-built_in">help</span>): n
+Partition number (2-128, default 2): 
+First sector (2099200-1000215182, default = 2099200) or {+-}size{KMGTP}: 
+Last sector (2099200-1000215182, default = 1000215175) or {+-}size{KMGTP}: +4G
+Current <span class="hljs-built_in">type</span> is 8300 (Linux filesystem)
+Hex code or GUID (L to show codes, Enter = 8300): 8200
+Changed <span class="hljs-built_in">type</span> of partition to <span class="hljs-string">&#x27;Linux swap&#x27;</span>
+
+<span class="hljs-comment"># root partition</span>
+Command (? <span class="hljs-keyword">for</span> <span class="hljs-built_in">help</span>): n
+Partition number (3-128, default 3): 
+First sector (10487808-1000215182, default = 10487808) or {+-}size{KMGTP}: 
+Last sector (10487808-1000215182, default = 1000215175) or {+-}size{KMGTP}: 
+Current <span class="hljs-built_in">type</span> is 8300 (Linux filesystem)
+Hex code or GUID (L to show codes, Enter = 8300): 
+Changed <span class="hljs-built_in">type</span> of partition to <span class="hljs-string">&#x27;Linux filesystem&#x27;</span>
+
+<span class="hljs-comment"># write changes</span>
+Command (? <span class="hljs-keyword">for</span> <span class="hljs-built_in">help</span>): w
+
+Final checks complete. About to write GPT data. THIS WILL OVERWRITE EXISTING
+PARTITIONS!!
+
+Do you want to proceed? (Y/N): y
+OK; writing new GUID partition table (GPT) to /dev/nvme0n1.
+The operation has completed successfully.</code></pre>
+      </div><p>Final partition table (<code>fdisk -l /dev/nvme0n1</code>):</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">Number  Start (sector)    End (sector)  Size       Code  Name
+   1            2048         2099199   1024.0 MiB  EF00  EFI system partition
+   2         2099200        10487807   4.0 GiB     8200  Linux swap
+   3        10487808      1000215175   471.9 GiB   8300  Linux filesystem</code></pre>
+      </div><p><strong>Let&#39;s use variables from now on for simplicity.</strong> Get the device ID in <code>/dev/disk/by-id/</code> (using ), in our case here it is <code>nvme-SKHynix_HFS512GDE9X081N_FNB6N634510106K5O</code></p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">BOOT=/dev/disk/by-id/nvme-SKHynix_HFS512GDE9X081N_FNB6N634510106K5O-part1
+SWAP=/dev/disk/by-id/nvme-SKHynix_HFS512GDE9X081N_FNB6N634510106K5O-part2
+DISK=/dev/disk/by-id/nvme-SKHynix_HFS512GDE9X081N_FNB6N634510106K5O-part3</code></pre>
+      </div><h4 id="make-a-zfs-pool-with-encryption-and-mount-points">Make a ZFS pool with encryption and mount points</h4><div class="code-container">
+        
+        <pre><code class="language-bash hljs">zpool create -O encryption=on -O keyformat=passphrase -O keylocation=prompt -O compression=zstd -O mountpoint=none -O xattr=sa -O acltype=posixacl -o ashift=12 zpool <span class="hljs-variable">$DISK</span>
+<span class="hljs-comment"># enter the password to decrypt the pool at boot</span>
+Enter new passphrase:
+Re-enter new passphrase:
+
+<span class="hljs-comment"># Create datasets</span>
+zfs create zpool/root
+zfs create zpool/nix
+zfs create zpool/var
+zfs create zpool/home
+
+<span class="hljs-comment"># Mount root</span>
+<span class="hljs-built_in">mkdir</span> -p /mnt
+mount -t zfs zpool/root /mnt -o zfsutil
+
+<span class="hljs-comment"># Mount nix, var, home</span>
+<span class="hljs-built_in">mkdir</span> /mnt/nix /mnt/var /mnt/home
+mount -t zfs zpool/nix /mnt/nix -o zfsutil
+mount -t zfs zpool/var /mnt/var -o zfsutil
+mount -t zfs zpool/home /mnt/home -o zfsutil</code></pre>
+      </div><p>Output from</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">zpool status</code></pre>
+      </div><!-- -->
+
+<div class="code-container">
+        
+        <pre><code class="language- hljs">zpool status
+  pool: zpool
+ state: ONLINE
+...
+config:
+
+    NAME                               STATE     READ WRITE CKSUM
+    zpool                              ONLINE       0     0     0
+      nvme-eui.0025384b21406566-part2  ONLINE       0     0     0</code></pre>
+      </div><h4 id="format-boot-partition-and-enable-swap">Format boot partition and enable swap</h4><div class="code-container">
+        
+        <pre><code class="language-bash hljs">mkfs.fat -F 32 -n boot <span class="hljs-variable">$BOOT</span></code></pre>
+      </div><div class="code-container">
+        
+        <pre><code class="language-bash hljs">mkswap -L swap <span class="hljs-variable">$SWAP</span>
+swapon <span class="hljs-variable">$SWAP</span></code></pre>
+      </div><h4 id="installation">Installation</h4><div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-comment"># Mount boot</span>
+<span class="hljs-built_in">mkdir</span> -p /mnt/boot
+mount <span class="hljs-variable">$BOOT</span> /mnt/boot
+
+<span class="hljs-comment"># Generate the nixos config</span>
+nixos-generate-config --root /mnt
+...
+writing /mnt/etc/nixos/hardware-configuration.nix...
+writing /mnt/etc/nixos/configuration.nix...
+For more hardware-specific settings, see https://github.com/NixOS/nixos-hardware.</code></pre>
+      </div><p>Now edit the configuration.nix that was just created in <code>/mnt/etc/nixos/configuration.nix</code> and make sure to have at least the following content in it.</p>
+<p>Now check the hardware-configuration.nix in <code>/mnt/etc/nixos/hardware-configuration.nix</code> and add whats missing e.g. <code>options = [ &quot;zfsutil&quot; ]</code> for all filesystems except boot and <code>randomEncryption = true;</code> for the swap partition. Also change the generated swap device to the partition we created e.g. <code>/dev/disk/by-id/nvme-SKHynix_HFS512GDE9X081N_FNB6N634510106K5O-part2</code> in this case and <code>/dev/disk/by-id/nvme-SKHynix_HFS512GDE9X081N_FNB6N634510106K5O-part1</code> for boot.</p>
+<p>Now you may install NixOS with <code>nixos-install</code>.</p>
+<h2 id="importing-on-boot">Importing on boot</h2><p>If you create a zpool, it will not be imported on the next boot unless you either add the zpool name to</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">boot.zfs.extraPools</code></pre>
+      </div><div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment">## In /etc/nixos/configuration.nix:</span>
+b<span class="hljs-attr">oot.zfs.extraPools</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;zpool_name&quot;</span> ];</code></pre>
+      </div><p>or if you are using legacy mountpoints, add a</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">fileSystems</code></pre>
+      </div><p>entry and NixOS will automatically detect that the pool needs to be imported:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment">## In /etc/nixos/configuration.nix:</span>
+fileSystems.<span class="hljs-string">&quot;/mount/point&quot;</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">device</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;zpool_name&quot;</span>;
+  <span class="hljs-attr">fsType</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;zfs&quot;</span>;
+};</code></pre>
+      </div><h3 id="zpool-created-with-bus-based-disk-names">Zpool created with bus-based disk names</h3><p>If you used bus-based disk names in the</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">zpool create</code></pre>
+      </div><p>command, e.g.,</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">/dev/sda</code></pre>
+      </div><p>, NixOS may run into issues importing the pool if the names change. Even if the pool is able to be mounted (with</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">b<span class="hljs-attr">oot.zfs.devNodes</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/dev/disk/by-partuuid&quot;</span>;</code></pre>
+      </div><p>set), this may manifest as a</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">FAULTED</code></pre>
+      </div><p>disk and a</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">DEGRADED</code></pre>
+      </div><p>pool reported by</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">zpool status</code></pre>
+      </div><p>. The fix is to re-import the pool using disk IDs:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs"># zpool export zpool_name
+# zpool import -d /dev/disk/by-id zpool_name</code></pre>
+      </div><p>The import setting is reflected in</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">/etc/zfs/zpool.cache</code></pre>
+      </div><p>, so it should persist through subsequent boots.</p>
+<h3 id="zpool-created-with-disk-ids">Zpool created with disk IDs</h3><p>If you used disk IDs to refer to disks in the <code>zpool create</code> command, e.g., <code>/dev/disk/by-id</code>, then NixOS may consistently fail to import the pool unless <code>boot.zfs.devNodes = &quot;/dev/disk/by-id&quot;</code> is also set.</p>
+<h2 id="mount-datasets-at-boot">Mount datasets at boot</h2><p>zfs-mount service is enabled by default on NixOS 22.05.</p>
+<p>To automatically mount a dataset at boot, you only need to set <code>canmount=on</code> and <code>mountpoint=/mount/point</code> on the respective datasets.</p>
+<h2 id="changing-the-adaptive-replacement-cache-size">Changing the Adaptive Replacement Cache size</h2><p>To change the maximum size of the ARC to (for example) 12 GB, add this to your NixOS configuration:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">b<span class="hljs-attr">oot.kernelParams</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;zfs.zfs_arc_max=12884901888&quot;</span> ];</code></pre>
+      </div><h2 id="tuning-other-parameters">Tuning other parameters</h2><p>To tune other attributes of ARC, L2ARC or of ZFS itself via runtime modprobe config, add this to your NixOS configuration (keys and values are examples only!):</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">    <span class="hljs-attr">boot.extraModprobeConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+      options zfs l2arc_noprefetch=0 l2arc_write_boost=33554432 l2arc_write_max=16777216 zfs_arc_max=2147483648
+    &#x27;&#x27;</span>;</code></pre>
+      </div><p>You can confirm whether any specified configuration/tuning got applied via commands like <code>zarcsummary</code> and <code>zarcstat -a -s &quot; &quot;</code>.</p>
+<h2 id="automatic-scrubbing">Automatic scrubbing</h2><p>Regular scrubbing of ZFS pools is recommended and can be enabled in your NixOS configuration via:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.zfs.autoScrub.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><p>You can tweak the interval (defaults to once a week) and which pools should be scrubbed (defaults to all).</p>
+<h2 id="remote-unlock">Remote unlock</h2><h3 id="unlock-encrypted-zfs-via-ssh-on-boot">Unlock encrypted ZFS via SSH on boot</h3><p>In case you want unlock a machine remotely (after an update), having an ssh service in initrd for the password prompt is handy:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">b<span class="hljs-attr">oot</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">initrd.network</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-comment"># This will use udhcp to get an ip address.</span>
+    <span class="hljs-comment"># Make sure you have added the kernel module for your network driver to `boot.initrd.availableKernelModules`, </span>
+    <span class="hljs-comment"># so your initrd can load it!</span>
+    <span class="hljs-comment"># Static ip addresses might be configured using the ip argument in kernel command line:</span>
+    <span class="hljs-comment"># https://www.kernel.org/doc/Documentation/filesystems/nfs/nfsroot.txt</span>
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">ssh</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-comment"># To prevent ssh clients from freaking out because a different host key is used,</span>
+      <span class="hljs-comment"># a different port for ssh is useful (assuming the same host has also a regular sshd running)</span>
+      <span class="hljs-attr">port</span> <span class="hljs-operator">=</span> <span class="hljs-number">2222</span>; 
+      <span class="hljs-comment"># hostKeys paths must be unquoted strings, otherwise you&#x27;ll run into issues with boot.initrd.secrets</span>
+      <span class="hljs-comment"># the keys are copied to initrd from the path specified; multiple keys can be set</span>
+      <span class="hljs-comment"># you can generate any number of host keys using </span>
+      <span class="hljs-comment"># `ssh-keygen -t ed25519 -N &quot;&quot; -f /path/to/ssh_host_ed25519_key`</span>
+      <span class="hljs-attr">hostKeys</span> <span class="hljs-operator">=</span> [ <span class="hljs-symbol">/path/to/ssh_host_rsa_key</span> ];
+      <span class="hljs-comment"># public ssh key used for login</span>
+      <span class="hljs-attr">authorizedKeys</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;ssh-rsa AAAA...&quot;</span> ];
+    };
+  };
+};</code></pre>
+      </div><ul>
+<li><p>In order to use DHCP in the initrd, network manager must not be enabled and</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">etworking.useDHCP</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><p>must be set.</p>
+</li>
+<li><p>If your network card isn&#39;t started, you&#39;ll need to add the according Kernel module to the Kernel and initrd as well, e.g.</p>
+</li>
+</ul>
+<p>boot.kernelModules = [ &quot;r8169&quot; ]; boot.initrd.kernelModules = [ &quot;r8169&quot; ];</p>
+</syntaxhighlight>
+
+<p>To know what kernel modules are needed, run <code>nix shell nixpkgs#pciutils --command lspci -v | grep -iA8 &#39;network\|ethernet&#39;</code> .</p>
+<p>After that you can unlock your datasets using the following ssh command:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">ssh -p 2222 root@host &quot;zpool import -a; zfs load-key -a &amp;&amp; killall zfs&quot;</code></pre>
+      </div><p>Alternatively you could also add the commands as postCommands to your configuration.nix, then you just have to ssh into the initrd:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">boot = {
+  initrd.network = {
+    postCommands = ''
+    # Import all pools
+    zpool import -a
+    # Or import selected pools
+    zpool import pool2
+    zpool import pool3
+    zpool import pool4
+    # Add the load-key command to the .profile
+    echo &quot;zfs load-key -a; killall zfs&quot; &gt;&gt; /root/.profile
+    '';
+  };
+};</code></pre>
+      </div><p>After that you can unlock your datasets using the following ssh command:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">ssh -p 2222 root@host </code></pre>
+      </div><h2 id="reservations">Reservations</h2><p>On ZFS, the performance will deteriorate significantly when more than 80% of the available space is used. To avoid this, reserve disk space beforehand.</p>
+<p>To reserve space create a new unused dataset that gets a guaranteed disk space of 10GB.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">zfs create -o refreservation=10G -o mountpoint=none zroot/reserved</span></code></pre>
+      </div><h2 id="auto-zfs-trimming">Auto ZFS trimming</h2><div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.zfs.trim.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><p>.</p>
+<p>This will periodically run <code>zpool trim</code>. Note that this is different from the <code>autotrim</code> pool property. For further information, see the <code>zpool-trim</code> and <code>zpoolprops</code> man pages.</p>
+<h2 id="take-snapshots-automatically">Take snapshots automatically</h2><p>See or section in <code>man configuration.nix</code>.</p>
+<h2 id="nfs-share">NFS share</h2><p>With <code>sharenfs</code> property, ZFS has build-in support for generating <code>/etc/exports.d/zfs.exports</code> file, which in turn is processed by NFS service automatically.</p>
+<p>To enable NFS share on a dataset, only two steps are needed:</p>
+<p>First, enable <a href="https://mirror.nixoscn.org/wiki/ZFS/NFS" class="wikilink" title="NFS service">NFS service</a>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.nfs.server.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><p>Only this line is needed. Configure firewall if necessary, as described in <a href="https://mirror.nixoscn.org/wiki/ZFS/NFS" class="wikilink" title="NFS">NFS</a> article.</p>
+<p>Then, set <code>sharenfs</code> property:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs">zfs set sharenfs=&quot;ro=192.168.1.0/24,all_squash,anonuid=70,anongid=70&quot; rpool/myData</code></pre>
+      </div><p>For more options, see <code>man 5 exports</code>.</p>
+<p>Todo: sharesmb property for Samba.</p>
+<h2 id="mail-notifications-zfs-event-daemon">Mail notifications (ZFS Event Daemon)</h2><p>ZFS Event Daemon (zed) monitors events generated by the ZFS Kernel module and runs configured tasks. It can be configured to send an email when a pool scrub is finished or a disk has failed. <a href="https://search.nixos.org/options?query=services.zfs.zed">zed options</a></p>
+<p>First, we need to configure a mail transfer agent, the program that sends email:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">age.secrets.msmtp</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">file</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${inputs.self.outPath}</span>/secrets/msmtp.age&quot;</span>;
+  };
+
+  <span class="hljs-comment"># for zed enableMail, enable sendmailSetuidWrapper</span>
+  <span class="hljs-attr">services.mail.sendmailSetuidWrapper.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+  <span class="hljs-attr">programs.msmtp</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">setSendmail</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">defaults</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">aliases</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/etc/aliases&quot;</span>;
+      <span class="hljs-attr">port</span> <span class="hljs-operator">=</span> <span class="hljs-number">587</span>;
+      <span class="hljs-attr">auth</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;plain&quot;</span>;
+      <span class="hljs-attr">tls</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;on&quot;</span>;
+      <span class="hljs-attr">tls_starttls</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;on&quot;</span>;
+    };
+    <span class="hljs-attr">accounts</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">default</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">host</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;smtp.mail.example.com&quot;</span>;
+        <span class="hljs-attr">passwordeval</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;cat <span class="hljs-subst">${config.age.secrets.msmtp.path}</span>&quot;</span>;
+        <span class="hljs-attr">user</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;myname@example.com&quot;</span>;
+        <span class="hljs-attr">from</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;myname@example.com&quot;</span>;
+      };
+    };
+  };
+}</code></pre>
+      </div><p>Then, configure an alias for root account. With this alias configured, all mails sent to root, such as cron job results and failed sudo login events, will be redirected to the configured email account.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">environment.etc.aliases.text</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    root: admin@example.com
+  &#x27;&#x27;</span>;
+}</code></pre>
+      </div><p>Finally, enable zed mail notification:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">services.zfs.zed</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enableMail</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">ZED_EMAIL_ADDR</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;root&quot;</span> ];
+      <span class="hljs-comment"># send notification if scrub succeeds</span>
+      <span class="hljs-attr">ZED_NOTIFY_VERBOSE</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    };
+  };
+}</code></pre>
+      </div><p>You can now test this by performing a scrub</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">zpool scrub <span class="hljs-variable">$pool</span></span></code></pre>
+      </div><p><a href="category:Guide" class="wikilink" title="Category:Guide">Category:Guide</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

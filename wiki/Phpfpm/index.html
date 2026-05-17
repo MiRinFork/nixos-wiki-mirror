@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Phpfpm</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Phpfpm</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Phpfpm -->
+
+<p><a href="https://www.php.net/manual/en/install.fpm.php">php-fpm</a> is a fastcgi interface for php.</p>
+<h2 id="configuration-for-nginx">Configuration for nginx</h2><p>This configuration will set up phpfpm for serving php files from <code>${dataDir}</code>. Import this from your <code>configuration.nix</code>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs, lib, config, ... }:
+<span class="hljs-keyword">let</span>
+  <span class="hljs-attr">app</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;phpdemo&quot;</span>;
+  <span class="hljs-attr">domain</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${app}</span>.example.com&quot;</span>;
+  <span class="hljs-attr">dataDir</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/srv/http/<span class="hljs-subst">${domain}</span>&quot;</span>;
+<span class="hljs-keyword">in</span> {
+  services.phpfpm.pools.${app} <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">user</span> <span class="hljs-operator">=</span> app;
+    <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-string">&quot;listen.owner&quot;</span> <span class="hljs-operator">=</span> config.services.nginx.user;
+      <span class="hljs-string">&quot;pm&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;dynamic&quot;</span>;
+      <span class="hljs-string">&quot;pm.max_children&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-number">32</span>;
+      <span class="hljs-string">&quot;pm.max_requests&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-number">500</span>;
+      <span class="hljs-string">&quot;pm.start_servers&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-number">2</span>;
+      <span class="hljs-string">&quot;pm.min_spare_servers&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-number">2</span>;
+      <span class="hljs-string">&quot;pm.max_spare_servers&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-number">5</span>;
+      <span class="hljs-string">&quot;php_admin_value[error_log]&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;stderr&quot;</span>;
+      <span class="hljs-string">&quot;php_admin_flag[log_errors]&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-string">&quot;catch_workers_output&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    };
+    phpEnv.<span class="hljs-string">&quot;PATH&quot;</span> <span class="hljs-operator">=</span> lib.makeBinPath [ pkgs.php ];
+  };
+  <span class="hljs-attr">services.nginx</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    virtualHosts.${domain}.locations.<span class="hljs-string">&quot;/&quot;</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">root</span> <span class="hljs-operator">=</span> dataDir;
+      <span class="hljs-attr">extraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        fastcgi_split_path_info ^(.+<span class="hljs-char escape_">\.</span>php)(/.+)$;
+        fastcgi_pass unix:<span class="hljs-subst">${config.services.phpfpm.pools.${app}</span>.socket};
+        include <span class="hljs-subst">${pkgs.nginx}</span>/conf/fastcgi.conf;
+      &#x27;&#x27;</span>;
+     };
+  };
+  users.users.${app} <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">isSystemUser</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">createHome</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">home</span> <span class="hljs-operator">=</span> dataDir;
+    <span class="hljs-attr">group</span>  <span class="hljs-operator">=</span> app;
+  };
+  users.groups.${app} <span class="hljs-operator">=</span> {};
+}</code></pre>
+      </div><h3 id="escaping-special-chars">Escaping special chars</h3><p>When using regular expressions in <code>locations</code> blocks, be ware of the <a href="https://nixos.org/manual/nix/stable/language/values.html#type-string">need to escape some special chars</a> like <code>\</code>.</p>
+<p>i.e. <code>locations.&quot;~ ^(.+\.php)(.*){{content}}quot; = {</code> should be escaped to <code>locations.&quot;~ ^(.+\\.php)(.*){{content}}quot; = {</code></p>
+<p>Otherwise file names like <em>gly<strong>php</strong>ro.css</em> will be matched and parsed by the php interpreter. Which likely fails with an access error because of php-fpms <a href="https://www.php.net/manual/en/install.fpm.configuration.php">security.limit_extensions</a>.</p>
+<p>See also <a href="https://mirror.nixoscn.org/wiki/Phpfpm/Nginx" class="wikilink" title=" the nginx article"> the nginx article</a>.</p>
+<h2 id="php-extensions">PHP Extensions</h2><p>To use certain PHP extensions you will need to configure them in the <code>php.ini</code>-configuration of phpfpm via <code>services.phpfpm.phpOptions</code> or <code>services.phpfpm.pools.${pool}.phpOptions</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">services.phpfpm.phpOptions</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    extension=<span class="hljs-subst">${pkgs.phpExtensions.redis}</span>/lib/php/extensions/redis.so
+    extension=<span class="hljs-subst">${pkgs.phpExtensions.apcu}</span>/lib/php/extensions/apcu.so
+  &#x27;&#x27;</span>;
+}</code></pre>
+      </div><p><a href="category:PHP" class="wikilink" title="Category:PHP">Category:PHP</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

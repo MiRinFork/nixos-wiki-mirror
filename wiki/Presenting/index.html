@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Presenting</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Presenting</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Presenting -->
+
+<p>So you&#39;d like to present Nix or NixOS to a group or organization?</p>
+<p>Great, we have put together this page to help you get started!</p>
+<p>We considered putting together a canned presentation, and maybe we still will but we think it&#39;s more compelling when an individual presents a message that they really own. Ideally, users will see your presentation and leave feeling excited to try NixOS.</p>
+<h2 id="purpose">Purpose</h2><p>Begin by considering the purpose of your presentation:</p>
+<ul>
+<li>Make it personal to you</li>
+<li>Why do you want to give this presentation?</li>
+<li>Why is giving the presentation important?</li>
+</ul>
+<h2 id="compelling-components">Compelling components</h2><p>Think about how you want to communicate the value or benefits of Nix:</p>
+<ul>
+<li>Telling a story</li>
+<li>Use the following needs-to-features framework:</li>
+</ul>
+<ol>
+<li>Situation that leads to a problem</li>
+<li>Implications of that problem, pain points</li>
+<li>How does Nix or NixOS take care of that problem</li>
+</ol>
+<ul>
+<li>Live demos are exciting and compelling, but also risky, so be sure to practice and have contingency plans!</li>
+</ul>
+<p>Bonus idea: fold these ideas together into a single cohesive whole.</p>
+<h2 id="what-to-focus-on">What to focus on</h2><p>When brainstorming your presentation, consider the following questions:</p>
+<ul>
+<li>What&#39;s important about Nix to you?</li>
+<li>What makes you excited about Nix?</li>
+<li>What do you usually show others when showing them Nix?</li>
+<li>When you&#39;re showing Nix to others, what gets them excited?</li>
+<li>What do they most like about Nix?</li>
+</ul>
+<p>Answers to these questions could include:</p>
+<ul>
+<li>Reproducible Builds</li>
+<li>Managing Dependency Relationships</li>
+<li>Fearlessly making changes</li>
+<li>Constant time rollbacks</li>
+<li>Configuring from a single canonical location</li>
+<li>Being part of something big, early</li>
+<li>Building skills in Nix</li>
+<li>Learning basic semantics of system management on an as-needed basis</li>
+</ul>
+<h2 id="live-demos">Live demos</h2><p>The best live demos will be the unique ones you come up with yourself, but to get you started, we have a basic set of examples:</p>
+<ul>
+<li>Vignettes in the <a href="https://nixos.org/">Examples on nixos.org.</a></li>
+</ul>
+<h2 id="a-generic-presentation-outline">A Generic Presentation Outline</h2><p>This is a quick introduction to Nix, NixOS, and the basic Nix ecosystem, suitable for explaining Nix to your local Linux user group or ACM club.</p>
+<h3 id="what-is-nix">What is Nix?</h3><ul>
+<li>Nix is a functional build system that is both reliable and reproducible.</li>
+<li>Core Features:<ul>
+<li>Declarative language and configuration.</li>
+<li>Reproducible builds.</li>
+<li>User-specific environments.</li>
+</ul>
+</li>
+</ul>
+<h3 id="what-are-nix-packages">What are Nix Packages?</h3><ul>
+<li><strong>Overview</strong>:<ul>
+<li>A collection of packages managed by the Nix package manager.</li>
+<li>Centralized in the Nixpkgs repository.</li>
+</ul>
+</li>
+<li>Advantages:<ul>
+<li>Multi-user package management.</li>
+<li>Ability to use multiple versions of the same software side by side.</li>
+</ul>
+</li>
+</ul>
+<h3 id="what-is-nixos">What is NixOS?</h3><ul>
+<li>Definition: A Linux distribution built on Nix and Nix Packages.</li>
+<li>Key Features:<ul>
+<li>Entire system configuration defined in a single Nix file.</li>
+<li>Rollbacks for the entire system state.</li>
+<li>Customizable and reproducible.</li>
+</ul>
+</li>
+</ul>
+<h3 id="what-is-home-manager">What is Home Manager?</h3><ul>
+<li>Definition: A tool for managing user environments with Nix.</li>
+<li>Uses:<ul>
+<li>Manage dotfiles and user applications, declaratively.</li>
+<li>Works across NixOS and other Linux distributions.</li>
+</ul>
+</li>
+<li>Advantages:<ul>
+<li>Consistent user environments on any machine.</li>
+<li>Declarative user environment for when multiple users use one machine.</li>
+<li>Centralized management of personal configurations.</li>
+</ul>
+</li>
+</ul>
+<h3 id="what-are-nix-flakes">What are Nix Flakes?</h3><ul>
+<li>Definition: A modern addition to the Nix ecosystem providing a standardized way to manage projects.</li>
+<li>Core Concepts:<ul>
+<li>Reproducible builds for projects.</li>
+<li>Integration with Git repositories.</li>
+<li>A clear and portable interface for Nix-based projects.</li>
+</ul>
+</li>
+<li>Components:<ul>
+<li>`flake.nix` file for project definitions.</li>
+<li>Specify inputs such as unstable/stable nixpkgs or home manager</li>
+<li>Specify outputs like dev environments, applications, containers, and libraries.</li>
+</ul>
+</li>
+</ul>
+<h3 id="summary">Summary</h3><ul>
+<li>Nix provides a unified way to manage packages, system configurations, and user environments.</li>
+<li>Tools like NixOS, Home Manager, and Flakes extend its power for system and project management.</li>
+<li>The ecosystem is designed for reliability, reproducibility, and flexibility.</li>
+</ul>
+<p>Questions?</p>
+<p><a href="category:Community" class="wikilink" title="Category:Community">Category:Community</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

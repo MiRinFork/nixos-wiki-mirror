@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NixOS Wiki/getting started/en</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/NixOS%20Wiki">NixOS Wiki</a><span aria-hidden="true"> / </span><a href="https://mirror.nixoscn.org/wiki/NixOS%20Wiki/getting%20started">getting started</a><span aria-hidden="true"> / </span>en</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: NixOS Wiki/getting started/en -->
+
+<languages/>
+
+<h2 id="getting-started">Getting started</h2><p>The official NixOS Wiki includes topics not covered in the <a href="https://nixos.org/nixos/manual">NixOS Manual</a>, such as NixOS user guides, configuration examples, troubleshooting tips, etc.</p>
+<p>NixOS is a <a href="https://kernel.org/">Linux</a> operating system based on the Nix package manager and the Nixpkgs package repository.</p>
+<p>Newcomers to NixOS are encouraged to read the <a href="https://mirror.nixoscn.org/wiki/NixOS%20Wiki/getting%20started/en/Nix_Ecosystem" class="wikilink" title="Nix Core Ecosystem">Nix Core Ecosystem</a> overview article to get a comprehensive orientation. For more specific introductions, see:</p>
+<ul>
+<li><a href="https://mirror.nixoscn.org/wiki/NixOS%20Wiki/getting%20started/en/Overview_of_the_NixOS_Linux_distribution" class="wikilink" title="NixOS">NixOS</a></li>
+<li><a href="https://mirror.nixoscn.org/wiki/NixOS%20Wiki/getting%20started/en/Nix_package_manager" class="wikilink" title="Nix package manager">Nix package manager</a></li>
+<li><a href="https://mirror.nixoscn.org/wiki/NixOS%20Wiki/getting%20started/en/Nixpkgs" class="wikilink" title="Nixpkgs package repository">Nixpkgs package repository</a></li>
+<li><a href="https://mirror.nixoscn.org/wiki/NixOS%20Wiki/getting%20started/en/Overview_of_the_Nix_Language" class="wikilink" title="Nix Language">Nix Language</a></li>
+</ul>
+<p>If you want to try Nix standalone in another Linux distribution or on a Mac, take your first steps on <a href="https://nix.dev/">nix.dev</a>.</p>
+<p>Many great additional tools exist in the Nix ecosystem, such as:</p>
+<ul>
+<li><a href="https://mirror.nixoscn.org/wiki/NixOS%20Wiki/getting%20started/en/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a>, a system for managing user profile &amp; home directory contents</li>
+<li><a href="https://mirror.nixoscn.org/wiki/NixOS%20Wiki/getting%20started/en/Flakes" class="wikilink" title="Nix Flakes">Nix Flakes</a>, an experimental feature for managing dependencies of Nix projects</li>
+</ul>
+<p>These add complexity and may be confusing at first, and you may even decide that you don&#39;t need them. Start with plain Nix/NixOS, and only integrate Home Manager and/or Flakes into your setup once you&#39;re confident with Nix/NixOS and comprehend their significance.</p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

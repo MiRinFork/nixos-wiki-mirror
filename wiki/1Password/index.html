@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>1Password</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / 1Password</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: 1Password -->
+
+<p><a href="https://1password.com/">1Password</a> is a password manager.</p>
+<h2 id="nixos">NixOS</h2><h3 id="installation">Installation</h3><p>If you&#39;re using <a href="https://mirror.nixoscn.org/wiki/1Password/NixOS" class="wikilink" title="NixOS">NixOS</a>, you can enable 1Password and its GUI with:</p>
+<h3 id="unlocking-browser-extensions">Unlocking browser extensions</h3><p>The 1Password app can unlock your browser extension using a special <a href="https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Native_messaging">native messaging</a> process. This streamlines your 1Password experience: Once you unlock 1Password from your tray icon, your browser extensions will be unlocked as well.</p>
+<p>This is automatically configured for <a href="https://mirror.nixoscn.org/wiki/1Password/Firefox" class="wikilink" title="Firefox">Firefox</a>, <a href="https://mirror.nixoscn.org/wiki/1Password/Chrome" class="wikilink" title="Chrome">Chrome</a>, and <a href="https://mirror.nixoscn.org/wiki/1Password/Brave" class="wikilink" title="Brave">Brave</a> browsers. However, <a href="https://mirror.nixoscn.org/wiki/1Password/Vivaldi" class="wikilink" title="Vivaldi">Vivaldi</a> and other custom Chrome-based browsers may not unlock when you unlock 1Password. If you find this to be the case, the solution is to set the <code>/etc/1password/custom_allowed_browsers</code> file as follows:</p>
+<ul>
+<li>First, use <code>ps aux</code> to find the application name for the browser. For Vivaldi, this is <code>vivaldi-bin</code></li>
+<li>Add that binary name to <code>/etc/1password/custom_allowed_browsers</code>:</li>
+</ul>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">    <span class="hljs-attr">environment.etc</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-string">&quot;1password/custom_allowed_browsers&quot;</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">text</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+          vivaldi-bin
+          wavebox
+        &#x27;&#x27;</span>;
+        <span class="hljs-attr">mode</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;0755&quot;</span>;
+      };
+    };</code></pre>
+      </div><h3 id="unlocking-with-system-authentication">Unlocking with System Authentication</h3><p>1Password allows <a href="https://support.1password.com/system-authentication-linux/">unlocking with system authentication</a>. This means fingerprints or login passwords may be used in addition to the master password. This must be enabled under the Security preferences tab of 1Password as outlined in the 1Password documentation, but also requires a few other system tools to work.</p>
+<p>For the graphical authentication prompt to work, a user <a href="https://mirror.nixoscn.org/wiki/1Password/Polkit#Authentication_agents" class="wikilink" title="Polkit authentication agent">Polkit authentication agent</a> must be started. The authentication agent may automatically be started under Gnome, KDE, or other DE at login, but may need to be explicitly enabled for other window managers.</p>
+<p>For fingerprint unlocking to work, <a href="https://mirror.nixoscn.org/wiki/1Password/Fingerprint_scanner" class="wikilink" title="fingerprint scanning">fingerprint scanning</a> to be enabled and allowed for typical system authentication.</p>
+<h2 id="home-manager">Home Manager</h2><h3 id="installation">Installation</h3><p>Add the following to your <a href="https://mirror.nixoscn.org/wiki/1Password/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> configuration:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">home.packages</span> <span class="hljs-operator">=</span> [
+    pkgs._1password
+    pkgs._1password-gui
+  ];</code></pre>
+      </div><h3 id="ssh-key-management">SSH key management</h3><p>1Password <a href="https://developer.1password.com/docs/ssh/">can manage SSH keys</a>.</p>
+<h4 id="configuring-ssh">Configuring SSH</h4><p>If 1Password manages your <a href="https://mirror.nixoscn.org/wiki/1Password/SSH" class="wikilink" title="SSH">SSH</a> keys and you use <a href="https://mirror.nixoscn.org/wiki/1Password/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a>, you may also configure your <code>~/.ssh/config</code> file using Nix:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-keyword">let</span>
+  <span class="hljs-attr">onePassPath</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">if</span> pkgs.stdenv.isDarwin
+    <span class="hljs-keyword">then</span> <span class="hljs-string">&quot;<span class="hljs-subst">${config.home.homeDirectory}</span>/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock&quot;</span>
+    <span class="hljs-keyword">else</span> <span class="hljs-string">&quot;<span class="hljs-subst">${config.home.homeDirectory}</span>/.1password/agent.sock&quot;</span>;
+<span class="hljs-keyword">in</span> {
+  <span class="hljs-attr">home.sessionVariables.SSH_AUTH_SOCK</span> <span class="hljs-operator">=</span> onePassPath;
+
+  <span class="hljs-comment"># or, alternatively, set it in `.ssh/config` which has higher precedence:</span>
+  <span class="hljs-attr">programs.ssh</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">extraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+      Host *
+          IdentityAgent <span class="hljs-subst">${onePassPath}</span>
+    &#x27;&#x27;</span>;
+  };
+}</code></pre>
+      </div><h4 id="configuring-git">Configuring Git</h4><p>You can enable <a href="https://mirror.nixoscn.org/wiki/1Password/Git" class="wikilink" title="Git">Git</a>&#39;s <a href="https://mirror.nixoscn.org/wiki/1Password/SSH" class="wikilink" title="SSH">SSH</a> signing with <a href="https://mirror.nixoscn.org/wiki/1Password/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">programs.git</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">extraConfig</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">gpg</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">format</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ssh&quot;</span>;
+      };
+      <span class="hljs-string">&quot;gpg <span class="hljs-char escape_">\&quot;</span>ssh<span class="hljs-char escape_">\&quot;</span>&quot;</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">program</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${lib.getExe&#x27; pkgs._1password-gui <span class="hljs-string">&quot;op-ssh-sign&quot;</span>}</span>&quot;</span>;
+      };
+      <span class="hljs-attr">commit</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">gpgsign</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      };
+
+      <span class="hljs-attr">user</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">signingKey</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;...&quot;</span>;
+      };
+    };
+  };
+}</code></pre>
+      </div><p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

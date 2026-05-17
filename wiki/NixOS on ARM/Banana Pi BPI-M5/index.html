@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NixOS on ARM/Banana Pi BPI-M5</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM">NixOS on ARM</a><span aria-hidden="true"> / </span>Banana Pi BPI-M5</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: NixOS on ARM/Banana Pi BPI-M5 -->
+
+<h2 id="status">Status</h2><p>Work in progress</p>
+<h2 id="building-amlogic-compatible-u-boot">Building Amlogic-compatible U-Boot</h2><h3 id="building-u-boot">Building U-Boot</h3><p><strong>Note:</strong> Do not use the severely outdated <a href="https://github.com/BPI-SINOVOIP/BPI-M5-bsp">BPI-M5-bsp</a> or <a href="https://github.com/Dangku/Amlogic-u-boot">Amlogic-u-boot</a> to build u-boot.</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell-session hljs">$ git clone git://git.denx.de/u-boot.git
+$ cd u-boot
+$ nix-shell -p ubootTools gcc-arm-embedded dtc flex bison python swig
+$ make -j$(nproc) ARCH=arm CROSS_COMPILE=aarch64-unknown-linux-gnu- bananapi-m5_defconfig
+$ make -j$(nproc) ARCH=arm CROSS_COMPILE=aarch64-unknown-linux-gnu-
+$ cd ..</code></pre>
+      </div><h3 id="creating-amlogic-package">Creating Amlogic Package</h3><p><strong>Note:</strong> The following steps require an AMD64 platform.</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell-session hljs">$ git clone https://github.com/LibreELEC/amlogic-boot-fip
+$ cd amlogic-boot-fip
+$ mkdir -p output-bananapim5/
+$ ./build-fip.sh bananapi-m5 ../u-boot/u-boot.bin output-bananapim5
+$ hexdump -C -n 32 output-bananapim5/u-boot.bin | grep &quot;40 41 4d 4c&quot;
+$ cd ..</code></pre>
+      </div><p>Verify that the new u-boot.bin contains <code>40 41 4d 4c</code> (<code>@AML</code>) at 0x10 onwards.</p>
+<h2 id="board-specific-installation-notes">Board-specific installation notes</h2><p>First follow the <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/Banana%20Pi%20BPI-M5/NixOS_on_ARM#SD_card_images_.28SBCs_and_similar_platforms.29" class="wikilink" title="NixOS_on_ARM instructions to get the SD card image">NixOS_on_ARM instructions to get the SD card image</a> and decompress it.</p>
+<p>Once the image has been decompressed, the Amlogic U-Boot package needs to be copied to byte 512+ inside the image (replace the image with the name downloaded and decompressed image):</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell-session hljs">$ sudo dd if=amlogic-boot-fip/output-bananapim5/u-boot.bin of=nixos-sd-image-22.11.2620.de5448dab58-aarch64-linux.img conv=fsync,notrunc bs=512 seek=1</code></pre>
+      </div><p>Then, copy the image onto the eMMC or sdcard using the <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/Banana%20Pi%20BPI-M5/NixOS_on_ARM#Installation_steps" class="wikilink" title="the installation steps">the installation steps</a>.</p>
+<p>In order to get a serial console output, it is required to replace <code>ttyAMA0</code> with <code>ttyAML0</code> in the <code>/boot/extlinux/extlinux.conf</code> file inside the image. The easiest way is to just mount the respective folder after the image has been flashed on the SD-card</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell-session hljs">$ sudo mount /dev/sdX /mnt/
+$ sudo sed -i 's/ttyAMA0/ttyAML0/g' /mnt/boot/extlinux/extlinux.conf</code></pre>
+      </div><h2 id="resources">Resources</h2><ul>
+<li><a href="https://wiki.banana-pi.org/Banana_Pi_BPI-M5">Official product page</a></li>
+<li><a href="https://u-boot.readthedocs.io/en/latest/board/amlogic/odroid-c4.html">Installation here is based on the U-Boot for Odroid C4 documentation</a></li>
+</ul>
+<p><a href="category:NixOS_on_ARM" class="wikilink" title="Category:NixOS on ARM">Category:NixOS on ARM</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

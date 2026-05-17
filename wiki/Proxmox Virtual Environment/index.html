@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Proxmox Virtual Environment</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Proxmox Virtual Environment</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Proxmox Virtual Environment -->
+
+<p><a href="https://www.proxmox.com/proxmox-ve"></a> - shortened <em>PVE</em> - (<a href="wikipedia:en:```{{PAGENAME}}```" class="wikilink" title="wikipedia:en:```
+{{PAGENAME}}
+```">wikipedia:en:```
+{{PAGENAME}}</p>
+<div class="code-container">
+        <div class="code-header"><span class="code-filename">is a platform for containerization and virtualization.</span></div>
+        <pre><code class="language-</a>) hljs">
+PVE is open source and is based on Debian GNU/Linux (with a customized kernel from Ubuntu) and supports a variety of filesystems (e.g.&lt;a href=&quot;ZFS&quot; class=&quot;wikilink&quot; title=&quot;ZFS&quot;&gt;ZFS&lt;/a&gt;) and storage-backends/network-filesystems (e.g.&lt;a href=&quot;Ceph&quot; class=&quot;wikilink&quot; title=&quot;Ceph&quot;&gt;Ceph&lt;/a&gt;). &lt;a href=&quot;Ceph&quot; class=&quot;wikilink&quot; title=&quot;Ceph&quot;&gt;Ceph&lt;/a&gt; can be setup, administrated and monitored through the Webinterface, just as most other functions of PVE. There is also an API and a way to configure PVE through Configfiles and CLI-Commands.
+
+&lt;figure&gt;
+&lt;img src=&quot;Proxmox-VE-8-0-Cluster-Summary.png&quot; title=&quot;Proxmox-VE-8-0-Cluster-Summary&quot; /&gt;
+&lt;figcaption&gt;Proxmox-VE-8-0-Cluster-Summary&lt;/figcaption&gt;
+&lt;/figure&gt;
+
+PVE can manage a &quot;data center&quot; as a cluster of machines and storage through a unified Webgui that allows management of the whole cluster through each of the nodes.
+
+Proxmox VE uses
+
+- &lt;a href=&quot;#KVM&quot; class=&quot;wikilink&quot; title=&quot;#KVM&quot;&gt;#KVM&lt;/a&gt; for virtualization and
+- &lt;a href=&quot;#LXC&quot; class=&quot;wikilink&quot; title=&quot;#LXC&quot;&gt;#LXC&lt;/a&gt; for containerization.
+
+NixOS runs on both.
+
+&gt; The instructions should work for PVE 7.2 and later with NixOS 22.05 and later.
+
+## Deploying Proxmox with NixOS
+
+The [proxmox-nixos](https://github.com/SaumonNet/proxmox-nixos/) project allows to run the Proxmox Hypervisor on top of NixOS.
+
+## KVM
+
+It is possible to generate generic qcow2 images and attach them to VMs with `qm importdisk` as shown [here](https://pve.proxmox.com/wiki/Migration_of_servers_to_Proxmox_VE#Importing_to_Proxmox_VE).
+
+A better option is to generate a VMA image that can be imported as a VM on Proxmox VE. With this method, many VM configuration options such as CPU, memory, network interfaces, and serial terminals can be specified in nix instead of manually setting them on the Proxmox UI.
+
+### Generating VMA
+
+&gt; The first run will take some time, as a patched version of qemu with support for the VMA format needs to be built
+
+    nix run github:nix-community/nixos-generators -- --format proxmox
+
+Pass additional nix configuration to the template with `--configuration filename.nix`. In addition to NixOS module options, proxmox-specific options present in [nixos/modules/virtualisation/proxmox-image.nix](https://github.com/NixOS/nixpkgs/blob/master/nixos/modules/virtualisation/proxmox-image.nix) can be used to set core, memory, disk and other VM hardware options.
+
+### Deploying on Proxmox VE
+
+The generated vma.zst file can be copied to `/var/lib/vz/dump/` (or any other configured VM dump storage path). A new VM can be spun up from it either using the GUI or the CLI:
+
+    qmrestore /var/lib/vz/dump/vzdump-qemu-nixos-21.11.git.d41882c7b98M.vma.zst &amp;lt;vmid&amp;gt; --unique true
+
+&gt; note: the MAC address of net0 defaults to `00:00:00:00:00:00`. This must either be overridden through `proxmox.qemuConf.net0`, or the `unique` attribute must be set to true when importing the image on Proxmox.
+
+By default, the generated image is set up to expose a serial terminal interface for ease of access.
+
+    root@proxmox-server:~# qm start &amp;lt;vmid&amp;gt;
+    root@proxmox-server:~# qm terminal &amp;lt;vmid&amp;gt;
+    starting serial terminal on interface serial0 (press Ctrl+O to exit)
+
+    &amp;lt;&amp;lt;&amp;lt; NixOS Stage 1 &amp;gt;&amp;gt;&amp;gt;
+
+    loading module dm_mod...
+    running udev...
+    Starting version 249.4
+    .
+    .
+    .
+    [  OK  ] Reached target Multi-User System.
+
+
+    &amp;lt;&amp;lt;&amp;lt; Welcome to NixOS 21.11.git.d41882c7b98M (x86_64) - ttyS0 &amp;gt;&amp;gt;&amp;gt;
+
+    Run 'nixos-help' for the NixOS manual.
+
+    nixos login: root (automatic login)
+
+
+    [root@nixos:~]#
+
+### Network configuration
+
+Cloud-init can be enabled with
+
+    services.cloud-init.network.enable = true;
+
+This will enable systemd-networkd, allowing cloud-init to set up network interfaces on boot.
+
+## LXC
+
+### Generating LXC template
+
+    nix run github:nix-community/nixos-generators -- --format proxmox-lxc
+
+### Privileged LXCs
+
+While it’s not necessary, `proxmoxLXC.privileged` can be set to true to enable the DebugFS mount in privileged LXCs. If enabled on unprivileged LXCs, this will fail to mount.
+
+### Network configuration
+
+The proxmox LXC template uses systemd-networkd by default to allow network configuration by Proxmox. `proxmoxLXC.manageNetwork` can be set to true to disable this.
+
+### Deploying on Proxmox VE
+
+Copy the tarball to Proxmox, then create a new LXC with this template through the web UI or the CLI. The “nesting” feature needs to be enabled. Newer versions of Proxmox will have it enabled by default.
+
+As of now, not all of the configuration options on the web UI work for Proxmox LXCs. Network configuration and adding SSH keys to root user work, while setting a password for the root user and setting hostname don’t.
+
+It is suggested to set a root password within the container on first boot.
+
+The template built above without any options does not come with `/etc/nixos/configuration.nix`. A minimal working example is presented below. Be sure to run `nix-channel --update`, reboot the container running before `nixos-rebuild switch`.
+
+``` nix
+{ pkgs, modulesPath, ... }:
+
+{
+  imports = [
+    (modulesPath + &quot;/virtualisation/proxmox-lxc.nix&quot;)
+  ];
+
+  environment.systemPackages = [
+    pkgs.vim
+  ];
+}</code></pre>
+      </div><h3 id="lxc-console">LXC Console</h3><p>You may need to set the Console Mode option to /dev/console (instead of the default of &quot;tty&quot;) in order to make the console shell work.</p>
+<h3 id="lxc-see-also">LXC See also</h3><ul>
+<li>earlier wiki page <a href="https://mirror.nixoscn.org/wiki/Proxmox%20Virtual%20Environment/Proxmox_Linux_Container" class="wikilink" title="Proxmox Linux Container">Proxmox Linux Container</a></li>
+</ul>
+<h2 id="name">Name</h2><p><em>Proxmox Virtual Environment</em> is also called</p>
+<p>short <em>Proxmox VE</em>,</p>
+<p>shortened <em>PVE</em>,</p>
+<p>just <em>Proxmox</em>.</p>
+<p>Proxmox is the firm of the company <em>Proxmox Server Solutions GmbH</em>. Besides <em>Proxmox Virtual Environment</em> (<em>PVE</em>)<sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Proxmox%20Virtual%20Environment#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup> there are other products called <em>Proxmox Backup Server</em> (<em>PBS</em>)<sup><a id="footnote-ref-2" href="https://mirror.nixoscn.org/wiki/Proxmox%20Virtual%20Environment#footnote-2" data-footnote-ref aria-describedby="footnote-label">2</a></sup> and <em>Proxmox Mail Gateway</em> (<em>PMG</em>)<sup><a id="footnote-ref-3" href="https://mirror.nixoscn.org/wiki/Proxmox%20Virtual%20Environment#footnote-3" data-footnote-ref aria-describedby="footnote-label">3</a></sup>.</p>
+<h2 id="references">References</h2><references />
+
+<p><a href="category:Software" class="wikilink" title="Category:Software">Category:Software</a> <a href="category:Virtualization" class="wikilink" title="Category:Virtualization">Category:Virtualization</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p><a href="https://pve.proxmox.com/">https://pve.proxmox.com/</a> <a href="https://mirror.nixoscn.org/wiki/Proxmox%20Virtual%20Environment#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+<li id="footnote-2">
+<p><a href="https://pbs.proxmox.com/">https://pbs.proxmox.com/</a> <a href="https://mirror.nixoscn.org/wiki/Proxmox%20Virtual%20Environment#footnote-ref-2" data-footnote-backref aria-label="Back to reference 2">↩</a></p>
+</li>
+<li id="footnote-3">
+<p><a href="https://pmg.proxmox.com/">https://pmg.proxmox.com/</a> <a href="https://mirror.nixoscn.org/wiki/Proxmox%20Virtual%20Environment#footnote-ref-3" data-footnote-backref aria-label="Back to reference 3">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

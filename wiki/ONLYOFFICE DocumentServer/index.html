@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ONLYOFFICE DocumentServer</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / ONLYOFFICE DocumentServer</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: ONLYOFFICE DocumentServer -->
+
+<p><a href="https://www.onlyoffice.com/">ONLYOFFICE DocumentServer</a> is a full-featured backend for editing different office documents like Open Document, Word, Excel, etc. online in your browser. The software is open source and can be easily deployed and integrated into existing server software. Available frontends are <a href="https://mirror.nixoscn.org/wiki/ONLYOFFICE%20DocumentServer/Nextcloud" class="wikilink" title="Nextcloud">Nextcloud</a> or the ONLYOFFICE CommunityServer. It can also be used in own software, see <a href="https://github.com/ONLYOFFICE/document-server-integration">following examples</a> for PHP, Node.js, etc.</p>
+<h2 id="installation">Installation</h2><p>A minimal example to get a ONLYOFFICE DocumentServer running on localhost should look like this</p>
+<p>Note the example above leaks the secret into your nix store - you should review a <a href="https://mirror.nixoscn.org/wiki/ONLYOFFICE%20DocumentServer/Comparison_of_secret_managing_schemes" class="wikilink" title="secrets management approach">secrets management approach</a> and make sure you pick a unique secret.</p>
+<h2 id="configuration">Configuration</h2><h3 id="change-default-listening-port">Change default listening port</h3><p>In case port 80 is already used by a different application, or you&#39;re using a different web server than <a href="https://mirror.nixoscn.org/wiki/ONLYOFFICE%20DocumentServer/Nginx" class="wikilink" title="Nginx">Nginx</a>, which is used by the ONLYOFFICE module, you can change the listening port with the following option:</p>
+<h3 id="caddy-web-server">Caddy web server</h3><p>Instead of using the default <a href="https://mirror.nixoscn.org/wiki/ONLYOFFICE%20DocumentServer/Nginx" class="wikilink" title="Nginx">Nginx</a> web server, a configuration for <a href="https://mirror.nixoscn.org/wiki/ONLYOFFICE%20DocumentServer/Caddy" class="wikilink" title="Caddy">Caddy</a> might look like this</p>
+<p>The reverse_proxy configuration directly forwards all requests to the ONLYOFFICE server, ignoring the default Nginx vhost.</p>
+<h2 id="troubleshooting">Troubleshooting</h2><p>When using the documentserver from Nextcloud, saving the settings on the Nextcloud UI (&quot;Administration Settings&quot; -&gt; Administration -&gt; ONLYOFFICE)&quot; triggers a round-trip test.</p>
+<p>There are two services: onlyoffice-docservice.service and onlyoffice-converter.service. These need to be started after each other: onlyoffice-docservice.service (currently) generates configuration files in /run/onlyoffice, which can take a while. onlyoffice-converter.service then picks these up and uses them.</p>
+<h2 id="packaging">Packaging</h2><p>The notes below are mainly useful for those creating the onlyoffice packages.</p>
+<h3 id="sourcemaps">Sourcemaps</h3><p>To enable sourcemaps for sdkjs and partly web-apps, see <a href="https://github.com/raboof/nixpkgs/commit/0b3b7a9f10565eda44a9b32e1b9bfa5726bf49d3">https://github.com/raboof/nixpkgs/commit/0b3b7a9f10565eda44a9b32e1b9bfa5726bf49d3</a></p>
+<p><a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="category:Web_Applications" class="wikilink" title="Category:Web Applications">Category:Web Applications</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

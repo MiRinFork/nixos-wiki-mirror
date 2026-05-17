@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Invoiceplane</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Invoiceplane</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Invoiceplane -->
+
+<p><a href="https://www.invoiceplane.com/">Invoiceplane</a> is a web application for managing invoices, clients and payments.</p>
+<h2 id="installation">Installation</h2><p>To setup Invoiceplane locally, this is the most minimal configuration to get started</p>
+<p>After that Invoiceplane will be available at <a href="http://localhost/">http://localhost</a> . Complete the setup by choosing your default language and setting up your user profile.</p>
+<p>It is recommended to disable the setup wizard after installation is complete. Add following arguments to the settings option:</p>
+<h2 id="configuration">Configuration</h2><h3 id="invoice-templates">Invoice templates</h3><p>Invoiceplane will render and export invoices as PDF. You can create your own invoice templates or reuse existing ones. The following example fetches an invoice template and makes it available to your running Invoiceplane instance</p>
+<h3 id="invoice-mail-delivery">Invoice mail delivery</h3><p>There are several methods to automatically deliver invoices via mail. First we have to configure which mail backend to use. One method which is confirmed to work on NixOS is to use <code>sendmail</code>. Using a configured program like <a href="https://mirror.nixoscn.org/wiki/Invoiceplane/Msmtp" class="wikilink" title="Msmtp">Msmtp</a> to relay mails from your server using your existing mail provider. Unfortunately it is <a href="https://github.com/InvoicePlane/InvoicePlane/issues/845">not yet possible</a> to configure the mail backend with <em>extraSettings</em>. In this case navigate in the web interface to: <em>Settings → System settings → E-Mail</em> and set mail delivery method to <em>Sendmail</em>.</p>
+<p>Invoices can be send directly while editing them. It is also possible to create a common mail template which can be reused. Go to <em>Settings → Mail templates</em>. To configure a default mail template, go to <em>Settings → System settings → Invoices</em>.</p>
+<h3 id="recurring-invoices">Recurring invoices</h3><p>See <a href="https://wiki.invoiceplane.com/en/1.5/modules/recurring-invoices">upstream documentation</a> on how to configure recurring. invoices. This feature requires a cron task setup which queries the Invoiceplane backend every few minutes. This can be configured with the Invoiceplane module as follows</p>
+<p>Replace the cron key value with the one given in the Invoiceplane administration web interface.</p>
+<h3 id="electronic-invoice">Electronic invoice</h3><p>To enable electronic invoicing using the <a href="http://zugferd.org/">standard ZUGFeRD</a>, we can hardcode the activation into the InvoicePlane source code. Otherwise it has to be manually enabled in the settings menu of the web app.</p>
+<p>Enabling this via <code>settings</code> option is <a href="https://github.com/InvoicePlane/InvoicePlane/issues/999">not yet possible</a>.</p>
+<h2 id="maintenance">Maintenance</h2><h3 id="upgrading-to-new-versions">Upgrading to new versions</h3><p>After upgrading to a new version of Invoiceplane, change following two lines of your Invoiceplane config to re-enable the setup wizard, required for database upgrades.</p>
+<p>Access your Invoiceplane instance again in your browser and rerun the setup. After upgrading the tables you can login as usual. It is now recommended to change both variables in the config file above back to <code>true</code>.</p>
+<h2 id="tips-and-tricks">Tips and tricks</h2><h3 id="invoice-template-development">Invoice template development</h3><p>Following <code>flake.nix</code> file helps you spawning a virtual machine running a development environment of Invoiceplane. The local directory <code>/home/user/my_invoiceplane_template</code> containing a modified invoice or quote template will be mounted into the Invoiceplane web app, allowing to change the template and directly render the invoice PDF in the local web server at <a href="http://localhost:8080/">http://localhost:8080</a></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Invoiceplane invoice template development shell&quot;</span>;
+
+  <span class="hljs-attr">inputs.nixpkgs.url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nixpkgs/nixos-24.11&quot;</span>;
+
+  <span class="hljs-attr">outputs</span> <span class="hljs-operator">=</span> { self, nixpkgs, ... }@<span class="hljs-params">inputs:</span>
+  <span class="hljs-keyword">let</span>
+    <span class="hljs-attr">pkgs</span> <span class="hljs-operator">=</span> nixpkgs.legacyPackages.x86_64-linux;
+    <span class="hljs-attr">start</span> <span class="hljs-operator">=</span>
+      pkgs.writeShellScriptBin <span class="hljs-string">&quot;start&quot;</span> <span class="hljs-string">&#x27;&#x27;
+        set -e
+        export QEMU_NET_OPTS=&quot;hostfwd=tcp::8080-:80&quot;
+        <span class="hljs-subst">${pkgs.nixos-shell}</span>/bin/nixos-shell --flake .
+       &#x27;&#x27;</span>;
+  <span class="hljs-keyword">in</span> {
+    <span class="hljs-attr">nixosConfigurations.vm</span> <span class="hljs-operator">=</span> nixpkgs.lib.nixosSystem {
+      <span class="hljs-attr">system</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;x86_64-linux&quot;</span>;
+      <span class="hljs-attr">specialArgs.inputs</span> <span class="hljs-operator">=</span> inputs;
+      <span class="hljs-attr">pkgs</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> nixpkgs {
+    <span class="hljs-attr">overlays</span> <span class="hljs-operator">=</span> [
+          (<span class="hljs-params">self:</span> <span class="hljs-params">super:</span> {
+            <span class="hljs-attr">invoiceplane</span> <span class="hljs-operator">=</span> super.invoiceplane.overrideAttrs (<span class="hljs-params">oldAttrs:</span> <span class="hljs-keyword">rec</span> {
+              <span class="hljs-attr">installPhase</span> <span class="hljs-operator">=</span> oldAttrs.installPhase <span class="hljs-operator">+</span> <span class="hljs-string">&#x27;&#x27;
+                rm -r $out/application/views/invoice_templates/pdf
+                ln -sf /var/lib/invoiceplane/localhost/pdf $out/application/views/invoice_templates/pdf
+              &#x27;&#x27;</span>;
+            });
+          })
+        ];
+      };
+      <span class="hljs-attr">modules</span> <span class="hljs-operator">=</span> [
+        ({ lib, config, pkgs, ... }: {
+
+      services.invoiceplane.sites.<span class="hljs-string">&quot;localhost&quot;</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+        <span class="hljs-attr">settings.IP_URL</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;http://localhost:8080&quot;</span>;
+      };
+
+          <span class="hljs-attr">nixos-shell.mounts.extraMounts</span> <span class="hljs-operator">=</span> {
+            <span class="hljs-string">&quot;/var/lib/invoiceplane/localhost/pdf&quot;</span> <span class="hljs-operator">=</span> {
+               <span class="hljs-attr">target</span> <span class="hljs-operator">=</span> <span class="hljs-symbol">/home/user/my_invoiceplane_template</span>;
+               <span class="hljs-attr">cache</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;none&quot;</span>;
+            };
+          };
+
+          <span class="hljs-attr">system.stateVersion</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;24.11&quot;</span>;
+          <span class="hljs-attr">services.getty.autologinUser</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;root&quot;</span>;
+        })
+      ];
+    };
+
+    <span class="hljs-attr">packages</span> <span class="hljs-operator">=</span> { <span class="hljs-keyword">inherit</span> start; };
+    <span class="hljs-attr">defaultPackage.x86_64-linux</span> <span class="hljs-operator">=</span> start;
+
+  };
+}</code></pre>
+      </div><p>To run the web server simply execute following command in the same directory as the <code>flake.nix</code> file</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs">nix run</code></pre>
+      </div><h2 id="see-also">See also</h2><ul>
+<li><a href="https://mirror.nixoscn.org/wiki/Invoiceplane/Crater" class="wikilink" title="Crater">Crater</a>, alternative self-hosted invoicing application</li>
+</ul>
+<p><a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="category:Web_Applications" class="wikilink" title="Category:Web Applications">Category:Web Applications</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,445 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Networking</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Networking</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Networking -->
+
+<p>Networking config always goes in your system configuration. This can be done declaratively as shown in the following sections or through non-declarative tools such as <a href="https://mirror.nixoscn.org/wiki/Networking/NetworkManager" class="wikilink" title="NetworkManager">NetworkManager</a>.</p>
+<h2 id="configuration">Configuration</h2><h3 id="wireless-networks">Wireless networks</h3><p>See <a href="https://mirror.nixoscn.org/wiki/Networking/wpa_supplicant" class="wikilink" title="wpa_supplicant">wpa_supplicant</a> / <a href="https://mirror.nixoscn.org/wiki/Networking/Iwd" class="wikilink" title="Iwd">Iwd</a>.</p>
+<h3 id="static-ip-for-network-adapter">Static IP for network adapter</h3><p>The following example configures a static IPv4 and IPv6 address and a default gateway for the interface <code>ens3</code></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">etworking</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">interfaces.ens3</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">ipv6.addresses</span> <span class="hljs-operator">=</span> [{
+      <span class="hljs-attr">address</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;2a01:4f8:1c1b:16d0::1&quot;</span>;
+      <span class="hljs-attr">prefixLength</span> <span class="hljs-operator">=</span> <span class="hljs-number">64</span>;
+    }];
+    <span class="hljs-attr">ipv4.addresses</span> <span class="hljs-operator">=</span> [{
+      <span class="hljs-attr">address</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;192.0.2.2&quot;</span>;
+      <span class="hljs-attr">prefixLength</span> <span class="hljs-operator">=</span> <span class="hljs-number">24</span>;
+    }];
+  };
+  <span class="hljs-attr">defaultGateway</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">address</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;192.0.2.1&quot;</span>;
+    <span class="hljs-attr">interface</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ens3&quot;</span>;
+  };
+  <span class="hljs-attr">defaultGateway6</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">address</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;fe80::1&quot;</span>;
+    <span class="hljs-attr">interface</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ens3&quot;</span>;
+  };
+};</code></pre>
+      </div><h3 id="hosts-file">Hosts file</h3><p>To edit <code>/etc/hosts</code> just add something like this to your <code>configuration.nix</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">etworking.hosts</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-string">&quot;127.0.0.2&quot;</span> <span class="hljs-operator">=</span> [<span class="hljs-string">&quot;other-localhost&quot;</span>];
+  <span class="hljs-string">&quot;192.0.2.1&quot;</span> <span class="hljs-operator">=</span> [<span class="hljs-string">&quot;mail.example.com&quot;</span> <span class="hljs-string">&quot;imap.example.com&quot;</span>];
+};</code></pre>
+      </div><h3 id="port-forwarding">Port forwarding</h3><p>In this example we&#39;re going to forward the port <code>80</code> via NAT from our internal network interface <code>ens3</code> to the host <code>10.100.0.3</code> on our external interface <code>wg0</code>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">etworking</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">firewall</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">allowedTCPPorts</span> <span class="hljs-operator">=</span> [ <span class="hljs-number">80</span> ];
+  };
+  <span class="hljs-attr">nat</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">internalInterfaces</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;ens3&quot;</span> ];
+    <span class="hljs-attr">externalInterface</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;wg0&quot;</span>;
+    <span class="hljs-attr">forwardPorts</span> <span class="hljs-operator">=</span> [
+      {
+        <span class="hljs-attr">sourcePort</span> <span class="hljs-operator">=</span> <span class="hljs-number">80</span>;
+        <span class="hljs-attr">proto</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;tcp&quot;</span>;
+        <span class="hljs-attr">destination</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;10.100.0.3:80&quot;</span>;
+      }
+    ];
+  };
+  <span class="hljs-comment"># Previous section is equivalent to :</span>
+  <span class="hljs-attr">nftables</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">ruleset</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        table ip nat {
+          chain PREROUTING {
+            type nat hook prerouting priority dstnat; policy accept;
+            iifname &quot;ens3&quot; tcp dport 80 dnat to 10.100.0.3:80
+          }
+        }
+    &#x27;&#x27;</span>;
+  };
+};</code></pre>
+      </div><p>For IPv6 port forwarding, the example would look like this. Incoming connections on the address <code>2001:db8::</code> and port <code>80</code> will be forwarded to <code>[fe80::1234:5678:9abc:def0]:80</code>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">etworking</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">firewall</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">allowedTCPPorts</span> <span class="hljs-operator">=</span> [ <span class="hljs-number">80</span> ];
+  };
+  <span class="hljs-attr">nat</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">internalInterfaces</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;ens3&quot;</span> ];
+    <span class="hljs-attr">externalInterface</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;wg0&quot;</span>;
+    <span class="hljs-attr">enableIPv6</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">internalIPv6s</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;2001:db8::/64&quot;</span> ];
+    <span class="hljs-attr">externalIPv6</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;fe80::1234:5678:9abc:def0&quot;</span>;
+    <span class="hljs-attr">forwardPorts</span> <span class="hljs-operator">=</span> [
+      {
+        <span class="hljs-attr">sourcePort</span> <span class="hljs-operator">=</span> <span class="hljs-number">80</span>;
+        <span class="hljs-attr">proto</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;tcp&quot;</span>;
+        <span class="hljs-attr">destination</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;fe80::1234:5678:9abc:def0]:80&quot;</span>;
+      }
+    ];
+  };
+  <span class="hljs-comment"># Previous section is equivalent to :</span>
+  <span class="hljs-attr">nftables</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">ruleset</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        table ip6 nat {
+          chain PREROUTING {
+            type nat hook prerouting priority dstnat; policy accept;
+            iifname &quot;ens3&quot; ip6 daddr [2001:db8::] tcp dport 80 dnat to [fe80::1234:5678:9abc:def0]:80
+          }
+        }
+    &#x27;&#x27;</span>;
+  };
+};</code></pre>
+      </div><h3 id="virtualization">Virtualization</h3><p>Sometimes complex network configurations with VPNs or firewall rules you may need extra configurations in order for your VMs to have network access. It is recommended to use more granular control over the ports instead of simply allowing the entire interface.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">etworking</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">firewall</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    
+    <span class="hljs-comment"># Allows the entire interface through the firewall.</span>
+    <span class="hljs-comment"># trustedInterfaces = [</span>
+    <span class="hljs-comment">#   &quot;virbr0&quot;</span>
+    <span class="hljs-comment"># ];</span>
+
+    <span class="hljs-comment"># Allows individual ports through the firewall.</span>
+    <span class="hljs-attr">interfaces</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">virbr0</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">allowedUDPPorts</span> <span class="hljs-operator">=</span> [
+          <span class="hljs-comment"># DNS</span>
+          <span class="hljs-number">53</span>
+          <span class="hljs-comment"># DHCP</span>
+          <span class="hljs-number">67</span>
+          <span class="hljs-comment"># You may want to allow more ports such as ipv6 and other services here.</span>
+        ];
+      };
+    };
+  };
+  <span class="hljs-attr">nat</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+    <span class="hljs-attr">internalInterfaces</span> <span class="hljs-operator">=</span> [
+      <span class="hljs-string">&quot;virbr0&quot;</span>
+    ];
+  };
+};</code></pre>
+      </div><h2 id="ipv6">IPv6</h2><h3 id="prefix-delegation-with-fixed-duid">Prefix delegation with fixed DUID</h3><p>Sometimes the hosting provider manages IPv6 networks via a so-called <em>DUID</em> or <em>clientid</em>. This snippet is required to make the network routable:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ config, pkgs, ... }:
+
+<span class="hljs-keyword">let</span>
+  <span class="hljs-comment"># Get this from your hosting provider</span>
+  <span class="hljs-attr">clientid</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;00:11:22:33:44:55:66:77:88:99&quot;</span>;
+  <span class="hljs-attr">interface</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;enp2s0&quot;</span>;
+  <span class="hljs-attr">subnet</span> <span class="hljs-operator">=</span>  <span class="hljs-string">&quot;56&quot;</span>;
+  <span class="hljs-attr">network</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;2001:bbb:3333:1111::/<span class="hljs-subst">${subnet}</span>&quot;</span>;
+  <span class="hljs-attr">own_ip</span> <span class="hljs-operator">=</span>  <span class="hljs-string">&quot;2001:bbb:3333:1111::1/<span class="hljs-subst">${subnet}</span>&quot;</span>;
+<span class="hljs-keyword">in</span> {
+  <span class="hljs-comment"># ... snip ...</span>
+
+  <span class="hljs-attr">networking.enableIPv6</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">networking.useDHCP</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">networking.dhcpcd.persistent</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">networking.dhcpcd.extraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    clientid &quot;<span class="hljs-subst">${clientid}</span>&quot;
+    noipv6rs
+    interface <span class="hljs-subst">${interface}</span>
+    ia_pd 1/<span class="hljs-subst">${network}</span> <span class="hljs-subst">${interface}</span>
+    static ip6_address=<span class="hljs-subst">${own_ip}</span>
+  &#x27;&#x27;</span>;
+  environment.etc.<span class="hljs-string">&quot;dhcpcd.duid&quot;</span>.text <span class="hljs-operator">=</span> clientid;
+
+}</code></pre>
+      </div><p>Source: <a href="https://gist.github.com/gleber/9429ea43e6beb114250c3529b5c9d522">gleber gist for online.net IPv6 config in NixOS</a></p>
+<p>Note: Recent versions of dhcpcd move the duid file to /var/db/dcpcd/duid. For that to work, you have to replace the above environment.etc line with something like:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ystemd.services.dhcpcd.preStart</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+  cp <span class="hljs-subst">${pkgs.writeText <span class="hljs-string">&quot;duid&quot;</span> <span class="hljs-string">&quot;&lt;ID&gt;&quot;</span>}</span> /var/db/dhcpcd/duid
+&#x27;&#x27;</span>;</code></pre>
+      </div><h3 id="ipv6-mostly">IPv6-mostly</h3><p>For IPv6 mostly networks the situation in Linux is a little bit dire. A 464XLAT CLAT implementation on the client device has to be running.</p>
+<p>For example run clatd:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">services.clatd.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+}</code></pre>
+      </div><p>Caveats:</p>
+<ul>
+<li>disable IPv4 manually for DHCPv4 clients that do not accept Option 108 (IPv6-Only Preferred Option)</li>
+<li>set NAT64 prefix manually, if client doesn&#39;t support RA/PREF64 (RFC 8781) or DNS64 (RFC 7050):</li>
+</ul>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">services.clatd.settings</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">plat-prefix</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;64:ff9b::/96&quot;</span>;
+  };
+}</code></pre>
+      </div><ul>
+<li>clatd needs to be restarted, if the network has changed</li>
+</ul>
+<p>Sources:</p>
+<ul>
+<li><a href="https://labs.ripe.net/author/ondrej_caletka_1/deploying-ipv6-mostly-access-networks/">https://labs.ripe.net/author/ondrej_caletka_1/deploying-ipv6-mostly-access-networks/</a></li>
+<li><a href="https://ripe85.ripe.net/presentations/9-RIPE85-Deploying_IPv6_mostly.pdf">https://ripe85.ripe.net/presentations/9-RIPE85-Deploying_IPv6_mostly.pdf</a></li>
+<li><a href="https://github.com/systemd/systemd/issues/23674">https://github.com/systemd/systemd/issues/23674</a></li>
+<li><a href="https://github.com/toreanderson/clatd">https://github.com/toreanderson/clatd</a></li>
+<li><a href="https://gist.github.com/oskar456/d898bf2e11b642757800a5ccdc2415aa">https://gist.github.com/oskar456/d898bf2e11b642757800a5ccdc2415aa</a></li>
+<li><a href="https://fosdem.org/2024/schedule/event/fosdem-2024-1798-improving-ipv6-only-experience-on-linux/">https://fosdem.org/2024/schedule/event/fosdem-2024-1798-improving-ipv6-only-experience-on-linux/</a></li>
+<li><a href="https://nlnet.nl/project/IPv6-monostack/">https://nlnet.nl/project/IPv6-monostack/</a></li>
+</ul>
+<h2 id="vlans">VLANs</h2><p>Refer to <a href="https://nixos.org/manual/nixos/stable/options.html#opt-networking.vlans"> in the manual</a>.</p>
+<p>Below is a complete networking example showing two interfaces, one with VLAN trunk tagging and one without.</p>
+<p>is a normal network interface at with no VLAN information.</p>
+<p>is the virtual LAN trunk with two tagged VLANs, and .</p>
+<p>is in the network and is in the network.</p>
+<p>The should be unique among your machines, <a href="https://nixos.org/manual/nixos/stable/options.html#opt-networking.hostId">as mentioned in the manual</a>.</p>
+<p>Complete networking section example:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">    <span class="hljs-attr">networking</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">hostId</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;deadb33f&quot;</span>;
+      <span class="hljs-attr">hostName</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nixos&quot;</span>;
+      <span class="hljs-attr">domain</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;example.com&quot;</span>;
+      <span class="hljs-attr">dhcpcd.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+      <span class="hljs-attr">interfaces.enp2s1.ipv4.addresses</span> <span class="hljs-operator">=</span> [{
+        <span class="hljs-attr">address</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;192.168.1.2&quot;</span>;
+        <span class="hljs-attr">prefixLength</span> <span class="hljs-operator">=</span> <span class="hljs-number">28</span>;
+      }];
+      <span class="hljs-attr">vlans</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">vlan100</span> <span class="hljs-operator">=</span> { <span class="hljs-attr">id</span><span class="hljs-operator">=</span><span class="hljs-number">100</span>; <span class="hljs-attr">interface</span><span class="hljs-operator">=</span><span class="hljs-string">&quot;enp2s0&quot;</span>; };
+        <span class="hljs-attr">vlan101</span> <span class="hljs-operator">=</span> { <span class="hljs-attr">id</span><span class="hljs-operator">=</span><span class="hljs-number">101</span>; <span class="hljs-attr">interface</span><span class="hljs-operator">=</span><span class="hljs-string">&quot;enp2s0&quot;</span>; };
+      };
+      <span class="hljs-attr">interfaces.vlan100.ipv4.addresses</span> <span class="hljs-operator">=</span> [{
+        <span class="hljs-attr">address</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;10.1.1.2&quot;</span>;
+        <span class="hljs-attr">prefixLength</span> <span class="hljs-operator">=</span> <span class="hljs-number">24</span>;
+      }];
+      <span class="hljs-attr">interfaces.vlan101.ipv4.addresses</span> <span class="hljs-operator">=</span> [{
+        <span class="hljs-attr">address</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;10.10.10.3&quot;</span>;
+        <span class="hljs-attr">prefixLength</span> <span class="hljs-operator">=</span> <span class="hljs-number">24</span>;
+      }];
+      <span class="hljs-attr">defaultGateway</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;192.168.1.1&quot;</span>;
+      <span class="hljs-attr">nameservers</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;1.1.1.1&quot;</span> <span class="hljs-string">&quot;8.8.8.8&quot;</span> ];
+    };</code></pre>
+      </div><h2 id="link-aggregation">Link aggregation</h2><p><a href="https://en.wikipedia.org/wiki/Link_aggregation"><strong>Link aggregation</strong></a>, also known as <strong>bonding</strong> or <strong>trunking</strong> is the combining of multiple network links in parallel. This guide focuses on creating a Link Aggregation Group (<strong>LAG</strong>, <strong>bond</strong>, or <strong>trunk</strong>) using LACP (Link Aggregation Content Protocol).</p>
+<table>
+<thead>
+<tr>
+<th>Bonding mode</th>
+<th>Description</th>
+<th>Switch configuration</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>balance-rr</code></td>
+<td><strong>Default</strong>. Transmit packets round-robin.</td>
+<td>Requires static EtherChannel enabled, not LACP-negotiated.</td>
+</tr>
+<tr>
+<td><code>active-backup</code></td>
+<td>Recommended for fault tolerance when 802.3ad isn&#39;t available. Only one slave in the bond in active. If it fails, another one is picked to be active.</td>
+<td>No configuration required on the switch.</td>
+</tr>
+<tr>
+<td><code>balance-xor</code></td>
+<td>Transmit packets based on the selected transmit hash policy.</td>
+<td>Requires static EtherChannel enabled, not LACP-negotiated.</td>
+</tr>
+<tr>
+<td><code>broadcast</code></td>
+<td>Transmit everything on all slave interfaces.</td>
+<td>Requires static EtherChannel enabled, not LACP-negotiated.</td>
+</tr>
+<tr>
+<td><code>802.3ad</code></td>
+<td><strong>Recommended</strong>. IEEE 802.3ad Dynamic link aggregation. Transmits packets based on the selected transmit hash policy.</td>
+<td>Requires LACP-negotiated EtherChannel enabled. In simpler terms, dynamic LACP.</td>
+</tr>
+<tr>
+<td><code>balance-tlb</code></td>
+<td>Adaptive transmit load balancing</td>
+<td>No configuration required on the switch.</td>
+</tr>
+<tr>
+<td><code>balance-alb</code></td>
+<td>Adaptive load balancing</td>
+<td>No configuration required on the switch.</td>
+</tr>
+</tbody></table>
+<p>Bonding modes</p>
+<h3 id="networkmanager">NetworkManager</h3><h3 id="systemd-networkd-and-scripted-networking">systemd-networkd and scripted networking</h3><p>See <a href="https://mirror.nixoscn.org/wiki/Networking/Systemd/networkd#Bonding" class="wikilink" title="Systemd/networkd#Bonding">Systemd/networkd#Bonding</a> for more detailed configuration possibilities.</p>
+<h3 id="teaming">Teaming</h3><p>Using the teaming driver provides more configuration capabilities since more descision-making is done in userspace <sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Networking#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup>.</p>
+<h2 id="references">References</h2><references />
+
+<p><a href="category:Networking" class="wikilink" title="Category:Networking">Category:Networking</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p><a href="https://github.com/jpirko/libteam/wiki/Bonding-vs.-Team-features">https://github.com/jpirko/libteam/wiki/Bonding-vs.-Team-features</a> <a href="https://mirror.nixoscn.org/wiki/Networking#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

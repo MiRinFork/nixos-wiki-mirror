@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rollback nixpkgs</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Rollback nixpkgs</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Rollback nixpkgs -->
+
+<p>It is possible some software you depend on breaks in an updated nixpkgs release. If you need to roll back to a previous version of nixpkgs here an example method of using <a href="https://mirror.nixoscn.org/wiki/Rollback%20nixpkgs/Hydra" class="wikilink" title="Hydra">Hydra</a> to get the last tested release of nixpkgs that contains it.</p>
+<p>This specific example is where an update to Linux 6.6.57 breaks netfilter and we need to roll back to 6.6.56.</p>
+<p>We go to <a href="https://hydra.nixos.org/"><a href="https://hydra.nixos.org/">https://Hydra.nixos.org</a></a> and are presented with the Projects page.</p>
+<p><img src="https://mirror.nixoscn.org/wiki/Rollback%20nixpkgs/1-hydra-projects.png" title="1-hydra-projects.png" width="663" height="663" alt="1-hydra-projects.png" /> In this example we want to roll back in the nixos-unstable branch so we select the nixos Project.</p>
+<p><img src="https://mirror.nixoscn.org/wiki/Rollback%20nixpkgs/2-hydria-jobsets.png" title="2-hydria-jobsets.png" width="653" height="653" alt="2-hydria-jobsets.png" /> Highlighted are the release-24.05 <code>jobset</code> for NixOS stable release and the trunk-combined <code>jobset</code> which will be relevant to most. trunk-combined is Hydra <code>jobset</code> that builds nixos-unstable.</p>
+<p><img src="https://mirror.nixoscn.org/wiki/Rollback%20nixpkgs/3-hdrya-jobset-jobs-tab.png" title="3-hdrya-jobset-jobs-tab.png" width="637" height="637" alt="3-hdrya-jobset-jobs-tab.png" /> Here is the Hydra page showing the latest evaluations for trunk-combined. Highlighted is the Jobs tab where we will search for the Linux kernel we are looking for.</p>
+<figure>
+<img src="https://mirror.nixoscn.org/wiki/Rollback%20nixpkgs/4-hydra-jobs.png" title="4-hydra-jobs.png" width="827" height="827" />
+<figcaption>4-hydra-jobs.png</figcaption>
+</figure>
+
+<p>Here we are searching for the job that builds the linux_6_6 kernel and select it.</p>
+<figure>
+<img src="https://mirror.nixoscn.org/wiki/Rollback%20nixpkgs/5-hydra-job-packages.png" title="5-hydra-job-packages.png" width="735" height="735" />
+<figcaption>5-hydra-job-packages.png</figcaption>
+</figure>
+
+<p>We have found the last build that compiled the 6.6.56 kernel and select it.</p>
+<figure>
+<img src="https://mirror.nixoscn.org/wiki/Rollback%20nixpkgs/6-hydra-build-summary.png" title="6-hydra-build-summary.png" width="651" height="651" />
+<figcaption>6-hydra-build-summary.png</figcaption>
+</figure>
+
+<p>This build of the Linux 6.6.56 kernel is the first time it was built. We can see it is part of 2 other evaluations. We want to see which nixpkgs-unstable evaluations contained this build, so we click on the &quot;2 others&quot;.</p>
+<figure>
+<img src="https://mirror.nixoscn.org/wiki/Rollback%20nixpkgs/7-hydra-build-evals.png" title="7-hydra-build-evals.png" width="709" height="709" />
+<figcaption>7-hydra-build-evals.png</figcaption>
+</figure>
+
+<p>Here we have the git commit hashes for nixpkgs that were used to generate the 3 nixpkgs-unstable evals that contained the kernel we want.</p>
+<p>We do not want just any eval that had this kernel build in it. It could have been incomplete or failed. So we want to ensure that the build ran through the &quot;tested&quot; <code>job</code> that is part of the trunk-combined <code>jobset</code>. The tested <code>job</code> runs the various tests that must pass for the NixOS channels to progress.</p>
+<figure>
+<img src="https://mirror.nixoscn.org/wiki/Rollback%20nixpkgs/8-hydra-jobset-overview.png" title="8-hydra-jobset-overview.png" width="734" height="734" />
+<figcaption>8-hydra-jobset-overview.png</figcaption>
+</figure>
+
+<p>Select the Jobset dropdown. Notice that <code>trunk-combined</code> <code>jobset</code> is highligted. We select overview. But we want to open this in another windows or tab, so we have access to compare the git commit hashes we found before.</p>
+<figure>
+<img src="https://mirror.nixoscn.org/wiki/Rollback%20nixpkgs/9-hydra-jobset-jobs-tested.png" title="9-hydra-jobset-jobs-tested.png" width="753" height="753" />
+<figcaption>9-hydra-jobset-jobs-tested.png</figcaption>
+</figure>
+
+<p>First select the jobs tab to search for <code>jobs</code>. In the search field we are searching for the <code>tested</code> job. After pressing enter you see similar to the above image. Select the <code>tested</code> job. There is also a <code>tested</code> job if you are using the stable release.</p>
+<figure>
+<img src="https://mirror.nixoscn.org/wiki/Rollback%20nixpkgs/10-hydra-jobset-jobs-tested-last-successful.png" title="10-hydra-jobset-jobs-tested-last-successful.png" width="698" height="698" />
+<figcaption>10-hydra-jobset-jobs-tested-last-successful.png</figcaption>
+</figure>
+
+<p>Here we notice we are on the<code>tested</code>job of the <code>trunk-combined</code> jobset. We compare the git commit hashes of the nixpkgs evals we got from the previous step to find the tested jobs that contain the kernel we want.</p>
+<p>In this example we see that build 275414986 successfully passed the<code>tested</code> job with the green check mark displayed.</p>
+<p>So it is the latest nixos-unstable evaluation that has the kernel we want. We can then know that we can use <code>5785b6bb5eaa</code> git commit hash in our flake for nixpkgs to build our system and utilise the NixOS cache. (<code>nixpkgs.url = &quot;github:NixOS/nixpkgs/5785b6bb5eaa&quot;;</code>)</p>
+<p>We also see that the first eval that had the 6.6.56 kernel failed to pass the tested job. Good thing we took this extra step to verify!</p>
+<figure>
+<img src="https://mirror.nixoscn.org/wiki/Rollback%20nixpkgs/11-hydra-jobset-jobs-tested-last-success.png" title="11-hydra-jobset-jobs-tested-last-success.png" width="657" height="657" />
+<figcaption>11-hydra-jobset-jobs-tested-last-success.png</figcaption>
+</figure>
+
+<p>Here is the summary page of the tested build we want showing it as successful with the git commit hash.</p>
+<p><a href="category:Nixpkgs" class="wikilink" title="Category:Nixpkgs">Category:Nixpkgs</a> <a href="category:Tutorial" class="wikilink" title="Category:Tutorial">Category:Tutorial</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

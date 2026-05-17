@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IGVT-g</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / IGVT-g</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: IGVT-g -->
+
+<p>Intel GVT-g is a technology that allows to &quot;slice&quot; an Intel GPU into virtualized GPUs that can be then passed into virtual machines.</p>
+<p>Note that Intel GVT-g only supports Intel Broadwell (5th gen) to Comet Lake (10th gen), where in 10th gen support for IVGT-g was removed. For 11th gen, and 12th gen, there is SR-IOV coming up for virtualized GPUs, but that did not yet arrive in Linux mainline.</p>
+<h2 id="configuring-gpu">Configuring GPU</h2><p>First, enable iGVT-g with:</p>
+<p>... then rebuild and reboot.</p>
+<p>After rebooting, check if the driver was successfully loaded:</p>
+<p><code> $ ls /sys/bus/pci/devices/0000:00:02.0/mdev_supported_types/</code></p>
+<p>... if you get <code>No such file or directory</code>, it means you might be using an older CPU that needs an extra configuration option:</p>
+<p>... then rebuild and reboot once again (unless that previous <code>ls</code> succeeded, in which case you don&#39;t have to modify that <code>extraModprobeConfig</code> at all).</p>
+<p>Now, using <code>ls</code> you can list which variants your Intel GPU is able to virtualise:</p>
+<p><code> $ ls /sys/bus/pci/devices/0000:00:02.0/mdev_supported_types/</code><br><code> i915-GVTg_V5_4/  i915-GVTg_V5_8/</code></p>
+<p>E.g.:</p>
+<p><code> $ cat /sys/bus/pci/devices/0000:00:02.0/mdev_supported_types/i915-GVTg_V5_8/description </code><br><code> low_gm_size: 64MB</code><br><code> high_gm_size: 384MB</code><br><code> fence: 4</code><br><code> resolution: 1024x768</code><br><code> weight: 2</code></p>
+<p>Find some variant that matches your expectations (resolution, memory size etc.), note down its name, generate a random UUID:</p>
+<p><code> # If you&#39;re using Nix Flakes:</code><br><code> $ nix shell nixpkgs#libossp_uuid -c uuid</code><br><code> a297db4a-f4c2-11e6-90f6-d3b88d6c9525</code></p>
+<p><code> # If you&#39;re not using Nix Flakes:</code><br><code> $ nix run nixpkgs.libossp_uuid -c uuid</code><br><code> a297db4a-f4c2-11e6-90f6-d3b88d6c9525</code></p>
+<p>... and add that variant&#39;s name into your configuration:</p>
+<p>Rebuild &amp; voilá - your virtualized GPU is ready; now you just have to attach it to some virtual machine.</p>
+<h2 id="attaching-gpu">Attaching GPU</h2><h3 id="bare-qemu">Bare Qemu</h3><p><code> qemu-system-x86_64 \</code><br><code>    -enable-kvm \</code><br><code>    -m 1G \</code><br><code>    -nodefaults \</code><br><code>    -display gtk,gl=on \</code><br><code>    -device vfio-pci,sysfsdev=/sys/bus/mdev/devices/</code>**<code>a297db4a-f4c2-11e6-90f6-d3b88d6c9525</code>**<code>,display=on,x-igd-opregion=on,driver=vfio-pci-nohotplug,ramfb=on,xres=1920,yres=1080</code></p>
+<h3 id="libvirt">libvirt</h3><p>If using virt-manager, create new or open existing VM. Change existing <graphics> and <code></p>
+<video>
+
+<p></code> sections.</p>
+<p>sudo -E virsh edit win10</p>
+<div class="code-container">
+        
+        <pre><code class="language-xml hljs"><span class="hljs-tag">&lt;<span class="hljs-name">domain</span> <span class="hljs-attr">type</span>=<span class="hljs-string">&#x27;kvm&#x27;</span> <span class="hljs-attr">xmlns:qemu</span>=<span class="hljs-string">&#x27;http://libvirt.org/schemas/domain/qemu/1.0&#x27;</span>&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">devices</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">graphics</span> <span class="hljs-attr">type</span>=<span class="hljs-string">&#x27;spice&#x27;</span>&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">listen</span> <span class="hljs-attr">type</span>=<span class="hljs-string">&#x27;none&#x27;</span>/&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">gl</span> <span class="hljs-attr">enable</span>=<span class="hljs-string">&#x27;yes&#x27;</span>/&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">graphics</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">video</span>&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">model</span> <span class="hljs-attr">type</span>=<span class="hljs-string">&#x27;none&#x27;</span>/&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">video</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">hostdev</span> <span class="hljs-attr">mode</span>=<span class="hljs-string">&#x27;subsystem&#x27;</span> <span class="hljs-attr">type</span>=<span class="hljs-string">&#x27;mdev&#x27;</span> <span class="hljs-attr">managed</span>=<span class="hljs-string">&#x27;no&#x27;</span> <span class="hljs-attr">model</span>=<span class="hljs-string">&#x27;vfio-pci&#x27;</span> <span class="hljs-attr">display</span>=<span class="hljs-string">&#x27;on&#x27;</span>&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">source</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">address</span> <span class="hljs-attr">uuid</span>=<span class="hljs-string">&#x27;a297db4a-f4c2-11e6-90f6-d3b88d6c9525&#x27;</span>/&gt;</span>
+      <span class="hljs-tag">&lt;/<span class="hljs-name">source</span>&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">address</span> <span class="hljs-attr">type</span>=<span class="hljs-string">&#x27;pci&#x27;</span> <span class="hljs-attr">domain</span>=<span class="hljs-string">&#x27;0x0000&#x27;</span> <span class="hljs-attr">bus</span>=<span class="hljs-string">&#x27;0x00&#x27;</span> <span class="hljs-attr">slot</span>=<span class="hljs-string">&#x27;0x09&#x27;</span> <span class="hljs-attr">function</span>=<span class="hljs-string">&#x27;0x0&#x27;</span>/&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">hostdev</span>&gt;</span>
+  <span class="hljs-tag">&lt;/<span class="hljs-name">devices</span>&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">qemu:commandline</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">qemu:arg</span> <span class="hljs-attr">value</span>=<span class="hljs-string">&#x27;-set&#x27;</span>/&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">qemu:arg</span> <span class="hljs-attr">value</span>=<span class="hljs-string">&#x27;device.hostdev0.x-igd-opregion=on&#x27;</span>/&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">qemu:arg</span> <span class="hljs-attr">value</span>=<span class="hljs-string">&#x27;-set&#x27;</span>/&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">qemu:arg</span> <span class="hljs-attr">value</span>=<span class="hljs-string">&#x27;device.hostdev0.ramfb=on&#x27;</span>/&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">qemu:arg</span> <span class="hljs-attr">value</span>=<span class="hljs-string">&#x27;-set&#x27;</span>/&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">qemu:arg</span> <span class="hljs-attr">value</span>=<span class="hljs-string">&#x27;device.hostdev0.driver=vfio-pci-nohotplug&#x27;</span>/&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">qemu:arg</span> <span class="hljs-attr">value</span>=<span class="hljs-string">&#x27;-set&#x27;</span>/&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">qemu:arg</span> <span class="hljs-attr">value</span>=<span class="hljs-string">&#x27;device.hostdev0.xres=1920&#x27;</span>/&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">qemu:arg</span> <span class="hljs-attr">value</span>=<span class="hljs-string">&#x27;-set&#x27;</span>/&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">qemu:arg</span> <span class="hljs-attr">value</span>=<span class="hljs-string">&#x27;device.hostdev0.yres=1080&#x27;</span>/&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">qemu:env</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;MESA_LOADER_DRIVER_OVERRIDE&quot;</span> <span class="hljs-attr">value</span>=<span class="hljs-string">&quot;i965&quot;</span>/&gt;</span>
+  <span class="hljs-tag">&lt;/<span class="hljs-name">qemu:commandline</span>&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">domain</span>&gt;</span></code></pre>
+      </div><h2 id="faq">FAQ</h2><ul>
+<li>No video output</li>
+</ul>
+<!-- -->
+
+<ul>
+<li><ul>
+<li>use BIOS (SeaBIOS) machine, EFI (OVMF) is not supported. You may use the following workarounds <a href="https://wiki.archlinux.org/index.php/Intel_GVT-g#Using_DMA-BUF_with_UEFI/OVMF">https://wiki.archlinux.org/index.php/Intel_GVT-g#Using_DMA-BUF_with_UEFI/OVMF</a></li>
+</ul>
+</li>
+</ul>
+<!-- -->
+
+<ul>
+<li><ul>
+<li>ensure that the recent Intel graphics driver is installed in the guest</li>
+</ul>
+</li>
+</ul>
+<!-- -->
+
+<ul>
+<li>(libvirtd) &quot;Element domain has extra content: qemu:commandline&quot; error after editing via virsh</li>
+</ul>
+<!-- -->
+
+<ul>
+<li><ul>
+<li>you forgot to add xmlns:qemu=&#39;<a href="http://libvirt.org/schemas/domain/qemu/1.0">http://libvirt.org/schemas/domain/qemu/1.0</a>&#39;</li>
+</ul>
+</li>
+</ul>
+<!-- -->
+
+<ul>
+<li>(libvirtd) &quot;no drm render node available&quot; error in virt-manager</li>
+</ul>
+<!-- -->
+
+<ul>
+<li><ul>
+<li>in virt-manager change SPICE display render node from auto to available one</li>
+</ul>
+</li>
+</ul>
+<!-- -->
+
+<ul>
+<li>&quot;write_loop: No space left on device&quot; error when creating mdev device</li>
+</ul>
+<!-- -->
+
+<ul>
+<li><ul>
+<li>check whether available instances are left</li>
+</ul>
+</li>
+</ul>
+<p><code> $ cat /sys/bus/pci/devices/0000\:00\:02.0/mdev_supported_types/i915-GVTg_V5_4/available_instances </code><br><code> 1</code></p>
+<p>also check dmesg output for gvt related error, most likely there is not enough VRAM</p>
+<ul>
+<li>(libvirtd) VM stops immediately with no error other than &quot;internal error: process exited while connecting to monitor&quot;</li>
+</ul>
+<!-- -->
+
+<ul>
+<li><ul>
+<li>qemu might be exiting due to SIGSYS, which may be related to this bug: <a href="https://github.com/intel/gvt-linux/issues/47">https://github.com/intel/gvt-linux/issues/47</a></li>
+</ul>
+</li>
+</ul>
+<p>Try disabling seccomp sandboxing in qemu like so:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">virtualisation.libvirtd</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">qemuVerbatimConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+      seccomp_sandbox = 0
+    &#x27;&#x27;</span>;
+  };</code></pre>
+      </div><h2 id="useful-sources">Useful sources</h2><ul>
+<li><a href="https://www.kraxel.org/blog/2019/02/ramfb-display-in-qemu/">https://www.kraxel.org/blog/2019/02/ramfb-display-in-qemu/</a> - Info about ramfb parameter</li>
+<li><a href="https://lists.01.org/hyperkitty/list/igvt-g@lists.01.org/thread/LAB74CANVVRKGPBJMHULMMUFX43LRH55/">https://lists.01.org/hyperkitty/list/igvt-g@lists.01.org/thread/LAB74CANVVRKGPBJMHULMMUFX43LRH55/</a> - Info about x-igd-opregion parameter</li>
+<li><a href="https://www.kraxel.org/blog/2019/03/edid-support-for-qemu/">https://www.kraxel.org/blog/2019/03/edid-support-for-qemu/</a> - Info about xres and yres parameters</li>
+</ul>
+<p><a href="category:Video" class="wikilink" title="Category:Video">Category:Video</a> <a href="category:Virtualization" class="wikilink" title="Category:Virtualization">Category:Virtualization</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Backlight</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Backlight</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Backlight -->
+
+<p>This page documents methods for controlling backlight (aka screen brightness) and tips to control it via hotkeys.</p>
+<h2 id="kernel-native">Kernel native</h2><p>Some laptops, using a recent enough kernel, will automatically handle increasing and decreasing the backlight using the hot keys. The following tools will allow scripting or controlling the backlight using other means, if desired.</p>
+<h2 id="desktop-environment-native">Desktop Environment native</h2><p>Some desktop environments will handle querying and setting the backlight, including configuring the backlight keys. These include at least: Plasma (KDE) and XFCE. It may be needed to configure or start some desktop environment-specific services.</p>
+<h2 id="xbacklight"><code>xbacklight</code></h2><p><code>xbacklight</code> uses X to change the light settings. This can be inconvenient in some situations, e.g. for use with the service, which doesn&#39;t know about the X session. It, though, has an history of being more compatible with different hardware, especially newer hardware<sup>[citation needed]</sup></p>
+<p>To install <code>xbacklight</code> globally, add this to your <code>configuration.nix</code>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [ xorg.xbacklight ];</code></pre>
+      </div><p>Alternatively, use <code>nix-env -iA nixos.xorg.xbacklight</code> to install it to your user profile.</p>
+<h2 id="light"><code>light</code></h2><p><code>light</code> does not use X to change the light settings. This can be used in situations where the X service isn&#39;t available. While it does not use X, it will need some privileges to work.</p>
+<p>To enable the use of <code>light</code>, add this to your <code>configuration.nix</code> and make sure that your user is a member of the <code>video</code> group.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">programs.light.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><p>The following commands will allow you to test <code>light</code>:</p>
+<ul>
+<li><code>light -U 30</code> — the screen should become darker.</li>
+<li><code>light -A 30</code> — the screen should become brighter.</li>
+</ul>
+<p>Be careful using <code>light -U</code>, as you might turn your backlight completely off! You will not be able to see what you&#39;re typing anymore.</p>
+<h2 id="brightnessctl"><code>brightnessctl</code></h2><p>(<a href="https://github.com/Hummer12007/brightnessctl">homepage</a>) is another option, which, like <code>light</code>, would work even without X or on Wayland.</p>
+<p>You can use it by simply installing the package. Since <code>brightnessctl</code> supports the systemd-logind API it should work out of the box (i.e. without installing any udev rules or using a setuid wrapper).</p>
+<p>The following commands will allow you to test <code>brightnessctl</code>:</p>
+<ul>
+<li><code>brightnessctl set 5%-</code> - the screen should become darker.</li>
+<li><code>brightnessctl set 5%+</code> - the screen should become brighter.</li>
+</ul>
+<p>If you get an error like <code>Failed to set brightness: Protocol error</code>, check that you are using the right device. You can get a list of the devices with running <code>brightnessctl -l</code> and then specify the device with <code>-d deviceName</code>.</p>
+<p>Example: <code>brightnessctl set 5%- -d intel_backlight</code></p>
+<h2 id="external-monitors">External Monitors</h2><p>The DDC/CI (I2C) interface may be available to control the brightness of your external monitor. There are two ways to do this:</p>
+<h3 id="via-ddcutil">Via <code>ddcutil</code></h3><div class="code-container">
+        
+        <pre><code class="language-shell hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">sudo</span> modprobe i2c-dev</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-shell -p ddcutil --<span class="hljs-built_in">command</span> <span class="hljs-string">&quot;sudo ddcutil --bus=MYBUSNUM setvcp 10 MYBRIGHTNESSPCT&quot;</span></span></code></pre>
+      </div><p>You can find the correct bus number by examining the paths in <code>/sys/bus/i2c/devices</code>. e.g. to control the <code>DP4</code> device below use device <code>17</code>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">ls</span> -l /sys/bus/i2c/devices/</span>
+lrwxrwxrwx - root  2 Nov 12:34 i2c-13 -&gt; ../../../devices/pci0000:00/0000:00:02.0/drm/card1/card1-eDP-1/i2c-13
+lrwxrwxrwx - root  2 Nov 12:34 i2c-14 -&gt; ../../../devices/pci0000:00/0000:00:02.0/drm/card1/card1-DP-1/i2c-14
+lrwxrwxrwx - root  2 Nov 12:34 i2c-15 -&gt; ../../../devices/pci0000:00/0000:00:02.0/drm/card1/card1-DP-2/i2c-15
+lrwxrwxrwx - root  2 Nov 12:34 i2c-16 -&gt; ../../../devices/pci0000:00/0000:00:02.0/drm/card1/card1-DP-3/i2c-16
+lrwxrwxrwx - root  2 Nov 12:34 i2c-17 -&gt; ../../../devices/pci0000:00/0000:00:02.0/drm/card1/card1-DP-4/i2c-17</code></pre>
+      </div><p>All together:</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs">nix-shell -p ddcutil --command &quot;sudo ddcutil --bus=17 setvcp 10 65&quot;</code></pre>
+      </div><p>You can then bind this to a hotkey or similar.</p>
+<p>To make this permanent, add to your system packages, and enable i2c support.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">h<span class="hljs-attr">ardware.i2c.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span></code></pre>
+      </div><p>To interact with DDC/CI without root, also add your user to the <code>i2c</code> group (or the group defined by <a href="https://search.nixos.org/options?show=hardware.i2c.group&amp;query=hardware.i2c.group"><code>hardware.i2c.group</code></a>), or <a href="https://www.ddcutil.com/i2c_permissions/">set udev rules manually</a>.</p>
+<h3 id="via-ddcci-driver">Via <code>ddcci-driver</code></h3><p>A <a href="https://gitlab.com/ddcci-driver-linux/ddcci-driver-linux">driver</a> exists which exposes the ddcci control as a more standard <code>backlight</code> device, allowing it to be controlled by standard utilities such as <code>brightnessctl</code>. e.g. when setup:</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">find /sys/class/backlight</span>
+/sys/class/backlight
+/sys/class/backlight/ddcci17
+/sys/class/backlight/intel_backlight
+<span class="hljs-meta prompt_">
+$ </span><span class="language-bash">brightnessctl --device=ddcci17 <span class="hljs-built_in">set</span> 100%</span>
+Updated device &#x27;ddcci17&#x27;:
+Device &#x27;ddcci17&#x27; of class &#x27;backlight&#x27;:
+    Current brightness: 100 (100%)
+    Max brightness: 100</code></pre>
+      </div><p>Get the i2c name:</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">cat</span> /sys/bus/i2c/devices/i2c-17/name</span>                     
+AUX USBC4/DDI TC4/PHY TC4</code></pre>
+      </div><div class="code-container">
+        
+        <pre><code class="language-nix hljs">b<span class="hljs-attr">oot.extraModulePackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> config.boot.kernelPackages; [ ddcci-driver ];
+<span class="hljs-attr">boot.kernelModules</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;ddcci-backlight&quot;</span> ];
+<span class="hljs-attr">services.udev.extraRules</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">let</span>
+      <span class="hljs-attr">bash</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.bash}</span>/bin/bash&quot;</span>;
+      <span class="hljs-attr">ddcciDev</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;AUX USBC4/DDI TC4/PHY TC4&quot;</span>;                                                                                                      
+      <span class="hljs-attr">ddcciNode</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/sys/bus/i2c/devices/i2c-17/new_device&quot;</span>;
+    <span class="hljs-keyword">in</span> <span class="hljs-string">&#x27;&#x27;
+      SUBSYSTEM==&quot;i2c&quot;, ACTION==&quot;add&quot;, ATTR{name}==&quot;<span class="hljs-subst">${ddcciDev}</span>&quot;, RUN+=&quot;<span class="hljs-subst">${bash}</span> -c &#x27;sleep 30; printf ddcci<span class="hljs-char escape_">\ </span>0x37 &gt; <span class="hljs-subst">${ddcciNode}</span>&#x27;&quot;
+    &#x27;&#x27;</span>;</code></pre>
+      </div><p>Device autodetection is tricky with i2c so we need to trigger it manually with the <code>0x37</code> code. The <code>sleep</code> is often unfortunately necessary.</p>
+<p>The driver has had some issues with kernels &gt; 6.8, the below overlay should allow it to build if you encounter issues (<a href="https://gitlab.com/ddcci-driver-linux/ddcci-driver-linux/-/merge_requests/17">source</a>).</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">nixpkgs.overlays</span> <span class="hljs-operator">=</span> [
+      (<span class="hljs-params">self:</span> <span class="hljs-params">super:</span> {
+        <span class="hljs-attr">linuxPackages_latest</span> <span class="hljs-operator">=</span> super.linuxPackages_latest.extend (<span class="hljs-params">lpself:</span> <span class="hljs-params">lpsuper:</span> {
+          <span class="hljs-attr">ddcci-driver</span> <span class="hljs-operator">=</span> super.linuxPackages_latest.ddcci-driver.overrideAttrs (<span class="hljs-params">oldAttrs:</span> {
+            <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> super.linuxPackages_latest.ddcci-driver.version <span class="hljs-operator">+</span> <span class="hljs-string">&quot;-FIXED&quot;</span>;
+            <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> pkgs.fetchFromGitLab {
+              <span class="hljs-attr">owner</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ddcci-driver-linux&quot;</span>;
+              <span class="hljs-attr">repo</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ddcci-driver-linux&quot;</span>;
+              <span class="hljs-attr">rev</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;0233e1ee5eddb4b8a706464f3097bad5620b65f4&quot;</span>;
+              <span class="hljs-attr">hash</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sha256-Osvojt8UE+cenOuMoSY+T+sODTAAKkvY/XmBa5bQX88=&quot;</span>;
+            };
+            <span class="hljs-attr">patches</span> <span class="hljs-operator">=</span> [
+              (pkgs.fetchpatch {
+                <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ddcci-e0605c9cdff7bf3fe9587434614473ba8b7e5f63.patch&quot;</span>;
+                <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://gitlab.com/nullbytepl/ddcci-driver-linux/-/commit/e0605c9cdff7bf3fe9587434614473ba8b7e5f63.patch&quot;</span>;
+                <span class="hljs-attr">hash</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sha256-sTq03HtWQBd7Wy4o1XbdmMjXQE2dG+1jajx4HtwBHjM=&quot;</span>;                                                                      
+              })
+            ];
+          });
+        });
+      })
+    ];</code></pre>
+      </div><h2 id="sys-class-backlight"><code>/sys/class/backlight/...</code></h2><p>The <code>/sys/class/backlight/*/brightness</code> files are a built-in way to set brightness. Use them e.g. with:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">  <span class="hljs-built_in">sudo</span> <span class="hljs-built_in">tee</span> /sys/class/backlight/intel_backlight/brightness &lt;&lt;&lt; <span class="hljs-string">300</span></code></pre>
+      </div><p>to set the brightness to <code>300</code>, where the maximum is stored in <code>brightness_max</code>. You can set file permissions e.g. with a udev rule, if you don&#39;t want to use sudo. Here is an example udev rule, where you will likely have to replace intel_backlight, with the name in your /sys/class/backlight/:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">services.udev.extraRules</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    ACTION==&quot;add&quot;, SUBSYSTEM==&quot;backlight&quot;, KERNEL==&quot;intel_backlight&quot;, MODE=&quot;0666&quot;, RUN+=&quot;<span class="hljs-subst">${pkgs.coreutils}</span>/bin/chmod a+w /sys/class/backlight/%k/brightness&quot;
+  &#x27;&#x27;</span>;</code></pre>
+      </div><h2 id="tips">Tips</h2><h3 id="key-mapping">Key mapping</h3><p>While controlling the backlight via the command line is useful, it would be preferable to control it using key bindings. This is especially true considering most laptops have backlight control keys.</p>
+<p>There are two main choices to add key bindings, using a system-level service like <a href="https://mirror.nixoscn.org/wiki/Backlight/actkbd" class="wikilink" title="actkbd">actkbd</a> or using an X session tool, either provided by your <a href="https://mirror.nixoscn.org/wiki/Backlight/:Category:Desktop_environment" class="wikilink" title="Desktop environment">Desktop environment</a>, <a href="https://mirror.nixoscn.org/wiki/Backlight/Window_manager" class="wikilink" title="Window manager">Window manager</a> or a tool like <a href="https://mirror.nixoscn.org/wiki/Backlight/xbindkeys" class="wikilink" title="xbindkeys">xbindkeys</a>.</p>
+<p>Depending on the tools that work for controlling the backlight you will be able to choose one of those options.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th><code>light</code></th>
+<th><code>xbacklight</code></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>System service</td>
+<td>Yes</td>
+<td>With hacks</td>
+</tr>
+<tr>
+<td>X session</td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+</tbody></table>
+<p>Follows, an example mapping for use with actkbd:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">programs.light.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">services.actkbd</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">bindings</span> <span class="hljs-operator">=</span> [
+      { <span class="hljs-attr">keys</span> <span class="hljs-operator">=</span> [ <span class="hljs-number">224</span> ]; <span class="hljs-attr">events</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;key&quot;</span> ]; <span class="hljs-attr">command</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/run/current-system/sw/bin/light -A 10&quot;</span>; }
+      { <span class="hljs-attr">keys</span> <span class="hljs-operator">=</span> [ <span class="hljs-number">225</span> ]; <span class="hljs-attr">events</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;key&quot;</span> ]; <span class="hljs-attr">command</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/run/current-system/sw/bin/light -U 10&quot;</span>; }
+    ];
+  };</code></pre>
+      </div><h2 id="oled-screens">OLED Screens</h2><p>OLED screens do not have a backlight, but their perceived brightness can be changed via xrandr:</p>
+<ul>
+<li><code>xrandr --output<output>
+
+--brightness .5</code> - dim to 50%</li>
+<li><code>xrandr --output<output>
+
+--brightness 1</code> - no dimming</li>
+</ul>
+<h2 id="see-also">See also</h2><ul>
+<li><a href="https://wiki.archlinux.org/index.php/backlight">Arch Linux wiki page about the backlight</a></li>
+</ul>
+<p><a href="category:hardware" class="wikilink" title="category:hardware">category:hardware</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Uutils</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Uutils</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Uutils -->
+
+<p>The <a href="https://uutils.github.io/">Uutils</a> project reimplements ubiquitous command line utilities in memory-safe Rust.</p>
+<h2 id="coreutils">Coreutils</h2><h3 id="introduction">Introduction</h3><p><a href="https://uutils.github.io/coreutils/">Uutils Coreutils</a> is a cross-platform memory-safe reimplementation of <a href="https://www.gnu.org/s/coreutils/">GNU Coreutils</a> in Rust</p>
+<p>While all programs have been implemented, some options might be missing or different behavior might be experienced</p>
+<p><small>For details, see <a href="https://uutils.github.io/coreutils/docs/test_coverage.html">Uutils Coreutils - GNU Coreutils Test Coverage</a></small></p>
+<p>Though the main goal of the project is compatibility, <a href="https://uutils.github.io/coreutils/">Uutils Coreutils</a> supports a few features that are not supported by <a href="https://www.gnu.org/s/coreutils/">GNU Coreutils</a></p>
+<p><small>For details, see <a href="https://github.com/uutils/coreutils/blob/main/docs/src/extensions.md">Uutils Coreutils - Extensions</a></small></p>
+<p><a href="https://search.nixos.org/packages?show=uutils-diffutils">Nixpkgs - <code>uutils-coreutils</code></a></p>
+<p><small>If you want a prefixed package for some reason, use <a href="https://search.nixos.org/packages?show=uutils-coreutils"><code>uutils-coreutils</code></a> instead</small></p>
+<h2 id="findutils">Findutils</h2><p><a href="https://uutils.github.io/findutils/">Uutils Findutils</a> is a cross-platform memory-safe reimplementation of GNU findutils: <code>xargs</code>, <code>find</code>, <code>locate</code> and <code>updatedb</code></p>
+<p>It aims to be a drop-in replacement of the original GNU findutils commands</p>
+<p><a href="https://search.nixos.org/packages?show=uutils-findutils">Nixpkgs - <code>uutils-findutils</code></a></p>
+<h2 id="diffutils">Diffutils</h2><p><a href="https://uutils.github.io/diffutils/">Uutils Diffutils</a> is is a cross-platform memory-safe reimplementation of GNU findutils: <code>diff</code>, <code>cmp</code>, <code>diff3</code> and <code>sdiff</code></p>
+<p>It aims to be a drop-in replacement of the original GNU diffutils commands</p>
+<p><a href="https://search.nixos.org/packages?show=uutils-diffutils">Nixpkgs - <code>uutils-diffutils</code></a></p>
+<h2 id="installation">Installation</h2><p>To do a systemwide replacement of gnu utils with uutils you can use system.replaceDependencies.</p>
+<p><em>Warning: as of February 2026 this seems to break nixos-rebuild, as uutils mv uses an interactive prompt where coreutils don&#39;t</em></p>
+<p>It should be noted that the name of the dependency is hardcoded in the binaries, therefore the name of the replacing dependency needs to have exactly the same length as the name of the source dependency. To do this declaratively this snippet should be added to your configs:</p>
+<p>This is of course still quite a hacky solution, as the name of the resulting binaries will simply be padded with the char &#39;_&#39;. A better solution might be found in the future.</p>
+<p><small>For details, see <a href="https://discourse.nixos.org/t/how-to-use-uutils-coreutils-instead-of-the-builtin-coreutils/8904/36?u=malix">NixOS - Discourse: &quot;How to use uutils-coreutils instead of the builtin coreutils?&quot; (8904) - Comment 36</a></small>}}</p>
+<p>]</p>
+<p><a href="category:CLI_Applications" class="wikilink" title="Category:CLI_Applications">Category:CLI_Applications</a> <a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="category:Rust" class="wikilink" title="Category:Rust">Category:Rust</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SCION</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / SCION</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: SCION -->
+
+<p><strong>SCION (Scalability, Control, and Isolation On Next-Generation Networks)</strong> is a modern Future Internet architecture that aims to offer high availability and efficient point-to-point packet delivery, even in the presence of actively malicious network operators and devices. As of 2018 it is an ongoing research project led by researchers at ETH Zurich and, among other <em>Future Internet</em> proposals, is being explored in the Internet Engineering Task Force research group for path-aware networking.<sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/SCION#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup></p>
+<h2 id="usage-tips">Usage Tips</h2><p>Users of <code>scion ping</code> and other SCION applications must be in the <code>scion</code> group in order to access the dispatcher socket in <code>/run/shm/dispatcher/default.sock</code>. You can add users to the SCION group in your NixOS configuration as follows</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">users.users.matthew.extraGroups</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;scion&quot;</span> ];
+}</code></pre>
+      </div><p>The <a href="https://github.com/netsec-ethz/scion-apps">scion-apps</a> are not included by default even when <code>services.scion.enable = true</code>. You can add them to your NixOS configuration as follows</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs, ... }:
+{
+  <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> [ pkgs.scion-apps ];
+}</code></pre>
+      </div><h2 id="connecting-to-scionlab">Connecting to SCIONLab</h2><p>SCIONLab is a global research network to test the SCION next-generation internet architecture.<sup><a id="footnote-ref-2" href="https://mirror.nixoscn.org/wiki/SCION#footnote-2" data-footnote-ref aria-describedby="footnote-label">2</a></sup> and allows you to connect to a pre-existing network without bootstrapping your own cryptographic material or Isolation Domain as a <strong>non-core AS (Autonomous System)</strong>. Once you have configured a <strong>non-core AS</strong> on your LAN, other hosts on this LAN can then use it to connect to the broader SCIONLab network, without having to run the <code>scion-control</code> or <code>scion-router</code> daemons. A SCION end-host only requires the <code>scion-dispatcher</code> and <code>scion-daemon</code> services. In a future release of SCION, the dispatcher will be deprecated and this requirement is reduced to only a single daemon. <sup><a id="footnote-ref-3" href="https://mirror.nixoscn.org/wiki/SCION#footnote-3" data-footnote-ref aria-describedby="footnote-label">3</a></sup></p>
+<p>To connect to SCIONLab:</p>
+<p>1. Create an account at <a href="https://www.scionlab.org/registration/register/">https://www.scionlab.org/registration/register/</a></p>
+<p>2. Create a new AS at <a href="https://www.scionlab.org/user/as/add">https://www.scionlab.org/user/as/add</a></p>
+<p>3. Fill out the following form, making sure to select <code>SCION installation from sources</code> <img src="https://mirror.nixoscn.org/wiki/SCION/SCIONLab_AS_Form.png" alt="" title="SCIONLab_AS_Form.png">4. Click <code>Create AS</code></p>
+<p>5. Once your AS is created, you should be able to click <code>Download configuration</code> on the page. This will yield a tarball like <code>scion_lab_user@myemail.com_20-ffaa_1_1155.tar.gz</code> Inside is a folder named <code>gen</code> which contains the necessary information we need to connect to the SCIONLab test network.</p>
+<h3 id="fixing-scionlab-provided-topology-json">Fixing SCIONLab Provided topology.json</h3><p>The SCIONLab generated configuration contains some default incorrect assumptions though, that we need to either <strong>accomodate</strong> or <strong>fix</strong>. Inside of the <code>gen</code> folder provided by SCIONLab, you can correct the <code>topology.json</code> by removing <code>-1</code> from all occurrences of <code>br-1</code> <code>cs-1</code> <code>ds-1</code> and <code>sig-1</code>, then you can use the NixOS configuration below with no changes.</p>
+<p>For convenience, you can run <code>sed -i &#39;s/-1//g&#39; gen/*/topology.json</code> to do this replacement.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">services</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">scion</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; <span class="hljs-comment"># Enable all SCION daemons</span>
+      <span class="hljs-attr">bypassBootstrapWarning</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; <span class="hljs-comment"># We do not need to generate keys to attach to SCIONLab</span>
+    };
+  };
+
+  <span class="hljs-comment"># Pass the SCIONLab generated configuration into `/etc/scion` where the daemons will read from</span>
+  <span class="hljs-attr">environment</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">etc</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-string">&quot;scion/topology.json&quot;</span>.source <span class="hljs-operator">=</span> <span class="hljs-symbol">./gen/ASffaa_1_1155/topology.json</span>;
+      <span class="hljs-string">&quot;scion/certs&quot;</span>.source <span class="hljs-operator">=</span> <span class="hljs-symbol">./gen/ASffaa_1_1155/certs</span>;
+      <span class="hljs-string">&quot;scion/keys&quot;</span>.source <span class="hljs-operator">=</span> <span class="hljs-symbol">./gen/ASffaa_1_1155/keys</span>;
+      <span class="hljs-string">&quot;scion/crypto&quot;</span>.source <span class="hljs-operator">=</span> <span class="hljs-symbol">./gen/ASffaa_1_1155/crypto</span>;
+    };
+  };
+}</code></pre>
+      </div><h3 id="accomodating-scionlab-provided-topology-json">Accomodating SCIONLab Provided topology.json</h3><p>Alternatively, if you wish to accomodate SCIONLab&#39;s default topology naming assumptions, you can modify the identifiers in each instance of the SCION daemons, and avoid modifying the supplied `topology.json`</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">services</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">scion</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; <span class="hljs-comment"># Enable all SCION daemons</span>
+      <span class="hljs-attr">bypassBootstrapWarning</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; <span class="hljs-comment"># We do not need to generate keys to attach to SCIONLab</span>
+
+      <span class="hljs-comment"># Correct the identifiers to accomodate SCIONLab provided topology.json</span>
+      <span class="hljs-attr">scion-control.settings.general</span> <span class="hljs-operator">=</span> { <span class="hljs-attr">id</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;cs-1&quot;</span>; };
+      <span class="hljs-attr">scion-daemon.settings.general</span> <span class="hljs-operator">=</span> { <span class="hljs-attr">id</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sd-1&quot;</span>; };
+      <span class="hljs-attr">scion-router.settings.general</span> <span class="hljs-operator">=</span> { <span class="hljs-attr">id</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;br-1&quot;</span>; };
+    };
+  };
+
+  <span class="hljs-comment"># Pass the SCIONLab generated configuration into `/etc/scion` where the daemons will read from</span>
+  <span class="hljs-attr">environment</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">etc</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-string">&quot;scion/topology.json&quot;</span>.source <span class="hljs-operator">=</span> <span class="hljs-symbol">./gen/ASffaa_1_1155/topology.json</span>;
+      <span class="hljs-string">&quot;scion/certs&quot;</span>.source <span class="hljs-operator">=</span> <span class="hljs-symbol">./gen/ASffaa_1_1155/certs</span>;
+      <span class="hljs-string">&quot;scion/keys&quot;</span>.source <span class="hljs-operator">=</span> <span class="hljs-symbol">./gen/ASffaa_1_1155/keys</span>;
+      <span class="hljs-string">&quot;scion/crypto&quot;</span>.source <span class="hljs-operator">=</span> <span class="hljs-symbol">./gen/ASffaa_1_1155/crypto</span>;
+    };
+  };
+}</code></pre>
+      </div><h4 id="checking-that-everything-worked">Checking that everything worked</h4><p>Once connected to SCIONLab, you should be able to ping one of the core AS from <a href="https://www.scionlab.org/topology.png">https://www.scionlab.org/topology.png</a>, as below</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell-session hljs">$ scion ping 17-ffaa:0:1107,127.0.0.1
+Resolved local address:
+  127.0.0.1
+Using path:
+  Hops: [17-ffaa:1:1155 1&gt;573 17-ffaa:0:1107] MTU: 1472 NextHop: 127.0.0.1:30001
+
+PING 17-ffaa:0:1107,127.0.0.1:0 pld=0B scion_pkt=80B
+88 bytes from 17-ffaa:0:1107,127.0.0.1: scmp_seq=0 time=36.799ms
+^C
+--- 17-ffaa:0:1107,127.0.0.1 statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 423.698ms
+rtt min/avg/max/mdev = 36.799/36.799/36.799/0.000 ms</code></pre>
+      </div><p>Additionally, you can try using the <code>scion-apps</code> as described in the upstream documentation <a href="https://docs.scionlab.org/content/apps/">https://docs.scionlab.org/content/apps/</a>.</p>
+<p><a href="category:Networking" class="wikilink" title="Category:Networking">Category:Networking</a> <a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p><a href="https://en.wikipedia.org/w/index.php?title=SCION_(Internet_architecture)&amp;oldid=1154623316">https://en.wikipedia.org/w/index.php?title=SCION_(Internet_architecture)&amp;oldid=1154623316</a> <a href="https://mirror.nixoscn.org/wiki/SCION#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+<li id="footnote-2">
+<p><a href="https://www.scionlab.org/">https://www.scionlab.org/</a> <a href="https://mirror.nixoscn.org/wiki/SCION#footnote-ref-2" data-footnote-backref aria-label="Back to reference 2">↩</a></p>
+</li>
+<li id="footnote-3">
+<p><a href="https://github.com/scionproto/scion/pull/4344">https://github.com/scionproto/scion/pull/4344</a> <a href="https://mirror.nixoscn.org/wiki/SCION#footnote-ref-3" data-footnote-backref aria-label="Back to reference 3">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

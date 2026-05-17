@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ceph</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Ceph</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Ceph -->
+
+<p>The below wiki instructions still have some troubles; read ahead to see some of the remaining issues this guide should address. Please make a Wiki account and add your experiences.</p>
+<p>Another distributed filesystem alternative you may evaluate is <a href="https://github.com/seaweedfs/seaweedfs">SeaweedFS</a>.</p>
+<hr>
+<p>Here is a quick collection of commands I used on a 3-node Ceph mesh. The examples have been reduced to a single node, `mesh-a`, for simplicity.</p>
+<p>Describe your ceph user, alongside your normal login user:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">users.users</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">mesh</span> <span class="hljs-operator">=</span> { <span class="hljs-attr">isNormalUser</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; <span class="hljs-attr">extraGroups</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;wheel&quot;</span> <span class="hljs-string">&quot;docker&quot;</span> ]; };
+    <span class="hljs-attr">ceph</span> <span class="hljs-operator">=</span> { <span class="hljs-attr">isNormalUser</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; <span class="hljs-attr">extraGroups</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;wheel&quot;</span> <span class="hljs-string">&quot;ceph&quot;</span> ]; };
+  };
+  <span class="hljs-attr">users.groups.ceph</span> <span class="hljs-operator">=</span> {};</code></pre>
+      </div><p>Be sure you rebuild so you can assign some paths to the <code>ceph</code> user.</p>
+<p>Run <code>uuidgen</code> and assign the response as your <code>fsid</code>; describe your Ceph nodes:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">services.ceph</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">global.fsid</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;4b687c5c-5a20-4a77-8774-487989fd0bc7&quot;</span>;
+    <span class="hljs-attr">osd</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">daemons</span> <span class="hljs-operator">=</span> [<span class="hljs-string">&quot;0&quot;</span>];
+    };
+    <span class="hljs-attr">mon</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+      <span class="hljs-attr">extraConfig</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-string">&quot;mon initial members&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;mesh-a&quot;</span>;
+        <span class="hljs-string">&quot;mon host&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;10.0.0.11&quot;</span>;
+      };
+    };
+  };</code></pre>
+      </div><p>Some preparation is needed so Ceph can run the monitors. You&#39;ll need to run these commands on each node (based on <a href="https://docs.ceph.com/en/quincy/install/manual-deployment/">https://docs.ceph.com/en/quincy/install/manual-deployment/</a> ):</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">export</span> IP=&lt;your-node-IP-on-local-LAN&gt;
+<span class="hljs-built_in">export</span> FSID=4b687c5c-5a20-4a77-8774-487989fd0bc7
+
+<span class="hljs-comment"># Make your paths!</span>
+<span class="hljs-built_in">sudo</span> -u ceph <span class="hljs-built_in">mkdir</span> -p /etc/ceph
+<span class="hljs-built_in">sudo</span> -u ceph <span class="hljs-built_in">mkdir</span> -p /var/lib/ceph/bootstrap-osd
+<span class="hljs-built_in">sudo</span> -u ceph <span class="hljs-built_in">mkdir</span> -p /tmp/monmap
+<span class="hljs-built_in">sudo</span> -u ceph <span class="hljs-built_in">mkdir</span> -p /var/lib/ceph/mon/ceph-$(hostname)
+<span class="hljs-built_in">sudo</span> -u ceph <span class="hljs-built_in">mkdir</span> /var/lib/ceph/mon/ceph-mon-$(hostname)
+
+<span class="hljs-comment"># Make a keyring!</span>
+<span class="hljs-built_in">sudo</span> ceph-authtool --create-keyring /etc/ceph/ceph.client.admin.keyring --gen-key -n client.admin --<span class="hljs-built_in">cap</span> mon <span class="hljs-string">&#x27;allow *&#x27;</span> --<span class="hljs-built_in">cap</span> osd <span class="hljs-string">&#x27;allow *&#x27;</span> --<span class="hljs-built_in">cap</span> mds <span class="hljs-string">&#x27;allow *&#x27;</span> --<span class="hljs-built_in">cap</span> mgr <span class="hljs-string">&#x27;allow *&#x27;</span>
+<span class="hljs-built_in">sudo</span> <span class="hljs-built_in">mkdir</span> -p /var/lib/ceph/bootstrap-osd &amp;&amp; <span class="hljs-built_in">sudo</span> ceph-authtool --create-keyring /var/lib/ceph/bootstrap-osd/ceph.keyring --gen-key -n client.bootstrap-osd --<span class="hljs-built_in">cap</span> mon <span class="hljs-string">&#x27;profile bootstrap-osd&#x27;</span> --<span class="hljs-built_in">cap</span> mgr <span class="hljs-string">&#x27;allow r&#x27;</span>
+<span class="hljs-built_in">sudo</span> ceph-authtool /tmp/ceph.mon.keyring --import-keyring /etc/ceph/ceph.client.admin.keyring <span class="hljs-built_in">sudo</span> ceph-authtool /tmp/ceph.mon.keyring --import-keyring /var/lib/ceph/bootstrap-osd/ceph.keyring
+<span class="hljs-built_in">sudo</span> <span class="hljs-built_in">chown</span> ceph:ceph /tmp/ceph.mon.keyring
+
+<span class="hljs-comment"># Make a monitor!</span>
+<span class="hljs-built_in">sudo</span> monmaptool --create --add mesh-a <span class="hljs-variable">$IP</span> --fsid <span class="hljs-variable">$FSID</span> /tmp/monmap
+<span class="hljs-built_in">sudo</span> -u ceph ceph-mon --mkfs -i mon-$(hostname) --monmap /tmp/monmap --keyring /tmp/ceph.mon.keyring</code></pre>
+      </div><p>Prepare <code>systemd</code> to bind all Ceph OSD shares (based on <code>u/imspacekitteh</code>&#39;s example, see links):</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">systemd.services.ceph-mesh</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Ceph OSD Bindings&quot;</span>;
+    <span class="hljs-attr">unitConfig</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">After</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;local-fs.target&quot;</span>;
+      <span class="hljs-attr">Wants</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;local-fs.target&quot;</span>;
+    };
+    <span class="hljs-attr">serviceConfig</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">Type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;oneshot&quot;</span>;
+      <span class="hljs-attr">KillMode</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;none&quot;</span>;
+      <span class="hljs-attr">Environment</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;CEPH_VOLUME_TIMEOUT=10000 PATH=$PATH:/run/current-system/sw/bin/&quot;</span>;
+      <span class="hljs-attr">ExecStart</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/bin/sh -c &#x27;timeout $CEPH_VOLUME_TIMEOUT /run/current-system/sw/bin/ceph-volume lvm activate --all --no-systemd&#x27;&quot;</span>;
+      <span class="hljs-attr">TimeoutSec</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>;
+    };
+    <span class="hljs-attr">wantedBy</span> <span class="hljs-operator">=</span> [<span class="hljs-string">&quot;multi-user.target&quot;</span>];
+  };</code></pre>
+      </div><p>Though these commands seem reliable enough, there are some issues...</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">mesh@mesh-c:~/.build/ &gt; sudo ceph -s
+Error initializing cluster client: ObjectNotFound('RADOS object not found (error calling conf_read_file)')</code></pre>
+      </div><p>Clearly, Ceph is concerned that the `/etc/ceph/ceph.conf` file is missing. So am I! The Nixpkgs module should be upgraded to handle this someday, based on our supplied <code>extraConfig</code> options.</p>
+<p>Bypass the error by making the necessary config; this should be minimally enough to load Ceph:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">sudo</span> su -c <span class="hljs-string">&quot;echo &#x27;
+[global]
+fsid=<span class="hljs-variable">$FSID</span>
+mon initial members = mesh-a
+mon host = 10.0.0.11
+cluster network = 10.0.0.0/24
+&#x27; &gt; /etc/ceph/ceph.conf&quot;</span> -
+
+<span class="hljs-comment"># Double-check!</span>
+<span class="hljs-built_in">cat</span> /etc/ceph/ceph.conf</code></pre>
+      </div><p>We can now see that Ceph is ready for us to make a volume!</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">mesh@mesh-a:~/.build/ &gt; sudo systemctl restart ceph-mesh
+
+mesh@mesh-a:~/.build/ &gt; sudo systemctl status ceph-mesh
+○ ceph-mesh.service - Ceph OSD Bindings
+     Loaded: loaded (/etc/systemd/system/ceph-mesh.service; enabled; preset: enabled)
+     Active: inactive (dead) since Tue 2023-12-19 16:12:51 EST; 4s ago
+    Process: 37570 ExecStart=/bin/sh -c timeout $CEPH_VOLUME_TIMEOUT /run/current-system/sw/bin/ceph-volume lvm activate --all --no-systemd (code=exited, status=0/SUCCESS)
+   Main PID: 37570 (code=exited, status=0/SUCCESS)
+         IP: 0B in, 0B out
+        CPU: 162ms
+
+Dec 19 16:12:51 mesh-a systemd[1]: Starting Ceph OSD Bindings...
+Dec 19 16:12:51 mesh-a sh[37571]: --&gt; Was unable to find any OSDs to activate
+Dec 19 16:12:51 mesh-a sh[37571]: --&gt; Verify OSDs are present with &quot;ceph-volume lvm list&quot;
+Dec 19 16:12:51 mesh-a systemd[1]: ceph-mesh.service: Deactivated successfully.
+Dec 19 16:12:51 mesh-a systemd[1]: Finished Ceph OSD Bindings.
+
+mesh@mesh-a:~/.build/ &gt; sudo ceph-volume lvm list
+No valid Ceph lvm devices found</code></pre>
+      </div><p>Go ahead and make one.</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">mesh@mesh-a:~/.build/ &gt; sudo ceph-volume lvm create --data /dev/nvme0n1p4 --no-systemd
+Running command: /nix/store/x645fiz9vzkkwyf08agprl9h25fkqw7g-ceph-18.2.0/bin/ceph-authtool --gen-print-key
+Running command: /nix/store/x645fiz9vzkkwyf08agprl9h25fkqw7g-ceph-18.2.0/bin/ceph --cluster ceph --name client.bootstrap-osd --keyring /var/lib/ceph/bootstrap-osd/ceph.keyring -i - osd new a0d4c3db-cc9c-416a-b209-72b9bad3be40</code></pre>
+      </div><p>OOPS! This command hangs endlessly, as does <code>sudo ceph -s</code>.</p>
+<p>Your help is needed to make more progress here!</p>
+<hr>
+<p>Many users aspire to run Ceph on NixOS, and recommend varying approaches in different forums online. Here is a collection of links that can lead you along, though please consider; these experiences come from older versions of Ceph, such as v10, while (as of 2023-12) Ceph is on v18.</p>
+<ul>
+<li><a href="https://d.moonfire.us/blog/2022/12/10/ceph-and-nixos/">https://d.moonfire.us/blog/2022/12/10/ceph-and-nixos/</a></li>
+<li><a href="https://github.com/NixOS/nixpkgs/issues/147801">https://github.com/NixOS/nixpkgs/issues/147801</a></li>
+<li><a href="https://www.reddit.com/r/ceph/comments/14otjyo/ceph_on_nixos/">https://www.reddit.com/r/ceph/comments/14otjyo/ceph_on_nixos/</a></li>
+</ul>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

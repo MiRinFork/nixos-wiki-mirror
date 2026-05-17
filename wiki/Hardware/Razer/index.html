@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hardware/Razer</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/Hardware">Hardware</a><span aria-hidden="true"> / </span>Razer</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Hardware/Razer -->
+
+<h2 id="openrazer">OpenRazer</h2><p>OpenRazer is an open-source project to support Razer peripherals, including those found in their laptops. To enable the OpenRazer you need to add the following to your system configuration:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">hardware.openrazer.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+    openrazer-daemon
+  ];</code></pre>
+      </div><p>To run the <code>openrazer-daemon</code>, you need to be in the <code>openrazer</code> group.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">users.users.<span class="hljs-symbol">&lt;username&gt;</span>.extraGroups <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;openrazer&quot;</span> ];</code></pre>
+      </div><p>To enable a front-end to control the peripherals, add the following to your system configuration:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+    polychromatic
+  ];</code></pre>
+      </div><h2 id="razer-blade-15-advanced-early-2020-model">Razer Blade 15 Advanced (Early 2020 model)</h2><h3 id="lid-reopen-hybernate-issue">Lid reopen hybernate issue</h3><p>Upon closing the lid to the laptop and reopening, an issue occurs where the device will intermittently go back into hybernate mode after around 10-30 seconds. Setting the kernel parameter <code>button.lid_init_state=open</code> fixes this issue. The following is an example configuration (working in NixOS 22.05):</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">b<span class="hljs-attr">oot.kernelParams</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;button.lid_init_state=open&quot;</span> ];</code></pre>
+      </div><h3 id="getting-the-nvidia-card-to-work-properly-with-external-displays">Getting the Nvidia card to work properly with external displays</h3><p>In order to get both the laptop display and external displays working, in the BIOS settings set Chipset &gt; GPU MODE to &quot;Dedicated GPU only&quot;.</p>
+<p>After setting the GPU MODE to &quot;Dedicated GPU only&quot; in the BIOS, enabling <a href="https://mirror.nixoscn.org/wiki/Hardware/Razer/NVIDIA#Sync_mode" class="wikilink" title="NVIDIA#Sync mode">NVIDIA#Sync mode</a> is necessary in order for both the laptop&#39;s display and external display/ports to work properly. Here is an example configuration snippet for NixOS 22.05:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">services.xserver.videoDrivers</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;nvidia&quot;</span> ];
+  <span class="hljs-attr">hardware.opengl.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+  <span class="hljs-attr">hardware.nvidia</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">package</span> <span class="hljs-operator">=</span> config.boot.kernelPackages.nvidiaPackages.beta;
+    <span class="hljs-attr">powerManagement.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">modesetting.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">prime</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">sync.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">nvidiaBusId</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;PCI:1:0:0&quot;</span>;
+      <span class="hljs-attr">intelBusId</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;PCI:0:2:0&quot;</span>;
+    };
+  };</code></pre>
+      </div><h3 id="additional-resources">Additional Resources</h3><p><a href="https://discourse.nixos.org/t/razer-blade-15-nvidia-integrated-graphics-on-nixos-issues/23576/6">https://discourse.nixos.org/t/razer-blade-15-nvidia-integrated-graphics-on-nixos-issues/23576/6</a></p>
+<p><a href="https://www.reddit.com/r/NixOS/comments/nuclde/how_to_properly_set_up_lidclose_behaviour_on_a/">https://www.reddit.com/r/NixOS/comments/nuclde/how_to_properly_set_up_lidclose_behaviour_on_a/</a></p>
+<p><a href="https://wiki.archlinux.org/title/Razer_Blade">https://wiki.archlinux.org/title/Razer_Blade</a></p>
+<h2 id="updating-your-system-to-use-the-unstable-drivers-and-daemon">Updating your system to use the unstable drivers and daemon</h2><p>If you are using a new model from Razer, it probably is not available in the stable packages. But it might be available in the unstable ones.</p>
+<p>Add the below to your system configuration:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">nixpkgs.config</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">allowUnfree</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+    <span class="hljs-attr">packageOverrides</span> <span class="hljs-operator">=</span> <span class="hljs-params">pkgs:</span> {
+      <span class="hljs-attr">stable</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixos-stable&gt;</span> { <span class="hljs-attr">config</span> <span class="hljs-operator">=</span> config.nixpkgs.config; };
+      <span class="hljs-attr">unstable</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> (<span class="hljs-built_in">fetchTarball</span> <span class="hljs-string">&quot;https://github.com/NixOS/nixpkgs/archive/nixos-unstable.tar.gz&quot;</span>) { <span class="hljs-attr">config</span> <span class="hljs-operator">=</span> config.nixpkgs.config; };
+    };
+  };
+
+  <span class="hljs-comment"># updates the whole kernel to unstable so you have the correct drivers.</span>
+  <span class="hljs-attr">boot.kernelPackages</span> <span class="hljs-operator">=</span> pkgs.unstable.linuxPackages;
+
+  <span class="hljs-comment"># overrides the openrazer-daemon that the harware.openrazer.enable starts</span>
+  <span class="hljs-attr">nixpkgs.overlays</span> <span class="hljs-operator">=</span> [
+    (<span class="hljs-params">final:</span> <span class="hljs-params">prev:</span> {
+      <span class="hljs-attr">openrazer-daemon</span> <span class="hljs-operator">=</span> pkgs.unstable.openrazer-daemon;
+    })
+  ];
+
+  <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+    unstable.polychromatic
+  <span class="hljs-comment"># alternatively</span>
+  <span class="hljs-comment"># unstable.razergenie</span>
+  ];</code></pre>
+      </div><h2 id="usb-disable-issues">USB disable Issues</h2><p>If you are encountering issues that your Razer keyboard does light up on boot shortly and then can not be found by the open-razer-daemon until you unplug your USB cable and re-plug it. Then you might want to reset your USB on startup so that after login the daemon finds it again.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># Razer usb reset. Since it disables somehow on boot.</span>
+systemd.services.<span class="hljs-string">&quot;usb-reset&quot;</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+  <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Resets usb port for my Razer Keyboard&quot;</span>;
+  <span class="hljs-attr">after</span> <span class="hljs-operator">=</span> [<span class="hljs-string">&quot;multi-user.target&quot;</span>];
+  <span class="hljs-attr">serviceConfig</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">User</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;root&quot;</span>;
+      <span class="hljs-attr">Type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;simple&quot;</span>;
+      <span class="hljs-attr">ExecStart</span><span class="hljs-operator">=</span>pkgs.writeShellScript <span class="hljs-string">&quot;unit-restart-usb7_3&quot;</span> <span class="hljs-string">&#x27;&#x27;
+        echo &#x27;7-3&#x27; |tee /sys/bus/usb/drivers/usb/unbind
+        echo &#x27;7-3&#x27; |tee /sys/bus/usb/drivers/usb/bind
+      &#x27;&#x27;</span>;
+      <span class="hljs-attr">KillMode</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;process&quot;</span>;
+      <span class="hljs-attr">Restart</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;on-failure&quot;</span>;
+  };
+  <span class="hljs-attr">wantedBy</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;graphical.target&quot;</span> ];
+};
+    </code></pre>
+      </div><p>The text <code>7-3</code> is composed of the bus number (7) and the port (device?) number (3).</p>
+<p>To find the bus and port numbers, read this post: <a href="https://superuser.com/questions/1707773/how-to-turn-usb-connected-device-on-and-off-in-linux">1</a></p>
+<p>If that does not work, you can reset all USB controllers instead <sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Hardware/Razer#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-comment"># Razer usb reset. Since it disables somehow on boot.</span>
+  systemd.services.<span class="hljs-string">&quot;usb-reset&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+    <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Resets usb port for my Razer Keyboard&quot;</span>;
+    <span class="hljs-attr">after</span> <span class="hljs-operator">=</span> [<span class="hljs-string">&quot;multi-user.target&quot;</span>];
+    <span class="hljs-attr">serviceConfig</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">User</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;root&quot;</span>;
+        <span class="hljs-attr">Type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;simple&quot;</span>;
+        <span class="hljs-attr">ExecStart</span> <span class="hljs-operator">=</span> pkgs.writeShellScript <span class="hljs-string">&quot;unit-restart-usb-controller&quot;</span> <span class="hljs-string">&#x27;&#x27;
+          #!/usr/bin/env bash
+          # Resets all USB host controllers of the system.
+          # This is useful in case one stopped working
+          # due to a faulty device having been connected to it.
+
+          base=&quot;/sys/bus/pci/drivers&quot;
+          sleep_secs=&quot;1&quot;
+
+          # This might find a sub-set of these:
+          # * &#x27;ohci_hcd&#x27; - USB 3.0
+          # * &#x27;ehci-pci&#x27; - USB 2.0
+          # * &#x27;xhci_hcd&#x27; - USB 3.0
+          echo &quot;Looking for USB standards ...&quot;
+          for usb_std in &quot;$base/&quot;?hci[-_]?c*
+          do
+              echo &quot;* USB standard &#x27;$usb_std&#x27; ...&quot;
+              for dev_path in &quot;$usb_std/&quot;*:*
+              do
+                  dev=&quot;$(basename &quot;$dev_path&quot;)&quot;
+                  echo &quot;  - Resetting device &#x27;$dev&#x27; ...&quot;
+                  printf &#x27;%s&#x27; &quot;$dev&quot; | tee &quot;$usb_std/unbind&quot; &gt; /dev/null
+                  sleep &quot;$sleep_secs&quot;
+                  printf &#x27;%s&#x27; &quot;$dev&quot; | tee &quot;$usb_std/bind&quot; &gt; /dev/null
+                  echo &quot;    done.&quot;
+              done
+              echo &quot;  done.&quot;
+          done
+          echo &quot;done.&quot;
+        &#x27;&#x27;</span>;
+        <span class="hljs-attr">KillMode</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;process&quot;</span>;
+        <span class="hljs-attr">Restart</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;on-failure&quot;</span>;
+    };
+    <span class="hljs-attr">wantedBy</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;graphical.target&quot;</span> ];
+  };</code></pre>
+      </div><h2 id="references">References</h2><references />
+
+<p><a href="category:Hardware" class="wikilink" title="Category:Hardware">Category:Hardware</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p><a href="https://unix.stackexchange.com/questions/704341/how-to-reset-usb-controllers">https://unix.stackexchange.com/questions/704341/how-to-reset-usb-controllers</a> <a href="https://mirror.nixoscn.org/wiki/Hardware/Razer#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

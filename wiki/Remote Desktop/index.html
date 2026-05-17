@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Remote Desktop</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Remote Desktop</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Remote Desktop -->
+
+<h2 id="software">Software</h2><p>Remote desktop software is split into two types: servers and clients. To access a computer remotely, it must have a server running, which usually is exposed to a port or set thereof. Access to that server can be gained using a client; many protocols, like RDP, are open to all clients willing to support them. Others require specific clients, so consult the documentation for whichever service you choose to use.</p>
+<h2 id="server-protocols">Server Protocols</h2><ul>
+<li>VNC</li>
+<li>RDP</li>
+</ul>
+<h2 id="self-hosting">Self hosting</h2><ul>
+<li><a href="https://mirror.nixoscn.org/wiki/Remote%20Desktop/RustDesk" class="wikilink" title="RustDesk">RustDesk</a> available in nixpkgs as rustdesk-server</li>
+</ul>
+<h2 id="clients">Clients</h2><ul>
+<li>Apache Guacamole</li>
+<li>freerdp</li>
+<li>KRDC (KDE)</li>
+<li>remmina</li>
+<li>tightvnc and its forks tigervnc and turbovnc</li>
+<li>x2goclient</li>
+<li>GNOME Connections</li>
+<li><a href="https://mirror.nixoscn.org/wiki/Remote%20Desktop/RustDesk" class="wikilink" title="RustDesk">RustDesk</a></li>
+</ul>
+<h2 id="vnc">VNC</h2><p>Most servers provide a <code>vncserver</code> command. Various servers provide configuration options either by CLI or by configuration file.</p>
+<h3 id="desktop-session">Desktop session</h3><p>To start a desktop session or window manager, one currently has to do this manually because servers still have hard-coded paths to <code>/usr/share/xsessions</code> to look for <code>.desktop</code> files. That means one has to write a script that starts the desktop session, window manager, or any other X application.</p>
+<p>Some servers will automatically run <code>$HOME/.vnc/xstartup</code> but the more secure option is to write an executable script and run <code>vncserver -xstartup $pathToScript</code></p>
+<p>An example script:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-meta">#!/usr/bin/env bash</span>
+
+<span class="hljs-comment"># set some env variables</span>
+<span class="hljs-comment"># start window manager</span>
+<span class="hljs-built_in">exec</span> icewm</code></pre>
+      </div><p><code>pathToScript</code> can also be a path to an executable like <code>${pkgs.icewm}/bin/icewm</code></p>
+<h3 id="tigervnc">TigerVNC</h3><p>Nixpkgs has a package but no service. The server component can be started using the <code>vncserver</code> command. To connect, use the <code>vncviewer</code> command.</p>
+<p>For an automated nixos config see <a href="https://mirror.nixoscn.org/wiki/Remote%20Desktop/TigerVNC" class="wikilink" title="TigerVNC">TigerVNC</a>.</p>
+<p>However, you&#39;ll more likely have success running <a href="https://search.nixos.org/packages?channel=unstable&amp;query=x11vnc&amp;show=x11vnc">x11vnc</a> on the remote/far-away server, while only using `vncviewer` from the TigerVNC package from where you&#39;re sitting. Quality documentation for x11vnc usage is at its <a href="https://github.com/LibVNC/x11vnc/?tab=readme-ov-file#readme">official repository</a>.</p>
+<h3 id="x2go">x2go</h3><p>X2go client is packaged in nixos as <code>x2goclient</code>.</p>
+<p>The server is installed by adding the following line:<br><code>services.x2goserver.enable = true;</code><br>to /etc/nixos/configuration.nix.</p>
+<h3 id="guacamole">Guacamole</h3><h4 id="guacamole-server">Guacamole Server</h4><p>In nixos the guacamole server component is provided by <a href="https://github.com/NixOS/nixpkgs/blob/nixos-24.05/nixos/modules/services/web-apps/guacamole-server.nix">guacamole-server</a></p>
+<p>A basic server setup service entry would look like this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.guacamole-server</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">host</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;127.0.0.1&quot;</span>;
+    <span class="hljs-attr">port</span> <span class="hljs-operator">=</span> <span class="hljs-number">4822</span>;
+    <span class="hljs-attr">userMappingXml</span> <span class="hljs-operator">=</span> <span class="hljs-symbol">./user-mapping.xml</span>;
+};</code></pre>
+      </div><p>This creates the <code>guacamole-server.service</code> systemd unit.</p>
+<p>See the <a href="https://search.nixos.org/options?type=packages&amp;query=services.guacamole-server">search.nixos options</a> for other configuration options.</p>
+<p>The <code>host</code> entry indicates on which IP the server component listens. The <code>port</code> entry here is the default port of <code>4822</code>.</p>
+<p>The <code>./user-mapping.xml</code> is a relative path to the file which declares the service. So if the service is in <code>/etc/nixos/configuration.nix</code> then in this example the file would reside at <code>/etc/nixos/user-mapping.xml</code>. Contents of the file are discussed below.</p>
+<h4 id="user-mapping-xml">user-mapping.xml</h4><p>The <code>user-mapping.xml</code> file is how to define the user(s) that are allowed to login to the webportal, as well as the connections available to the user.</p>
+<p>The file content should look something like this:</p>
+<p><code>   </code><user-mapping><br><code>       </code><authorize username="USERNAME_HERE" password="ENCRYPTED_PASSWORD_HERE" encoding="sha256"><br><code>         </code><connection name="NAME_OF_THE_CONNECTION"><br><code>             </code><protocol><code>rdp</code></protocol><br><code>             </code><param name="hostname"><code>XXX.XXX.XXX.XXX</code></param><br><code>             </code><param name="port"><code>3389</code></param><br><code>             </code><param name="ignore-cert"><code>true</code></param><br><code>         </code></connection><br><code>         </code><connection name="NAME_OF_THE_CONNECTION"><br><code>             </code><protocol><code>ssh</code></protocol><br><code>             </code><param name="hostname"><code>XXX.XXX.XXX.XXX</code></param><br><code>             </code><param name="port"><code>22</code></param><br><code>         </code></connection><br><code>       </code></authorize><br><code>   </code></user-mapping></p>
+<p>The <code>password=&quot;&quot;</code> can be a plain text password, but it is not recommended. An easy way to encrypt a password would be something like:</p>
+<p><code>   $  echo -n &#39;SUPERsecretPASSWORD&#39; | openssl dgst -sha256</code><br><code>   SHA2-256(stdin)= 491cf91d586fb9442db7efe92b7839190206a653971573c23fed0435ceb596e8</code></p>
+<p>The <a href="https://guacamole.apache.org/doc/gug/configuring-guacamole.html#configuring-connections">upstream documentation</a> has complete configuration options avaiable.</p>
+<h4 id="guacamole-client">Guacamole Client</h4><p>In nixos the guacamole client component is provided by the <a href="https://github.com/NixOS/nixpkgs/blob/nixos-24.05/nixos/modules/services/web-apps/guacamole-client.nix">guacamole-client</a> component.</p>
+<p>This is the part of the service that provides the webportal for end users.</p>
+<p>A basic client setup service entry would look like this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.guacamole-client</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">enableWebserver</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">guacd-port</span> <span class="hljs-operator">=</span> <span class="hljs-number">4822</span>;
+        <span class="hljs-attr">guacd-hostname</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;localhost&quot;</span>;
+    };
+};</code></pre>
+      </div><p>This creates a <code>tomcat.service</code> systemd unit.</p>
+<p>See the <a href="https://search.nixos.org/options?type=packages&amp;query=services.guacamole-client">search.nixos options</a> for other configuration options.</p>
+<p>The webportal this provides is served by the tomcat server, and listens on port <code>8080</code> by default. The <code>settings.guacd-port</code> tells the client software how to communicate with the guacamole-server component.</p>
+<p>The <a href="https://guacamole.apache.org/doc/gug/configuring-guacamole.html#guacamole-properties">upstream documentation</a> has the list of <code>guacamole.properties</code> options that can be provided for this setting.</p>
+<p>At this point if you are intending to serve the webportal directly, then the service can be reached at the url <a href="http://"><code>http://</code></a><code>&lt;your-computer-ip:8080/guacamole</code>.</p>
+<h4 id="reverse-proxy">Reverse Proxy</h4><p>If you want to use <code>nginx</code> as a reverse proxy in front of the webportal, then the below options can serve as an example setup.</p>
+<p>This example has a virtual host available as <a href="https://remote.mydomain.net/"><code>https://remote.mydomain.net</code></a>. It uses the <a href="https://search.nixos.org/options?type=packages&amp;query=services.nginx">nginx</a> service, and <a href="https://letsencrypt.org/">LetsEncrypt</a> for SSL. Configuration of a DNS domain and records is outside the scope of this document.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.nginx</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  upstreams.<span class="hljs-string">&quot;guacamole_server&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">extraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+      keepalive 4;
+    &#x27;&#x27;</span>;
+    <span class="hljs-attr">servers</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-string">&quot;127.0.0.1:8080&quot;</span> <span class="hljs-operator">=</span> { };
+    };
+};
+
+virtualHosts.<span class="hljs-string">&quot;remote.mydomain.net&quot;</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">forceSSL</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; <span class="hljs-comment"># redirect http to https</span>
+  <span class="hljs-attr">enableACME</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  locations.<span class="hljs-string">&quot;/&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">extraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+      proxy_buffering off;
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection $http_connection;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header Host $host;
+      proxy_set_header X-NginX-Proxy true;
+      proxy_pass http://guacamole_server/guacamole$request_uri;
+      proxy_redirect http://guacamole_server/ https://$server_name/;
+    &#x27;&#x27;</span>;
+  };
+      
+<span class="hljs-comment"># this sets up the letsencrypt service to get ssl certs for the above</span>
+s<span class="hljs-attr">ecurity.acme</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">acceptTerms</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">defaults.email</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;your.email@server.name&quot;</span>;
+};    </code></pre>
+      </div><p>The <code>upstreams.&quot;guacamole_server&quot;.servers</code> setting points the to IP:port where the <code>guacamole-client</code> webportal is hosted. In this example <code>nginx</code> and <code>guacamole</code> are on the same host.</p>
+<p>The <code>virtualHosts.&quot;name&quot;.forceSSL</code> ensures requests sent to HTTP are redirected to HTTPS. The <code>enableACME</code> sets up LetsEncrypt and nginx to get and renew SSL certs.</p>
+<p>The <code>proxy_buffering off;</code>, <code>proxy_set_header Upgrade $http_upgrade;</code>, and <code>proxy_set_header Connection $http_connection;</code> settings are required to prevent nginx from buffering traffic, which can prevent guacamole from operating properly.</p>
+<p>The optional <code>proxy_pass </code><a href="http://guacamole_server/guacamole$request_uri"><code>http://guacamole_server/guacamole$request_uri</code></a><code>;</code> allows end users to access the service at <a href="https://remote.mydomain.net/"><code>https://remote.mydomain.net</code></a> as opposed to <a href="https://remote.mydomain.net/guacamole"><code>https://remote.mydomain.net/guacamole</code></a>.</p>
+<p>See the <a href="https://guacamole.apache.org/doc/gug/reverse-proxy.html#">upstream documentation</a> for more details and other proxy examples.</p>
+<h4 id="firewall">Firewall</h4><p>In the case of the above reverse proxy example, the correct firewall ports will also need to be opened on the server hosting the <code>nginx</code> proxy.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">etworking.firewall</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">allowedTCPPorts</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-number">80</span> <span class="hljs-comment"># http</span>
+    <span class="hljs-number">443</span> <span class="hljs-comment"># https</span>
+    <span class="hljs-number">8080</span> <span class="hljs-comment"># guacamole</span>
+    <span class="hljs-number">4822</span> <span class="hljs-comment"># guacamole</span>
+  ];
+};                                        </code></pre>
+      </div><p>For any systems that will be reached from the guacamole service, the corresponding ports will need to be opened. The below example opens ports that match the connection settings in the above <code>user-mapping.xml</code>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">etworking.firewall</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">allowedTCPPorts</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-number">3389</span> <span class="hljs-comment"># rdp</span>
+  ];
+};                                        </code></pre>
+      </div><h4 id="references">References</h4><p><a href="https://github.com/NixOS/nixpkgs/issues/17879">The original package request has good discussions as well</a></p>
+<h2 id="rdp">RDP</h2><h3 id="xrdp">XRDP</h3><p><img src="https://mirror.nixoscn.org/wiki/Remote%20Desktop/Screenshot_from_2024-03-02_03-15-05.png" alt="GNOME running in an XRDP shell in Remmina." title="GNOME running in an XRDP shell in Remmina."> NixOS has first-class support for XRDP. Client-wise, RDP can be accessed in many ways, but `remmina` and `freerdp` support it natively.</p>
+<p>All of the options for the <code>xrdp</code> service can be viewed on the <a href="https://search.nixos.org/options?type=packages&amp;query=xrdp">NixOS Options wiki</a>, though an example setup inside of <code>configuration.nix</code> is provided below:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">
+<span class="hljs-attr">services.xserver</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">displayManager.sddm.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">desktopManager.plasma5.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+};
+
+<span class="hljs-attr">services.xrdp</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">defaultWindowManager</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;startplasma-x11&quot;</span>;
+  <span class="hljs-attr">openFirewall</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+};</code></pre>
+      </div><p>(Source: <a href="https://discourse.nixos.org/t/please-post-working-xrdp-setting-in-configuration-nix/7404/10">Discourse Link</a>, <a href="https://github.com/NixOS/nixpkgs/blob/86a80807d8d7051c63ab2b9d7f630abe066468b1/nixos/modules/services/networking/xrdp.nix">nixpkgs code</a>)</p>
+<p>A different window manager can be used for XRDP than a machine user, provided it has been enabled (through NixOS <code>services</code> or <code>nixpkgs</code>.</p>
+<p>Make sure you log out the visual user first on the remote machine, otherwise you&#39;ll get a black screen. (Source: <a href="https://www.reddit.com/r/Proxmox/comments/hxp28j/black_screen_in_microsoft_remote_desktop_noob/fzm7zbo/">Reddit</a>). You may be able to work around this by enabling and configuring <a href="https://mirror.nixoscn.org/wiki/Remote%20Desktop/Polkit" class="wikilink" title="Polkit">Polkit</a>, as demonstrated on that page.</p>
+<h4 id="xrdp-with-gnome-48-and-higher">XRDP with Gnome 48 and higher</h4><div class="code-container">
+        
+        <pre><code class="language-nix hljs">
+<span class="hljs-attr">services.xrdp.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+<span class="hljs-attr">services.xrdp.defaultWindowManager</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.gnome-session}</span>/bin/gnome-session&quot;</span>; <span class="hljs-comment"># gnome wayland session</span>
+s<span class="hljs-attr">ervices.gnome.gnome-remote-desktop.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; <span class="hljs-comment"># needs gnome-remote-desktop backend to work!!</span>
+s<span class="hljs-attr">ervices.displayManager.autoLogin.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+<span class="hljs-attr">services.getty.autologinUser</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;
+<span class="hljs-attr">networking.firewall.allowedTCPPorts</span> <span class="hljs-operator">=</span> [ <span class="hljs-number">3389</span> ];</code></pre>
+      </div><h4 id="xrdp-under-hyper-v-with-enhanced-session-mode">XRDP under Hyper-V with enhanced session mode</h4><p>If you want to use enhanced session mode in VMConnect while using Hyper-V for a NixOS VM, you need to specify some additional options:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">services</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">xrdp</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">defaultWindowManager</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.i3}</span>/bin/i3&quot;</span>;
+      <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">extraConfDirCommands</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        substituteInPlace $out/xrdp.ini \
+          --replace-fail &#x27;port=3389&#x27; &#x27;port=vsock://-1:3389&#x27; \
+          --replace-fail &#x27;#vmconnect=true&#x27; &#x27;vmconnect=true&#x27; \
+          --replace-fail &#x27;security_layer=negotiate&#x27; &#x27;security_layer=rdp&#x27; \
+          --replace-fail &#x27;crypt_level=high&#x27; &#x27;crypt_level=none&#x27; \
+          --replace-fail &#x27;bitmap_compression=true&#x27; &#x27;bitmap_compression=false&#x27;
+      &#x27;&#x27;</span>;
+    };
+  };
+
+  <span class="hljs-attr">systemd.services.xrdp.serviceConfig.ExecStart</span> <span class="hljs-operator">=</span> lib.mkForce <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.xrdp}</span>/bin/xrdp --nodaemon --config /etc/xrdp/xrdp.ini&quot;</span>;
+
+  <span class="hljs-attr">virtualisation.hypervGuest.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><p>As documented in <a href="https://github.com/nixos/nixpkgs/issues/304855">this issue</a>, the current behavior of the XRDP module in NixOS is to provide the <code>--port</code> parameter on the CLI in the systemD unit file. It does print a message indicating it&#39;s ignoring anything provided in the configuration saying <code>--port parameter found, ini override</code> in journalctl.</p>
+<p>If in doubt, you can always run <code>ss --vsock -l</code>. If nothing shows up, then XRDP isn&#39;t listening where it should be and something about the above has changed.</p>
+<h3 id="gnome-rdp">GNOME RDP</h3><p>To enable the built in gnome-rdp, setting <code>services.gnome.gnome-remote-desktop.enable = true;</code> is not enough by itself. This installs the systemd unit but the unit does not start automatically at boot. As a consequence the &#39;Remote Desktop&#39; configuration option is also not available in &#39;System&#39; tab of the &#39;Settings&#39; app.</p>
+<p>To fix this we need to enable and start the systemd unit at boot using <code>wantedBy = [ &quot;graphical.target&quot; ];</code> as shown below:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.gnome.gnome-remote-desktop.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+<span class="hljs-attr">systemd.services.gnome-remote-desktop</span> <span class="hljs-operator">=</span> { 
+  <span class="hljs-attr">wantedBy</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;graphical.target&quot;</span> ]; <span class="hljs-comment"># for starting the unit automatically at boot</span>
+};
+<span class="hljs-attr">services.displayManager.autoLogin.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+<span class="hljs-attr">networking.firewall.allowedTCPPorts</span> <span class="hljs-operator">=</span> [ <span class="hljs-number">3389</span> ];</code></pre>
+      </div><h3 id="meshcentral">Meshcentral</h3><p>Meshcentral is a self-hosted open source administration tool similar to teamviewer. It can be added with:</p>
+<p><code>services.meshcentral.enable = true;</code></p>
+<p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="category:Desktop" class="wikilink" title="Category:Desktop">Category:Desktop</a> <a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

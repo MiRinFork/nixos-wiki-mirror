@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Weechat</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Weechat</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Weechat -->
+
+<p><a href="https://weechat.org/">WeeChat</a> is an extensible chat client with a command line interface.</p>
+<p>This article is an extension to the documentation in the <a href="https://nixos.org/manual/nixos/stable/#module-services-weechat">NixOS manual</a>.</p>
+<h2 id="module">Module</h2><p>To use WeeChat using the NixOS module, you should note that additional configuration is required. This is because of the screen security wrapper.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">services.weechat.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">programs.screen.screenrc</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    multiuser on
+    acladd USER # TODO: change to your local user
+    term screen-256color
+  &#x27;&#x27;</span>;</code></pre>
+      </div><p>After that you may attach the screen session using <code>$ screen -x weechat/weechat-screen</code>.</p>
+<h2 id="scripts">Scripts</h2><p>WeeChat can be extended with scripts. Those can be written in a variety of scripting languages. As these scripts may depend on external libraries, we need to take care that those are found by WeeChat. This can either be done by adding already packaged scripts or by extending WeeChat&#39;s extraBuildInputs.</p>
+<h3 id="packaged-weechat-scripts">Packaged WeeChat Scripts</h3><p>There are multiple prepackaged <code>weechatScripts</code> in the nixpkgs. Those are Nix packages for a WeeChat script with the script&#39;s extra dependencies. The easiest way is to create an <a href="https://mirror.nixoscn.org/wiki/Weechat/Overlays" class="wikilink" title=" overlay"> overlay</a>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-params">self:</span> <span class="hljs-params">super:</span>
+{
+  <span class="hljs-attr">weechat</span> <span class="hljs-operator">=</span> super.weechat.override {
+    <span class="hljs-attr">configure</span> <span class="hljs-operator">=</span> { availablePlugins, ... }: {
+      <span class="hljs-attr">scripts</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> super.weechatScripts; [
+        weechat-otr
+        wee-slack
+      ];
+      <span class="hljs-comment"># Uncomment this if you&#x27;re on Darwin, there&#x27;s no PHP support available. See https://github.com/NixOS/nixpkgs/blob/e6bf74e26a1292ca83a65a8bb27b2b22224dcb26/pkgs/applications/networking/irc/weechat/wrapper.nix#L13 for more info.</span>
+      <span class="hljs-comment"># plugins = builtins.attrValues (builtins.removeAttrs availablePlugins [ &quot;php&quot; ]);</span>
+    };
+  };
+}</code></pre>
+      </div><h3 id="weechat-extrabuildinputs">WeeChat extraBuildInputs</h3><p>For example the <a href="https://weechat.org/scripts/source/jabber.py.html/">Jabber script</a> depends on the <code>xmpppy</code> python library, which is provided in a separate nix package. To make WeeChat find the library, we can override the <code>weechat</code> nix package and add the dependency as an extra build input, e.g. by changing the <code>~/.nixpkgs/config.nix</code> as follows:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">packageOverrides</span> <span class="hljs-operator">=</span> <span class="hljs-params">pkgs:</span> <span class="hljs-keyword">rec</span> {
+    <span class="hljs-attr">weechat</span> <span class="hljs-operator">=</span> pkgs.weechat.override { <span class="hljs-attr">extraBuildInputs</span> <span class="hljs-operator">=</span> [ pkgs.xmpppy ]; };
+  };
+}</code></pre>
+      </div><h3 id="problem-loading-multiline-pl">Problem loading multiline.pl</h3><p>The script <b>multiline.pl</b> depends on the Pod::Select module. However, since perl version v5.31.1 Pod::Select has been removed. You can either install PodParser or use nix-shell to wrap weechat so it can find it:</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs">nix-shell -p perl -p perl532Packages.PodParser --run weechat</code></pre>
+      </div><p>This script was also packaged as <code>weechatScripts.multiline</code> and is currently available in the <a href="https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/applications/networking/irc/weechat/scripts/multiline/default.nix">unstable release</a>.</p>
+<h2 id="glowing-bear-nginx-tls-and-oauth2-proxy">Glowing Bear, nginx, TLS, and Oauth2 Proxy</h2><p>One can set up Glowing Bear as a web client to Weechat. However, its best to proxy inbound connections from the internet through a more robust service with TLS enabled. Lastly, it&#39;s convenient to reuse an auth provider to provide access to internal applications.</p>
+<p>This configuration snippet can illustrate how to configure it:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ config, pkgs, ... }:
+{
+  <span class="hljs-attr">services.weechat.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+  <span class="hljs-comment"># Go read the terms at https://letsencrypt.org/repository/</span>
+  <span class="hljs-attr">security.acme.acceptTerms</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+  <span class="hljs-attr">security.acme.email</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;</span>;
+
+  <span class="hljs-attr">services.nginx</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">recommendedGzipSettings</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">recommendedOptimisation</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">recommendedProxySettings</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">recommendedTlsSettings</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-comment"># You&#x27;d think this is a good idea, but Safari doesn&#x27;t support 1.3 on websockets yet from my testing in 2020.  If one is only using Chrome, consider it.</span>
+    <span class="hljs-comment"># sslProtocols = &quot;TLSv1.3&quot;;</span>
+    <span class="hljs-attr">virtualHosts</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-string">&quot;irc.your.fqdn.goes.here&quot;</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">forceSSL</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+        <span class="hljs-attr">enableACME</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+        locations.<span class="hljs-string">&quot;^~ /weechat&quot;</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">proxyPass</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;http://127.0.0.1:9000/weechat/&quot;</span>;
+          <span class="hljs-attr">proxyWebsockets</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+        };
+        locations.<span class="hljs-string">&quot;/&quot;</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">root</span> <span class="hljs-operator">=</span> pkgs.glowing-bear;
+        };
+      };
+    };
+
+    <span class="hljs-attr">services.oauth2.proxy</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">email.addresses</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        # your email goes here for authorization
+      &#x27;&#x27;</span>;
+      <span class="hljs-attr">nginx.virtualhosts</span> <span class="hljs-operator">=</span> [
+        <span class="hljs-string">&quot;irc.your.fqdn.goes.here&quot;</span>
+      ];
+      <span class="hljs-attr">clientID</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;</span>;
+      <span class="hljs-attr">keyFile</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;</span>;
+    };
+}</code></pre>
+      </div><p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="category:NixOS_Manual" class="wikilink" title="Category:NixOS Manual">Category:NixOS Manual</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

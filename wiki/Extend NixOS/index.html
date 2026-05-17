@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Extend NixOS</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Extend NixOS</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Extend NixOS -->
+
+<p>This tutorial shows how to extend a NixOS configuration to include custom <a href="https://mirror.nixoscn.org/wiki/Extend%20NixOS/systemd" class="wikilink" title="systemd">systemd</a> units, by creating a <a href="https://mirror.nixoscn.org/wiki/Extend%20NixOS/systemd" class="wikilink" title="systemd">systemd</a> unit that initializes IRC client every time a system session starts. Beginning by adding functionality directly to a file, it then shows how to abstract the functionality into a separate NixOS <a href="https://mirror.nixoscn.org/wiki/Extend%20NixOS/module" class="wikilink" title="module">module</a>.</p>
+<h1 id="the-problem">The Problem</h1><p>We want to start up an IRC client whenever a user logs into/starts their session.</p>
+<p>It is possible to find a variety of different ways to do this, but a simple modern approach that fits well within NixOS&#39;s <a href="https://mirror.nixoscn.org/wiki/Extend%20NixOS/Declarative_model" class="wikilink" title="Declarative model">Declarative model</a> is to declare a unit which initializes the IRC client upon session login by a user.</p>
+<p>Assume that our IRC client is as the IRC client. We&#39;ll run it inside a <a href="https://wiki.archlinux.org/title/GNU_Screen">screen</a> daemon, which apart from allowing us to <a href="https://en.wikipedia.org/wiki/Terminal_multiplexer">multiplex</a> our terminal sessions, also enables the IRC session to continue even after we log out of our shell session.</p>
+<p>Note that due to the details of systemd, the service we create will run *per user*, not *per session*.</p>
+<h1 id="some-helpful-links">Some helpful links</h1><p>This article assumes some familiarity with <a href="https://mirror.nixoscn.org/wiki/Extend%20NixOS/systemd" class="wikilink" title="systemd">systemd</a>, and <a href="https://mirror.nixoscn.org/wiki/Extend%20NixOS/NixOS_options" class="wikilink" title="NixOS options">NixOS options</a>. The following links will be helpful for providing this background:</p>
+<ul>
+<li>General overviews of : <a href="https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/system_administrators_guide/chap-managing_services_with_systemd">from RedHat</a>, <a href="https://wiki.archlinux.org/title/Systemd">the Arch Linux Wiki</a>, <a href="https://www.digitalocean.com/community/tutorials/how-to-use-systemctl-to-manage-systemd-services-and-units">tutorial from Digital Ocean</a></li>
+<li><a href="https://www.freedesktop.org/software/systemd/man/latest/systemd.html#">systemd man pages</a></li>
+<li>NixOS <a href="https://mirror.nixoscn.org/wiki/Extend%20NixOS/modules" class="wikilink" title="modules">modules</a></li>
+<li>use <a href="https://mirror.nixoscn.org/wiki/Extend%20NixOS/NixOS_search" class="wikilink" title="NixOS Search">NixOS Search</a> and <a href="https://nixos.org/nixos/manual/options.html">NixOS Manual: List of Options</a> to look up more information about specific module options that we use</li>
+</ul>
+<h1 id="implementations">Implementations</h1><h2 id="quick-implementation">Quick Implementation</h2><p>NixOS provides <a href="https://search.nixos.org/options?show=systemd">a systemd module</a> with a wide variety of configuration options. A small number of those (which you can check out on <a href="https://mirror.nixoscn.org/wiki/Extend%20NixOS/NixOS_search" class="wikilink" title="NixOS search">NixOS search</a>) allows us to implement this little snippet within our :</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"> <span class="hljs-comment"># pkgs is used to fetch screen &amp; irssi.</span>
+ {pkgs, ...}: 
+ {
+   <span class="hljs-comment"># ircSession is the name of the new service we&#x27;ll be creating</span>
+   <span class="hljs-attr">systemd.services.ircSession</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-comment"># this service is &quot;wanted by&quot; (see systemd man pages, or other tutorials) the system </span>
+      <span class="hljs-comment"># level that allows multiple users to login and interact with the machine non-graphically </span>
+      <span class="hljs-comment"># (see the Red Hat tutorial or Arch Linux Wiki for more information on what each target means) </span>
+      <span class="hljs-comment"># this is the &quot;node&quot; in the systemd dependency graph that will run the service</span>
+      <span class="hljs-attr">wantedBy</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;multi-user.target&quot;</span> ];
+      <span class="hljs-comment"># systemd service unit declarations involve specifying dependencies and order of execution</span>
+      <span class="hljs-comment"># of systemd nodes; here we are saying that we want our service to start after the network has </span>
+      <span class="hljs-comment"># set up (as our IRC client needs to relay over the network)</span>
+      <span class="hljs-attr">after</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;network.target&quot;</span> ];
+      <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Start the irc client of username.&quot;</span>;
+      <span class="hljs-attr">serviceConfig</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-comment"># see systemd man pages for more information on the various options for &quot;Type&quot;: &quot;notify&quot;</span>
+        <span class="hljs-comment"># specifies that this is a service that waits for notification from its predecessor (declared in</span>
+        <span class="hljs-comment"># `after=`) before starting</span>
+        <span class="hljs-attr">Type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;notify&quot;</span>;
+        <span class="hljs-comment"># username that systemd will look for; if it exists, it will start a service associated with that user</span>
+        <span class="hljs-attr">User</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;username&quot;</span>;
+        <span class="hljs-comment"># the command to execute when the service starts up </span>
+        <span class="hljs-attr">ExecStart</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;<span class="hljs-subst">${pkgs.screen}</span>/bin/screen -dmS irc <span class="hljs-subst">${pkgs.irssi}</span>/bin/irssi&#x27;&#x27;</span>; 
+        <span class="hljs-comment"># and the command to execute         </span>
+        <span class="hljs-attr">ExecStop</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;<span class="hljs-subst">${pkgs.screen}</span>/bin/screen -S irc -X quit&#x27;&#x27;</span>;
+      };
+   };
+ 
+   <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> [ pkgs.screen ];
+ 
+   <span class="hljs-comment"># ... usual configuration ...</span>
+ }</code></pre>
+      </div><p>What does this do?</p>
+<ul>
+<li><code>systemd.services.ircSession</code> option adds our new service to the module&#39;s <a href="https://search.nixos.org/options?channel=unstable&amp;show=systemd.services&amp;from=0&amp;size=50&amp;sort=relevance&amp;type=packages&amp;query=systemd.service">attribute set</a>.</li>
+</ul>
+<!-- -->
+
+<ul>
+<li>The comments explain the various configuration steps declaring the definition of the new service. As you can see, we configure it to start when the network connects, and to execute a shell command.</li>
+</ul>
+<p>After rebuilding the NixOS configuration with this file, our IRC session should start when our network connects. The IRC session is started as a child to the screen daemon, which is independent of any user&#39;s session and will continue running when we log out. To connect to the IRC session, we SSH into the system, reconnect to the screen session, and choose the IRC window. Here&#39;s the command:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">{{ ic \| \# ssh username@my-server -t screen -d -R irc }}</code></pre>
+      </div><h2 id="conditional-implementation">Conditional Implementation</h2><p>Suppose we want to share this functionality with your second computer, which is a similar NixOS system. The computers are very similar, so we can reuse most of the configuration file. How do we use the same configuration file, but change behavior depending on the host system? One way is to assume the &quot;hostname&quot; of each system is unique. If the hostname is X, we enable the service, and if it is Y, we disable it.</p>
+<p>We can use the <code>mkIf</code> function in the <code>configuration.nix</code> file to add conditional behavior. Here&#39;s the new implementation:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"> {config, pkgs, lib, ...}:
+ 
+ {
+   <span class="hljs-attr">systemd.services</span> <span class="hljs-operator">=</span> lib.mkIf (config.networking.hostName <span class="hljs-operator">==</span> <span class="hljs-string">&quot;my-server&quot;</span>) {
+      <span class="hljs-attr">ircSession</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">wantedBy</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;multi-user.target&quot;</span> ]; 
+        <span class="hljs-attr">after</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;network.target&quot;</span> ];
+        <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Start the irc client of username.&quot;</span>;
+        <span class="hljs-attr">serviceConfig</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">Type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;forking&quot;</span>;
+          <span class="hljs-attr">User</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;username&quot;</span>;
+          <span class="hljs-attr">ExecStart</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;<span class="hljs-subst">${pkgs.screen}</span>/bin/screen -dmS irc <span class="hljs-subst">${pkgs.irssi}</span>/bin/irssi&#x27;&#x27;</span>;         
+          <span class="hljs-attr">ExecStop</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;<span class="hljs-subst">${pkgs.screen}</span>/bin/screen -S irc -X quit&#x27;&#x27;</span>;
+        };
+      };
+   };
+ 
+   <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> lib.mkIf (config.networking.hostName <span class="hljs-operator">==</span> <span class="hljs-string">&quot;my-server&quot;</span>) [ pkgs.screen ];
+ 
+   <span class="hljs-comment"># ... usual configuration ...</span>
+ }</code></pre>
+      </div><p>This works, but if we use too many conditionals, our code will become difficult to read and modify. For example, what do we do when we want to change the hostname?</p>
+<h2 id="modular-configuration">Modular Configuration</h2><p>To avoid using conditional expressions in our <code>configuration.nix</code> file, we can separate these properties into units and blend them together differently for each host. Nix allows us to do this with the <code>imports</code> attribute (see <a href="https://nixos.org/nixos/manual/index.html#sec-modularity">NixOS Manual: Modularity</a>) to separate each concern into its own file. One way to organize this is to place common properties in the <code>configuration.nix</code> file and move the the IRC-related properties into an <code>irc-client.nix</code> file.</p>
+<p>If we move the IRC stuff into the <code>irc-client.nix</code> file, we change the <code>configuration.nix</code> file like this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"> {
+   <span class="hljs-attr">imports</span> <span class="hljs-operator">=</span> [
+     <span class="hljs-symbol">./irc-client.nix</span>
+   ];
+ 
+   <span class="hljs-comment"># ... usual configuration ...</span>
+ }</code></pre>
+      </div><p>The <code>irc-client.nix</code> file will, of course, look like this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"> {config, pkgs, lib, ...}:
+ 
+ lib.mkIf (config.networking.hostName <span class="hljs-operator">==</span> <span class="hljs-string">&quot;my-server&quot;</span>) {
+   <span class="hljs-attr">systemd.services.ircSession</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">wantedBy</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;multi-user.target&quot;</span> ]; 
+      <span class="hljs-attr">after</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;network.target&quot;</span> ];
+      <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Start the irc client of username.&quot;</span>;
+      <span class="hljs-attr">serviceConfig</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">Type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;forking&quot;</span>;
+        <span class="hljs-attr">User</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;username&quot;</span>;
+        <span class="hljs-attr">ExecStart</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;<span class="hljs-subst">${pkgs.screen}</span>/bin/screen -dmS irc <span class="hljs-subst">${pkgs.irssi}</span>/bin/irssi&#x27;&#x27;</span>;         
+        <span class="hljs-attr">ExecStop</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;<span class="hljs-subst">${pkgs.screen}</span>/bin/screen -S irc -X quit&#x27;&#x27;</span>;
+      };
+   };
+ 
+   <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> [ pkgs.screen ];
+}</code></pre>
+      </div><p>If we organize our configuration like this, sharing it across machines is easier. In addition, our IRC client can be consistent across machines that choose to use it.</p>
+<h2 id="generic-module-configuration">Generic Module Configuration</h2><p>Our IRC module is pretty useful, so we tell our friends on IRC about it. Now, they want to use our module. We still have our hostname hard-coded in our module, which isn&#39;t useful to our friends. We should remove stuff like this from our module before we distribute it to our friends. We should add a parameter so a user can pass their hostname to our module. How do we add a parameter to a module?</p>
+<p>NixOS supports this idea, but it is called &quot;options&quot;. We can add options to our module for both the condition and the username. Here is what a <code>irc-client.nix</code> module with parameters/options looks like:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"> {config, pkgs, lib, ...}:
+ 
+ <span class="hljs-keyword">let</span>
+   <span class="hljs-attr">cfg</span> <span class="hljs-operator">=</span> config.services.ircClient;
+ <span class="hljs-keyword">in</span>
+ 
+ <span class="hljs-keyword">with</span> lib;
+ 
+ {
+   <span class="hljs-attr">options</span> <span class="hljs-operator">=</span> {
+     <span class="hljs-attr">services.ircClient</span> <span class="hljs-operator">=</span> {
+       <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> mkOption {
+         <span class="hljs-attr">default</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+         <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> types; bool;
+         <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+           Start an irc client for a user.
+         &#x27;&#x27;</span>;
+       };
+ 
+       <span class="hljs-attr">user</span> <span class="hljs-operator">=</span> mkOption {
+         <span class="hljs-attr">default</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;username&quot;</span>;
+         <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> types; uniq string;
+         <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+           Name of the user.
+         &#x27;&#x27;</span>;
+       };
+     };
+   };
+ 
+   <span class="hljs-attr">config</span> <span class="hljs-operator">=</span> mkIf cfg.enable {
+     <span class="hljs-attr">systemd.services.ircSession</span> <span class="hljs-operator">=</span> {
+       <span class="hljs-attr">wantedBy</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;multi-user.target&quot;</span> ]; 
+       <span class="hljs-attr">after</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;network.target&quot;</span> ];
+       <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Start the irc client of username.&quot;</span>;
+       <span class="hljs-attr">serviceConfig</span> <span class="hljs-operator">=</span> {
+         <span class="hljs-attr">Type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;forking&quot;</span>;
+         <span class="hljs-attr">User</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${cfg.user}</span>&quot;</span>;
+         <span class="hljs-attr">ExecStart</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;<span class="hljs-subst">${pkgs.screen}</span>/bin/screen -dmS irc <span class="hljs-subst">${pkgs.irssi}</span>/bin/irssi&#x27;&#x27;</span>;         
+         <span class="hljs-attr">ExecStop</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;<span class="hljs-subst">${pkgs.screen}</span>/bin/screen -S irc -X quit&#x27;&#x27;</span>;
+       };
+     };
+ 
+     <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> [ pkgs.screen ];
+   };
+ }</code></pre>
+      </div><p>This module is now independent of the system. Now, we must update our <code>configuration.nix</code> file to pass our condition and hostname into our new module.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{config, ...}:
+
+ {
+   <span class="hljs-attr">imports</span> <span class="hljs-operator">=</span> [
+     <span class="hljs-symbol">./irc-client.nix</span>
+   ];
+ 
+   <span class="hljs-attr">services.ircClient.enable</span> <span class="hljs-operator">=</span> config.networking.hostName <span class="hljs-operator">==</span> <span class="hljs-string">&quot;my-server&quot;</span>;
+   <span class="hljs-attr">services.ircClient.user</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;username&quot;</span>;
+ 
+   <span class="hljs-comment"># ... usual configuration ...</span>
+ }</code></pre>
+      </div><h1 id="testing-configuration-changes-in-a-vm">Testing Configuration Changes in a VM</h1><p>Creating or modifying a NixOS configuration can be trial-and-error. Rather than change our working system on each configuration change, we can build it completely inside a VM, which is much safer.</p>
+<p>To see how this works, create a file like this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"> {config, pkgs, ...}:
+ {
+   <span class="hljs-comment"># You need to configure a root filesytem</span>
+   fileSystems.<span class="hljs-string">&quot;/&quot;</span>.label <span class="hljs-operator">=</span> <span class="hljs-string">&quot;vmdisk&quot;</span>;
+ 
+   <span class="hljs-comment"># The test vm name is based on the hostname, so it&#x27;s nice to set one</span>
+   <span class="hljs-attr">networking.hostName</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;vmhost&quot;</span>; 
+ 
+   <span class="hljs-comment"># Add a test user who can sudo to the root account for debugging</span>
+   <span class="hljs-attr">users.extraUsers.vm</span> <span class="hljs-operator">=</span> {
+     <span class="hljs-attr">password</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;vm&quot;</span>;
+     <span class="hljs-attr">shell</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.bash}</span>/bin/bash&quot;</span>;
+     <span class="hljs-attr">group</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;wheel&quot;</span>;
+   };
+   <span class="hljs-attr">security.sudo</span> <span class="hljs-operator">=</span> {
+     <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+     <span class="hljs-attr">wheelNeedsPassword</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+   };
+ 
+   <span class="hljs-comment"># Enable your new service!</span>
+   <span class="hljs-attr">services</span> <span class="hljs-operator">=</span>  {
+     <span class="hljs-attr">myNewService</span> <span class="hljs-operator">=</span> {
+       <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+     };
+   };
+ }</code></pre>
+      </div><p>Then, we build the new configuration inside a VM. If we named the above file <code>vmtest.nix</code>, we can use these commands:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"> # </span><span class="language-bash">Create a VM from the new configuration.</span>
+<span class="hljs-meta prompt_"> $ </span><span class="language-bash">NIXOS_CONFIG=`<span class="hljs-built_in">pwd</span>`/vmtest.nix nixos-rebuild  -I nixos=/path/to/nixos/ build-vm</span>
+<span class="hljs-meta prompt_"> # </span><span class="language-bash">Then start it.</span>
+<span class="hljs-meta prompt_"> $ </span><span class="language-bash">./result/bin/run-vmhost-vm</span></code></pre>
+      </div><h1 id="what-next">What Next?</h1><p>This tutorial follows the evolution of NixOS configuration modification, which ends in creating distributable modules.</p>
+<p>If you have another tutorial about extending NixOS, add a link below.</p>
+<ul>
+<li><a href="https://web.archive.org/web/20150331124128/http://larrythecow.org/archives/2011-10-11.html">System Services on NixOS: larrythecow.org (archived)</a></li>
+</ul>
+<p><a href="category:systemd" class="wikilink" title="Category:systemd">Category:systemd</a> <a href="category:Tutorial" class="wikilink" title="Category:Tutorial">Category:Tutorial</a> <a href="category:NixOS" class="wikilink" title="Category:NixOS">Category:NixOS</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

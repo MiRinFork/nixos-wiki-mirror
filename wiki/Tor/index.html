@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tor</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Tor</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Tor -->
+
+<p><strong>Tor (The Onion Router)</strong> is a free, open-source software that enables anonymous internet communication. It protects users&#39; privacy by routing traffic through a global network of volunteer-operated servers, masking IP addresses and online activities. Tor&#39;s key features include <strong>anonymity</strong>, <strong>privacy</strong>, and <strong>censorship circumvention</strong>. It supports hidden services with <strong>.onion domains</strong> for additional anonymity.</p>
+<p>Tor works by encrypting data multiple times and sending it through a series of nodes (entry, middle, and exit), each decrypting a layer. This process, called <strong>onion routing</strong>, ensures no single point knows both the origin and destination.</p>
+<p>Commonly used by <strong>journalists</strong>, <strong>activists</strong>, and <strong>privacy-conscious individuals</strong>, Tor helps bypass censorship and protect against surveillance. However, it can be slower than direct connections and has been associated with illegal activities due to its anonymity.</p>
+<p>For more information, you can visit the official <a href="https://www.torproject.org/">Tor Project website</a>.</p>
+<h2 id="installation">Installation</h2><h4 id="using-nix-shell">Using nix-shell</h4><div class="code-container">
+        
+        <pre><code class="language-bash hljs">nix-shell -p tor-browser</code></pre>
+      </div><h4 id="using-global-configuration">Using Global Configuration</h4><div class="code-container">
+        
+        <pre><code class="language-text hljs">environment.systemPackages = [
+  pkgs.tor-browser
+];</code></pre>
+      </div><p>After modifying your configuration, apply the changes by running:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">sudo</span> nixos-rebuild switch</code></pre>
+      </div><h4 id="using-home-configuration">Using Home Configuration</h4><div class="code-container">
+        
+        <pre><code class="language-text hljs">home.packages = [ 
+  pkgs.tor-browser
+];</code></pre>
+      </div><p>After updating your configuration, apply the changes by running:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">home-manager switch</code></pre>
+      </div><h2 id="configuration">Configuration</h2><h4 id="basic">Basic</h4><div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.tor</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">openFirewall</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+};</code></pre>
+      </div><h4 id="advanced">Advanced</h4><div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.tor</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; 
+
+  <span class="hljs-comment"># Disable GeoIP to prevent the Tor client from estimating the locations of Tor nodes it connects to</span>
+  <span class="hljs-attr">enableGeoIP</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+
+  <span class="hljs-comment"># Enable Torsocks for transparent proxying of applications through Tor</span>
+  <span class="hljs-attr">torsocks.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+  <span class="hljs-comment"># Enable the Tor client</span>
+  <span class="hljs-attr">client</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  };
+
+  <span class="hljs-comment"># Enable and configure the Tor relay</span>
+  <span class="hljs-attr">relay</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">role</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;relay&quot;</span>;  <span class="hljs-comment"># Set the relay role (e.g., &quot;relay&quot;, &quot;bridge&quot;)</span>
+  };
+
+  <span class="hljs-comment"># Configure Tor settings</span>
+  <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">Nickname</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;YourNickname&quot;</span>;  
+    <span class="hljs-attr">ContactInfo</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;your-email@example.com&quot;</span>; 
+
+    <span class="hljs-comment"># Bandwidth settings</span>
+    <span class="hljs-attr">MaxAdvertisedBandwidth</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;100 MB&quot;</span>;  
+    <span class="hljs-attr">BandWidthRate</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;50 MB&quot;</span>;  
+    <span class="hljs-attr">RelayBandwidthRate</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;50 MB&quot;</span>;  
+    <span class="hljs-attr">RelayBandwidthBurst</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;100 MB&quot;</span>; 
+
+    <span class="hljs-comment"># Restrict exit nodes to a specific country (use the appropriate country code)</span>
+    <span class="hljs-attr">ExitNodes</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;{ch} StrictNodes 1&quot;</span>;  
+    
+    <span class="hljs-comment"># Reject all exit traffic</span>
+    <span class="hljs-attr">ExitPolicy</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;reject *:*&quot;</span>;  
+
+    <span class="hljs-comment"># Performance and security settings</span>
+    <span class="hljs-attr">CookieAuthentication</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;  
+    <span class="hljs-attr">AvoidDiskWrites</span> <span class="hljs-operator">=</span> <span class="hljs-number">1</span>; 
+    <span class="hljs-attr">HardwareAccel</span> <span class="hljs-operator">=</span> <span class="hljs-number">1</span>;  
+    <span class="hljs-attr">SafeLogging</span> <span class="hljs-operator">=</span> <span class="hljs-number">1</span>; 
+    <span class="hljs-attr">NumCPUs</span> <span class="hljs-operator">=</span> <span class="hljs-number">3</span>;   
+
+    <span class="hljs-comment"># Network settings</span>
+    <span class="hljs-attr">ORPort</span> <span class="hljs-operator">=</span> [<span class="hljs-number">443</span>];
+  };
+};
+
+<span class="hljs-comment"># Operating a Snowflake proxy helps others circumvent censorship. Safe to run.</span>
+s<span class="hljs-attr">ervices.snowflake-proxy</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">capacity</span> <span class="hljs-operator">=</span> <span class="hljs-number">10</span>;
+};</code></pre>
+      </div><p>The Tor relay will require some days to advertise in the network, to the <a href="https://metrics.torproject.org/rs.html">relay index</a> and start generating traffic. You can query metrics about your relay on the relay index page using the name or email from the settings.</p>
+<p>In case your Tor relay is running behind a NAT network, be sure to forward the ORPort and the obfs4 Port to your server running Tor.</p>
+<h2 id="tips-and-tricks">Tips and Tricks</h2><h3 id="location-of-option">Location of Option</h3><p>The global options are listed here <a href="https://search.nixos.org/options?channel=unstable&amp;query=services.tor">services.tor.*</a>.</p>
+<h3 id="relay-management">Relay Management</h3><p>Tor relays are servers that help anonymize internet traffic by routing it through a series of nodes. Each relay in the Tor network plays a crucial role in maintaining the privacy and security of users by ensuring that no single point can trace the origin and destination of the data. The primary purpose of Tor relays is to facilitate anonymous communication and protect users from network surveillance and traffic analysis.</p>
+<p><strong>Types of Relays</strong></p>
+<ul>
+<li><strong>Entry (Guard) Relays:</strong> These are the first relays that Tor clients connect to. They are responsible for receiving traffic from the user and passing it to the middle relays. Entry relays are chosen carefully to ensure stability and reliability.</li>
+<li><strong>Middle Relays:</strong> These relays pass traffic between the entry and exit relays. They add an additional layer of encryption and help obscure the path of the data.</li>
+<li><strong>Exit Relays:</strong> These are the final relays that traffic passes through before reaching its destination. Exit relays decrypt the last layer of encryption and send the data to the intended recipient. They are crucial for accessing non-Tor websites and services.</li>
+</ul>
+<p><strong>Performance Considerations</strong></p>
+<ul>
+<li><strong>Bandwidth:</strong> The speed and performance of the Tor network depend on the bandwidth provided by the relays. Higher bandwidth relays can handle more traffic and improve overall network performance.</li>
+<li><strong>Latency:</strong> Due to the multiple layers of encryption and the routing through several relays, Tor can introduce latency, making it slower than direct internet connections.</li>
+<li><strong>Load Balancing:</strong> The Tor network uses load balancing to distribute traffic evenly across relays, preventing any single relay from becoming a bottleneck.</li>
+</ul>
+<p><strong>Security Risks</strong></p>
+<ul>
+<li><strong>Malicious Relays:</strong> Some relays may be operated by malicious actors attempting to intercept or manipulate traffic. The Tor network mitigates this risk through its layered encryption, but users should remain cautious.</li>
+<li><strong>Exit Relay Monitoring:</strong> Since exit relays decrypt the final layer of encryption, they can potentially monitor unencrypted traffic. Users should use end-to-end encryption (e.g., HTTPS) to protect their data.</li>
+<li><strong>Correlation Attacks:</strong> Adversaries with the ability to monitor both the entry and exit points of the Tor network may attempt to correlate traffic patterns and de-anonymize users.</li>
+</ul>
+<p><strong>Legal Issues</strong></p>
+<ul>
+<li><strong>Jurisdiction:</strong> Tor relays operate in various jurisdictions, each with its own legal framework. Relay operators should be aware of local laws and regulations regarding data privacy and internet usage.</li>
+<li><strong>Liability:</strong> Exit relay operators may face legal scrutiny if their relays are used for illegal activities. It is important for operators to understand the potential legal implications and take appropriate measures to protect themselves.</li>
+</ul>
+<h3 id="client-bridge">Client Bridge</h3><p>Tor can be enabled as a system service by enabling options . Configuration of tor service is an example of <a href="https://nixos.org/manual/nixos/stable/index.html#sec-freeform-modules">Freeform module</a>, so you can pass not only explicitly supported , but all other <a href="https://2019.www.torproject.org/docs/tor-manual.html.en">torrc</a> options. For example, client bridge config can be set like this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.tor.settings</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">UseBridges</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">ClientTransportPlugin</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;obfs4 exec <span class="hljs-subst">${pkgs.obfs4}</span>/bin/lyrebird&quot;</span>;
+      <span class="hljs-attr">Bridge</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;obfs4 IP:ORPort [fingerprint]&quot;</span>;
+};</code></pre>
+      </div><p>By default, Tor in NixOS provides one SOCKS proxy on port 9050. Port 9050 is a &quot;slow&quot; SOCKS port which can be used for email, git, and pretty much any other protocol except HTTP(S). This is a safe default which complicates identity correlation attacks, although it isn&#39;t sufficient to completely thwart them.</p>
+<p>By also enabling , an additional SOCKS service on port 9063 can be enabled. This is a &quot;fast&quot; SOCKS port suitable for browser use; a new circuit is established every ten minutes.</p>
+<h3 id="sandboxing">Sandboxing</h3><p>You can also run the <a href="https://mirror.nixoscn.org/wiki/Tor/Tor_Browser_in_a_Container" class="wikilink" title="Tor Browser in a Container">Tor Browser in a Container</a>.</p>
+<p>Alternatively, Tor can be configured together with the <a href="https://mirror.nixoscn.org/wiki/Tor/Firejail#Torify_application_traffic" class="wikilink" title="Firejail">Firejail</a> sandboxing solution.</p>
+<h3 id="faster-reconnects-on-network-switch">Faster Reconnects on Network Switch</h3><p>Using <a href="https://mirror.nixoscn.org/wiki/Tor/Systemd/networkd/dispatcher" class="wikilink" title="Systemd/networkd/dispatcher">Systemd/networkd/dispatcher</a> it is possible to restart the Tor daemon every time a network reconnect is performed. This avoids having to wait for Tor network timeouts and reestablishes a new connection faster.</p>
+<p><strong>Guard Wrappers</strong> Some applications have native support for SOCKS proxies, and it is tempting to use such support. However, it isn&#39;t unheard of for proxy support to have bugs or for application plugins to ignore proxy settings or for settings to get lost. Using a wrapper such as torsocks can be more reliable.</p>
+<p>An alternative approach is use both a wrapper and built-in proxy support. This way, if the application&#39;s proxy support fails, the connection is likely to be caught by the wrapper and if you run the application without the wrapper by mistake, the connections are still likely to be proxied.</p>
+<h3 id="kde-integration">KDE Integration</h3><p><strong>KDE Proxy Configuration</strong> In KDE, proxy server configuration is set for all applications centrally. You should set the SOCKS proxy to Tor&#39;s default SOCKS port (127.0.0.1:9050), and set the HTTP proxy to Privoxy (127.0.0.1:8118).</p>
+<p>Without Privoxy, KDE applications using either KHTML or WebKit KPart (such as Konqueror, Rekonq, KTorrent, Akregator) would become nearly unusable and cause excessive load to the Tor network.</p>
+<p>Another possibility is to run <code>tsocks kdeinit4</code>, which would cause kdeinit4 to respawn in a wrapped state. All KDE applications started after this will be wrapped with tsocks.</p>
+<p><strong>Kopete</strong> Kopete makes direct connections and ignores KDE settings. Kopete torification depends on what plugins you use. XMPP requires <code>tsocks</code>. ICQ requires <code>torsocks-faster</code>.</p>
+<p><strong>KDE PIM</strong> KMail respects KDE-wide proxy settings, and the &quot;safe&quot; SOCKS port offers good isolation between mailboxes.</p>
+<h3 id="dns-over-tor">DNS over Tor</h3><div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">tor</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">client.dns.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">settings.DNSPort</span> <span class="hljs-operator">=</span> [{
+      <span class="hljs-attr">addr</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;127.0.0.1&quot;</span>;
+      <span class="hljs-attr">port</span> <span class="hljs-operator">=</span> <span class="hljs-number">53</span>;
+    }];
+  };
+  <span class="hljs-attr">resolved</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; <span class="hljs-comment"># For caching DNS requests.</span>
+    <span class="hljs-attr">fallbackDns</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;&quot;</span> ]; <span class="hljs-comment"># Overwrite compiled-in fallback DNS servers.</span>
+  };
+};
+
+<span class="hljs-attr">networking.nameservers</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;127.0.0.1&quot;</span> ];</code></pre>
+      </div><p>Please refer to <a href="https://wiki.archlinux.org/title/Tor#TorDNS">ArchWiki</a> for details.</p>
+<h2 id="references">References</h2><ol>
+<li><a href="https://support.torproject.org/tbb/tbb-9">https://support.torproject.org/tbb/tbb-9</a></li>
+<li><a href="https://nixos.org/manual/nixos/stable/index.html#sec-freeform-modules">https://nixos.org/manual/nixos/stable/index.html#sec-freeform-modules</a></li>
+<li><a href="https://2019.www.torproject.org/docs/tor-manual.html.en">https://2019.www.torproject.org/docs/tor-manual.html.en</a></li>
+<li><a href="https://wiki.archlinux.org/title/Tor#TorDNS">https://wiki.archlinux.org/title/Tor#TorDNS</a></li>
+<li><a href="https://search.nixos.org/options?channel=unstable&amp;query=services.tor">https://search.nixos.org/options?channel=unstable&amp;query=services.tor</a></li>
+</ol>
+<p><a href="category:Networking" class="wikilink" title="Category:Networking">Category:Networking</a> <a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="category:Security" class="wikilink" title="Category:Security">Category:Security</a> <a href="category:Privacy" class="wikilink" title="Category:Privacy">Category:Privacy</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

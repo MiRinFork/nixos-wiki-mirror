@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Installing from Linux</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Installing from Linux</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Installing from Linux -->
+
+<h2 id="why">Why?</h2><p>For &#39;normal&#39; NixOS installations, you&#39;d use the instructions from <a href="https://nixos.org/manual/nixos/stable/index.html#sec-installation">https://nixos.org/manual/nixos/stable/index.html#sec-installation</a></p>
+<p>However, you can install &#39;directly from Linux&#39; if:</p>
+<ul>
+<li>You already have a running linux distro</li>
+<li>You don&#39;t want to waste a CD-R (and can&#39;t boot from USB)</li>
+<li>You have a spare partition where to install NixOS ready.</li>
+</ul>
+<p>One method is described in the manual at <a href="https://nixos.org/manual/nixos/stable/#sec-installing-from-other-distro">https://nixos.org/manual/nixos/stable/#sec-installing-from-other-distro</a>. For an alternative method, see below.</p>
+<h2 id="how">How?</h2><p>To simplify, we will be using these abbreviations:</p>
+<p>/dev/sda1<br>your boot partition, containing already working grub</p>
+<!-- -->
+
+<p>/dev/sda2<br>your linux root partition, containing your currently working OS (/dev/sda1 and /dev/sda2 *can* be the same partition!)</p>
+<!-- -->
+
+<p>/dev/sda3<br>your spare partition to where you will install NixOS</p>
+<!-- -->
+
+<p>/boot<br>the boot directory, where grub is installed</p>
+<!-- -->
+
+<p>~/inst<br>directory where the ISO is (loop) mounted</p>
+<p>The following sections outline two installation methods. Choose the one that suits you best.</p>
+<h2 id="installing-through-a-chroot">Installing through a chroot</h2><p>In this section we will install NixOS by unpacking the ISO and then chrooting into its contents to start the final install.</p>
+<p>Note that this may not work on all distributions (eg. older versions of debian stable).</p>
+<h3 id="preparations">Preparations</h3><p>Get a NixOS ISO and unpack the squashfs filesystem containing the nix store. A tool from squashfs-tools is required, so install that package first.</p>
+<p>The following commands create two directories in your home directory, one for the ISO mountpoint and one for the host system. Then the ISO is downloaded (substitute as you please), mounted and the nix store extracted.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-built_in">cd</span> ~</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-built_in">mkdir</span> -p inst host/nix</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">wget https://channels.nixos.org/nixos-21.11/latest-nixos-minimal-x86_64-linux.iso</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">modprobe loop</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">mount -o loop latest-nixos-minimal-x86_64-linux.iso inst</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">unsquashfs -d host/nix/store inst/nix-store.squashfs <span class="hljs-string">&#x27;*&#x27;</span></span></code></pre>
+      </div><p>To have a working network connection, copy /etc/resolv.conf to host/nix/etc. For a working chroot, you also need to bind /dev, /proc and /sys directories to the target system.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-built_in">cd</span> host</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-built_in">mkdir</span> -p etc dev proc sys</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-built_in">cp</span> /etc/resolv.conf etc</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-keyword">for</span> fn <span class="hljs-keyword">in</span> dev proc sys; <span class="hljs-keyword">do</span> mount --<span class="hljs-built_in">bind</span> <span class="hljs-string">&quot;/<span class="hljs-variable">${fn}</span>&quot;</span> <span class="hljs-string">&quot;<span class="hljs-variable">${fn}</span>&quot;</span>; <span class="hljs-keyword">done</span></span></code></pre>
+      </div><h3 id="circumventing-regular-init-sequence">Circumventing regular init sequence</h3><p>To properly chroot into the host system you must locate the packages named nixos and bash. The following commands may prove helpful:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">INIT=$(find . -<span class="hljs-built_in">type</span> f -path <span class="hljs-string">&#x27;*nixos*/init&#x27;</span>)</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-built_in">echo</span> <span class="hljs-variable">$INIT</span></span>
+./nix/store/abwlkvzyjd2i39b1l1wfv7v9ilx88fwi-nixos-0.1pre34067-34077/init
+<span class="hljs-meta prompt_"># </span><span class="language-bash">BASH=$(find . -<span class="hljs-built_in">type</span> f -path <span class="hljs-string">&#x27;*/bin/bash&#x27;</span> | <span class="hljs-built_in">tail</span> -n 1)</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-built_in">echo</span> <span class="hljs-variable">$BASH</span></span>
+./nix/store/bmgq2jrn6719r6j55gs4rzfp0azcbazy-bash-4.2-p24/bin/bash</code></pre>
+      </div><p><strong>Replace further mentions of these files with your own results! Note the missing prefix in some uses.</strong></p>
+<p>Next we have to edit the target system init script to start a bash session instead of systemd. As that is the last thing the script does, adding an interactive program does not pose a problem.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">sed -i <span class="hljs-string">&quot;s,exec /.*systemd,exec /<span class="hljs-variable">$BASH</span>,&quot;</span> <span class="hljs-variable">$INIT</span></span></code></pre>
+      </div><h3 id="starting-the-install">Starting the install</h3><p>Now we are able to chroot into the NixOS system used for installation. <em>You may get several warnings and errors, but you can safely ignore them unless they are fatal.</em> If you&#39;re installing from Arch, you may need to remove the mount call that tries to make / private in the same init script.</p>
+<p>Using chroot:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-built_in">chroot</span> . /<span class="hljs-variable">$INIT</span></span></code></pre>
+      </div><p>Using pivot_root:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-built_in">mkdir</span> old_root</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">mount --make-rprivate /</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">pivot_root . old_root</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-variable">$INIT</span></span></code></pre>
+      </div><p><strong>Further commands to be executed in the chrooted environment will be prefixed with &quot;# (chroot)&quot;</strong>.</p>
+<p>The next steps are the same as with classical installation methods. Create a suitable NixOS <a href="http://nixos.org/nixos/manual/#ch-configuration">configuration</a> and start the build.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">(<span class="hljs-built_in">chroot</span>) mount /dev/sda3 /mnt</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">(<span class="hljs-built_in">chroot</span>) nixos-generate-config --root /mnt</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">(<span class="hljs-built_in">chroot</span>) nano /mnt/etc/nixos/configuration.nix</span></code></pre>
+      </div><p>Before executing nixos-install you might want to run nixos-checkout to obtain the most recent version of packages to be installed into your NixOS system. You might need to copy /etc/resolv.conf from the host to the target system.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">(<span class="hljs-built_in">chroot</span>) NIX_PATH=<span class="hljs-string">&quot;nixpkgs=channel:nixos-21.11&quot;</span> nixos-install</span></code></pre>
+      </div><p>Now your system should be set up. Be sure to change the root password to be able to login and double check that /mnt/boot/grub/menu.lst is present and looks sensible.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">(<span class="hljs-built_in">chroot</span>) passwd</span></code></pre>
+      </div><p>Finally, if you instructed nix not to overwrite your existing boot loader, manually copy the menu.lst entries into your existing system&#39;s GRUB menu.lst.</p>
+<p>Once you&#39;re done tweaking, exit the chroot (exit or ctrl-d will) and reboot. With any luck, you will have new choices in the GRUB menu to choose from.</p>
+<h2 id="running-the-livecd-installer-from-disk">Running the LiveCD installer from disk</h2><p>In this section we will install NixOS by transfering the installer from the ISO to a bootable partition and then running it.</p>
+<p><strong>WARNING</strong></p>
+<p>This approach relies on merging the LiveCD image with the contents of your working partition, so several limitations apply:</p>
+<ul>
+<li>the target partition needs to have enough free space for both the working partition (/dev/sda2) and the uncompressed nix store from the LiveCD</li>
+<li>/etc will be merged, so your current settings can interfere with the final installation steps</li>
+</ul>
+<h3 id="unpacking-the-iso-image">Unpacking the ISO image</h3><div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">wget https://channels.nixos.org/nixos-24.05/latest-nixos-minimal-x86_64-linux.iso <span class="hljs-comment"># get the latest iso (URL might change!)</span></span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">modprobe loop</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">mount -o loop latest-nixos-minimal-x86_64-linux.iso ~/inst</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-comment"># mount /dev/sda1 # mount the /boot partition if you have it</span></span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-built_in">cp</span> ~/inst/boot/bzImage /boot/nixos-livecd-bzImage</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-built_in">cp</span> ~/inst/boot/initrd /boot/nixos-livecd-initrd</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-built_in">cp</span> ~/inst/nix-store.squashfs /nix-store.squashfs</span></code></pre>
+      </div><h3 id="modifying-your-bootloader-39-s-config">Modifying your bootloader&#39;s config</h3><p>Look at some_dir/boot/grub/grub.cfg. This is Grub-2 main config file of the ISO. Locate the NixOS menuentry section:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">menuentry &quot;NixOS Installer / Rescue&quot; {
+  linux /boot/bzImage init=/nix/store/p5n72ay1c1wx4wry90zabr8jnljpdzgx-nixos-0.2pre4601_1def5ba-48a4e91/init root=LABEL=NIXOS_0.2pre4601_1def5ba-48a4e91
+  initrd /boot/initrd
+}</code></pre>
+      </div><p>The goal is to tell your bootloader to boot /nixos-livecd-bzImage with correct init argument.</p>
+<h4 id="grub-1">GRUB 1</h4><p>To setup grub-1, edit your /boot/grub/menu.lst (or equivalent). Add following lines to the config:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">title NixOS LiveCD
+kernel /nixos-livecd-bzImage init=/nix/store/p5n72ay1c1wx4wry90zabr8jnljpdzgx-nixos-0.2pre4601_1def5ba-48a4e91/init root=/dev/sda2 splash=verbose vga=0x317
+initrd /nixos-livecd-initrd</code></pre>
+      </div><p>Note, that hash should match with what you have seen in some_dir/grub/grub.cfg</p>
+<p>Go to the reboot section</p>
+<h4 id="grub-2">GRUB 2</h4><p>A grub entry for ubuntu might look like this:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">menuentry &quot;NixOS Installer / Rescue&quot; {
+  linux /nixos-livecd-bzImage init=/nix/store/p5n72ay1c1wx4wry90zabr8jnljpdzgx-nixos-0.2pre4601_1def5ba-48a4e91/init root=/dev/sda2
+  initrd /nixos-lived-initrd
+}</code></pre>
+      </div><h4 id="other-bootloaders">Other bootloaders</h4><p>Should also work. Please add instructions here.</p>
+<h3 id="booting-into-livecd">Booting into LiveCD</h3><p>Reboot. Select &quot;NixOS LiveCD&quot; from the bootloader menu. If everything is OK, you will see Login prompt asking you to login as root with empty password. &#39;&#39;DO NOT TRUST IT BLINDLY. You probably have your /etc mounted from /dev/sda2 so it contains your old passwd (as well as LiveCD stuff merged into by the means of UnionFS). So if empty password is not working, try your old root password.</p>
+<p>Thats it. Now follow the manual (Alt-F8), mount /dev/sda3 as /mnt, do nixos-option and so on.</p>
+<p><a href="category:Tutorial" class="wikilink" title="Category:Tutorial">Category:Tutorial</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

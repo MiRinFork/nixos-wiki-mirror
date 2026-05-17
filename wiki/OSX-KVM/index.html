@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OSX-KVM</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / OSX-KVM</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: OSX-KVM -->
+
+<p>The <a href="https://github.com/kholia/OSX-KVM">OSX-KVM</a> project provides a quick method of running macOS on Linux machines.</p>
+<h2 id="installation">Installation</h2><p>Enable virtualisation support in your system configuration by adding following lines</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">virtualisation.libvirtd.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">users.extraUsers.youruser.extraGroups</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;libvirtd&quot;</span> ];
+
+  <span class="hljs-attr">boot.extraModprobeConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    options kvm_intel nested=1
+    options kvm_intel emulate_invalid_guest_state=0
+    options kvm ignore_msrs=1
+  &#x27;&#x27;</span>;
+}</code></pre>
+      </div><p>Replace <code>youruser</code> with the user name of your running system. After applying the configuration, reboot your system so the changes to the kernel modules can take effect.</p>
+<h2 id="usage">Usage</h2><p>Jonas Heinrich (GitHub user @onny) created a fork of the OSX-KVM repository with a flake. You can clone the fork and simply <code>nix run</code>, or, since the fork is several commits behind the original repo, you can complete the steps manually (see below), or copy the flake.nix to a clone of the original repo.</p>
+<p>For the forked repo, git clone and run <code>nix run</code> to prepare and run a macOS system:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">git <span class="hljs-built_in">clone</span> -b flake https://github.com/onny/OSX-KVM.git
+<span class="hljs-built_in">cd</span> OSX-KVM
+nix run</code></pre>
+      </div><p>Alternatively, clone the original repo, <a href="https://github.com/kholia/OSX-KVM">https://github.com/kholia/OSX-KVM</a>. Then, copy over @onny&#39;s flake and <code>nix run</code>, or run the following manually. You will need the <code>python3</code> and <code>qemu</code> packages.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-comment"># to fetch BaseSystem.dmg</span>
+python ./fetch-macOS-v2.py
+
+<span class="hljs-comment"># to convert BaseSystem.dmg to BaseSystem.img</span>
+qemu-img convert BaseSystem.dmg -O raw BaseSystem.img
+
+<span class="hljs-comment"># to create virtual hard drive image file mac_hdd_ng.img</span>
+qemu-img create -f qcow2 mac_hdd_ng.img 128G
+
+<span class="hljs-comment"># run launch script</span>
+<span class="hljs-comment"># this runs qemu-system-x86_64 with the necessary arguments</span>
+<span class="hljs-built_in">source</span> ./OpenCore-Boot.sh</code></pre>
+      </div><p>In all cases, you can adjust the CPU count, memory, or other options in <code>./OpenCore-Boot.sh</code>. Currently (commit <a href="https://github.com/kholia/OSX-KVM/tree/da4b23b5e92c5b939568700034367e8b7649fe90">da4b23b</a>), the script <a href="https://github.com/kholia/OSX-KVM/blob/da4b23b5e92c5b939568700034367e8b7649fe90/OpenCore-Boot.sh#L16">recommends changing the CPU to <code>Haswell-noTSX</code> for macOS Sonoma</a>.</p>
+<p>On the first run, QEMU will boot into the macOS recovery image. From the boot menu, select the macOS Disk Utility and erase / format the virtual hard drive that will be used for installation (find the one with the same size as created in the script, 128GB by default).</p>
+<p>Then choose the (re-)installer from the boot menu and select the previously created disk image as the installation target. This will then download the full image of the selected macOS version.</p>
+<p>On the next boot, you will see a new boot entry containing the actual installation.</p>
+<h2 id="see-also">See also</h2><ul>
+<li><a href="https://github.com/ngi-nix/OSX-KVM">ngi-nix/OSX-KVM</a>: This implementation is based on <a href="https://github.com/foxlet/macOS-Simple-KVM">macOS-Simple-KVM</a>, and may not be as complete or polished as <a href="https://github.com/kholia/OSX-KVM">kholia/OSX-KVM</a>. Usage instructions are available in the repository README.</li>
+</ul>
+<p><a href="category:Virtualization" class="wikilink" title="Category:Virtualization">Category:Virtualization</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

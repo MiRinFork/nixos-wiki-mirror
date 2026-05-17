@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Btrfs</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Btrfs</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Btrfs -->
+
+<p><a href="https://btrfs.readthedocs.io/en/latest/">btrfs</a> is a modern copy on write (CoW) filesystem for Linux aimed at implementing advanced features while also focusing on fault tolerance, repair and easy administration.</p>
+<h1 id="installation-of-nixos-on-btrfs">Installation of NixOS on btrfs</h1><h2 id="partition-the-disk">Partition the disk</h2><div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-built_in">printf</span> <span class="hljs-string">&quot;label: gpt\n,550M,U\n,,L\n&quot;</span> | sfdisk /dev/sdX</span></code></pre>
+      </div><h2 id="format-partitions-and-create-subvolumes">Format partitions and create subvolumes</h2><div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">nix-shell -p btrfs-progs</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">mkfs.fat -F 32 /dev/sdX1</span>
+<span class="hljs-meta prompt_">
+# </span><span class="language-bash">mkfs.btrfs /dev/sdX2</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-built_in">mkdir</span> -p /mnt</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">mount /dev/sdX2 /mnt</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">btrfs subvolume create /mnt/root</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">btrfs subvolume create /mnt/home</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">btrfs subvolume create /mnt/nix</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">umount /mnt</span></code></pre>
+      </div><h2 id="mount-the-partitions-and-subvolumes">Mount the partitions and subvolumes</h2><div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">mount -o compress=zstd,subvol=root /dev/sdX2 /mnt</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-built_in">mkdir</span> /mnt/{home,nix}</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">mount -o compress=zstd,subvol=home /dev/sdX2 /mnt/home</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">mount -o compress=zstd,noatime,subvol=nix /dev/sdX2 /mnt/nix</span>
+<span class="hljs-meta prompt_">
+# </span><span class="language-bash"><span class="hljs-built_in">mkdir</span> /mnt/boot</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">mount /dev/sdX1 /mnt/boot</span></code></pre>
+      </div><h2 id="install-nixos">Install NixOS</h2><div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">nixos-generate-config --root /mnt</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">nano /mnt/etc/nixos/configuration.nix <span class="hljs-comment"># manually add mount options (see Compression below for an example)</span></span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">nixos-install</span></code></pre>
+      </div><h1 id="configuration">Configuration</h1><h2 id="compression">Compression</h2><p><code>nixos-generate-config</code> doesn&#39;t detect mount options automatically. To enable compression, you must specify them manually and other mount options in your <code>configuration.nix</code>:</p>
+<p>Btrfs supports a few compression algorithms, each with different trade-offs:</p>
+<ul>
+<li><code>zstd</code>: Good compression ratio and performance, especially for general-purpose workloads. You can specify compression levels, as example <code>compress=zstd:3</code>.</li>
+</ul>
+<!-- -->
+
+<ul>
+<li><code>lzo</code>: Faster but provides lower compression ratios. Good for low powered systems or where performance is important.</li>
+</ul>
+<!-- -->
+
+<ul>
+<li><code>zlib</code>: Higher compression ratio but slower performance. Less commonly used nowadays in favor of zstd.</li>
+</ul>
+<p>You can find more details on the official <a href="https://btrfs.readthedocs.io/en/latest/Compression.html">Btrfs Compression Documentation</a>.</p>
+<h2 id="swap-file">Swap file</h2><p>Creating a separate subvolume for the swap file is optional. It is not required for functionality but can help with organization or snapshot management. Be sure to regenerate your <code>hardware-configuration.nix</code> if you choose to do this.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-built_in">mkdir</span> -p /mnt</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">mount /dev/sdXY /mnt</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">btrfs subvolume create /mnt/swap</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">umount /mnt</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-built_in">mkdir</span> /swap</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">mount -o noatime,subvol=swap /dev/sdXY /swap</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">nixos-generate-config</span></code></pre>
+      </div><p>Finally, define a swap file in your configuration and run <code>nixos-rebuild switch</code>:</p>
+<p>NixOS will automatically create the swap file with the appropriate attributes for Btrfs including disabling copy on write.</p>
+<p>For more NixOS swap configuration options, see <a href="https://mirror.nixoscn.org/wiki/Btrfs/Swap" class="wikilink" title="Swap">Swap</a>. Additonal Btrfs swapfile usage can be found at <a href="https://btrfs.readthedocs.io/en/latest/Swapfile.html">the Btrfs docs</a>.</p>
+<h2 id="scrubbing">Scrubbing</h2><p>Btrfs filesystems by default keep checksums for all files, to monitor if the file has changed due to hardware malfunctions or other external effects.</p>
+<p>Scrubbing is the process of checking file consistency, which may use checksums and/or duplicated copies of data, from raid for example. Scrubbing may be done &quot;online&quot;, meaning you don&#39;t need to unmount a subvolume to scrub it.</p>
+<p>You can enable automatic scrubbing withː</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.btrfs.autoScrub.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><p>Automatic scrubbing by default is performed once a month, but you can change that withː</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.btrfs.autoScrub.interval</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;weekly&quot;</span>;</code></pre>
+      </div><p><code>interval</code> syntax is defined by <a href="https://www.freedesktop.org/software/systemd/man/systemd.time.html#Calendar%20Events">systemd.timer&#39;s Calendar Events</a></p>
+<p>By default, autoscrub will scrub all detected btrfs mount points. However, in case of mounted nested subvolumes (e.g. the example above where <code>/nix</code> and <code>/home</code> are nested subvolumes under <code>/</code>), you only need to scrub the topmost one. So an example configuration may look like this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.btrfs.autoScrub</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">interval</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;monthly&quot;</span>;
+  <span class="hljs-attr">fileSystems</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;/&quot;</span> ];
+};</code></pre>
+      </div><p>The result of the periodic auto scrub will be saved to the system journal, and you can check the status of the last scrubː</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">btrfs scrub status /</code></pre>
+      </div><p>You can also start a scrub in the background manuallyː</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">btrfs scrub start /</code></pre>
+      </div><p>You can check the status of the ongoing scrubbing process with the same <code>status</code> command as above.</p>
+<h2 id="deduplication">Deduplication</h2><p>Files with (partially) equal contents can be deduplicated using <a href="https://github.com/Zygo/bees">bees</a> or <a href="https://github.com/markfasheh/duperemove">duperemove</a>. The <a href="https://btrfs.readthedocs.io/en/latest/Deduplication.html">upstream wiki entry</a> on deduplication provides an overview of available features of these programs.</p>
+<p>bees can be configured in <code>configuration.nix</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.beesd.filesystems</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">root</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">spec</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;LABEL=root&quot;</span>;
+    <span class="hljs-attr">hashTableSizeMB</span> <span class="hljs-operator">=</span> <span class="hljs-number">2048</span>;
+    <span class="hljs-attr">verbosity</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;crit&quot;</span>;
+    <span class="hljs-attr">extraOptions</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;--loadavg-target&quot;</span> <span class="hljs-string">&quot;5.0&quot;</span> ];
+  };
+};</code></pre>
+      </div><p>This will run the daemon in the background. To disable auto-start, use <code>systemd.services.&quot;beesd@root&quot;.wantedBy = lib.mkForce [ ];</code> for each filesystem.</p>
+<h1 id="usage">Usage</h1><h2 id="subvolumes">Subvolumes</h2><p>To display all subvolumes within a mounted btrfs filesystem:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">btrfs subvolume list -t /mnt</code></pre>
+      </div><p>To create a new subvolume at a specified location:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">btrfs subvolume create /mnt/nixos</code></pre>
+      </div><p>To remove an existing subvolume:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">btrfs subvolume delete /mnt/nixos</code></pre>
+      </div><h3 id="top-level-vs-nested-subvolumes">Top-level vs nested subvolumes</h3><p>In btrfs, subvolumes can be created either at the top level of the filesystem or within other subvolumes.</p>
+<ul>
+<li>Top-level subvolumes are created directly under the filesystem&#39;s root. By default, the root volume ID is 5. Top-level subvolumes are easier to snapshot, roll back or destroy independently. This is good for things such as <code>/home</code> or <code>/nix</code>.</li>
+</ul>
+<!-- -->
+
+<ul>
+<li>Nested subvolumes are created inside an existing subvolume or directory within the filesystem. All nested subvolumes inherit the mount status of their parent unless mounted separately. This layout is useful for organizing related subvolumes under a common namespace. For example, a top-level subvolume such as <code>/srv/nfs</code> can contain multiple nested subvolumes like <code>/srv/nfs/export1</code> and <code>/srv/nfs/export2</code>.</li>
+</ul>
+<h2 id="snapshots">Snapshots</h2><p>A snapshot in btrfs is simply a subvolume that shares its data (and metadata) with some other subvolume, using btrfs&#39;s CoW capabilities. Because of that, there is no special location for snapshots and you can decide where you want to store them. It can be a simple directory inside the root subvolume, or a directory inside a dedicated &quot;snapshots&quot; subvolume.</p>
+<p>For this example we are going to store snapshots in a directory <code>/snapshots</code>, that has to be created beforehand with <code>sudo mkdir /snapshots</code></p>
+<p>To take a read-only (<code>-r</code>) snapshot called <code>home_snapshot_202302</code> of the subvolume mounted at <code>/home</code></p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">btrfs subvolume snapshot -r /home /snapshots/home_snapshot_202302</code></pre>
+      </div><p>You can also snapshot the root subvolume. But keep in mind that nested subvolumes are <strong>not</strong> part of a snapshot. So if you have subvolumes <code>/nix /home</code>, taking a snapshot of <code>/</code> will not include them.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">btrfs subvolume snapshot -r / /snapshots/nixos_snapshot_202302</code></pre>
+      </div><p>Make snapshot read-write againː</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">btrfs property <span class="hljs-built_in">set</span> -ts /snapshots/home_snapshot_202302 ro <span class="hljs-literal">false</span></code></pre>
+      </div><p>However, changing read-only property of a snapshot in-place may [//lore.kernel.org/linux-btrfs/<a href="mailto:06e92a0b-e71b-eb21-edb5-9d2a5513b718@gmail.com">06e92a0b-e71b-eb21-edb5-9d2a5513b718@gmail.com</a>/ causes issues] with any future incremental send/receive. Instead, a read-only snapshot itself (being a simple subvolume) can be snapshotted again as a read-write snapshot like this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">btrfs subvolume snapshot /snapshots/home_snapshot_202302 /snapshots/home_snapshot_202302_rw</code></pre>
+      </div><p>Or it can be restored directly to <code>/home</code> straight away like this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">btrfs subvolume delete /home
+btrfs subvolume snapshot /snapshots/home_snapshot_202302 /home</code></pre>
+      </div><p>After this you can mount <code>/home</code> again.</p>
+<h2 id="transfer-snapshot">Transfer snapshot</h2><p>Sending the snapshot <code>/snapshots/nixos_snapshot_202302</code> compressed to a remote host via ssh at <code>root@192.168.178.110</code> and saving it to a subvolume mounted on a directory at <code>/mnt/nixos</code></p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">sudo</span> btrfs send /snapshots/nixos_snapshot_202302 | zstd | ssh root@192.168.178.110 <span class="hljs-string">&#x27;zstd -d | btrfs receive /mnt/nixos&#x27;</span></code></pre>
+      </div><p>If both the sender and receiver side have Btrfs with the same compression algorithm and level, you can instead use <code>send --compressed-data</code> to avoid decompressing and recompressing the data.</p>
+<h1 id="tips-and-tricks">Tips and tricks</h1><h2 id="backup">Backup</h2><p><a href="https://mirror.nixoscn.org/wiki/Btrfs/Btrbk" class="wikilink" title="Btrbk">Btrbk</a> is a tool for creating snapshots and remote backups of btrfs subvolumes.</p>
+<h2 id="installation-with-encryption">Installation with encryption</h2><p>Using <a href="https://en.wikipedia.org/wiki/Linux_Unified_Key_Setup">Luks2</a>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">cryptsetup --verify-passphrase -v luksFormat <span class="hljs-string">&quot;<span class="hljs-variable">$DISK</span>&quot;</span>p2 
+
+cryptsetup open <span class="hljs-string">&quot;<span class="hljs-variable">$DISK</span>&quot;</span>p2 enc</code></pre>
+      </div><p>You can use any device partition for your bootloader. Note that this bootloader is unencrypted by default:</p>
+<p><code>mkfs.vfat -n BOOT &quot;$DISK&quot;p1</code></p>
+<h3 id="creating-subvolumes">Creating subvolumes</h3><div class="code-container">
+        
+        <pre><code class="language-bash hljs">mkfs.btrfs /dev/mapper/enc <span class="hljs-comment"># Creating btrfs partition</span>
+
+mount -t btrfs /dev/mapper/enc /mnt
+
+<span class="hljs-comment"># Create the subvolumes </span>
+
+btrfs subvolume create /mnt/root <span class="hljs-comment"># The subvolume for /</span>
+
+btrfs subvolume create /mnt/home <span class="hljs-comment"># The subvolume for /home, which should be backed up</span>
+
+btrfs subvolume create /mnt/nix <span class="hljs-comment"># The subvolume for /nix, which needs to be persistent but is not worth backing up, as it’s trivial to reconstruct</span>
+
+btrfs subvolume create /mnt/log <span class="hljs-comment"># The subvolume for /var/log.</span></code></pre>
+      </div><p>Unmount to mount on the subvolumes for the next steps:</p>
+<p><code>umount /mnt</code></p>
+<p>Once the subvolumes have been created, mount them with the desired options.</p>
+<p>Example with <a href="https://facebook.github.io/zstd/">Zstandard compression</a> and noatime:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">mount -o subvol=root,compress=zstd,noatime /dev/mapper/enc /mnt 
+
+<span class="hljs-built_in">mkdir</span> /mnt/home
+
+mount -o subvol=home,compress=zstd,noatime /dev/mapper/enc /mnt/home
+
+<span class="hljs-built_in">mkdir</span> /mnt/nix
+
+mount -o subvol=nix,compress=zstd,noatime /dev/mapper/enc /mnt/nix
+
+<span class="hljs-built_in">mkdir</span> -p /mnt/var/log
+
+mount -o subvol=<span class="hljs-built_in">log</span>,compress=zstd,noatime /dev/mapper/enc /mnt/var/log
+
+<span class="hljs-comment"># do not forget to create and mount the bootloader</span>
+
+<span class="hljs-built_in">mkdir</span> /mnt/boot
+
+mount <span class="hljs-string">&quot;<span class="hljs-variable">$DISK</span>&quot;</span>p1 /mnt/boot</code></pre>
+      </div><p>Configure <code>hardware-configuration.nix</code></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"> <span class="hljs-comment"># enable btrfs support</span>
+ <span class="hljs-attr">boot.supportedFilesystems</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;btrfs&quot;</span> ];
+
+ fileSystems.<span class="hljs-string">&quot;/var/log&quot;</span> <span class="hljs-operator">=</span>
+    { <span class="hljs-attr">device</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/dev/disk/by-uuid/X&quot;</span>;
+      <span class="hljs-attr">fsType</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;btrfs&quot;</span>;
+      <span class="hljs-comment"># enable noatime and zstd to the other subvolumes aswell</span>
+      <span class="hljs-attr">options</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;subvol=log&quot;</span> <span class="hljs-string">&quot;compress=zstd&quot;</span> <span class="hljs-string">&quot;noatime&quot;</span> ];
+      <span class="hljs-comment"># to have a correct log order</span>
+      <span class="hljs-attr">neededForBoot</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    };</code></pre>
+      </div><p>Generate Nixconfig:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nixos-generate-config --root /mnt</code></pre>
+      </div><h2 id="convert-ext3-ext4-system-partition-to-btrfs">Convert Ext3/Ext4 system partition to Btrfs</h2><p>To convert the existing filesystem (Ext3/4) to Btrfs, boot into a NixOS live system and run the following commandː</p>
+<div class="code-container">
+        
+        <pre><code class="language-sh hljs">fsck -f /dev/sdXY
+btrfs-convert /dev/sdXY</code></pre>
+      </div><p>Replace the device path with the target partition. Converting larger filesystems can take a long time.</p>
+<p>Next, mount the converted filesystem and chroot into itː</p>
+<div class="code-container">
+        
+        <pre><code class="language-sh hljs">mount /dev/sdXY /mnt
+nixos-enter --root /mnt</code></pre>
+      </div><p>Replace the partition UUID with the new one, which can be obtained using the command <code>blkid</code>, in <code>/etc/nixos/hardware-configuration.nix</code> and also change the filesystem to <code>btrfs</code>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  fileSystems.<span class="hljs-string">&quot;/&quot;</span> <span class="hljs-operator">=</span>
+    { <span class="hljs-attr">device</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/dev/disk/by-uuid/44444444-4444-4444-8888-888888888888&quot;</span>;
+      <span class="hljs-attr">fsType</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;btrfs&quot;</span>;
+    };</code></pre>
+      </div><p>Apply the changes</p>
+<div class="code-container">
+        
+        <pre><code class="language-sh hljs">nixos-rebuild boot</code></pre>
+      </div><p>If the Grub bootloader is used and it doesn&#39;t get reinstalled correctly, you can run the following command inside chrootː</p>
+<div class="code-container">
+        
+        <pre><code class="language-sh hljs">grub-install /dev/sdX</code></pre>
+      </div><p>If the conversion was successful and no rollback is required, the backup image which was stored by btrfs-convert can be removed withː</p>
+<div class="code-container">
+        
+        <pre><code class="language-sh hljs">btrfs subvolume delete /btrfs/ext2_saved</code></pre>
+      </div><h3 id="trim-support">TRIM support</h3><p>Refer to <a href="https://btrfs.readthedocs.io/en/latest/Trim.html">btrfs docs</a> on how Trim works with btrfs through the <code>discard</code> mount option.</p>
+<p><a href="category:_Configuration" class="wikilink" title="Category: Configuration">Category: Configuration</a> <a href="category:Filesystem" class="wikilink" title="Category:Filesystem">Category:Filesystem</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

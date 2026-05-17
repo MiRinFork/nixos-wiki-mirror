@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hardware/Mellanox/SN2410</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/Hardware">Hardware</a><span aria-hidden="true"> / </span><a href="https://mirror.nixoscn.org/wiki/Hardware/Mellanox">Mellanox</a><span aria-hidden="true"> / </span>SN2410</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Hardware/Mellanox/SN2410 -->
+
+<div class="infobox">
+
+<table>
+<thead>
+<tr>
+<th colspan="2" class="title"><p>Mellanox SN2410</p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><p>Manufacturer</p></td>
+<td><p>Mellanox (now NVIDIA)</p></td>
+</tr>
+<tr>
+<td><p>Architecture</p></td>
+<td><p>x86_64</p></td>
+</tr>
+<tr>
+<td><p>Bootloader</p></td>
+<td><p>64-bit GRUB</p></td>
+</tr>
+<tr>
+<td><p>Maintainer</p></td>
+<td><p><a href="user:Rv32ima" class="wikilink" title="rv32ima">rv32ima</a></p></td>
+</tr>
+</tbody>
+</table>
+
+</div>
+
+<p>The Mellanox SN2410 is a 25GbE/100GbE network switch manufactured by Mellanox (now NVIDIA). It has 48 25GbE ports, and 8 100GbE ports. This switch uses GRUB (by default) and has a relatively standard UEFI BIOS, meaning that it can easily run NixOS without much trouble.</p>
+<h2 id="setup">Setup</h2><p>In order to get NixOS working with this switch (and all of it&#39;s many ethernet ports), some manual configuration is needed. You can use a regular installer ISO to get NixOS on this machine, but for all ports to be functional, some extra configuration is needed. Add this to your system&#39;s configuration:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">    <span class="hljs-attr">boot.kernelPatches</span> <span class="hljs-operator">=</span> [
+      {
+        <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;mlx-stuff&quot;</span>;
+        <span class="hljs-attr">patch</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;
+        <span class="hljs-attr">extraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+          MELLANOX_PLATFORM y
+          MLXREG_HOTPLUG m
+          MLXREG_IO m
+          MLXREG_LC m
+          NVSW_SN2201 m
+          SENSORS_MLXREG_FAN m
+        &#x27;&#x27;</span>;
+      }
+    ];
+
+    <span class="hljs-attr">boot.blacklistedKernelModules</span> <span class="hljs-operator">=</span> [
+      <span class="hljs-string">&quot;i2c_mux_reg&quot;</span>
+    ];</code></pre>
+      </div><p>This adds in some missing kernel drivers for the switch into your kernel, and blacklists the `i2c_mux_reg` driver (which interferes with the mlxsw_spectrum driver).</p>
+<p><a href="category:Hardware" class="wikilink" title="Category:Hardware">Category:Hardware</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

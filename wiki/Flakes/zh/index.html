@@ -1,0 +1,534 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Flakes/zh</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/Flakes">Flakes</a><span aria-hidden="true"> / </span>zh</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Flakes/zh -->
+
+<languages />
+
+<p><strong>Nix flakes</strong> 是 <a href="https://mirror.nixoscn.org/wiki/Flakes/zh/Nix" class="wikilink" title="Nix">Nix</a> 2.4 版本中首次引入的一项<a href="https://nix.dev/manual/nix/stable/contributing/experimental-features">实验性功能</a>，旨在解决 Nix 生态系统许多领域的改进问题：它们为 Nix 项目提供了一个统一结构、允许固定每个依赖项的特定版本并通过锁文件共享这些依赖项，同时总体上使编写可复现的 Nix 表达式变得更加方便。</p>
+<p>Flake 是一个直接包含 <code>flake.nix</code> 文件的目录，该文件内容遵循一种特定结构。Flakes 引入了一种类似 URL 的语法 来指定远程资源。为了简化这种 URL 语法，Flakes 使用符号标识符注册表，这允许通过类似 <code>github:NixOS/nixpkgs</code> 的语法直接指定资源。</p>
+<p>Flakes 还允许锁定引用和版本，然后通过 inputs 以可编程方式进行查询和更新。此外，一个实验性的 CLI 实用程序接受 flake 引用作为参数，该引用指向用于构建、运行和部署软件包的表达式。</p>
+<p><span id="Flake_file_structure"></span></p>
+<h2 id="flake-文件结构">Flake 文件结构</h2><p>一个最小化的 flake 文件包含该 flake 的描述（description），一组输入依赖项（inputs）和一个输出（outputs）。您可以随时使用 <code>nix flake init</code> 命令来生成一个非常基础的 flake 文件。这将在当前目录下创建一个名为 <code>flake.nix</code> 的文件，其内容类似于：</p>
+<p>在上述示例中，您可以看到对该 flake 的<strong>描述</strong>、指定为某 Github 仓库特定分支的<strong>输入</strong>（此为 <code>nixos/nixpkgs</code> 仓库的 <code>nixos-unstable</code> 分支）以及一个使用该输入的<strong>输出</strong>。该输出简单地指定了该 flake 包含一个用于 x86_64 架构名为 <code>hello</code> 的包。即使您的 flake 输出不使用其输入（尽管这在实践中极不可能），其输出仍需要是一个 Nix 函数。</p>
+<p><span id="Nix_configuration"></span></p>
+<h3 id="nix-配置">Nix 配置</h3><p>为了推导 flake，您可以覆盖 <code>nix.conf</code> 文件中设置的全局 Nix 配置。例如，这可用于设置特定项目的二进制缓存源，同时保持全局配置不变。Flake 文件中可包含一个 nixConfig 属性，并在其中设置相关配置。例如，启用 nix-community 二进制缓存可以通过以下方式实现：</p>
+<p><span id="Setup"></span></p>
+<h2 id="设置">设置</h2><p><span id="Enabling_flakes_temporarily"></span></p>
+<h3 id="临时启用-flakes">临时启用 Flakes</h3><p>当使用任意 <a href="https://mirror.nixoscn.org/wiki/Flakes/zh/Nix_command" class="wikilink" title="nix 命令"><code>nix</code> 命令</a>时，添加如下命令行参数：</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs"> --experimental-features &#x27;nix-command flakes&#x27;</code></pre>
+      </div><p><span id="Enabling_flakes_permanently"></span></p>
+<h3 id="永久启用-flakes">永久启用 Flakes</h3><h4 id="nixos">NixOS</h4><p>添加如下内容至 <a href="https://mirror.nixoscn.org/wiki/Flakes/zh/Overview_of_the_NixOS_Linux_distribution#Declarative_Configuration_system_configuration" class="wikilink" title="NixOS 配置">NixOS 配置</a>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">nix.settings.experimental-features</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;nix-command&quot;</span> <span class="hljs-string">&quot;flakes&quot;</span> ];</code></pre>
+      </div><h4 id="home-manager">Home Manager</h4><p>添加如下内容至您的 <a href="https://mirror.nixoscn.org/wiki/Flakes/zh/Home_Manager" class="wikilink" title="home manager">home manager</a> 配置:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">nix.settings.experimental-features</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;nix-command&quot;</span> <span class="hljs-string">&quot;flakes&quot;</span> ];</code></pre>
+      </div><p><span id="Nix_standalone"></span></p>
+<h4 id="nix-独立程序">Nix 独立程序</h4><p>添加如下内容至 <code>~/.config/nix/nix.conf</code> 或 <code>/etc/nix/nix.conf</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-text hljs">experimental-features = nix-command flakes</code></pre>
+      </div><p><span id="Usage"></span></p>
+<h2 id="用法">用法</h2><p><span id="The_nix_flakes_command"></span></p>
+<h3 id="nix-flakes-命令">Nix Flakes 命令</h3><p>的子命令在 中被描述。</p>
+<p>此 flake 生成一个单 Flake 输出 <code>packages</code>。其中，<code>x86_64-linux</code> 是系统特定的属性集。其中包含两个软件包的 <a href="https://mirror.nixoscn.org/wiki/Flakes/zh/derivations" class="wikilink" title="Derivations（派生/定义）">Derivations（派生/定义）</a>：<code>default</code> 和 <code>hello</code>。您可以使用 给出某 flake 的输出，如下所示：</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix flake show</span>
+└───packages
+    └───x86_64-linux
+        ├───default: package &#x27;hello-2.12.2&#x27;
+        └───hello: package &#x27;hello-2.12.2&#x27;</code></pre>
+      </div><p><span id="Development_shells"></span></p>
+<h4 id="开发环境-shell">开发环境 Shell</h4><p><code>devShell</code> 是定义在 flake 中由 Nix 提供的<a href="https://mirror.nixoscn.org/wiki/Flakes/zh/Development_environment_with_nix-shell#nix_develop" class="wikilink" title="开发环境">开发环境</a>。它允许您声明一个可复用的 Shell 环境，其中将包含开发特定项目所需的工具、库和环境变量。这相当于在 flake 中定义一个 <code>nix-shell</code>。</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Example flake with a devShell&quot;</span>;
+
+  <span class="hljs-attr">inputs.nixpkgs.url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:nixos/nixpkgs?ref=nixos-unstable&quot;</span>;
+
+  <span class="hljs-attr">outputs</span> <span class="hljs-operator">=</span> { self, nixpkgs }:
+    <span class="hljs-keyword">let</span>
+      <span class="hljs-attr">system</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;x86_64-linux&quot;</span>;
+      <span class="hljs-attr">pkgs</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> nixpkgs { <span class="hljs-keyword">inherit</span> system; };
+    <span class="hljs-keyword">in</span> {
+      <span class="hljs-attr">devShells.x86_64-linux.default</span> <span class="hljs-operator">=</span> pkgs.mkShell {
+        <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+          hello
+        ];
+        <span class="hljs-attr">shellHook</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+          echo &quot;Welcome to the devShell!&quot;
+        &#x27;&#x27;</span>;
+      };
+    };
+}</code></pre>
+      </div><p>进入开发环境 Shell：</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix develop</span></code></pre>
+      </div><p><span id="Build_specific_attributes_in_a_flake_repository"></span></p>
+<h4 id="在-flake-仓库中构建特定属性">在 flake 仓库中构建特定属性</h4><p>运行 <code>nix build</code> 将在 <code>legacyPackages</code> 和 <code>packages</code> 输出属性中查找相应的 <a href="https://mirror.nixoscn.org/wiki/Flakes/zh/derivations" class="wikilink" title="derivation">derivation</a>，然后基于您的系统架构构建默认输出项。如果您想在 flake 仓库中指定构建属性，可以运行 <code>nix build .#</code><attr>。在上面的示例中，如果您想构建 <code>packages.x86_64-linux.hello</code> 属性，请运行：</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix build .#hello</span></code></pre>
+      </div><p>同样，您可以给 <code>run</code> 命令：<code>nix run .#hello</code> 和 <code>develop</code>命令：<code>nix develop .#hello</code>指定属性。</p>
+<p><span id="Flake_schema"></span></p>
+<h2 id="flake-规范">Flake 规范</h2><p><code>flake.nix</code> 文件是一个具有特殊限制的 Nix 文件（稍后会详细介绍）。</p>
+<p>它有 4 个顶级属性：</p>
+<ul>
+<li><code>description</code>：描述此 flake 的字符串。</li>
+</ul>
+<!-- -->
+
+<ul>
+<li><code>inputs</code>：一个包含此 flake 所有依赖项的属性集。相关规范见下述内容。</li>
+</ul>
+<!-- -->
+
+<ul>
+<li><code>outputs</code>： 一个接收参数的函数，其参数为所有所需输入的属性集，并输出另一个属性集，其规范如下所述。</li>
+</ul>
+<!-- -->
+
+<ul>
+<li><code>nixConfig</code>：一个属性集，包含了 <a href="https://nixos.org/manual/nix/stable/command-ref/conf-file.html">赋予 nix.conf 的值</a>。这可以通过添加特定于 flake 的配置（例如 <a href="https://mirror.nixoscn.org/wiki/Flakes/zh/Binary_Cache" class="wikilink" title="二进制缓存源">二进制缓存源</a>）来扩展用户 nix 操作的正常行为。</li>
+</ul>
+<p><span id="Input_schema"></span></p>
+<h3 id="输入规范">输入规范</h3><p><a href="https://nixos.org/manual/nix/stable/command-ref/new-cli/nix3-flake.html#flake-inputs">Nix flake inputs 手册</a>.</p>
+<p><a href="https://nixos.org/manual/nix/stable/command-ref/new-cli/nix3-flake.html#flake-references">Nix flake 引用手册</a>.</p>
+<p><code>inputs</code> 属性定义了 flake 的依赖项。例如，为了让系统能够正确构建，nixpkgs 必须被定义为系统 flake 的依赖项。</p>
+<p><a href="https://mirror.nixoscn.org/wiki/Flakes/zh/Nixpkgs" class="wikilink" title="Nixpkgs">Nixpkgs</a> 可使用以下代码进行定义：</p>
+<p><code>inputs.nixpkgs.url = &quot;github:NixOS/nixpkgs/</code><branch name><code>&quot;;</code></p>
+<p>Nixpkgs 也可以指向一个由 NixOS 组织缓存的 URL：</p>
+<p><code>inputs.nixpkgs.url = &quot;https://nixos.org/channels/nixpkgs-unstable/nixexprs.tar.xz&quot;;</code></p>
+<p>在此示例中，输入将指向 <code>nixpkgs-unstable</code> 频道（channel）。</p>
+<p>对于任何包含 flake.nix 文件的仓库，其所属网站也必须被定义。Nix 知道 nixpkgs 仓库的位置，因此没有必要声明它在 GitHub 上。</p>
+<p>例如，将 <a href="https://mirror.nixoscn.org/wiki/Flakes/zh/Hyprland" class="wikilink" title="Hyprland">Hyprland</a> 添加为输入看起来像这样：</p>
+<p><code>inputs.hyprland.url = &quot;github:hyprwm/Hyprland&quot;;</code></p>
+<p>如果您想让 Hyprland 的 nixpkgs 依赖跟随 nixpkgs 输入以避免出现多个版本的 nixpkgs，可以使用以下代码来完成：</p>
+<p><code>inputs.hyprland.inputs.nixpkgs.follows = &quot;nixpkgs&quot;;</code></p>
+<p>使用大括号 (<code>{}</code>)，我们可以缩短这些内容并将其放在一个表中。代码如下所示：</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">i<span class="hljs-attr">nputs</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">nixpkgs.url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:NixOS/nixpkgs/&lt;branch name&gt;&quot;</span>;
+  <span class="hljs-attr">hyprland</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:hyprwm/Hyprland&quot;</span>;
+    <span class="hljs-attr">inputs.nixpkgs.follows</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nixpkgs&quot;</span>;
+  };
+};</code></pre>
+      </div><p>默认情况下，包 <code>src</code> 中的 Git 子模块不会被复制到 Nix Store，这可能会导致构建失败。Git 仓库中的 Flakes 可以声明它们需要启用 Git 子模块。从 Nix 版本 <a href="https://discourse.nixos.org/t/nix-2-27-0-released/62003">2.27</a> 开始，您可以通过以下方式启用子模块：</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">inputs.self.submodules</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><p><span id="Output_schema"></span></p>
+<h3 id="输出规范">输出规范</h3><p><a href="https://nix.dev/manual/nix/2.33/command-ref/new-cli/nix3-flake-check.html#evaluation-checks">Nix flake check 手册页</a>中对输出规范进行了描述。</p>
+<p>一旦 Inputs 被解析，它们就会与 <code>self</code> 一起传递给函数 <code>outputs</code>，<code>self</code> 是此 flake 在 Store 中的目录。<code>outputs</code> 根据以下规范返回 flake 的输出。</p>
+<p>其中：</p>
+<ul>
+<li><system> 为类似“x86_64-linux”、“aarch64-linux”、“i686-linux”、“x86_64-darwin”的值</li>
+</ul>
+<!-- -->
+
+<ul>
+<li><name> 是一个属性名称，如“hello”。</li>
+</ul>
+<!-- -->
+
+<ul>
+<li><flake> 是一个 flake 名称， 如“nixpkgs”。</li>
+</ul>
+<!-- -->
+
+<ul>
+<li><store-path> 是 <code>/nix/store..</code> 的路径。</li>
+</ul>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ self, ... }@<span class="hljs-params">inputs:</span>
+{
+  <span class="hljs-comment"># Executed by `nix flake check`</span>
+  checks.<span class="hljs-string">&quot;&lt;system&gt;&quot;</span>.<span class="hljs-string">&quot;&lt;name&gt;&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">derivation</span>;
+  <span class="hljs-comment"># Executed by `nix build .#&lt;name&gt;`</span>
+  packages.<span class="hljs-string">&quot;&lt;system&gt;&quot;</span>.<span class="hljs-string">&quot;&lt;name&gt;&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">derivation</span>;
+  <span class="hljs-comment"># Executed by `nix build .`</span>
+  packages.<span class="hljs-string">&quot;&lt;system&gt;&quot;</span>.default <span class="hljs-operator">=</span> <span class="hljs-built_in">derivation</span>;
+  <span class="hljs-comment"># Executed by `nix run .#&lt;name&gt;`</span>
+  apps.<span class="hljs-string">&quot;&lt;system&gt;&quot;</span>.<span class="hljs-string">&quot;&lt;name&gt;&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;app&quot;</span>;
+    <span class="hljs-attr">program</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&lt;store-path&gt;&quot;</span>;
+    <span class="hljs-attr">meta</span> <span class="hljs-operator">=</span> {<span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;...&quot;</span>; <span class="hljs-keyword">inherit</span> otherMetaAttrs; };
+  };
+  <span class="hljs-comment"># Executed by `nix run . -- &lt;args?&gt;`</span>
+  apps.<span class="hljs-string">&quot;&lt;system&gt;&quot;</span>.default <span class="hljs-operator">=</span> { <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;app&quot;</span>; <span class="hljs-attr">program</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;...&quot;</span>; <span class="hljs-attr">meta</span> <span class="hljs-operator">=</span> {<span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;...&quot;</span>; <span class="hljs-keyword">inherit</span> otherMetaAttrs; }; };
+
+  <span class="hljs-comment"># Formatter (alejandra, nixfmt, treefmt-nix or nixpkgs-fmt)</span>
+  formatter.<span class="hljs-string">&quot;&lt;system&gt;&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">derivation</span>;
+  <span class="hljs-comment"># Used for nixpkgs packages, also accessible via `nix build .#&lt;name&gt;`</span>
+  legacyPackages.<span class="hljs-string">&quot;&lt;system&gt;&quot;</span>.<span class="hljs-string">&quot;&lt;name&gt;&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">derivation</span>;
+  <span class="hljs-comment"># Overlay, consumed by other flakes</span>
+  overlays.<span class="hljs-string">&quot;&lt;name&gt;&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-params">final:</span> <span class="hljs-params">prev:</span> { };
+  <span class="hljs-comment"># Default overlay</span>
+  <span class="hljs-attr">overlays.default</span> <span class="hljs-operator">=</span> <span class="hljs-params">final:</span> <span class="hljs-params">prev:</span> { };
+  <span class="hljs-comment"># Nixos module, consumed by other flakes</span>
+  nixosModules.<span class="hljs-string">&quot;&lt;name&gt;&quot;</span> <span class="hljs-operator">=</span> { config, ... }: { <span class="hljs-attr">options</span> <span class="hljs-operator">=</span> {}; <span class="hljs-attr">config</span> <span class="hljs-operator">=</span> {}; };
+  <span class="hljs-comment"># Default module</span>
+  <span class="hljs-attr">nixosModules.default</span> <span class="hljs-operator">=</span> { config, ... }: { <span class="hljs-attr">options</span> <span class="hljs-operator">=</span> {}; <span class="hljs-attr">config</span> <span class="hljs-operator">=</span> {}; };
+  <span class="hljs-comment"># Used with `nixos-rebuild switch --flake .#&lt;hostname&gt;`</span>
+  <span class="hljs-comment"># nixosConfigurations.&quot;&lt;hostname&gt;&quot;.config.system.build.toplevel must be a derivation</span>
+  nixosConfigurations.<span class="hljs-string">&quot;&lt;hostname&gt;&quot;</span> <span class="hljs-operator">=</span> {};
+  <span class="hljs-comment"># Used by `nix develop .#&lt;name&gt;`</span>
+  devShells.<span class="hljs-string">&quot;&lt;system&gt;&quot;</span>.<span class="hljs-string">&quot;&lt;name&gt;&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">derivation</span>;
+  <span class="hljs-comment"># Used by `nix develop`</span>
+  devShells.<span class="hljs-string">&quot;&lt;system&gt;&quot;</span>.default <span class="hljs-operator">=</span> <span class="hljs-built_in">derivation</span>;
+  <span class="hljs-comment"># Hydra build jobs</span>
+  hydraJobs.<span class="hljs-string">&quot;&lt;attr&gt;&quot;</span>.<span class="hljs-string">&quot;&lt;system&gt;&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">derivation</span>;
+  <span class="hljs-comment"># Used by `nix flake init -t &lt;flake&gt;#&lt;name&gt;`</span>
+  templates.<span class="hljs-string">&quot;&lt;name&gt;&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">path</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&lt;store-path&gt;&quot;</span>;
+    <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;template description goes here?&quot;</span>;
+  };
+  <span class="hljs-comment"># Used by `nix flake init -t &lt;flake&gt;`</span>
+  <span class="hljs-attr">templates.default</span> <span class="hljs-operator">=</span> { <span class="hljs-attr">path</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&lt;store-path&gt;&quot;</span>; <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;</span>; };
+}</code></pre>
+      </div><p>您还可以定义其他任意属性，但以上这些是 Nix 已知的输出。</p>
+<p><span id="Core_usage_patterns"></span></p>
+<h2 id="核心使用模式">核心使用模式</h2><p><span id="Making_your_evaluations_pure"></span></p>
+<h3 id="使您的推导更纯">使您的推导更纯</h3><p>Nix Flakes 在纯粹推导模式下进行，这意味着对于外部环境的访问被限制以确保可复现性。要保持使用 Flakes 时的纯粹性（Purity），请考虑以下方式：</p>
+<ul>
+<li>和 需要传入 <code>sha256</code> 参数才会被视为纯函数。</li>
+</ul>
+<!-- -->
+
+<ul>
+<li><code>builtins.currentSystem</code> 函数是非确定且不纯的，因为它返回的是执行推导的主机系统。通常可以通过将系统类型（例如 x86_64-linux）显式传递给需要它的 Derivations 来避免使用。</li>
+</ul>
+<!-- -->
+
+<ul>
+<li><code>builtins.getEnv</code> 函数也是不纯的。请避免从环境变量中读取数据，同样，也不要引用 flake 目录之外的文件。</li>
+</ul>
+<p><span id="Defining_a_flake_for_multiple_architectures"></span></p>
+<h3 id="为多架构定义-flake">为多架构定义 Flake</h3><p>Flakes 强制要求您为每种支持的架构指定一个程序。以下示例展示了如何编写一个针对多种架构的 flake。</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;A flake targeting multiple architectures&quot;</span>;
+
+<span class="hljs-attr">inputs</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">nixpkgs.url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:nixos/nixpkgs?ref=nixos-unstable&quot;</span>;
+  };
+
+<span class="hljs-attr">outputs</span> <span class="hljs-operator">=</span> { self, nixpkgs }: <span class="hljs-keyword">let</span>
+    <span class="hljs-attr">systems</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;x86_64-linux&quot;</span> <span class="hljs-string">&quot;aarch64-linux&quot;</span> ];
+    <span class="hljs-attr">forAllSystems</span> <span class="hljs-operator">=</span> <span class="hljs-params">f:</span> <span class="hljs-built_in">builtins.listToAttrs</span> (<span class="hljs-built_in">map</span> (<span class="hljs-params">system:</span> {
+      <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> system;
+      <span class="hljs-attr">value</span> <span class="hljs-operator">=</span> f system;
+    }) systems);
+  <span class="hljs-keyword">in</span> {
+    <span class="hljs-attr">packages</span> <span class="hljs-operator">=</span> forAllSystems (<span class="hljs-params">system:</span> <span class="hljs-keyword">let</span>
+      <span class="hljs-attr">pkgs</span> <span class="hljs-operator">=</span> nixpkgs.legacyPackages.${system};
+    <span class="hljs-keyword">in</span> {
+      <span class="hljs-attr">hello</span> <span class="hljs-operator">=</span> pkgs.hello;
+      <span class="hljs-attr">default</span> <span class="hljs-operator">=</span> pkgs.hello;
+    });
+  };
+}</code></pre>
+      </div><p>您还可以使用如 <a href="https://mirror.nixoscn.org/wiki/Flakes/zh/Flake_Utils" class="wikilink" title="flake-utils">flake-utils</a> 或 <a href="https://mirror.nixoscn.org/wiki/Flakes/zh/Flake_Parts" class="wikilink" title="flake-parts">flake-parts</a> 的第三方项目来编写，它们会提供代码来避免此类样板代码。为了避免多次重新定义程序，请参阅 <a href="https://mirror.nixoscn.org/wiki/Flakes/zh/Flake_Utils#Defining_a_flake_for_multiple_architectures" class="wikilink" title="Flake Utils#Defining a flake for multiple architectures">Flake Utils#Defining a flake for multiple architectures</a></p>
+<p><span id="Using_overlays"></span></p>
+<h3 id="使用-overlays">使用 overlays</h3><p>要将 <a href="https://mirror.nixoscn.org/wiki/Flakes/zh/Overlays" class="wikilink" title="Overlays">Overlays</a> 与 Flakes 一起使用，请参阅 <a href="https://mirror.nixoscn.org/wiki/Flakes/zh/Overlays#In_a_Nix_flake" class="wikilink" title="Overlays#In a Nix flake">Overlays#In a Nix flake</a> 页面。</p>
+<p><span id="Enable_unfree_software"></span></p>
+<h3 id="启用非自由软件">启用非自由软件</h3><p>为了在 flake 项目中允许使用 <a href="https://mirror.nixoscn.org/wiki/Flakes/zh/Unfree_software" class="wikilink" title="非自由软件">非自由软件</a>，您需要在导入 Nixpkgs 时通过设置 <code>config.allowUnfree = true;</code> 来明确允许它。</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">inputs.nixpkgs.url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:nixos/nixpkgs?ref=nixos-unstable&quot;</span>;
+  <span class="hljs-attr">outputs</span> <span class="hljs-operator">=</span> { self, nixpkgs, flake-compat }:
+    <span class="hljs-keyword">let</span>
+      <span class="hljs-attr">system</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;x86_64-linux&quot;</span>;
+      <span class="hljs-attr">pkgs</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> nixpkgs { <span class="hljs-keyword">inherit</span> system; <span class="hljs-attr">config.allowUnfree</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;};
+    <span class="hljs-keyword">in</span> {
+      ...
+    };
+}</code></pre>
+      </div><p><span id="NixOS_configuration_with_flakes"></span></p>
+<h2 id="启用-flake-的-nixos-配置">启用 Flake 的 NixOS 配置</h2><p>可使用 Flakes 管理 <a href="https://mirror.nixoscn.org/wiki/Flakes/zh/NixOS" class="wikilink" title="NixOS">NixOS</a> 系统配置，以获得可复现、声明式输入和简化更新的优点。</p>
+<p>关于详情与示例，请参阅 <a href="https://mirror.nixoscn.org/wiki/Flakes/zh/NixOS_system_configuration#Defining_NixOS_as_a_flake" class="wikilink" title="NixOS system configuration#Defining NixOS as a flake">NixOS system configuration#Defining NixOS as a flake</a>。</p>
+<p><span id="Development_tricks"></span></p>
+<h2 id="开发技巧">开发技巧</h2><p><span id="Automatically_switch_nix_shells_with_direnv"></span></p>
+<h3 id="使用-direnv-自动切换-nix-shell">使用 direnv 自动切换 Nix shell</h3><p>在项目目录之间导航时，使用 <a href="https://mirror.nixoscn.org/wiki/Flakes/zh/Direnv" class="wikilink" title="Direnv">Direnv</a> 可以自动激活不同的 Nix shell。Nix 与 Direnv 的额外集成参阅 <a href="https://github.com/nix-community/nix-direnv">nix-direnv</a>。</p>
+<p><span id="Pushing_Flakes_to_Cachix"></span></p>
+<h3 id="推送-flakes-至-cachix">推送 Flakes 至 Cachix</h3><p><a href="https://docs.cachix.org/pushing#flakes">https://docs.cachix.org/pushing#flakes</a></p>
+<p><span id="Flake_support_in_projects_without_flakes"></span></p>
+<h3 id="非-flake-项目中的-flake-支持">非 Flake 项目中的 Flake 支持</h3><p><a href="https://github.com/edolstra/flake-compat">flake-compat</a> 库提供了一个兼容层，允许使用传统 <code>default.nix</code> 和 <code>shell.nix</code> 文件的项目与 Flakes 兼容。更多详情和使用示例，请参阅 <a href="https://mirror.nixoscn.org/wiki/Flakes/zh/Flake_Compat" class="wikilink" title="Flake Compat">Flake Compat</a> 页面。</p>
+<p>另一个允许在非 flake 项目中使用 Flakes 的项目是 <a href="https://github.com/fricklerhandwerk/flake-inputs">flake-inputs</a>。</p>
+<p><span id="Accessing_flakes_from_Nix_expressions"></span></p>
+<h3 id="从-nix-表达式访问-flakes">从 Nix 表达式访问 Flakes</h3><p>如果您想在启用了 Flakes 功能的系统上从常规 Nix 表达式中访问 flake，可以使用类似 <code>(builtins.getFlake &quot;/path/to/directory&quot;).packages.x86_64-linux.default</code> 的代码，其中“directory”是包含 <code>flake.nix</code> 的目录。</p>
+<p><span id="Efficiently_build_multiple_flake_outputs"></span></p>
+<h3 id="高效构建多个-flake-输出">高效构建多个 Flake 输出</h3><p>要自动推送<em>所有</em> flake 输出，请查看 <a href="https://github.com/srid/devour-flake#usage">devour-flake</a>。</p>
+<p><span id="Build_a_package_added_in_a_PR"></span></p>
+<h3 id="构建一个添加至-pr-中的包">构建一个添加至 PR 中的包</h3><div class="code-container">
+        
+        <pre><code class="language- hljs">nix build github:nixos/nixpkgs?ref=pull/&lt;PR_NUMBER&gt;/head#&lt;PACKAGE&gt;</code></pre>
+      </div><p>这允许构建尚未添加到 nixpkgs 的包。</p>
+<p>请注意，这将下载 nixpkgs 的完整 tarball 压缩档。如果您已有本地克隆，由于增量压缩机制，使用它可能会更快：</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">git fetch upstream pull/&lt;PR_NUMBER&gt;/head &amp;&amp; git checkout FETCH_HEAD &amp;&amp; nix build .#PACKAGE</code></pre>
+      </div><p>这允许构建尚未添加到 nixpkgs 的包。</p>
+<p><span id="How_to_add_a_file_locally_in_git_but_not_include_it_in_commits"></span></p>
+<h3 id="如何在-git-中添加一个本地文件但不将其包含在提交中">如何在 git 中添加一个本地文件但不将其包含在提交中</h3><p>当 <a href="https://mirror.nixoscn.org/wiki/Flakes/zh/git" class="wikilink" title="git">git</a> 文件夹存在时，flake 将仅复制在 git 中添加的文件，以最大限度地提高可复现性（因此，如果您忘记在代码库中添加本地文件，则在尝试编译时会直接出错）。但是，有时出于开发目的您可能需要创建一个备用的 flake 文件，例如包含您首选编辑器的配置，如<a href="https://discourse.nixos.org/t/local-personal-development-tools-with-flakes/22714/8">此处所述</a>，这种情况下当然无需提交此文件，因为它只包含您自己首选的工具。在上述情况下，您可以执行以下操作（例如，创建了一个名为 <code>extra/flake.nix</code> 的文件）：</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">git add --intent-to-add extra/flake.nix
+git update-index --skip-worktree --assume-unchanged extra/flake.nix</code></pre>
+      </div><p><span id="Rapid_iteration_of_a_direct_dependency"></span></p>
+<h3 id="直接依赖项的快速迭代">直接依赖项的快速迭代</h3><p>使用 Nix 作为开发环境的一个常见痛点是，每次更新依赖项时都需要完全重构并重新进入开发 shell。<code>nix develop --redirect </code><flake><code> </code><directory> 命令允许您向 shell 提供可变的依赖项，就像它是由 Nix 构建的一样。</p>
+<p>考虑这样一个场景：您的可执行程序 <code>consumexe</code> 依赖于一个库 <code>libdep</code>。你希望同时开发这两个项目，并且对 <code>libdep</code> 的修改能够实时反映到 <code>consumexe</code> 中。这种工作流程可以通过以下方式实现：</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">cd</span> ~/libdep-src-checkout/
+nix develop <span class="hljs-comment"># Or `nix-shell` if applicable.</span>
+<span class="hljs-built_in">export</span> prefix=<span class="hljs-string">&quot;./install&quot;</span> <span class="hljs-comment"># configure nix to install it here</span>
+buildPhase   <span class="hljs-comment"># build it like nix does</span>
+installPhase <span class="hljs-comment"># install it like nix does</span></code></pre>
+      </div><p>现在您已经构建了依赖项，<code>consumexe</code> 可以将其作为输入。<strong>在另一个终端中</strong>：</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">cd</span> ~/consumexe-src-checkout/
+nix develop --redirect libdep ~/libdep-src-checkout/install
+<span class="hljs-built_in">echo</span> <span class="hljs-variable">$buildInputs</span> | <span class="hljs-built_in">tr</span> <span class="hljs-string">&quot; &quot;</span> <span class="hljs-string">&quot;\n&quot;</span> | grep libdep
+<span class="hljs-comment"># Output should show ~/libdep-src-checkout/ so you know it worked</span></code></pre>
+      </div><p>如果 Nix 警告您重定向的 flake 实际上并未用作已推导 flake 的输入，请尝试使用 <code>--inputs-from .</code> 标志。如果一切顺利，您应该能够在依赖项更改时执行 <code>buildPhase &amp;&amp; installPhase</code> 操作，并使用新版本依赖重建您的程序，而<em>无需</em>退出开发 shell。</p>
+<p><span id="See_also"></span></p>
+<h3 id="另见">另见</h3><p><span id="Official_sources"></span></p>
+<h3 id="官方来源">官方来源</h3><ul>
+<li><a href="https://nix.dev/concepts/flakes">Flakes</a> - nix.dev</li>
+</ul>
+<!-- -->
+
+<ul>
+<li><a href="https://nixos.org/manual/nix/unstable/command-ref/new-cli/nix3-flake.html">Nix flake 命令参考手册</a> - 关于 Flakes 及其各部分的更多附加细节。</li>
+</ul>
+<!-- -->
+
+<ul>
+<li><a href="https://github.com/NixOS/nix/blob/master/src/nix/flake.md">更详细地描述 Flakes Inputs 的规范</a></li>
+</ul>
+<!-- -->
+
+<ul>
+<li><a href="https://github.com/NixOS/rfcs/pull/49">RFC 49</a> (2019) - 原始 Flakes 规范</li>
+</ul>
+<p><span id="Guides"></span></p>
+<h3 id="指南">指南</h3><ul>
+<li><a href="https://jade.fyi/blog/flakes-arent-real/">Flakes 并非幻象，亦非洪水猛兽</a> (Jade Lovelace, 2024)</li>
+</ul>
+<!-- -->
+
+<ul>
+<li><a href="https://github.com/ryan4yin/nixos-and-flakes-book">NixOS &amp; Flakes Book</a>(Ryan4yin, 2023) - 🛠️ ❤️ 一本非官方的 NixOS &amp; Flakes 新手入门书籍。</li>
+</ul>
+<!-- -->
+
+<ul>
+<li><a href="https://xeiaso.net/blog/nix-flakes-1-2022-02-21">Nix Flakes：一个简要介绍</a> (Xe Iaso, 2022)</li>
+</ul>
+<!-- -->
+
+<ul>
+<li><a href="https://serokell.io/blog/practical-nix-flakes">Practical Nix Flakes</a> (Alexander Bantyev, 2021) - 关于使用 Nix 和 Flakes 的介绍文章。</li>
+</ul>
+<!-- -->
+
+<ul>
+<li><a href="https://www.tweag.io/blog/2020-05-25-flakes/">Nix Flakes, 第一节：介绍和教程</a> (Eelco Dolstra, 2020)</li>
+</ul>
+<!-- -->
+
+<ul>
+<li><a href="https://www.tweag.io/blog/2020-06-25-eval-cache/">Nix Flakes, 第二节：推导缓存</a> (Eelco Dolstra, 2020)</li>
+</ul>
+<!-- -->
+
+<ul>
+<li><a href="https://www.tweag.io/blog/2020-07-31-nixos-flakes/">Nix Flakes, 第三节：管理 NixOS 系统</a> (Eelco Dolstra, 2020)</li>
+</ul>
+<!-- -->
+
+<ul>
+<li><a href="https://www.youtube.com/watch?v=QXUlhnhuRX4&amp;list=PLgknCdxP89RcGPTjngfNR9WmBgvD_xW0l">Nix flakes 101: Introduction to nix flakes</a> (Jörg Thalheim, 2020) YouTube 视频</li>
+</ul>
+<p><span id="Useful_flake_modules"></span></p>
+<h3 id="flake-实用模块">Flake 实用模块</h3><ul>
+<li><a href="https://mirror.nixoscn.org/wiki/Flakes/zh/Flake_Utils" class="wikilink" title="flake-utils">flake-utils</a>：一个用于简化 Flakes 编写、避免样板代码的库</li>
+</ul>
+<!-- -->
+
+<ul>
+<li><a href="https://mirror.nixoscn.org/wiki/Flakes/zh/Flake_Parts" class="wikilink" title="flake-parts">flake-parts</a>：帮助编写模块化、结构化 Flakes 的库</li>
+</ul>
+<!-- -->
+
+<ul>
+<li><a href="https://mirror.nixoscn.org/wiki/Flakes/zh/Flake_Compat" class="wikilink" title="flake-compat">flake-compat</a>：Flakes 兼容层</li>
+</ul>
+<!-- -->
+
+<ul>
+<li><a href="https://github.com/nix-community/todomvc-nix">构建 Rust 和 Haskell 的 flakes</a></li>
+</ul>
+<p><a href="category:Software" class="wikilink" title="软件">软件</a> <a href="category:Nix" class="wikilink" title="Nix">Nix</a> <a href="category:Nix_Language" class="wikilink" title="Nix 语言">Nix 语言</a> <a href="category:Flakes" class="wikilink" title="Flakes">Flakes</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Wake on LAN</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Wake on LAN</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Wake on LAN -->
+
+<p>Wake on LAN (WoL) is a method used to turn on the target computer over the network.</p>
+<h2 id="1-hardware-settings">1 Hardware Settings</h2><p>Wake on LAN can be enabled when the following two conditions are met:</p>
+<ol>
+<li>Target computer&#39;s motherboard and Network Interface Controller (NIC) has Wake on Lan support.</li>
+<li>Target computer has to be physically connected (with a cable) to a router or to the source computer for WoL to work properly or your wireless card has Wake on Wireless (WoWLAN or WoW) support.</li>
+</ol>
+<p>Prepare BIOS/UEFI:</p>
+<ol>
+<li>Enable the Wake on LAN feature. Different motherboard manufacturers use slightly different language for this feature. Look for terminology such as &quot;PCI Power up&quot;, &quot;Allow PCI wake up event&quot; or &quot;Boot from PCI/PCI-E&quot;.</li>
+<li>(If available in BIOS/UEFI) Make sure that ErP is <strong>disabled</strong>, otherwise your Ethernet card will not be powered and will not be able to recieve any wake-up packets sent form another device.</li>
+<li>(If available in BIOS/UEFI) Make sure that &quot;Deep Sx&quot; is <strong>disabled</strong>, otherwise your Ethernet card might not be powered when the computer is powered off (S5 state). Found at <em>Advanced &gt; Chipset Configuration &gt; PCH Configuration &gt; Deep Sx</em> in the Aptio Setup Utility, American Megatrends, Inc. Version 2.15.1227, Core Version: 4.6.5.3, BIOS Version 5404 x64 on an <em>ASUS Z9PE-D8 WS</em> Mainboard.</li>
+</ol>
+<h2 id="2-nixos-configuration">2 NixOS Configuration</h2><h2 id="2-1-enable-wake-on-lan-for-a-network-interface">2.1 Enable Wake on Lan for a Network Interface</h2><p>The following example enables Wake on Lan for <strong>ens3</strong> interface and opens port 9 (WoL UDP Port) for target computer. After enabling, you may need to restart your computer too see these changes take effect.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">etworking</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">interfaces</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">ens3</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">wakeOnLan.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    };
+  };
+  <span class="hljs-attr">firewall</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">allowedUDPPorts</span> <span class="hljs-operator">=</span> [ <span class="hljs-number">9</span> ];
+  };
+};</code></pre>
+      </div><h2 id="2-2-source-configuration-and-usage">2.2 Source Configuration and usage</h2><p>After setting up the target computer, install <strong>wakeonlan</strong> package on the source computer.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+  wakeonlan
+];</code></pre>
+      </div><p>The output of the <strong>ip a</strong> command contains the <strong>link/ether address</strong> under the ens3 interface. Copy this and run it as shown in the example command.</p>
+<p>In this example Target IP is 192.168.1.50.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">wakeonlan -i 192.168.1.50 {your_link/ether_adress}</code></pre>
+      </div><p><a href="category:Networking" class="wikilink" title="Category:Networking">Category:Networking</a> <a href="category:Configuration" class="wikilink" title="Category:Configuration">Category:Configuration</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

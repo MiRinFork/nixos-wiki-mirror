@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Drupal</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Drupal</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Drupal -->
+
+<p><a href="https://drupal.org/">Drupal</a> is a self-hosted content management system with an eye towards enterprise usage, custom development, internationalization, accessibility, and open source software. It has a large ecosystem of <a href="https://drupal.org/project/project_module">user-contributed plugins</a> and <a href="https://www.drupal.org/project/project_theme">themes</a> that can be used to extend its capabilities, the vast majority of of which are free to use and do not feature any standing subscription costs.</p>
+<h2 id="installation">Installation</h2><p>A simple installation can be implemented with the following setup</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.drupal.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><p>This will spin up a simple Drupal installation at <a href="http://localhost/">http://localhost</a> using nginx and MYSQL.</p>
+<p>This configuration is functionally identical to writing:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.drupal</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">sites</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-string">&quot;localhost&quot;</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    };
+  };
+};</code></pre>
+      </div><h3 id="after-installation">After Installation</h3><p>After installing Drupal using nix, visit the hostname you configured in a web browser and inspect the website. If this is your first time accessing this environment, and you haven&#39;t manually imported a database, you will probably need to go through the standard Drupal UI installation process.</p>
+<blockquote>
+<p><strong>Note:</strong> If you install Drupal using the UI, Drupal will make some changes to the <code>settings.php</code> file located at <code>/var/lib/drupal/</code><hostname><code>/sites/default/settings.php</code>. These changes <strong>will be overridden</strong> next time you rebuild your Drupal project from a newer source. In order to preserve these changes, make sure to add the automatically generated PHP to the <code>extraConfig</code> attribute of your configuration file. You can usually find this located at the bottom of the <code>settings.php</code> file.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">
+<span class="hljs-comment"># Example code, do not use this directly. Instead, copy the contents at the end of your settings.php file and place them here.</span>
+services.drupal.sites.<span class="hljs-string">&quot;localhost&quot;</span>.extraConfig <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+// Automatically generated code from Drupal install time.
+$databases[&#x27;default&#x27;][&#x27;default&#x27;] = array (
+  &#x27;database&#x27; =&gt; &#x27;drupal&#x27;,
+  &#x27;username&#x27; =&gt; &#x27;drupal&#x27;,
+  &#x27;password&#x27; =&gt; &#x27;drupal&#x27;,
+  &#x27;prefix&#x27; =&gt; &quot;&quot;,
+  &#x27;host&#x27; =&gt; &#x27;localhost&#x27;,
+  &#x27;port&#x27; =&gt; &#x27;3306&#x27;,
+  &#x27;isolation_level&#x27; =&gt; &#x27;READ COMMITTED&#x27;,
+  &#x27;driver&#x27; =&gt; &#x27;mysql&#x27;,
+  &#x27;namespace&#x27; =&gt; &#x27;Drupal<span class="hljs-char escape_">\\</span>mysql<span class="hljs-char escape_">\\</span>Driver<span class="hljs-char escape_">\\</span>Database<span class="hljs-char escape_">\\</span>mysql&#x27;,
+  &#x27;autoload&#x27; =&gt; &#x27;core/modules/mysql/src/Driver/Database/mysql/&#x27;,
+);
+&#x27;&#x27;</span>;</code></pre>
+      </div></blockquote>
+<h4 id="capturing-server-resources-before-your-next-rebuild">Capturing Server Resources Before Your Next Rebuild</h4><p>After installing Drupal on NixOS using the admin UI, you will want to export the MYSQL database of your website and export the Drupal site configuration. Doing both steps makes it possible to implement continuous integration and continuous delivery on the environment you just created.</p>
+<p>Backing up your Drupal configuration (with git or similar) and database is recommended, especially after a successful install of a new Drupal instance.</p>
+<blockquote>
+<p><strong>Warning:</strong> When using a Drupal package that has an existing set of configuration in the config sync directory (or using the configRoot option in nix), it is <strong>mandatory</strong> to import a working SQL database from another working installation. Failing to do so will cause your website to not function correctly.</p>
+<p>The advised development workflow for starting a Drupal website (or websites) on NixOS is to do the following</p>
+<ol>
+<li>Install a new instance of Drupal on NixOS. The configRoot option should be disabled.</li>
+<li>Once the installation is complete, export the database, and export the configuration. See the sections below on the recommended way to do both of these tasks.</li>
+<li>Integrate the contents of the config sync directory (located, by default, at /var/lib/drupal/<hostname>/config) back into your upstream Drupal package.</li>
+<li>During your next rebuild, make sure to import any configuration changes by visiting <strong>Manage &gt; Configuration &gt; Development &gt; Configuration synchronization</strong> in the Drupal admin.</li>
+<li>If you intend on deploying this exact same site elsewhere, take regular backups of your database.</li>
+<li>Deploy your saved database and the source code into a new instance of Drupal on NixOS at the same time to avoid a chicken-and-egg scenario.</li>
+</ol>
+</blockquote>
+<h5 id="exporting-the-database">Exporting The Database</h5><p>As root, you can export the database to a local backup using bash script like this.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">DATE=<span class="hljs-string">&quot;<span class="hljs-subst">$(date +&#x27;%F-%T&#x27;)</span>&quot;</span>
+BACKUP_DIR=<span class="hljs-string">&quot;/var/lib/drupal/sql-backups/<span class="hljs-variable">$DRUPAL_HOSTNAME</span>&quot;</span> <span class="hljs-comment"># Replace the hostname with your Drupal hostname from services.drupal.sites.&lt;hostname&gt;.</span>
+
+<span class="hljs-built_in">mkdir</span> -p <span class="hljs-string">&quot;<span class="hljs-variable">$BACKUP_DIR</span>&quot;</span>
+
+<span class="hljs-comment"># Replace the variables in this line with the values defined in your services.drupal configuration.</span>
+mariadb-dump -u root -<span class="hljs-variable">$DB_NAME</span> -P <span class="hljs-variable">$DB_PORT</span> -h <span class="hljs-variable">$DB_HOST</span> | gzip &gt; <span class="hljs-string">&quot;<span class="hljs-variable">$BACKUP_DIR</span>/<span class="hljs-variable">$DATE</span>-<span class="hljs-variable">$DRUPAL_HOSTNAME</span>-auto-backup.sql.gz&quot;</span></code></pre>
+      </div><blockquote>
+<p><strong>Note:</strong> The <code>$DB_NAME</code>, <code>$DB_PORT</code>, and <code>$DB_HOST</code> variables in the above script need to be replaced with actual values from your Drupal configuration. By default, these values are <code>drupal</code>, <code>3306</code>, and <code>localhost</code>, respectively.</p>
+<p>Likewise, replace instances of <code>$DRUPAL_HOSTNAME</code> with the hostname you defined under <code>services.drupal.sites.</code><hostname></p>
+</blockquote>
+<h5 id="exporting-the-configuration">Exporting The Configuration</h5><p>Refer to this guide on Drupal.org for how to <a href="https://www.drupal.org/docs/administering-a-drupal-site/configuration-management/managing-your-sites-configuration">export your configuration yamls</a>.</p>
+<p>Drupal uses the files in the config sync directory as a way to implement the concept of &quot;migrations&quot; that you find in many other web frameworks like Ruby on Rails or Django. Whenever you change certain settings in the backend of your website, Drupal can export those database changes into a file to preserve that change in code. Config changes made on a lower environment can then be pushed up to a higher environment as code and imported to change the database in a predictable way.</p>
+<p>Configuration on a Drupal instance in NixOS will be synchronized to the location defined by the <code>configSyncDir</code> option in your nix configuration. By default, this location is set to <code>/var/lib/drupal/</code><hostname><code>/config/sync</code>.</p>
+<p>When you export your Drupal configuration on NixOS, make sure to save this configuration in another location immediately afterward, or it may be overridden on the next rebuild or on the next reboot.</p>
+<p>Generally, you should integrate the config you export from the NixOS environment back into a git repo that also contains your Drupal source code. This will ensure that the Drupal instance you deploy into NixOS can import any config changes from git.</p>
+<p>If your Drupal package comes with configuration in a config sync directory (or similar), make sure to tell NixOS where to find it with this expression.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># Tell NixOS where to look for the config sync directory in the Drupal package.</span>
+services.drupal.sites.<span class="hljs-string">&quot;my-host-name.local&quot;</span>.configRoot <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/config&quot;</span>;
+
+<span class="hljs-comment"># The contents of the /config directory (defined above) will be copied into the path defined by the configSyncDir setting MINUS the trailing &quot;/sync&quot; path, if it exists.</span>
+services.drupal.sites.<span class="hljs-string">&quot;my-host-name.local&quot;</span>.configSyncDir <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/var/lib/drupal/my-host-name.local/config/sync&quot;</span>;</code></pre>
+      </div><p>If you use the default setting for <code>configSyncDir</code>, you can simply add the first line of code and substitute your hostname.</p>
+<h2 id="configuration">Configuration</h2><h3 id="configuration-using-settings-php">Configuration Using settings.php</h3><p>Drupal uses a file called <code>settings.php</code> to configure the application at a low level. If you use the NixOS-provided Drupal package instead of a custom package, you may want to change some of these settings.</p>
+<p>You can do this by writing pure PHP into the <code>services.drupal.sites.</code><name><code>.extraSettings</code> key</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.drupal</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">sites</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-string">&quot;localhost&quot;</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">extraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        // These settings will be printed as pure PHP into a file visible to settings.php.
+        // These settings will be appended to, and thus override, any existing settings
+        // at the same namespace.
+        $config[&#x27;user.settings&#x27;][&#x27;anonymous&#x27;] = &#x27;Visitor&#x27;;
+        $settings[&#x27;entity_update_backup&#x27;] = TRUE;
+      &#x27;&#x27;</span>;
+    };
+  };
+};</code></pre>
+      </div><h3 id="webserver-configuration">Webserver Configuration</h3><p>You can use either <a href="https://mirror.nixoscn.org/wiki/Drupal/nginx" class="wikilink" title="nginx">nginx</a> or <a href="https://mirror.nixoscn.org/wiki/Drupal/caddy" class="wikilink" title="caddy">caddy</a> as the webserver, but only one may be used at a time. All Drupal installations on NixOS will use the same configured webserver, though webserver configuration may be customized for each installation.</p>
+<p>Nginx is the default webserver, though you can use caddy by writing this configuration</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.drupal.webserver</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;caddy&quot;</span>;</code></pre>
+      </div><h4 id="how-to-access-files-in-the-state-directory-as-a-regular-user">How To Access Files In The State Directory As A Regular User</h4><p>At install time, a small set of user-editable files get copied to <code>/var/lib/drupal/</code><sitname> and are free to be changed by system users so long as they have been added to the webserver group. If the user has not been added to the webserver group, they will be denied access to any resources.</p>
+<p>The group name you must use depends on your currently configured webserver settings. Once you make your changes, you must log in and back out again, or change your current group using <code>newgrp</code>.</p>
+<h5 id="for-nginx">For Nginx</h5><div class="code-container">
+        
+        <pre><code class="language-nix hljs">users.users.<span class="hljs-symbol">&lt;user&gt;</span>.extraGroups <span class="hljs-operator">=</span> [<span class="hljs-string">&quot;nginx&quot;</span>];</code></pre>
+      </div><h5 id="for-caddy">For Caddy</h5><div class="code-container">
+        
+        <pre><code class="language-nix hljs">users.users.<span class="hljs-symbol">&lt;user&gt;</span>.extraGroups <span class="hljs-operator">=</span> [<span class="hljs-string">&quot;caddy&quot;</span>];</code></pre>
+      </div><h3 id="database-configuration">Database Configuration</h3><p>The NixOS implementation of Drupal uses MySQL as the primary database, however you can <a href="https://www.drupal.org/docs/7/creating-custom-modules/howtos/how-to-connect-to-multiple-databases-within-drupal#s-drupal-8">add other databases using settings.php</a>. Refer to the <a href="https://mirror.nixoscn.org/wiki/Drupal/Drupal#Configuration_Using_settings.php" class="wikilink" title="Configuration Using settings.php">Configuration Using settings.php</a> section above for instructions on how to add extra settings to <code>settings.php</code>.</p>
+<p>Using nix, you can configure the database that gets created in NixOS at install time by using this configuration interface:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.drupal</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">sites</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-string">&quot;localhost&quot;</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">database</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">user</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;database_user&quot;</span>;                <span class="hljs-comment"># Default is &quot;drupal&quot;</span>
+        <span class="hljs-attr">tablePrefix</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;tblprfx_&quot;</span>;              <span class="hljs-comment"># Not set by default</span>
+        <span class="hljs-attr">socket</span> <span class="hljs-operator">=</span> <span class="hljs-symbol">/path/to/mysqld/mysqld.sock</span>;  <span class="hljs-comment"># Default is /run/mysqld/mysqld.sock</span>
+        <span class="hljs-attr">port</span> <span class="hljs-operator">=</span> <span class="hljs-number">3306</span>;                           <span class="hljs-comment"># Default is 3306  </span>
+        <span class="hljs-attr">passwordFile</span> <span class="hljs-operator">=</span> <span class="hljs-symbol">/path/to/password/file</span>; <span class="hljs-comment"># Not set by default</span>
+        <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;database_name&quot;</span>;                <span class="hljs-comment"># Default is &quot;drupal&quot;</span>
+        <span class="hljs-attr">host</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;database.host.local&quot;</span>;          <span class="hljs-comment"># Default is localhost</span>
+        <span class="hljs-attr">createLocally</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;                  <span class="hljs-comment"># Set to false if you want to use a remote DB</span>
+      };
+    };
+  };
+};</code></pre>
+      </div><blockquote>
+<p><strong>Note:</strong> The database settings configured in NixOS will merely create the database, they will not instruct a new Drupal installation where to find the database. Either define your database settings in <code>settings.php</code>, or see <a href="https://mirror.nixoscn.org/wiki/Drupal/Drupal#After_Installation" class="wikilink" title=" After Installation"> After Installation</a> for an example of how to do this with nix.</p>
+</blockquote>
+<h3 id="hostname-configuration">Hostname Configuration</h3><p>The hostname string configured under <code>services.drupal.sites.</code><sitename> can be used to create a publicly accessible hostname for your website. However, the Drupal service does not do this by default.</p>
+<p>In order to modify your <code>/etc/hosts</code> file, use this configuration in conjunction with your site config.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.drupal</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">sites</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-string">&quot;mysite.com&quot;</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    };
+  };
+};
+
+<span class="hljs-comment"># Enumerate our custom host into /etc/hosts</span>
+n<span class="hljs-attr">etworking.hosts</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-string">&quot;127.0.0.1&quot;</span> <span class="hljs-operator">=</span> [<span class="hljs-string">&quot;localhost&quot;</span> <span class="hljs-string">&quot;mysite.com&quot;</span>];
+};</code></pre>
+      </div><h2 id="state-directory">State Directory</h2><p>The state directory is a small set of user-editable files that gets installed into <code>/var/lib/drupal/</code><sitename> when the Drupal service is first activated. It contains a truncated Drupal file tree where system users can upload and manage certain files that affect the state of the web application.</p>
+<p>This is the file structure you can find at a typical installation</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">$ <span class="hljs-built_in">pwd</span>
+/var/lib/drupal/localhost
+$ <span class="hljs-built_in">ls</span>
+config  modules  private  sites  themes</code></pre>
+      </div><p>Files in this directory, because of their tendency to change during run time, cannot live inside of <code>/nix/store</code>, so they are placed here instead.</p>
+<p>The webserver is the default owner of all files in the state directory and regular users are not permitted to access this directory by default. However, users who belong to the webserver group may edit or upload files.</p>
+<p>Refer to <a href="https://mirror.nixoscn.org/wiki/Drupal/Drupal#How_To_Access_Files_In_The_State_Directory_As_A_Regular_User" class="wikilink" title="How To Access Files In The State Directory As A Regular User">How To Access Files In The State Directory As A Regular User</a> for more information on how to add users to the webserver group.</p>
+<h3 id="uploading-modules-and-themes">Uploading Modules and Themes</h3><p>The <code>modules</code> and <code>themes</code> directories of the state directory are symlinked directly to the Drupal installation in the nix store. Users can upload both <a href="https://www.drupal.org/docs/user_guide/en/extend-manual-install.html">modules and themes</a> to these directories and Drupal will detect them.</p>
+<p>This is not the officially <a href="https://www.drupal.org/docs/extending-drupal/installing-modules">recommended method</a> for installing contributed modules and themes, or modules and themes that have third-party dependencies. However, this functionality has been preserved both as an escape hatch, and to provide an easy way to manage a simple Drupal install that doesn&#39;t rely exclusively on <a href="https://getcomposer.org/">composer</a>.</p>
+<h3 id="changing-the-location-of-the-state-directory">Changing The Location Of The State Directory</h3><p>If you want the state directory to be located in a different part of the system, you can use the following configuration to change where it is created</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">services.drupal.sites.<span class="hljs-string">&quot;localhost&quot;</span>.stateDir <span class="hljs-operator">=</span> <span class="hljs-symbol">/path/to/custom/state/dir</span>;</code></pre>
+      </div><blockquote>
+<p><strong>Note</strong>: Changing the state directory does not automatically change the location of the <code>modules</code>, <code>themes</code>, <code>config</code>, or <code>files</code> directories. You can override those locations by using the <code>modulesDir</code> and <code>themesDir</code>, <code>configDir</code>, <code>filesDir</code> keys, accordingly.</p>
+</blockquote>
+<p><a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="category:Web_Applications" class="wikilink" title="Category:Web Applications">Category:Web Applications</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

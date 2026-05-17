@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NTP</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / NTP</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: NTP -->
+
+<p><a href="https://en.wikipedia.org/wiki/Network_Time_Protocol">NTP</a> is a protocol to synchronise time and date information through a network. It is used to set the clock of your system automatically when your computer is connected to the internet.</p>
+<h2 id="ntp-servers">NTP servers</h2><p>To choose which servers to ask for time information to, use the <code>networking.timeServers</code> option. If you simply want to <em>add</em> a server to the default list, you can retrieve the default value of the option under the name <code>options.networking.timeServers.default</code>. Make sure to have <code>options</code> in the arguments at the beginning of the file:</p>
+<h2 id="ntp-daemon">NTP daemon</h2><p>Different NTP daemons are available on NixOS. The default one is <code>systemd-timesyncd</code>. To switch to another implementation:</p>
+<ul>
+<li>for <strong>ntpd</strong>, use <code>services.ntp.enable = true;</code></li>
+<li>for <strong>openntpd</strong>, use <code>services.openntpd.enable = true;</code></li>
+<li>for <strong><a href="https://mirror.nixoscn.org/wiki/NTP/chrony" class="wikilink" title="chrony">chrony</a></strong>, use <code>services.chrony.enable = true;</code></li>
+</ul>
+<h2 id="set-ntp-from-dhcp-servers">Set NTP from DHCP servers</h2><p>Most of the time the default NTP servers will be reachable. However, sometimes the NTP servers can be blocked by the firewall (for instance most universities block NTP for security reasons). This will be visible in the <code>systemd-timesyncd.service</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">sudo</span> systemctl status systemd-timesyncd.service</span>
+● systemd-timesyncd.service - Network Time Synchronization
+…
+nov. 22 16:33:23 me systemd-timesyncd[2171]: Timed out waiting for reply from 94.198.159.11:123 (1.nixos.pool.ntp.org).
+…</code></pre>
+      </div><p>You can also test a specific server as follows:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-shell -p ntp</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">ntpdate -q 0.nixos.pool.ntp.org</span>
+22 Nov 17:06:57 ntpdate[4020886]: no server suitable for synchronization found</code></pre>
+      </div><p>However, a replacement NTP is usually provided in that case via the DHCP protocol. You can see it for instance if you use Network Manager:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nmcli connection show <span class="hljs-string">&#x27;name-of-the-current-connection&#x27;</span> | grep ntp</span>
+DHCP4.OPTION[8]:                        ntp_servers = 192.168.x.y
+DHCP4.OPTION[18]:                       requested_ntp_servers = 1
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">ntpdate -q 192.168.x.y</span>
+server 192.168.x.y, stratum 3, offset +2.493988, delay 0.02779
+22 Nov 16:51:37 ntpdate[3923570]: step time server 192.168.128.1 offset +2.493988 sec</code></pre>
+      </div><p>You might also be able to get the actual hostname of the DHCP (if it exists) using:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">sudo</span> nmap -sP 192.168.x.y</span></code></pre>
+      </div><p>Then, you can of course manually add the DHCP server as explained above… but it&#39;s not practical when you often go to new places, or if the NTP server changes over time. For laptop it may not be a big issue (your internal clock will be used in that case until you reach a new network without firewalls) but for some devices like raspberry pi that can&#39;t store the time when device is turned off, or for servers that will always be behind the firewall, it can be interesting to automatically configure the NTP server using DHCP.</p>
+<p>The procedure depends on how you configure internet:</p>
+<ol>
+<li><p><strong>By default</strong>: (if you have not installed network manager…) the <a href="https://github.com/NixOS/nixpkgs/blob/master/nixos/modules/tasks/network-interfaces-scripted.nix">module <code>network-interfaces-scripted</code></a> will be used… unfortunately as far as I know this script cannot deal with NTP.</p>
+</li>
+<li><p><strong>networkd</strong>: If you use <code>systemd-networkd</code>, then it should automatically use the right NTP… However if you want the configuration to be automatic you want to use <code>networking.useNetworkd = true;</code> instead of <code>systemd.network.enable</code> (<code>useNetworkd</code> will automatically configure <code>systemd.network</code> to provide a good default experience as alone <code>systemd.network</code> does basically nothing). However, <code>networking.useNetworkd</code> is apparently experimental now (2022) according to its documentation, so use it at your own risks. As far as I understand you can also <strong>disable</strong> the default behavior using:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ystemd.network.config</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">dhcpV4Config</span> <span class="hljs-operator">=</span> { <span class="hljs-attr">UseNTP</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>; };
+  <span class="hljs-attr">dhcpV6Config</span> <span class="hljs-operator">=</span> { <span class="hljs-attr">UseNTP</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>; };
+}</code></pre>
+      </div><p>but I have not tested it.</p>
+</li>
+<li><p><strong>Network Manager</strong> If you use Network Manager, then Network Manager cannot (in 2022) automatically configure the NTP as-it… but you can use this trick to fake it, by automatically creating a new connection-specific NTP configuration every time the connection changes and restarting <code>systemd-timesyncd.service</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># In /etc/nixos/configuration.nix</span>
+{ pkgs, lib, options, ...}
+{
+  <span class="hljs-comment">## To use, put this in your configuration, switch to it, and restart NM:</span>
+  <span class="hljs-comment">## $ sudo systemctl restart NetworkManager.service</span>
+  <span class="hljs-comment">## To check if it works, you can do `sudo systemctl status systemd-timesyncd.service`</span>
+  <span class="hljs-comment">## (it may take a bit of time to pick the right NTP as it may try the</span>
+  <span class="hljs-comment">## other NTP firsts)</span>
+  <span class="hljs-attr">networking.networkmanager.dispatcherScripts</span> <span class="hljs-operator">=</span> [
+    {
+      <span class="hljs-comment"># https://wiki.archlinux.org/title/NetworkManager#Dynamically_set_NTP_servers_received_via_DHCP_with_systemd-timesyncd</span>
+      <span class="hljs-comment"># You can debug with sudo journalctl -u NetworkManager-dispatcher -e</span>
+      <span class="hljs-comment"># make sure to restart NM as described above</span>
+      <span class="hljs-attr">source</span> <span class="hljs-operator">=</span> pkgs.writeText <span class="hljs-string">&quot;10-update-timesyncd&quot;</span> <span class="hljs-string">&#x27;&#x27;
+        [ -z &quot;$CONNECTION_UUID&quot; ] &amp;&amp; exit 0
+        INTERFACE=&quot;$1&quot;
+        ACTION=&quot;$2&quot;
+        case $ACTION in
+        up | dhcp4-change | dhcp6-change)
+            systemctl restart systemd-timesyncd.service
+            if [ -n &quot;$DHCP4_NTP_SERVERS&quot; ]; then
+              echo &quot;Will add the ntp server $DHCP4_NTP_SERVERS&quot;
+            else
+              echo &quot;No DHCP4 NTP available.&quot;
+              exit 0
+            fi
+            mkdir -p /etc/systemd/timesyncd.conf.d
+            # &lt;&lt;-EOF must really use tabs to keep indentation correct… and tabs are often converted to space in wiki
+            # so I don&#x27;t want to risk strange issues with indentation
+            echo &quot;[Time]&quot; &gt; &quot;/etc/systemd/timesyncd.conf.d/<span class="hljs-char escape_">&#x27;&#x27;$</span>{CONNECTION_UUID}.conf&quot;
+            echo &quot;NTP=$DHCP4_NTP_SERVERS&quot; &gt;&gt; &quot;/etc/systemd/timesyncd.conf.d/<span class="hljs-char escape_">&#x27;&#x27;$</span>{CONNECTION_UUID}.conf&quot;
+            systemctl restart systemd-timesyncd.service
+            ;;
+        down)
+            rm -f &quot;/etc/systemd/timesyncd.conf.d/<span class="hljs-char escape_">&#x27;&#x27;$</span>{CONNECTION_UUID}.conf&quot;
+            systemctl restart systemd-timesyncd.service
+            ;;
+        esac
+        echo &#x27;Done!&#x27;
+      &#x27;&#x27;</span>;
+    }
+  ];
+}</code></pre>
+      </div><p>To apply the change, switch to your new configuration and make sure to restart Network Manager:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">sudo</span> systemctl restart NetworkManager.service</span></code></pre>
+      </div><p>Check if the NTP server is used (may need to wait a few minutes):</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">sudo</span> systemctl status systemd-timesyncd.service</span></code></pre>
+      </div><p>You might need to wait a one or two minutes as <code>systemd-timesyncd</code> may try to load other ntp servers, timeout, and then try the new NTP server.</p>
+</li>
+</ol>
+<p><a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="category:Cookbook" class="wikilink" title="Category:Cookbook">Category:Cookbook</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

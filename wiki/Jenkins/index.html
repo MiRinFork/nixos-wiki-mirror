@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jenkins</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Jenkins</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Jenkins -->
+
+<p>Jenkins is an extendable open source continuous integration server.</p>
+<h2 id="services-jenkins-activation">services.jenkins activation</h2><p>Write this into your /etc/nixos/configuration.nix</p>
+<p><code> services.jenkins = {</code><br><code>   enable = true;</code><br><code> };</code></p>
+<p>After a `nixos-rebuild switch`</p>
+<p>Then the program is available via webbrowser at:</p>
+<p>&lt;<a href="http://localhost:8080/">http://localhost:8080</a>&gt;</p>
+<h3 id="ci-configuration">CI configuration</h3><p>Using the multibranch pipeline one can use this Jenkinsfile in the repository to build it:</p>
+<p><code> pipeline {</code><br><code>   agent any</code><br><code>   environment {</code><br><code>       PATH=&quot;/run/current-system/sw/bin&quot;</code><br><code>   }</code><br><code>   stages {</code><br><code>       stage(&#39;Build&#39;) {</code><br><code>           steps {</code><br><code>               echo &#39;Building..&#39;</code><br><code>               sh &#39;ls&#39;</code><br><code>               sh &#39;nix-shell --command &quot;just build&quot;&#39;</code><br><code>               archiveArtifacts artifacts: &#39;frontend/dist/*&#39;, fingerprint: true</code><br><code>           }</code><br><code>       }</code><br><code>       stage(&#39;Test&#39;) {</code><br><code>           steps {</code><br><code>               echo &#39;Testing..&#39;</code><br><code>               sh &#39;nix-shell --command &quot;just test&quot;&#39;</code><br><code>           }</code><br><code>       }</code><br><code>       stage(&#39;Check fmt&#39;) {</code><br><code>           steps {</code><br><code>               echo &#39;Checking fmt..&#39;</code><br><code>                 sh &#39;nix-shell --command &quot;cargo fmt --check&quot;&#39;</code><br><code>                 sh &#39;nix-shell --command &quot;cd frontend; cargo fmt --check&quot;&#39;</code><br><code>           }</code><br><code>       }</code><br><code>   }</code><br><code>   post {</code><br><code>        changed {</code><br><code>           script {</code><br><code>               if (currentBuild.currentResult == &#39;FAILURE&#39;) {</code><br><code>                   emailext subject: &#39;$DEFAULT_SUBJECT&#39;,</code><br><code>                       body: &#39;$DEFAULT_CONTENT&#39;,</code><br><code>                       recipientProviders: [</code><br><code>                           [$class: &#39;CulpritsRecipientProvider&#39;],</code><br><code>                           [$class: &#39;DevelopersRecipientProvider&#39;],</code><br><code>                           [$class: &#39;RequesterRecipientProvider&#39;]</code><br><code>                       ],</code><br><code>                       replyTo: &#39;$DEFAULT_REPLYTO&#39;,</code><br><code>                       to: &#39;$DEFAULT_RECIPIENTS&#39;</code><br><code>               }</code><br><code>           }</code><br><code>       }</code><br><code>       always {</code><br><code>           cleanWs(cleanWhenNotBuilt: false,</code><br><code>                   deleteDirs: true,</code><br><code>                   disableDeferredWipeout: true,</code><br><code>                   notFailBuild: true,</code><br><code>                   patterns: [[pattern: &#39;.gitignore&#39;, type: &#39;INCLUDE&#39;],</code><br><code>                              [pattern: &#39;.propsfile&#39;, type: &#39;EXCLUDE&#39;]])</code><br><code>       }</code><br><code>   }</code><br><code> }</code></p>
+<h2 id="reverse-proxy">reverse proxy</h2><p><code> services.nginx = {</code><br><code>   enable = true;</code><br><code>   recommendedGzipSettings = true;</code><br><code>   recommendedOptimisation = true;</code><br><code>   virtualHosts = {</code><br><code>     jenkins = {</code><br><code>       serverName = &quot;ci.example.com&quot;;</code><br><code>       serverAliases = [ &quot;ci-static.example.com&quot; ];</code><br><code>       forceSSL = true;</code><br><code>       enableACME = true;</code><br><code>       locations = {</code><br><code>         &quot;/&quot; = {</code><br><code>           proxyPass = &quot;</code><a href="http://127.0.0.1:8080/"><code>http://127.0.0.1:8080/</code></a><code>&quot;;</code><br><code>         };</code><br><code>       };</code><br><code>     };</code><br><code>   };</code></p>
+<p>You might want to enable the firewall using:</p>
+<p><code> networking.firewall.enable = true;</code></p>
+<h2 id="using-email">using email</h2><p>Use &lt;<a href="https://gitlab.com/simple-nixos-mailserver">https://gitlab.com/simple-nixos-mailserver</a>&gt; for email support. Can be tested using a test button from the <a href="localhost:8080">localhost:8080</a> webpage.</p>
+<h2 id="building-nix-projects">building nix projects</h2><p><a href="https://github.com/juspay/jenkins-nix-ci">jenkins-nix-ci</a>: A NixOS module for Jenkins, optimized specifically for running projects using Nix.</p>
+<p><a href="https://github.com/mrVanDalo">mrVanDalo</a> has a <a href="https://git.ingolf-wagner.de/palo/nixos-config/src/commit/74b2eb869bdf6cf531273de925e40cf4ca914f04/nixos/library/jenkins.nix">library</a> to declare jenkins in his repository. It can be used as shown <a href="https://git.ingolf-wagner.de/palo/nixos-config/src/commit/74b2eb869bdf6cf531273de925e40cf4ca914f04/nixos/configs/workhorse/jenkins.nix">here</a>.</p>
+<ul>
+<li><b>Note:</b> the above repo no longer has those sources so it is outdated, but keeping it as a reference.</li>
+</ul>
+<p><a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

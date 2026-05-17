@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Uninterruptible power supply</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Uninterruptible power supply</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Uninterruptible power supply -->
+
+<p>Uninterruptible power supply (UPS), provides near-instantaneous protection from input power interruptions by switching to energy stored in battery packs, supercapacitors or flywheels. The on-battery run-times of most UPSs are relatively short (only a few minutes) but sufficient to &quot;buy time&quot; for initiating a standby power source or properly shutting down the protected equipment. (source: Wikipedia)</p>
+<p>Network UPS Tools (NUT) is a collection of software for managing power devices, mainly UPS units. This article describes the configuration of NUT for a simple server with a single power supply, with no local users and no additional equipment.</p>
+<p>This article is mostly adapted from the excellent NUT ConfigExamples book, version 3.0, by Roger Price. <a href="https://github.com/networkupstools/ConfigExamples/releases/latest/download/ConfigExamples.pdf">1</a></p>
+<h1 id="compatible-hardware">Compatible Hardware</h1><p>Compatible hardware are listed at NUT website <a href="https://networkupstools.org/stable-hcl.html">2</a>. For best results, choose a model with good driver support with battery replacement notification. Battery pack in UPS is designed to be replaced every few years. For example, Eaton Ellipse ECO 650 <a href="https://www.eaton.com/content/dam/eaton/products/backup-power-ups-surge-it-power-distribution/backup-power-ups/eaton-ellipse-eco/eaton-ellipse-eco-userguides-en.pdf">3</a> needs a new battery every four years, under optimal operating conditions.</p>
+<h1 id="components-of-nut-software">Components of NUT Software</h1><p>One or more UPS&#39;s are attached to the <strong>attachment daemon</strong> <code>upsd</code> via a UPS-specific <strong>driver daemon</strong>.</p>
+<p>The attachment daemon maintains an abstract image of the UPS in memory. The attachment daemon can be queried by the <code>upsc</code> command. The driver daemon talks to the hardware and the attachment daemon. The driver daemon can be controlled by the <code>upsdrvctl</code> command.</p>
+<p>The <strong>management daemon</strong> <code>upsmon</code> is a client of upsd. It runs permanently, checks the status of UPS, and react to status changes, such as initiating a shutdown.</p>
+<h1 id="configuration-files-in-use">Configuration files in use</h1><p>In this simple standalone server setup, the following configuration files are generated:</p>
+<ul>
+<li>ups.conf, declare UPS-specific driver information, power.ups.ups.* option</li>
+<li>upsd.conf, control access to upsd, power.ups.upsd option</li>
+<li>upsd.users, add user with access to upsd, power.ups.users option</li>
+<li>upsmon.conf, connect upsmon to upsd, power.ups.upsmon.monitor section;</li>
+<li>upsmon.conf, set how upsmon should react to status changes, power.ups.upsmon.settings section</li>
+<li>delayed UPS shutdown systemd unit, to make Restore Power on AC Return BIOS option functional, systemd.services.nut-delayed-ups-shutdown section</li>
+</ul>
+<h1 id="declare-ups-units">Declare UPS units</h1><p>Corresponds to file ups.conf</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">power.ups</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">mode</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;standalone&quot;</span>;
+    <span class="hljs-comment"># section: The upsd UPS declarations: ups.conf</span>
+    <span class="hljs-comment"># this UPS device is named UPS-1.</span>
+    ups.<span class="hljs-string">&quot;UPS-1&quot;</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Eaton Ellipse ECO 650 with 12V 7Ah lead-acid Batt&quot;</span>;
+
+      <span class="hljs-comment"># driver name from https://networkupstools.org/stable-hcl.html</span>
+      <span class="hljs-attr">driver</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;usbhid-ups&quot;</span>;
+
+      <span class="hljs-comment"># usbhid-ups driver always use value &quot;auto&quot;</span>
+      <span class="hljs-attr">port</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;auto&quot;</span>;
+
+      <span class="hljs-attr">directives</span> <span class="hljs-operator">=</span> [
+        <span class="hljs-comment"># &quot;Restore power on AC&quot; BIOS option needs power to be cut a few seconds to work;</span>
+        <span class="hljs-comment"># this is achieved by the offdelay and ondelay directives.</span>
+
+        <span class="hljs-comment"># in the last stages of system shutdown, &quot;upsdrvctl shutdown&quot; is called to tell UPS that</span>
+        <span class="hljs-comment"># after offdelay seconds, the UPS power must be cut, even if</span>
+        <span class="hljs-comment"># wall power returns.</span>
+
+        <span class="hljs-comment"># There is a danger that the system will take longer than the default 20 seconds to shut down. </span>
+        <span class="hljs-comment"># If that were to happen, the UPS shutdown would provoke a brutal system crash.</span>
+        <span class="hljs-comment"># We adjust offdelay, to solve this issue.</span>
+        <span class="hljs-string">&quot;offdelay = 60&quot;</span>
+
+        <span class="hljs-comment"># UPS power is now cut regardless of wall power.  After (ondelay minus offdelay) seconds,</span>
+        <span class="hljs-comment"># if wall power returns, turn on UPS power.  The system has now been disconnected for a minimum of (ondelay minus offdelay) seconds,</span>
+        <span class="hljs-comment"># &quot;Restore power on AC&quot; should now power on the system.</span>
+        <span class="hljs-comment"># For reasons described above, ondelay value must be larger than offdelay value.</span>
+        <span class="hljs-comment"># We adjust ondelay, to ensure Restore power on AC option returns to Power Disconnected state.</span>
+        <span class="hljs-string">&quot;ondelay = 70&quot;</span>
+
+        <span class="hljs-comment"># set value for battery.charge.low,</span>
+        <span class="hljs-comment"># upsmon initiate shutdown once this threshold is reached.</span>
+        <span class="hljs-string">&quot;lowbatt = 40&quot;</span>
+
+        <span class="hljs-comment"># ignore it if the UPS reports a low battery condition</span>
+        <span class="hljs-comment"># without this, system will shutdown only when ups reports lb,</span>
+        <span class="hljs-comment"># not respecting lowbatt option</span>
+        <span class="hljs-string">&quot;ignorelb&quot;</span>
+      ];
+    };</code></pre>
+      </div><h1 id="declare-upsd-listening-ports">Declare upsd listening ports</h1><p>Corresponds to file upsd.conf. This file declares which ports the upsd daemon will listen to.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">power.ups</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-comment"># section: The upsd daemon access control; upsd.conf</span>
+    <span class="hljs-attr">upsd</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">listen</span> <span class="hljs-operator">=</span> [
+        {
+          <span class="hljs-attr">address</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;127.0.0.1&quot;</span>;
+          <span class="hljs-attr">port</span> <span class="hljs-operator">=</span> <span class="hljs-number">3493</span>;
+        }
+        {
+          <span class="hljs-attr">address</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;::1&quot;</span>;
+          <span class="hljs-attr">port</span> <span class="hljs-operator">=</span> <span class="hljs-number">3493</span>;
+        }
+      ];
+    };
+   };</code></pre>
+      </div><h1 id="declare-users-with-access-to-ups">Declare users with access to UPS</h1><p>Corresponds to file upsd.users. This file declares a virtual user (not related to /etc/passwd users) with write access to UPS. A password is also declared.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">power.ups</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-comment"># section: Users that can access upsd. The upsd daemon user</span>
+    <span class="hljs-comment"># declarations. upsd.users</span>
+    users.<span class="hljs-string">&quot;nut-admin&quot;</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-comment"># A file that contains just the password.</span>
+      <span class="hljs-attr">passwordFile</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/etc/nixos/ups-passwd.txt&quot;</span>;
+      <span class="hljs-attr">upsmon</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;primary&quot;</span>;
+    };
+   };</code></pre>
+      </div><h1 id="connect-upsmon-to-upsd">Connect upsmon to upsd</h1><p>Corresponds to upsmon.conf. This file declares how upsmon should connect to upsd</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">power.ups</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-comment"># section: The upsmon daemon configuration: upsmon.conf</span>
+    upsmon.monitor.<span class="hljs-string">&quot;UPS-1&quot;</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">system</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;UPS-1@localhost&quot;</span>;
+      <span class="hljs-attr">powerValue</span> <span class="hljs-operator">=</span> <span class="hljs-number">1</span>;
+      <span class="hljs-attr">user</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nut-admin&quot;</span>;
+      <span class="hljs-attr">passwordFile</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/etc/nixos/ups-passwd.txt&quot;</span>;
+      <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;primary&quot;</span>;
+    };
+   };</code></pre>
+      </div><h1 id="declare-how-upsmon-should-react-to-status-changes">Declare how upsmon should react to status changes</h1><p>Corresponds to upsmon.conf. This file declares how upsmon is to handle NOTIFY events.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">power.ups</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">upsmon.settings</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-comment"># This configuration file declares how upsmon is to handle</span>
+      <span class="hljs-comment"># NOTIFY events.</span>
+
+      <span class="hljs-comment"># POWERDOWNFLAG and SHUTDOWNCMD is provided by NixOS default</span>
+      <span class="hljs-comment"># values</span>
+
+      <span class="hljs-comment"># values provided by ConfigExamples 3.0 book</span>
+      <span class="hljs-attr">NOTIFYMSG</span> <span class="hljs-operator">=</span> [
+        [ <span class="hljs-string">&quot;ONLINE&quot;</span> <span class="hljs-string">&#x27;&#x27;&quot;UPS %s: On line power.&quot;&#x27;&#x27;</span> ]
+        [ <span class="hljs-string">&quot;ONBATT&quot;</span> <span class="hljs-string">&#x27;&#x27;&quot;UPS %s: On battery.&quot;&#x27;&#x27;</span> ]
+        [ <span class="hljs-string">&quot;LOWBATT&quot;</span> <span class="hljs-string">&#x27;&#x27;&quot;UPS %s: Battery is low.&quot;&#x27;&#x27;</span> ]
+        [ <span class="hljs-string">&quot;REPLBATT&quot;</span> <span class="hljs-string">&#x27;&#x27;&quot;UPS %s: Battery needs to be replaced.&quot;&#x27;&#x27;</span> ]
+        [ <span class="hljs-string">&quot;FSD&quot;</span> <span class="hljs-string">&#x27;&#x27;&quot;UPS %s: Forced shutdown in progress.&quot;&#x27;&#x27;</span> ]
+        [ <span class="hljs-string">&quot;SHUTDOWN&quot;</span> <span class="hljs-string">&#x27;&#x27;&quot;Auto logout and shutdown proceeding.&quot;&#x27;&#x27;</span> ]
+        [ <span class="hljs-string">&quot;COMMOK&quot;</span> <span class="hljs-string">&#x27;&#x27;&quot;UPS %s: Communications (re-)established.&quot;&#x27;&#x27;</span> ]
+        [ <span class="hljs-string">&quot;COMMBAD&quot;</span> <span class="hljs-string">&#x27;&#x27;&quot;UPS %s: Communications lost.&quot;&#x27;&#x27;</span> ]
+        [ <span class="hljs-string">&quot;NOCOMM&quot;</span> <span class="hljs-string">&#x27;&#x27;&quot;UPS %s: Not available.&quot;&#x27;&#x27;</span> ]
+        [ <span class="hljs-string">&quot;NOPARENT&quot;</span> <span class="hljs-string">&#x27;&#x27;&quot;upsmon parent dead, shutdown impossible.&quot;&#x27;&#x27;</span> ]
+      ];
+      <span class="hljs-attr">NOTIFYFLAG</span> <span class="hljs-operator">=</span> [
+        [ <span class="hljs-string">&quot;ONLINE&quot;</span> <span class="hljs-string">&quot;SYSLOG+WALL&quot;</span> ]
+        [ <span class="hljs-string">&quot;ONBATT&quot;</span> <span class="hljs-string">&quot;SYSLOG+WALL&quot;</span> ]
+        [ <span class="hljs-string">&quot;LOWBATT&quot;</span> <span class="hljs-string">&quot;SYSLOG+WALL&quot;</span> ]
+        [ <span class="hljs-string">&quot;REPLBATT&quot;</span> <span class="hljs-string">&quot;SYSLOG+WALL&quot;</span> ]
+        [ <span class="hljs-string">&quot;FSD&quot;</span> <span class="hljs-string">&quot;SYSLOG+WALL&quot;</span> ]
+        [ <span class="hljs-string">&quot;SHUTDOWN&quot;</span> <span class="hljs-string">&quot;SYSLOG+WALL&quot;</span> ]
+        [ <span class="hljs-string">&quot;COMMOK&quot;</span> <span class="hljs-string">&quot;SYSLOG+WALL&quot;</span> ]
+        [ <span class="hljs-string">&quot;COMMBAD&quot;</span> <span class="hljs-string">&quot;SYSLOG+WALL&quot;</span> ]
+        [ <span class="hljs-string">&quot;NOCOMM&quot;</span> <span class="hljs-string">&quot;SYSLOG+WALL&quot;</span> ]
+        [ <span class="hljs-string">&quot;NOPARENT&quot;</span> <span class="hljs-string">&quot;SYSLOG+WALL&quot;</span> ]
+      ];
+      <span class="hljs-comment"># every RBWARNTIME seconds, upsmon will generate a replace</span>
+      <span class="hljs-comment"># battery NOTIFY event</span>
+      <span class="hljs-attr">RBWARNTIME</span> <span class="hljs-operator">=</span> <span class="hljs-number">216000</span>;
+      <span class="hljs-comment"># every NOCOMMWARNTIME seconds, upsmon will generate a UPS</span>
+      <span class="hljs-comment"># unreachable NOTIFY event</span>
+      <span class="hljs-attr">NOCOMMWARNTIME</span> <span class="hljs-operator">=</span> <span class="hljs-number">300</span>;
+      <span class="hljs-comment"># after sending SHUTDOWN NOTIFY event to warn users, upsmon</span>
+      <span class="hljs-comment"># waits FINALDELAY seconds long before executing SHUTDOWNCMD</span>
+      <span class="hljs-comment"># Some UPS&#x27;s don&#x27;t give much warning for low battery and will</span>
+      <span class="hljs-comment"># require a value of 0 here for aq safe shutdown.</span>
+      <span class="hljs-attr">FINALDELAY</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>;
+    };
+   };</code></pre>
+      </div><p><a href="category:Hardware" class="wikilink" title="Category:Hardware">Category:Hardware</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

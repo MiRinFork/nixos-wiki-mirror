@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Install NixOS on a Server With a Different Filesystem</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Install NixOS on a Server With a Different Filesystem</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Install NixOS on a Server With a Different Filesystem -->
+
+<p>Usually when installing NixOS, you boot from an external USB device containing the installer, which makes it easy to change the underlying filesystem. On a remote server however, this is usually not possible. This guide shows you how you can still make it work. Here it is shown with a DigitalOcean (DO) droplet initially running Debian, then replacing the original filesystem with ZFS and installing NixOS on it.</p>
+<p>The trick to making this work is by building a <a href="https://en.wikipedia.org/wiki/Kexec">kexec</a> compatible ramdisk NixOS system locally, transfering it to the server and use the <code>kexec</code> command to boot into it. Afterwards, you can install NixOS like you usually do.</p>
+<h2 id="requirements">Requirements</h2><p>To follow this guide you need a server with:</p>
+<ul>
+<li>A running Linux installation (This guide uses Debian)</li>
+<li>At least 2GB of RAM</li>
+<li>root ssh access</li>
+<li>The same architecture as your local machine</li>
+</ul>
+<p>Note: DigitalOcean allows you to resize the droplet temporarily, which you can use to get enough RAM to do this, while reverting it once done.</p>
+<h2 id="building-the-system">Building the system</h2><p>To create the installation system, we use <a href="https://github.com/cleverca22/nix-tests/tree/master/kexec">clever&#39;s kexec config</a> with some modifications. Clone the repository and create a file <code>myconfig.nix</code> with the following contents:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">{
+  imports = [
+    ./configuration.nix
+  ];
+
+  # Make it use predictable interface names starting with eth0
+  boot.kernelParams = [ &amp;quot;net.ifnames=0&amp;quot; ];
+
+  networking = {
+    defaultGateway = &amp;quot;x.x.x.x&amp;quot;;
+    # Use google's public DNS server
+    nameservers = [ &amp;quot;8.8.8.8&amp;quot; ];
+    interfaces.eth0 = {
+      ipAddress = &amp;quot;y.y.y.y&amp;quot;;
+      prefixLength = z;
+    };
+  };
+
+  kexec.autoReboot = false;
+
+  users.users.root.openssh.authorizedKeys.keys = [
+    &amp;quot;ssh-rsa ...&amp;quot;
+  ];
+}</code></pre>
+      </div><p>Replace <code>x.x.x.x</code> with your servers IPv4 gateway, <code>y.y.y.y</code> with its IPv4 address and <code>z</code> with the subnet mask prefix. In DigitalOcean, you can find this info in your droplet&#39;s Networking tab in the Public Network section. Finally, put your ssh public key in the <code>users.users.root.openssh.authorizedKeys.keys</code> option.</p>
+<p>Build the system configuration with</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nix-build <span class="hljs-string">&#x27;&lt;nixpkgs/nixos&gt;&#x27;</span> -A config.system.build.kexec_tarball -I nixos-config=./myconfig.nix -Q</code></pre>
+      </div><p>This may take a while. When it finishes you will find the finished system as a tarball in <code>./result/tarball</code>.</p>
+<h2 id="starting-the-built-nixos-system-on-the-server">Starting the built NixOS system on the server</h2><p>Transfer the tarball to the server and ssh into it</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">scp result/tarball/nixos-system-x86_64-linux.tar.xz root@y.y.y.y:.
+ssh root@y.y.y.y</code></pre>
+      </div><p>Then unpack the tarball and run the kexec script</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">cd</span> /
+tar -xf ~/nixos-system-x86_64-linux.tar.xz
+./kexec_nixos</code></pre>
+      </div><ol>
+<li>Wait until the <code>+ kexec -e</code> line shows up, then terminate the ssh connection by pressing the following keys one after the other: <code>RETURN</code> + <code>~</code> + <code>.</code>.</li>
+<li>Wait until you have a ping again by doing <code>ping y.y.y.y</code>.</li>
+<li>Reconnect with ssh, you should see a warning about the host identification having changed, which is a good sign in our case.</li>
+<li>Remove your server&#39;s previous entry in <code>~/.ssh/known_hosts</code> and try again.</li>
+</ol>
+<p>If everything worked, you should now see the <code>[root@kexec:~]#</code> prompt. You&#39;re now running NixOS entirely in RAM!</p>
+<h2 id="installing-nixos">Installing NixOS</h2><p>Install NixOS like normal, and make sure to include the following:</p>
+<ul>
+<li><code>boot.kernelParams = [ &quot;net.ifnames=0&quot; ];</code></li>
+<li>The same network configuration from above</li>
+</ul>
+<h3 id="example-installation-with-zfs">Example installation with ZFS</h3><p>Repartition your main disk using <code>fdisk</code> to such a configuration (you can remove all previous partitions):</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">/dev/vda1 1M BIOS boot partition (BIOS boot)
+/dev/vda2 200M boot partition (EFI System)
+/dev/vda3 2GB swap partition (Linux swap)
+/dev/vda4 rest, zfs partition (Linux Filesystem)</code></pre>
+      </div><p>Create the file systems:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">mkfs.ext4 /dev/vda2
+mkswap /dev/vda3
+zpool create -O compress=on -O mountpoint=legacy tank /dev/vda4
+zfs create -o xattr=off -o atime=off tank/nix</code></pre>
+      </div><p>Mount them:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">swapon /dev/vda3
+mount -t zfs tank /mnt
+<span class="hljs-built_in">mkdir</span> /mnt/boot /mnt/nix
+mount -t zfs tank/nix /mnt/nix
+mount /dev/vda2 /mnt/boot</code></pre>
+      </div><p>Generate the configs:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nixos-generate-config --root /mnt</code></pre>
+      </div><p>Edit <code>/mnt/etc/nixos/configuration.nix</code> to something like this:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">{ config, pkgs, ... }:
+
+{
+  imports =
+    [
+      ./hardware-configuration.nix
+    ];
+
+  boot.loader.grub.enable = true;
+  boot.loader.grub.version = 2;
+
+  boot.kernelParams = [ &amp;quot;net.ifnames=0&amp;quot; ];
+
+  boot.zfs.devNodes = &amp;quot;/dev&amp;quot;;
+  boot.loader.grub.device = &amp;quot;/dev/vda&amp;quot;;
+
+  networking = {
+    hostName = &amp;quot;foobar&amp;quot;;
+    hostId = &amp;quot;12345678&amp;quot;;
+    defaultGateway = &amp;quot;x.x.x.x&amp;quot;;
+    nameservers = [ &amp;quot;8.8.8.8&amp;quot; ];
+    interfaces.eth0 = {
+      ipAddress = &amp;quot;y.y.y.y&amp;quot;;
+      prefixLength = z;
+    };
+  };
+
+  services.openssh.enable = true;
+
+  users.users.root.openssh.authorizedKeys.keys = [
+    &amp;quot;ssh-rsa ...&amp;quot;
+  ];
+
+  system.stateVersion = &amp;quot;18.03&amp;quot;; # Did you read the comment?
+}</code></pre>
+      </div><p>And finally, install nixos and cross fingers:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nixos-install
+reboot</code></pre>
+      </div><h2 id="nixos_lustrate">NIXOS_LUSTRATE</h2><p>See the relevant <a href="https://github.com/NixOS/nixpkgs/pull/17784">PR</a> or <a href="https://nixos.org/nixos/manual/index.html#sec-installing-from-other-distro">section of the manual</a></p>
+<p><a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

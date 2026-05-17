@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Distrobox</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Distrobox</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Distrobox -->
+
+<p><a href="https://distrobox.it/">Distrobox</a> offers you to use any linux distribution inside your terminal as a simple wrapper for <a href="https://mirror.nixoscn.org/wiki/Distrobox/Podman" class="wikilink" title="Podman">Podman</a>, <a href="https://mirror.nixoscn.org/wiki/Distrobox/Docker" class="wikilink" title="Docker">Docker</a> or Lilipod.</p>
+<h2 id="setup">Setup</h2><p>Distrobox uses Docker internally to fetch and run system images. Easily get started by enabling Podman with Docker-compatibility mode.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">v<span class="hljs-attr">irtualisation.podman</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">dockerCompat</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+};
+
+<span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> [ pkgs.distrobox ];</code></pre>
+      </div><h2 id="usage">Usage</h2><p>Setup container with latest <a href="https://archlinux.org/">Arch Linux</a> image</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs">distrobox create --root --name archlinux --init --image archlinux:latest</code></pre>
+      </div><p>Enter Arch Linux container</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs">distrobox enter --root archlinux</code></pre>
+      </div><p>For further usage, please refer to the <a href="https://distrobox.it/#distrobox">Distrobox</a> documentation.</p>
+<h2 id="tips-and-tricks">Tips and tricks</h2><h3 id="using-different-architecture">Using different architecture</h3><p>The following example will run an Ubuntu container with a different architecture than the host, in this case arm64.</p>
+<p>Add following line to your system configuration, apply it and then reboot the system.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">b<span class="hljs-attr">oot.binfmt.emulatedSystems</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;aarch64-linux&quot;</span> ];</code></pre>
+      </div><p>Run a Debian container with arm64 architecture</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">sudo podman run <span class="hljs-operator">-</span>-rm <span class="hljs-operator">-</span>-privileged multiarch<span class="hljs-symbol">/qemu-user-static</span> <span class="hljs-operator">-</span>-reset <span class="hljs-operator">-</span>p yes
+distrobox create <span class="hljs-operator">-</span>n debian <span class="hljs-operator">-</span>-image arm64v8<span class="hljs-symbol">/debian</span>
+distrobox enter debian</code></pre>
+      </div><h3 id="quot-potentially-insufficient-uids-and-guids-quot-error">&quot;potentially insufficient UIDs and GUIDs&quot; error</h3><p>When setting up containers that do not run as root, as <code>podman</code> does by default, you may see an error along the following lines: (this example uses podman, lilipod has a different error)</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">distrobox create container</span>
+...
+Error: copying system image from manifest list: writing blob: adding layer with blob ...:
+unpacking failed (error: exit status 1;
+output: potentially insufficient UIDs or GIDs available in user namespace (requested 1000:1000 for /home/container): Check /etc/subuid and /etc/subgid if configured locally and run &quot;podman system migrate&quot;: lchown /home/container: invalid argument)</code></pre>
+      </div><p>To fix it, adding the following to your config might help:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">users.users.YOURUSERNAME</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">extraGroups</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;podman&quot;</span> ];
+      <span class="hljs-attr">subGidRanges</span> <span class="hljs-operator">=</span> [
+          {
+              <span class="hljs-attr">count</span> <span class="hljs-operator">=</span> <span class="hljs-number">65536</span>;
+              <span class="hljs-attr">startGid</span> <span class="hljs-operator">=</span> <span class="hljs-number">1000</span>;
+          }
+      ];
+      <span class="hljs-attr">subUidRanges</span> <span class="hljs-operator">=</span> [
+          {
+              <span class="hljs-attr">count</span> <span class="hljs-operator">=</span> <span class="hljs-number">65536</span>;
+              <span class="hljs-attr">startUid</span> <span class="hljs-operator">=</span> <span class="hljs-number">1000</span>;
+          }
+      ];
+  };</code></pre>
+      </div><p>Rebuild your system, run <code>podman system migrate</code>, and try creating the distrobox container again.</p>
+<h3 id="exposing-your-profile">Exposing your profile</h3><p>If you get errors like <code>/home/user/.zshenv:.:2: no such file or directory: /etc/profiles/per-user/user/etc/profile.d/hm-session-vars.sh</code> or <code>_atuin_preexec: command not found: atuin</code> that is because your shell init is referencing paths that are not accessible to Distrobox. By default, Distrobox only gets access to your home directory. You can mount additional volumes with <code>distrobox create --volume /your/custom/volume/path</code>, but it is more convenient to define defaults in <code>distrobox.conf</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">environment.etc.<span class="hljs-string">&quot;distrobox/distrobox.conf&quot;</span>.text <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+  container_additional_volumes=&quot;/nix/store:/nix/store:ro /etc/profiles/per-user:/etc/profiles/per-user:ro /etc/static/profiles/per-user:/etc/static/profiles/per-user:ro&quot;
+&#x27;&#x27;</span>; </code></pre>
+      </div><h2 id="known-issues">Known Issues</h2><h3 id="distrobox-fails-with-arch-linux-and-init">Distrobox Fails With Arch Linux and init</h3><p>This is a cross-distro (not NixOS-specific) issue resulting from a <a href="https://github.com/util-linux/util-linux/">util-linux</a> runuser regression.<sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Distrobox#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup><sup><a id="footnote-ref-2" href="https://mirror.nixoscn.org/wiki/Distrobox#footnote-2" data-footnote-ref aria-describedby="footnote-label">2</a></sup> A fix has recently been merged, and the issue should be resolved in the next release (v2.43).<sup><a id="footnote-ref-3" href="https://mirror.nixoscn.org/wiki/Distrobox#footnote-3" data-footnote-ref aria-describedby="footnote-label">3</a></sup>.</p>
+<h2 id="references">References</h2><references/>
+
+<p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="category:Container" class="wikilink" title="Category:Container">Category:Container</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p><a href="https://github.com/89luca89/distrobox/issues/2069">https://github.com/89luca89/distrobox/issues/2069</a> <a href="https://mirror.nixoscn.org/wiki/Distrobox#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+<li id="footnote-2">
+<p><a href="https://github.com/89luca89/distrobox/issues/2065">https://github.com/89luca89/distrobox/issues/2065</a> <a href="https://mirror.nixoscn.org/wiki/Distrobox#footnote-ref-2" data-footnote-backref aria-label="Back to reference 2">↩</a></p>
+</li>
+<li id="footnote-3">
+<p><a href="https://github.com/util-linux/util-linux/pull/4185">https://github.com/util-linux/util-linux/pull/4185</a> <a href="https://mirror.nixoscn.org/wiki/Distrobox#footnote-ref-3" data-footnote-backref aria-label="Back to reference 3">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

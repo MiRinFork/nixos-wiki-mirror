@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MPD</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / MPD</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: MPD -->
+
+<p><a href="https://www.musicpd.org/">Music Player Daemon</a> (MPD) is a flexible, powerful, server-side application for playing music. Through plugins and libraries, it can play a variety of sound files while being controlled by its network protocol.</p>
+<h2 id="home-manager-installation">Home-manager Installation</h2><p>Home-manager has a module for MPD which runs it as a systemd user service, giving it easier access to your user&#39;s sound server. In most cases no specific audio output configuration is necessary:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.mpd</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">musicDirectory</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/path/to/music&quot;</span>;
+  <span class="hljs-comment"># Optional:</span>
+  <span class="hljs-attr">network.listenAddress</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;any&quot;</span>; <span class="hljs-comment"># if you want to allow non-localhost connections</span>
+  <span class="hljs-attr">network.startWhenNeeded</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; <span class="hljs-comment"># systemd feature: only start MPD service upon connection to its socket</span>
+};</code></pre>
+      </div><h2 id="nixos-installation">NixOS Installation</h2><p>A typical NixOS config, running MPD system-wide, will look like this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.mpd</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">musicDirectory</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/path/to/music&quot;</span>;
+  <span class="hljs-attr">extraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    # must specify one or more outputs in order to play audio!
+    # (e.g. ALSA, PulseAudio, PipeWire), see next sections
+  &#x27;&#x27;</span>;
+
+  <span class="hljs-comment"># Optional:</span>
+  <span class="hljs-attr">network.listenAddress</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;any&quot;</span>; <span class="hljs-comment"># if you want to allow non-localhost connections</span>
+  <span class="hljs-attr">startWhenNeeded</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; <span class="hljs-comment"># systemd feature: only start MPD service upon connection to its socket</span>
+};</code></pre>
+      </div><p>Still missing in the above configuration is one or more <code>audio_output</code>s. We will now see how MPD can be configured to work with ALSA, PulseAudio and PipeWire.</p>
+<h2 id="pulseaudio">PulseAudio</h2><p>In order to use system-wide MPD with PulseAudio, enable sound support in the NixOS <code>configuration.nix</code> :</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># Enable sound.</span>
+s<span class="hljs-attr">ound.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+<span class="hljs-attr">hardware.pulseaudio.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><p>Then, add a PulseAudio output to MPD:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.mpd.extraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+  audio_output {
+    type &quot;pulse&quot;
+    name &quot;My PulseAudio&quot; # this can be whatever you want
+  }
+&#x27;&#x27;</span>;</code></pre>
+      </div><p>Now, according to <cite><a href="https://wiki.archlinux.org/index.php/Music_Player_Daemon/Tips_and_tricks#Local_(with_separate_mpd_user)">https://wiki.archlinux.org/index.php/Music_Player_Daemon/Tips_and_tricks#Local_(with_separate_mpd_user)</a></cite>, this will not work, because MPD and Pulseaudio are ran by different users.</p>
+<h3 id="pulseaudio-workaround-1">PulseAudio workaround 1</h3><p>One way to work around this issue is to configure MPD to use PulseAudio&#39;s TCP module to send sound to localhost&quot;. To enable the required PulseAudio modules, add</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">h<span class="hljs-attr">ardware.pulseaudio.extraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;load-module module-native-protocol-tcp auth-ip-acl=127.0.0.1&quot;</span>;</code></pre>
+      </div><p>to <code>configuration.nix</code></p>
+<p>And add <code>server &quot;127.0.0.1&quot;</code> to MPD&#39;s config to tell it to connect to PulseAudio&#39;s local sound server.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.mpd.extraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+  audio_output {
+    type &quot;pulse&quot;
+    name &quot;Pulseaudio&quot;
+    server &quot;127.0.0.1&quot; # add this line - MPD must connect to the local sound server
+  }
+&#x27;&#x27;</span>;</code></pre>
+      </div><p>After editing the configuration and running <code># nixos-rebuild switch</code>, you can test if everything is working by using a MPD client, such as <code>MPC</code>.</p>
+<h3 id="pulseaudio-workaround-2">PulseAudio workaround 2</h3><p>Another workaround is to configure NixOS to run PulseAudio system-wide.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">h<span class="hljs-attr">ardware.pulseaudio.systemWide</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; 
+
+<span class="hljs-attr">services.mpd.extraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    audio_output {
+      type &quot;pulse&quot;
+      name &quot;Pulseaudio&quot;
+      mixer_type      &quot;hardware&quot;      # optional
+      mixer_device    &quot;default&quot;       # optional
+      mixer_control   &quot;PCM&quot;           # optional
+      mixer_index     &quot;0&quot;             # optional
+    }  &#x27;&#x27;</span>;
+};</code></pre>
+      </div><h2 id="alsa">ALSA</h2><p>You can also use alsa, just add audio output to services.mpd.extraConfig:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.mpd.extraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+  audio_output {
+    type &quot;alsa&quot;
+    name &quot;My ALSA&quot;
+    device          &quot;hw:0,0&quot;    # optional 
+    format          &quot;44100:16:2&quot;    # optional
+    mixer_type      &quot;hardware&quot;
+    mixer_device    &quot;default&quot;
+    mixer_control   &quot;PCM&quot;
+  }
+&#x27;&#x27;</span>;</code></pre>
+      </div><h2 id="pipewire">PipeWire</h2><p>Make sure PipeWire is enabled. See <a href="https://mirror.nixoscn.org/wiki/MPD/PipeWire" class="wikilink" title="PipeWire">PipeWire</a></p>
+<p>To use PipeWire with a system-wide MPD instance, create an <code>audio_output</code> for it:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.mpd.extraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+  audio_output {
+    type &quot;pipewire&quot;
+    name &quot;My PipeWire Output&quot;
+  }
+&#x27;&#x27;</span>;</code></pre>
+      </div><p>See <a href="https://mpd.readthedocs.io/en/stable/plugins.html#pipewire">https://mpd.readthedocs.io/en/stable/plugins.html#pipewire</a> for more options. However, similar to PulseAudio, MPD cannot connect to the PipeWire socket because MPD will by default run under a different user than PipeWire.</p>
+<h3 id="pipewire-workaround">PipeWire workaround</h3><p>PipeWire typically runs as a normal user, while a system-wide MPD instance will run under a system user. A workaround is to configure MPD to run under the same user as PipeWire:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.mpd.user</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;userRunningPipeWire&quot;</span>;
+<span class="hljs-attr">systemd.services.mpd.environment</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-comment"># https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/609</span>
+    <span class="hljs-attr">XDG_RUNTIME_DIR</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/run/user/<span class="hljs-subst">${<span class="hljs-built_in">toString</span> config.users.users.userRunningPipeWire.uid}</span>&quot;</span>; <span class="hljs-comment"># User-id must match above user. MPD will look inside this directory for the PipeWire socket.</span>
+};</code></pre>
+      </div><p>Source: <a href="https://github.com/NixOS/nixpkgs/issues/102547#issuecomment-1016671189">https://github.com/NixOS/nixpkgs/issues/102547#issuecomment-1016671189</a></p>
+<h2 id="further-reading">Further reading</h2><p>MPD&#39;s output plugin documentation: <a href="https://mpd.readthedocs.io/en/stable/plugins.html#output-plugins">https://mpd.readthedocs.io/en/stable/plugins.html#output-plugins</a></p>
+<p>Arch Wiki : <a href="https://wiki.archlinux.org/index.php/Mpd">https://wiki.archlinux.org/index.php/Mpd</a></p>
+<p><a href="category:Audio" class="wikilink" title="Category:Audio">Category:Audio</a> <a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

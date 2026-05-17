@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nix For Lang Packaging</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Nix For Lang Packaging</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Nix For Lang Packaging -->
+
+<h1 id="overview">Overview</h1><p>Nixpkgs includes many packages written in many different languages. Each language has their own special needs which means that we end-up re-implementing similar but not exactly the same features for all these systems.</p>
+<p>This page tries to summarize where these differences are found. Ideally this will give you an understanding of why this is a hard problem, and hopefully we can also start changing the languages so that they work better with Nix.</p>
+<h2 id="step-zero">Step zero</h2><p>The first integration usually looks like this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ stdenv, lang }:
+stdenv.mkDerivation {
+  <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;my-package&quot;</span>;
+  <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;...&quot;</span>;
+  <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> [ lang ];
+  <span class="hljs-attr">buildPhase</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    lang build
+  &#x27;&#x27;</span>;
+  <span class="hljs-attr">installPhase</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    cp buildfolder $out
+  &#x27;&#x27;</span>;
+}</code></pre>
+      </div><p>Where the `lang build` command:</p>
+<ul>
+<li>fetches all the project dependencies over the network (usually talking to a package registry)</li>
+<li>unpacks the dependencies into the project structure or in a folder under $HOME</li>
+<li>builds the dependencies</li>
+<li>builds the project</li>
+</ul>
+<p>The main advantage is that it&#39;s easy to use and doesn&#39;t require a lot of coordination between nix and $lang.</p>
+<p>On the downside:</p>
+<ul>
+<li>the build is impure, the output may vary between runs</li>
+<li>build sandboxing cannot be enabled (`--option use-sandbox true`).</li>
+<li>if any dependencies of the project change, the whole project needs to be rebuilt</li>
+</ul>
+<h2 id="fetchers">Fetchers</h2><p>Fetchers are special types of derivation which have network access even under sandbox. In exchange they ask for a sha256 which is checked against the $out at build time. We are thus guaranteed of the output content even if the fetcher our sources change.</p>
+<p>This is used by some $lang integration to fetch all the project dependencies, either in individual chunks or as a whole. It means that some cooperation is needed for nix to place the dependencies in the right place for the $lang build system to pick them up.</p>
+<p>Plus:</p>
+<ul>
+<li>only fetch if the dependency list has changed</li>
+<li>able to cache the build dependencies</li>
+</ul>
+<p>Cons:</p>
+<ul>
+<li>fetcher sha256 changes tend to be discovered late since they get cached</li>
+<li>tools don&#39;t generally guarantee on-disk format</li>
+<li>cooperation is needed between $lang and nix</li>
+</ul>
+<h2 id="interspersing-nix-with-lang-build-system">Interspersing nix with $lang build system</h2><p>When a project has N dependencies, if each dependency could be built in isolation, then only those who change would need to be rebuilt. For this to work, the nix code has to figure out the exact dependency set and run each builds into their own derivation. This is not always possible because languages make assumptions about where the packages are installed and packages start reaching into the filesystem for build dependencies in other packages. Or even worse they start mutating other packages.</p>
+<p>Pros:</p>
+<ul>
+<li>less rebuild</li>
+</ul>
+<p>Cons:</p>
+<ul>
+<li>higher cooperation needed between $lang and nix</li>
+</ul>
+<h2 id="overrides">Overrides</h2><p>When a project has a N dependencies, often these dependencies need additional buildInputs. Or the package needs to be patched for one reason or another.</p>
+<p>Depending on how the dependencies are being built, some layer of indirection might be useful to inject those changes into the package build system.</p>
+<p>A lot of build issues stem from the lack of distinction between build and runtime dependencies. Some languages don&#39;t seem to support that for some reason.</p>
+<h2 id="generating-nix-from-lockfiles">Generating nix from lockfiles</h2><p>A lot of the time, a $lang2nix is provided to translate the dependency set into nix code. In general this becomes easier when a .lock file is provided because the $lang-specific dependency resolution has already been done. It is even easier if all the dependencies have an associated sha256 that matches how nix calculates them.</p>
+<h2 id="curating-a-set-of-lang-dependencies">Curating a set of $lang dependencies</h2><p>Some languages have been collected into lists of $lang packages within Nixpkgs. Each package is then pointed at the nixpkgs versions of its dependencies. (This is the Python preferred approach.)</p>
+<p>Pros:</p>
+<ul>
+<li>Visibility</li>
+<li>Fewer touchpoints in the face of updates (esp. for security)</li>
+</ul>
+<p>Cons:</p>
+<ul>
+<li>More work on Nix-side for both library and application maintainers - the process is very manual.</li>
+</ul>
+<h2 id="extending-stdenv-mkderivation">Extending stdenv.mkDerivation</h2><p>It&#39;s tricky to extend the stdenv.mkDerivation to make it open for extension. TODO: add more on the subject</p>
+<h2 id="overlays-and-binary-cache">Overlays and binary cache</h2><p>It would be nice to explore how nixpkgs-$lang overlays could be used as extensions of the package registries. I played with that with the rubygems.org repo and just the hashes where already taking 1GB on disk. This leads me to believe that we would be better off with API results.</p>
+<p>Associated to that, a lot of developers are dreaming of having a $lang binary cache that they can tap into. Especially with languages like Haskell that take a long time to build. Compiling all the packages, times number of languages, times number of build input changes in nixpkgs. This leads me to believe that it would be better to help said developer to setup a CI + binary cache that they can use that only compiles the subset of packages and single nixpkgs snapshot that they are using.</p>
+<h2 id="git-dependencies-and-hashing">Git dependencies and hashing</h2><p>One difficulty is to agree on what hash should be generated for git repositories.</p>
+<p>Most languages assume that a repo URL and git commit SHA1 are enough to uniquely identify the code. But nix also wants a sha256.</p>
+<p>Another difficulty is that because the `.git` folder is not guaranteed to have exactly the same content between clones (due to changes to the pack files), it makes it hard to always get the sha256. In most cases the `.git` folder can be removed to avoid these differences but it&#39;s not always possible. For example if the repo needs git submodules, or if the build system invokes `git` to find out repo metadata that get included in the build output, then the `.git` folder needs to be kept.</p>
+<p>In the GitHub case (and probably Bitbucket, GitLab, ...), the service also provides tarballs of specific hashes. Regularly the tarball output is also changed so nixpkgs resorts on hashing the unpacked content instead.</p>
+<p>All this means that there are many possible variations and it&#39;s going to be hard to agree on which-one is the best.</p>
+<h2 id="what-lang-can-do-to-make-our-lives-easier">What $lang can do to make our lives easier</h2><ul>
+<li>The package registry should return sha256 of the packages with all their API results</li>
+<li>Avoid changing the on-disk format of unpacked packages</li>
+<li>Lockfiles should contain sha256 of all the dependencies</li>
+<li>The $lang build tool could expose it&#39;s build plan to help interspersing nix</li>
+<li>...</li>
+</ul>
+<p><a href="category:Tutorial" class="wikilink" title="Category:Tutorial">Category:Tutorial</a> <a href="category:Development" class="wikilink" title="Category:Development">Category:Development</a> <a href="category:Nixpkgs" class="wikilink" title="Category:Nixpkgs">Category:Nixpkgs</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

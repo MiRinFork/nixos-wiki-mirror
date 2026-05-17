@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nix (package manager)/pt</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/Nix%20(package%20manager)">Nix (package manager)</a><span aria-hidden="true"> / </span>pt</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Nix (package manager)/pt -->
+
+<languages/>
+
+<div class="mw-translate-fuzzy">
+
+<p>Nix é um gerenciador de pacotes e sistema de construção que analisa instruções de construção reproduzíveis especificadas no <a href="https://mirror.nixoscn.org/wiki/Nix%20(package%20manager)/pt/Nix_Expression_Language" class="wikilink" title="Nix Expression Language">Nix Expression Language</a>, Uma linguagem puramente funcional com avaliação preguiçosa. Expressões Nix são funções puras. <sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Nix%20(package%20manager)/pt#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup>tomando dependências como argumentos e produzindo <em><a href="https://mirror.nixoscn.org/wiki/Nix%20(package%20manager)/pt/Derivations" class="wikilink" title="derivation">derivation</a></em> especificando um ambiente de construção reproduzível para o pacote. O Nix armazena os resultados da construção em endereços exclusivos especificados por um hash da árvore de dependência completa, criando um armazenamento de pacotes imutável (também conhecido como <a href="https://mirror.nixoscn.org/wiki/Nix%20(package%20manager)/pt#Nix_store" class="wikilink" title="nix store">nix store</a>) que permite atualizações atômicas, reversões e instalação simultânea de diferentes versões de um pacote, eliminando essencialmente <a href="https://en.wikipedia.org/wiki/Dependency_hell">dependency hell</a>.</p>
+</div>
+
+<p><span id="Usage"></span></p>
+<h2 id="uso">Uso</h2><div class="mw-translate-fuzzy">
+
+<h3 id="instala-o">Instalação</h3><p>NixOS: O Nix está sendo instalado enquanto você instala o NixOS.</p>
+</div>
+
+<div class="mw-translate-fuzzy">
+
+<p>Se você pretende utilizar o Nix em uma distribuição Linux diferente ou em um computador Mac, você pode executar uma instalação autônoma: O <a href="https://nixos.org/manual/nix/stable/installation/installation">installation section of the Nix manual</a> descreve a instalação do Nix autônomo a partir do binário ou do código-fonte.</p>
+</div>
+
+<p><span id="Nix_commands"></span></p>
+<h3 id="comandos-nix">Comandos Nix</h3><div class="mw-translate-fuzzy">
+
+<p>O <a href="https://mirror.nixoscn.org/wiki/Nix%20(package%20manager)/pt/Nix_command" class="wikilink" title="Nix commands">Nix commands</a> esta documentado em <a href="https://nixos.org/manual/nix/stable/command-ref/command-ref">Nix reference manual</a>: Comandos principais, utilitários e comandos experimentais. Antes da versão 2.0 (lançada em fevereiro de 2018), havia comandos diferentes.</p>
+</div>
+
+<div class="mw-translate-fuzzy">
+
+<h3 id="configura-o">Configuração</h3><p>No NixOS, o Nix é configurado através do [<a href="https://search.nixos.org/options?query=nix">https://search.nixos.org/options?query=nix</a>. <code>nix</code> option].</p>
+</div>
+
+<div class="mw-translate-fuzzy">
+
+<p>O Nix autônomo é configurado através de <code>nix.conf</code> (geralmente encontrado em <code>/etc/nix/</code>), que define uma série de configurações relacionadas à avaliação, compilações, coleta de lixo, sandbox e permissões de usuário. Detalhes sobre as opções disponíveis estão disponíveis. Detalhes sobre as opções disponíveis são <a href="https://nixos.org/manual/nix/stable/command-ref/conf-file">found in the Nix reference manual</a>.</p>
+</div>
+
+<div class="mw-translate-fuzzy">
+
+<p>É possível uma configuração ainda mais completa com <a href="https://mirror.nixoscn.org/wiki/Nix%20(package%20manager)/pt/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> para gerenciar ambientes declarativos para um único usuário. Para configuração de todo o sistema no Linux, você pode usar System Manager. Para configuração de todo o sistema no macOS, [nix-darwin nix-darwin] é a solução preferida.</p>
+</div>
+
+<p><span id="Internals"></span></p>
+<h2 id="internos">Internos</h2><h3 id="nix-store">Nix store</h3><div lang="en" dir="ltr" class="mw-content-ltr">
+
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Packages built by Nix are placed in the read-only <em>Nix store</em>, normally found in <code>/nix/store</code>. Each package is given a unique address specified by a cryptographic hash followed by the package name and version, for example <code>/nix/store/nawl092prjblbhvv16kxxbk6j9gkgcqm-git-2.14.1</code>. These prefixes hash all the inputs to the build process, including the source files, the full dependency tree, compiler flags, etc. This allows Nix to simultaneously install different versions of the same package, and even different builds of the same version, for example variants built with different compilers. When adding, removing or updating a package, nothing is removed from the store; instead, symlinks to these packages are added, removed or changed in <em>profiles</em>.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h4 id="cleaning-the-nix-store">Cleaning the Nix store</h4></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>For information relating to cleaning the Nix store, refer to .</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h4 id="nix-store-corruption">Nix store corruption</h4></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>For information relating to fixing a corrupted Nix store, refer to .</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h4 id="valid-nix-store-names">Valid Nix store names</h4></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+</div>
+
+<p><span id="Profiles"></span></p>
+<h3 id="perfis">Perfis</h3><p>Para construir um ambiente de usuário ou sistema coerente, o Nix cria links simbólicos para entradas do repositório Nix em &quot;perfis&quot;. Estes são o front-end pelo qual o Nix permite reversões: como o repositório é imutável e as versões anteriores dos perfis são mantidas, reverter para um estado anterior é simplesmente uma questão de alterar o link simbólico para um perfil anterior. Para ser mais preciso, o Nix cria links simbólicos para binários em entradas do repositório Nix que representam os ambientes do usuário. Esses ambientes do usuário são então criados por links simbólicos para perfis rotulados armazenados em <code>/nix/var/nix/profiles</code> que por sua vez são vinculados simbolicamente ao usuário <code>~/.nix-profile</code>.</p>
+<h3 id="sandboxing">Sandboxing</h3><div class="mw-translate-fuzzy">
+
+<p>Quando as compilações em sandbox estão habilitadas, o Nix configura um ambiente isolado para cada processo de compilação. Ele é usado para remover outras dependências ocultas definidas pelo ambiente de compilação para melhorar a reprodutibilidade. Isso inclui acesso à rede durante a compilação fora das funções <code>fetch*</code> e arquivos fora do repositório Nix. Dependendo do sistema operacional, o acesso a outros recursos também é bloqueado (por exemplo, a comunicação entre processos é isolada no Linux); veja no manual do Nix para detalhes <a href="https://nixos.org/nix/manual/#sec-conf-file">nix.conf section</a>.</p>
+</div>
+
+<p>O sandboxing é habilitado por padrão no Linux e desabilitado por padrão no macOS. Em pull requests para [NixOS/nixpkgs/ Nixpkgs] as pessoas são solicitadas a testar compilações com sandbox habilitado (consulte <code>Testado usando sandbox</code> no modelo de solicitação de pull) porque em <a href="https://nixos.org/hydra/">official Hydra builds</a>sandboxing é usado também.</p>
+<p>Para configurar o Nix para sandbox, defina <code>sandbox = true</code> em <code>/etc/nix/nix.conf</code>; para configurar o NixOS para sandbox defina <code>nix.useSandbox = true;</code> em <code>configuration.nix</code>. O <code>nix.useSandbox</code> option is <code>true</code> por padrão desde NixOS 17.09.</p>
+<p><span id="Alternative_Interpreters"></span></p>
+<h3 id="int-rpretes-alternativos">Intérpretes Alternativos</h3><p>Há um esforço contínuo para reimplementar o Nix, do zero, no Rust.</p>
+<p>tvix</p>
+<p>Há também uma bifurcação do Nix 2.18 liderada pela comunidade, chamada Lix, focada em correção, usabilidade e crescimento. Embora também tenha portado alguns componentes do Nix para Rust, não é uma reescrita completa como o Tvix.</p>
+<p>Lix</p>
+<p>Tentativas anteriores podem ser encontradas em github</p>
+<h2 id="notas">Notas</h2><references />
+
+<p><a href="category:Pedias" class="wikilink" title="Category:Pedias">Category:Pedias</a> <a href="category:Nix" class="wikilink" title="Category:Nix">Category:Nix</a> <a href="category:Incomplete" class="wikilink" title="Category:Incomplete">Category:Incomplete</a> <a href="category:Software" class="wikilink" title="Category:Software">Category:Software</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p>Valores não podem mudar durante a computação. Funções sempre produzem a mesma saída se sua entrada não mudar. <a href="https://mirror.nixoscn.org/wiki/Nix%20(package%20manager)/pt#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

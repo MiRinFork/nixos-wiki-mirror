@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Yazi</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Yazi</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Yazi -->
+
+<p><strong><a href="https://yazi-rs.github.io/">Yazi</a></strong> is a blazing-fast terminal file manager developed in Rust, using non-blocking async I/O for an efficient, user-friendly, and highly customizable file management experience. It features full asynchronous support, distributing CPU tasks across multiple threads to maximize resource use and improve performance.</p>
+<p>It offers powerful async task scheduling with real-time progress updates, task cancellation, and internal prioritization. It supports multiple image protocols natively and integrates with <a href="https://github.com/jstkdng/ueberzugpp">Überzug++</a> for broad terminal compatibility. Additionally, Yazi includes built-in code highlighting and image decoding functionalities, along with a pre-loading mechanism to speed up file loading processes.</p>
+<h2 id="installation">Installation</h2><p>There are several ways to install Yazi on NixOS.</p>
+<h3 id="temporary-shell">Temporary Shell</h3><p>To temporarily use Yazi in your current shell session, run:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nix-shell -p yazi</code></pre>
+      </div><h3 id="system-wide">System-wide</h3><p>To install Yazi for all users on the system, add it to your :</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">p<span class="hljs-attr">rograms.yazi.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><p>After adding the option, rebuild your system:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">sudo</span> nixos-rebuild switch</code></pre>
+      </div><h3 id="home-manager">Home Manager</h3><p>To install Yazi for a single user, add it to your Home Manager configuration:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">p<span class="hljs-attr">rograms.yazi.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><p>After adding the option, apply the changes:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">home-manager switch</code></pre>
+      </div><h2 id="configuration">Configuration</h2><p>As mentioned above, there are both <a href="https://search.nixos.org/options?channel=unstable&amp;from=0&amp;size=50&amp;sort=relevance&amp;type=packages&amp;query=programs.yazi">NixOS options</a> and <a href="https://nix-community.github.io/home-manager/options.xhtml#opt-programs.yazi.enable">home-manager options</a> for configuring Yazi.</p>
+<h4 id="advanced">Advanced</h4><div class="code-container">
+        
+        <pre><code class="language-nix hljs">p<span class="hljs-attr">rograms.yazi</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">yazi</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">ratio</span> <span class="hljs-operator">=</span> [
+        <span class="hljs-number">1</span>
+        <span class="hljs-number">4</span>
+        <span class="hljs-number">3</span>
+      ];
+      <span class="hljs-attr">sort_by</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;natural&quot;</span>;
+      <span class="hljs-attr">sort_sensitive</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">sort_reverse</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+      <span class="hljs-attr">sort_dir_first</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">linemode</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;none&quot;</span>;
+      <span class="hljs-attr">show_hidden</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">show_symlink</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    };
+
+    <span class="hljs-attr">preview</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">image_filter</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;lanczos3&quot;</span>;
+      <span class="hljs-attr">image_quality</span> <span class="hljs-operator">=</span> <span class="hljs-number">90</span>;
+      <span class="hljs-attr">tab_size</span> <span class="hljs-operator">=</span> <span class="hljs-number">1</span>;
+      <span class="hljs-attr">max_width</span> <span class="hljs-operator">=</span> <span class="hljs-number">600</span>;
+      <span class="hljs-attr">max_height</span> <span class="hljs-operator">=</span> <span class="hljs-number">900</span>;
+      <span class="hljs-attr">cache_dir</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;</span>;
+      <span class="hljs-attr">ueberzug_scale</span> <span class="hljs-operator">=</span> <span class="hljs-number">1</span>;
+      <span class="hljs-attr">ueberzug_offset</span> <span class="hljs-operator">=</span> [
+        <span class="hljs-number">0</span>
+        <span class="hljs-number">0</span>
+        <span class="hljs-number">0</span>
+        <span class="hljs-number">0</span>
+      ];
+    };
+
+    <span class="hljs-attr">tasks</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">micro_workers</span> <span class="hljs-operator">=</span> <span class="hljs-number">5</span>;
+      <span class="hljs-attr">macro_workers</span> <span class="hljs-operator">=</span> <span class="hljs-number">10</span>;
+      <span class="hljs-attr">bizarre_retry</span> <span class="hljs-operator">=</span> <span class="hljs-number">5</span>;
+    };
+  };
+}</code></pre>
+      </div><h2 id="using-separate-files">Using separate files</h2><p>If you would like to use your existing files to keep them portable, you can import them into your configuration directly to be read and built by nix.</p>
+<h2 id="tips-and-tricks">Tips and tricks</h2><h4 id="installing-plugins">Installing Plugins</h4><p>Many yazi plugins are <a href="https://search.nixos.org/packages?channel=unstable&amp;from=0&amp;size=50&amp;buckets=%7B%22package_attr_set%22%3A%5B%22yaziPlugins%22%5D%2C%22package_license_set%22%3A%5B%5D%2C%22package_maintainers_set%22%3A%5B%5D%2C%22package_platforms%22%3A%5B%5D%7D&amp;sort=relevance&amp;type=packages&amp;query=yaziPlugins">packaged in nixpkgs</a>.</p>
+<p>There are some additional yazi plugins packaged in the <a href="https://github.com/lordkekz/nix-yazi-plugins">nix-yazi-plugins</a> flake. It also provides home-manager modules for configuring the plugins&#39; options.</p>
+<h4 id="bleeding-edge">Bleeding edge</h4><p>The upstream repository provides a flake so that Nix users can easily keep up with the bleeding edge.<sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Yazi#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">i<span class="hljs-attr">nputs</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">yazi.url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:sxyazi/yazi&quot;</span>;
+};</code></pre>
+      </div><p>Afterwards, you can use the new package.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># Global</span>
+e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> [ yazi.packages.${pkgs.stdenv.hostPlatform.system}.default ];
+<span class="hljs-comment"># or, if you use the module</span>
+p<span class="hljs-attr">rograms.yazi.package</span> <span class="hljs-operator">=</span> yazi.packages.${pkgs.stdenv.hostPlatform.system}.default;
+
+<span class="hljs-comment"># Home Manager</span>
+h<span class="hljs-attr">ome.packages</span> <span class="hljs-operator">=</span> [ yazi.packages.${pkgs.stdenv.hostPlatform.system}.default ];
+<span class="hljs-comment"># or, if you use the module</span>
+p<span class="hljs-attr">rograms.yazi.package</span> <span class="hljs-operator">=</span> yazi.packages.${pkgs.stdenv.hostPlatform.system}.default;</code></pre>
+      </div><p>Pre-built artifacts are served at <a href="https://yazi.cachix.org/">https://yazi.cachix.org</a>, so that Nix users don&#39;t have to build Yazi on their machine.<sup><a id="footnote-ref-2" href="https://mirror.nixoscn.org/wiki/Yazi#footnote-2" data-footnote-ref aria-describedby="footnote-label">2</a></sup></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">ix</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">substitute</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">substituters</span> <span class="hljs-operator">=</span> [
+      <span class="hljs-string">&quot;https://yazi.cachix.org&quot;</span>
+    ];
+    <span class="hljs-attr">trusted-public-keys</span> <span class="hljs-operator">=</span> [
+      <span class="hljs-string">&quot;yazi.cachix.org-1:Dcdz63NZKfvUCbDGngQDAZq6kOroIrFoyO064uvLh8k=&quot;</span>
+    ];
+  };
+};</code></pre>
+      </div><h4 id="stylix-integration">Stylix integration</h4><div class="code-container">
+        
+        <pre><code class="language-nix hljs">t<span class="hljs-attr">heme</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> config.stylix.base16Scheme; {
+  <span class="hljs-attr">filetype</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">rules</span> <span class="hljs-operator">=</span> [
+      <span class="hljs-comment"># Images</span>
+      {
+        <span class="hljs-attr">mime</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;image/*&quot;</span>;
+        <span class="hljs-attr">fg</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;#<span class="hljs-subst">${base0B}</span>&quot;</span>;
+      }
+
+      <span class="hljs-comment"># Videos</span>
+      {
+        <span class="hljs-attr">mime</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;video/*&quot;</span>;
+        <span class="hljs-attr">fg</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;#<span class="hljs-subst">${base03}</span>&quot;</span>;
+      }
+      <span class="hljs-comment"># Audio</span>
+      {
+        <span class="hljs-attr">mime</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;audio/*&quot;</span>;
+        <span class="hljs-attr">fg</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;#<span class="hljs-subst">${base08}</span>&quot;</span>;
+      }
+    ];
+  };
+};</code></pre>
+      </div><p>Stylix can do it automatically for you if the following option is set:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">tylix.targets.yazi.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><h4 id="key-mapping">Key mapping</h4><div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># Hyprland</span>
+b<span class="hljs-attr">ind</span> <span class="hljs-operator">=</span> [
+  <span class="hljs-string">&quot;$mod, E, exec, kitty -e yazi&quot;</span>
+];</code></pre>
+      </div><h2 id="troubleshooting">Troubleshooting</h2><h3 id="rar-file-extraction">RAR file extraction</h3><p>By default, yazi depends on _7zz in nixpkgs for extraction and previewing purposes. This does not support RAR files by default. To enable support, you can override the _7zz in the dependencies into unfree rar version.</p>
+<div class="code-container">
+        
+        <pre><code class="language-text hljs">pkgs.yazi.override {_7zz = pkgs._7zz-rar; }</code></pre>
+      </div><h2 id="see-also">See also</h2><ul>
+<li><a href="https://search.nixos.org/options?channel=unstable&amp;query=programs.yazi">NixOS options for Yazi</a></li>
+<li><a href="https://yazi-rs.github.io/docs/installation/">Yazi official documentation</a></li>
+</ul>
+<h2 id="references">References</h2><p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="category:File_Manager" class="wikilink" title="Category:File Manager">Category:File Manager</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p><a href="https://yazi-rs.github.io/docs/installation/#nix-flakes">https://yazi-rs.github.io/docs/installation/#nix-flakes</a> <a href="https://mirror.nixoscn.org/wiki/Yazi#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+<li id="footnote-2">
+<p><a href="https://yazi-rs.github.io/docs/installation/#cache">https://yazi-rs.github.io/docs/installation/#cache</a> <a href="https://mirror.nixoscn.org/wiki/Yazi#footnote-ref-2" data-footnote-backref aria-label="Back to reference 2">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

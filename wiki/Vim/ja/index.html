@@ -1,0 +1,626 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vim/ja</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/Vim">Vim</a><span aria-hidden="true"> / </span>ja</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Vim/ja -->
+
+<languages/>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p><a href="https://www.vim.org/">Vim</a> (vi improved) is a highly configurable modal text editor program for the terminal.</p>
+</div>
+
+<p><span id="Installation"></span></p>
+<h2 id="">インストール</h2><p><span id="Basic_Install"></span></p>
+<h3 id="">ベーシックインストール</h3><p>&lt;syntaxhighlight lang=&quot;nix&gt;</p>
+<p><code> programs.vim.enable = true;</code></p>
+</syntaxhighlight>
+
+<p>もしくは</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">programs.vim</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">package</span> <span class="hljs-operator">=</span> pkgs.vim-full;
+  };</code></pre>
+      </div><p>もしくは</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [ vim-full ];</code></pre>
+      </div><p><span id="Using_Home_Manager"></span></p>
+<h3 id="home-manager-使用-例">Home Managerを使用した例</h3><p>Vimは<a href="special:MyLanguage/Home_Manager" class="wikilink" title="Home Manager">Home Managerを</a>使用して簡単にセットアップ出来ます。以下は最低限の一例です：</p>
+<p>&lt;syntaxhighlight lang=&quot;nix&gt;</p>
+<p><code> programs.vim = {</code><br><code>   enable = true;</code><br><code>   plugins = with pkgs.vimPlugins; [ vim-airline ];</code><br><code>   settings = { ignorecase = true; };</code><br><code>   extraConfig = &#39;&#39;</code><br><code>     set mouse=a</code><br><code>   &#39;&#39;;</code><br><code> };</code></p>
+</syntaxhighlight>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>See <a href="https://github.com/rycee/home-manager/blob/master/modules/programs/vim.nix">1</a> for the full set of options.</p>
+</div>
+
+<p><span id="Vim_Spell_Files"></span></p>
+<h3 id="vim">Vimスペルファイル</h3><div class="mw-translate-fuzzy">
+
+<p>個々のスペルファイルをパッケージ化することで、ユーザーディレクトリにスペルファイルをインストールするようにhome-managerを設定することができます。以下はneovimとフランス語の例です：</p>
+</div>
+
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-keyword">let</span>
+n<span class="hljs-attr">vim-spell-fr-utf8-dictionary</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">builtins.fetchurl</span> {
+  <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;http://ftp.vim.org/vim/runtime/spell/fr.utf-8.spl&quot;</span>;
+  <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;abfb9702b98d887c175ace58f1ab39733dc08d03b674d914f56344ef86e63b61&quot;</span>;
+};
+
+<span class="hljs-attr">nvim-spell-fr-utf8-suggestions</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">builtins.fetchurl</span> {
+  <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;http://ftp.vim.org/vim/runtime/spell/fr.utf-8.sug&quot;</span>;
+  <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;0294bc32b42c90bbb286a89e23ca3773b7ef50eff1ab523b1513d6a25c6b3f58&quot;</span>;
+};
+
+<span class="hljs-attr">nvim-spell-fr-latin1-dictionary</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">builtins.fetchurl</span> {
+  <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;http://ftp.vim.org/vim/runtime/spell/fr.latin1.spl&quot;</span>;
+  <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;086ccda0891594c93eab143aa83ffbbd25d013c1b82866bbb48bb1cb788cc2ff&quot;</span>;
+};
+
+<span class="hljs-attr">nvim-spell-fr-latin1-suggestions</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">builtins.fetchurl</span> {
+  <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;http://ftp.vim.org/vim/runtime/spell/fr.latin1.sug&quot;</span>;
+  <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;5cb2c97901b9ca81bf765532099c0329e2223c139baa764058822debd2e0d22a&quot;</span>;
+};
+<span class="hljs-keyword">in</span>
+{
+  xdg.configFile.<span class="hljs-string">&quot;nvim/spell/fr.utf-8.spl&quot;</span>.source <span class="hljs-operator">=</span> nvim-spell-fr-utf8-dictionary;
+  xdg.configFile.<span class="hljs-string">&quot;nvim/spell/fr.utf-8.sug&quot;</span>.source <span class="hljs-operator">=</span> nvim-spell-fr-utf8-suggestions;
+  xdg.configFile.<span class="hljs-string">&quot;nvim/spell/fr.latin1.spl&quot;</span>.source <span class="hljs-operator">=</span> nvim-spell-fr-latin1-dictionary;
+  xdg.configFile.<span class="hljs-string">&quot;nvim/spell/fr.latin1.sug&quot;</span>.source <span class="hljs-operator">=</span> nvim-spell-fr-latin1-suggestions;
+}</code></pre>
+      </div><div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h4 id="neovim-with-coc-for-python">NeoVim with Coc for Python</h4></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>For NeoVim use this home manager config: <a href="https://github.com/NixOS/nixpkgs/issues/98166#issuecomment-725319238">https://github.com/NixOS/nixpkgs/issues/98166#issuecomment-725319238</a></p>
+</div>
+
+<p><span id="System_wide_vim/nvim_configuration"></span></p>
+<h2 id="全体-vim-nvim設定">システム全体でのvim/nvim設定</h2><p>vim/nvimのシステム全体の&quot;ベースライン&quot;設定が必要な場合は、次の二つの例を参照してください：</p>
+<p>unstableでは：</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs, ... }:
+{
+  <span class="hljs-attr">programs.vim</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">defaultEditor</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">package</span> <span class="hljs-operator">=</span> (pkgs.vim-full.override {  }).customize{
+      <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;vim&quot;</span>;
+      <span class="hljs-comment"># 例として、Nixファイルのシンタックスハイライト表示用のプラグインをインストールする</span>
+      <span class="hljs-attr">vimrcConfig.packages.myplugins</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs.vimPlugins; {
+        <span class="hljs-attr">start</span> <span class="hljs-operator">=</span> [ vim-nix vim-lastplace ];
+        <span class="hljs-attr">opt</span> <span class="hljs-operator">=</span> [];
+      };
+      <span class="hljs-attr">vimrcConfig.customRC</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        &quot; 自分のカスタムvimrc
+        set nocompatible
+        set backspace=indent,eol,start
+        &quot; シンタックスハイライトをデフォルトでオンにする
+        syntax on
+        &quot; ...
+      &#x27;&#x27;</span>;
+    };
+  };
+}</code></pre>
+      </div><div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs, ... }:
+{
+  <span class="hljs-attr">programs.neovim</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">defaultEditor</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">vimAlias</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">configure</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">customRC</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        &quot; 自分のカスタムvimrc
+        set nocompatible
+        set backspace=indent,eol,start
+        &quot; ...
+      &#x27;&#x27;</span>;
+      <span class="hljs-attr">packages.myPlugins</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs.vimPlugins; {
+        <span class="hljs-attr">start</span> <span class="hljs-operator">=</span> [ vim-lastplace vim-nix ]; 
+        <span class="hljs-attr">opt</span> <span class="hljs-operator">=</span> [];
+      };
+    };
+  };
+}</code></pre>
+      </div><p>これらのファイルを自分の<code>configuration.nix</code>でインポートする</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{    
+  <span class="hljs-attr">imports</span> <span class="hljs-operator">=</span>    
+    [
+      <span class="hljs-symbol">./vim.nix</span>
+    ];
+  <span class="hljs-comment"># ...</span>
+}</code></pre>
+      </div><p><span id="Custom_setup_without_using_Home_Manager"></span></p>
+<h2 id="home-manager-使用">Home Managerを使用しないカスタムセットアップ</h2><div lang="en" dir="ltr" class="mw-content-ltr">
+
+</div>
+
+<p>Vimプラグインはnixの助けを借りてインストールすることができます。vimプラグインマネージャーを使用せず、すべて<code>.nixpkgs/config</code>で行うことができます。</p>
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>A lot of documentation about package management and configuration of vim in nix is stored at <a href="https://github.com/NixOS/nixpkgs/blob/master/doc/languages-frameworks/vim.section.md">2</a> in nixpkgs.</p>
+</div>
+
+<p><span id="Customizations"></span></p>
+<h3 id="">カスタマイズする</h3><p>vimもneovimも、あなたの好きなプラグインや追加ライブラリを含むようにさらに設定することができます。利用可能な全ての vim プラグインをリストアップするには、<code>nix search nixpkgs#vimPlugins</code>を実行してください。</p>
+<p>以下のコードを<code>~/.nixpkgs/config.nix</code>に追加してください：</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">packageOverrides</span> <span class="hljs-operator">=</span> <span class="hljs-params">pkgs:</span> <span class="hljs-keyword">with</span> pkgs; {
+    <span class="hljs-attr">myVim</span> <span class="hljs-operator">=</span> vim-full.customize {
+      <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;vim-with-plugins&quot;</span>;
+      <span class="hljs-operator">&lt;</span>div lang<span class="hljs-operator">=</span><span class="hljs-string">&quot;en&quot;</span> dir<span class="hljs-operator">=</span><span class="hljs-string">&quot;ltr&quot;</span> class<span class="hljs-operator">=</span><span class="hljs-string">&quot;mw-content-ltr&quot;</span><span class="hljs-operator">&gt;</span>
+<span class="hljs-comment"># add here code from the example section</span>
+<span class="hljs-operator">&lt;</span><span class="hljs-operator">/</span>div<span class="hljs-operator">&gt;</span>
+    };
+    <span class="hljs-attr">myNeovim</span> <span class="hljs-operator">=</span> neovim.override {
+      <span class="hljs-attr">configure</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">customRC</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+          &lt;div lang=&quot;en&quot; dir=&quot;ltr&quot; class=&quot;mw-content-ltr&quot;&gt;
+# here your custom configuration goes!
+&lt;/div&gt;
+        &#x27;&#x27;</span>;
+        <span class="hljs-attr">packages.myVimPackage</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs.vimPlugins; {
+          <span class="hljs-operator">&lt;</span>div lang<span class="hljs-operator">=</span><span class="hljs-string">&quot;en&quot;</span> dir<span class="hljs-operator">=</span><span class="hljs-string">&quot;ltr&quot;</span> class<span class="hljs-operator">=</span><span class="hljs-string">&quot;mw-content-ltr&quot;</span><span class="hljs-operator">&gt;</span>
+<span class="hljs-comment"># see examples below how to use custom packages</span>
+<span class="hljs-operator">&lt;</span><span class="hljs-operator">/</span>div<span class="hljs-operator">&gt;</span>
+          <span class="hljs-attr">start</span> <span class="hljs-operator">=</span> [ ];
+          <span class="hljs-attr">opt</span> <span class="hljs-operator">=</span> [ ];
+        }; 
+      };     
+    };
+  };
+}</code></pre>
+      </div><div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>After that you can install your special grafted `myVim` or `myNeovim` packages.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h3 id="examples">Examples</h3></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h4 id="apply-custom-vimrc-configuration">Apply custom vimrc configuration</h4></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>NB: you <em>must</em> use <code>vimrcConfig.customRC</code> rather than installing a <code>~/.vimrc</code> by hand, since the customized Vim will silently ignore any vimrc in your home directory.</p>
+</div>
+
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">vim-full.customize {
+  <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;vim-with-plugins&quot;</span>;
+  <span class="hljs-operator">&lt;</span>div lang<span class="hljs-operator">=</span><span class="hljs-string">&quot;en&quot;</span> dir<span class="hljs-operator">=</span><span class="hljs-string">&quot;ltr&quot;</span> class<span class="hljs-operator">=</span><span class="hljs-string">&quot;mw-content-ltr&quot;</span><span class="hljs-operator">&gt;</span>
+<span class="hljs-comment"># add custom .vimrc lines like this:</span>
+<span class="hljs-operator">&lt;</span><span class="hljs-operator">/</span>div<span class="hljs-operator">&gt;</span>
+  <span class="hljs-attr">vimrcConfig.customRC</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    set hidden
+    set colorcolumn=80 
+  &#x27;&#x27;</span>;
+}</code></pre>
+      </div><div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>If you need to run code before plugins are added, you can use <code>vimrcConfig.beforePlugins</code> (be sure to include <code>set nocompatible</code> if you override <a href="https://github.com/NixOS/nixpkgs/blob/c3df8057dad986bf7f3928de1b5233fadb52bb15/pkgs/misc/vim-plugins/vim-utils.nix#L264-L267">the default value</a>).</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h3 id="using-vim-39-s-builtin-packaging-capability">Using vim&#39;s builtin packaging capability</h3></div>
+
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">vim-full.customize {
+  <span class="hljs-attr">vimrcConfig.packages.myVimPackage</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs.vimPlugins; {
+    <span class="hljs-operator">&lt;</span>div lang<span class="hljs-operator">=</span><span class="hljs-string">&quot;en&quot;</span> dir<span class="hljs-operator">=</span><span class="hljs-string">&quot;ltr&quot;</span> class<span class="hljs-operator">=</span><span class="hljs-string">&quot;mw-content-ltr&quot;</span><span class="hljs-operator">&gt;</span>
+<span class="hljs-comment"># loaded on launch</span>
+<span class="hljs-operator">&lt;</span><span class="hljs-operator">/</span>div<span class="hljs-operator">&gt;</span>
+    <span class="hljs-attr">start</span> <span class="hljs-operator">=</span> [ YouCompleteMe fugitive ];
+    <span class="hljs-operator">&lt;</span>div lang<span class="hljs-operator">=</span><span class="hljs-string">&quot;en&quot;</span> dir<span class="hljs-operator">=</span><span class="hljs-string">&quot;ltr&quot;</span> class<span class="hljs-operator">=</span><span class="hljs-string">&quot;mw-content-ltr&quot;</span><span class="hljs-operator">&gt;</span>
+<span class="hljs-comment"># manually loadable by calling `:packadd $plugin-name`</span>
+<span class="hljs-operator">&lt;</span><span class="hljs-operator">/</span>div<span class="hljs-operator">&gt;</span>
+    <span class="hljs-attr">opt</span> <span class="hljs-operator">=</span> [ phpCompletion elm-vim ];
+    <span class="hljs-operator">&lt;</span>div lang<span class="hljs-operator">=</span><span class="hljs-string">&quot;en&quot;</span> dir<span class="hljs-operator">=</span><span class="hljs-string">&quot;ltr&quot;</span> class<span class="hljs-operator">=</span><span class="hljs-string">&quot;mw-content-ltr&quot;</span><span class="hljs-operator">&gt;</span>
+<span class="hljs-comment"># To automatically load a plugin when opening a filetype, add vimrc lines like:</span>
+<span class="hljs-operator">&lt;</span><span class="hljs-operator">/</span>div<span class="hljs-operator">&gt;</span>
+    <span class="hljs-comment"># autocmd FileType php :packadd phpCompletion</span>
+  }
+};</code></pre>
+      </div><div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Note that dynamically loading with opt may be buggy and the workaround is to use <a href="https://vi.stackexchange.com/a/20818/30821">start instead</a>.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h3 id="using-pathogen-as-manager">Using Pathogen as manager</h3></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>There is a pathogen implementation as well, but its startup is slower and [VAM] has more features.</p>
+</div>
+
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">v<span class="hljs-attr">imrcConfig.pathogen.knownPlugins</span> <span class="hljs-operator">=</span> vimPlugins; <span class="hljs-comment"># optional</span>
+v<span class="hljs-attr">imrcConfig.pathogen.pluginNames</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;vim-addon-nix&quot;</span> <span class="hljs-string">&quot;youcompleteme&quot;</span> ];</code></pre>
+      </div><div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h3 id="using-vim-plug-as-manager">Using Vim-Plug as manager</h3></div>
+
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">v<span class="hljs-attr">imrcConfig.plug.plugins</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs.vimPlugins; [vim-addon-nix youcompleteme];</code></pre>
+      </div><div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h3 id="adding-new-plugins">Adding new plugins</h3></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Please see <a href="https://github.com/NixOS/nixpkgs/blob/master/doc/languages-frameworks/vim.section.md">https://github.com/NixOS/nixpkgs/blob/master/doc/languages-frameworks/vim.section.md</a>.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h4 id="notes-regarding-plugins">Notes Regarding Plugins</h4></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>For additional info, you may wish to look at <a href="https://github.com/NixOS/nixpkgs/blob/master/doc/languages-frameworks/vim.section.md">documentation on the nixpkgs repository</a>.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h3 id="add-a-new-custom-plugin-to-the-users-packages">Add a new custom plugin to the users packages</h3></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Sometimes you do not want to change upstream plugins, for this you can use <code>vimUtils.buildVimPlugin</code> to create your own:</p>
+</div>
+
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-keyword">let</span>
+  <span class="hljs-attr">vim-better-whitespace</span> <span class="hljs-operator">=</span> pkgs.vimUtils.buildVimPlugin {
+    <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;vim-better-whitespace&quot;</span>;
+    <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> pkgs.fetchFromGitHub {
+      <span class="hljs-attr">owner</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ntpeters&quot;</span>;
+      <span class="hljs-attr">repo</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;vim-better-whitespace&quot;</span>;
+      <span class="hljs-attr">rev</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;984c8da518799a6bfb8214e1acdcfd10f5f1eed7&quot;</span>;
+      <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;10l01a8xaivz6n01x6hzfx7gd0igd0wcf9ril0sllqzbq7yx2bbk&quot;</span>;
+    };
+  };
+<span class="hljs-keyword">in</span> {
+  users.users.<span class="hljs-symbol">&lt;yourNickname&gt;</span>.packages <span class="hljs-operator">=</span> [
+    (pkgs.vim-full.customize {
+      <span class="hljs-attr">vimrcConfig.packages.myVimPackage</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs.vimPlugins; {
+        <span class="hljs-attr">start</span> <span class="hljs-operator">=</span> [ vim-better-whitespace ];
+      };
+    })
+  ];
+};</code></pre>
+      </div><div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h4 id="using-flake">Using flake</h4></div>
+
+<p><code>configuration.nix</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ inputs, ... }:
+{
+  <span class="hljs-attr">nixpkgs</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">overlays</span> <span class="hljs-operator">=</span> [
+      (<span class="hljs-params">self:</span> <span class="hljs-params">super:</span>
+        <span class="hljs-keyword">let</span>
+          <span class="hljs-attr">winresizer-vim</span> <span class="hljs-operator">=</span> super.vimUtils.buildVimPlugin {
+            <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;winresizer-vim&quot;</span>;
+            <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> inputs.winresizer-vim;
+          };
+        <span class="hljs-keyword">in</span>
+        {
+          <span class="hljs-attr">vimPlugins</span> <span class="hljs-operator">=</span>
+            super.vimPlugins <span class="hljs-operator">//</span> {
+              <span class="hljs-keyword">inherit</span> winresizer-vim;
+            };
+        }
+      )
+    ];
+  };</code></pre>
+      </div><p><code>flake.nix</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">inputs</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">nixpkgs.url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:nixos/nixpkgs/nixos-22.05&quot;</span>;
+    <span class="hljs-attr">winresizer-vim</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:simeji/winresizer&quot;</span>;
+      <span class="hljs-attr">flake</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+    };
+  };
+
+  <span class="hljs-attr">outputs</span> <span class="hljs-operator">=</span> inputs@{ nixpkgs, ... }: {
+    <span class="hljs-attr">nixosConfigurations.nixos</span> <span class="hljs-operator">=</span> nixpkgs.lib.nixosSystem {
+      <span class="hljs-attr">system</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;x86_64-linux&quot;</span>;
+      <span class="hljs-attr">specialArgs</span> <span class="hljs-operator">=</span> { <span class="hljs-keyword">inherit</span> inputs; };
+      <span class="hljs-attr">modules</span> <span class="hljs-operator">=</span> [
+        <span class="hljs-symbol">./configuration.nix</span>
+        <span class="hljs-symbol">./hardware-configuration.nix</span>
+        { <span class="hljs-attr">nix.registry.nixpkgs.flake</span> <span class="hljs-operator">=</span> nixpkgs; }
+      ];
+    };
+  };
+}</code></pre>
+      </div><div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Then we can update the package with <code>nix flake lock --update-input winresizer-vim</code>, or update all inputs in flake.nix with <code>nix flake update</code>.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h3 id="vim-as-a-python-ide">Vim as a Python IDE</h3></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>The following snippet will make a full featured <a href="https://mirror.nixoscn.org/wiki/Vim/ja/python" class="wikilink" title="python">python</a> IDE.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h4 id="using-language-client">Using language client</h4></div>
+
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">vim-full.customize {
+  <span class="hljs-attr">vimrcConfig</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">customRC</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+      let g:LanguageClient_serverCommands = {
+        <span class="hljs-char escape_">\ </span>&#x27;python&#x27;: [&#x27;pyls&#x27;]
+        <span class="hljs-char escape_">\ </span>}
+       nnoremap &lt;F5&gt; :call LanguageClient_contextMenu()&lt;CR&gt;
+       nnoremap &lt;silent&gt; gh :call LanguageClient_textDocument_hover()&lt;CR&gt;
+       nnoremap &lt;silent&gt; gd :call LanguageClient_textDocument_definition()&lt;CR&gt;
+       nnoremap &lt;silent&gt; gr :call LanguageClient_textDocument_references()&lt;CR&gt;
+       nnoremap &lt;silent&gt; gs :call LanguageClient_textDocument_documentSymbol()&lt;CR&gt;
+       nnoremap &lt;silent&gt; &lt;F2&gt; :call LanguageClient_textDocument_rename()&lt;CR&gt;
+       nnoremap &lt;silent&gt; gf :call LanguageClient_textDocument_formatting()&lt;CR&gt;
+    &#x27;&#x27;</span>;
+    <span class="hljs-attr">packages.myVimPackage</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs.vimPlugins; {
+      <span class="hljs-attr">start</span> <span class="hljs-operator">=</span> [ LanguageClient-neovim ];
+    }
+};</code></pre>
+      </div><div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Then put the following expression in <code>environment.systemPackages</code> or in the home-manager package list, to install python-language-server:</p>
+</div>
+
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">(python3.withPackages(<span class="hljs-params">ps:</span> [
+  ps.python-language-server
+  <span class="hljs-operator">&lt;</span>div lang<span class="hljs-operator">=</span><span class="hljs-string">&quot;en&quot;</span> dir<span class="hljs-operator">=</span><span class="hljs-string">&quot;ltr&quot;</span> class<span class="hljs-operator">=</span><span class="hljs-string">&quot;mw-content-ltr&quot;</span><span class="hljs-operator">&gt;</span>
+<span class="hljs-comment"># the following plugins are optional, they provide type checking, import sorting and code formatting</span>
+<span class="hljs-operator">&lt;</span><span class="hljs-operator">/</span>div<span class="hljs-operator">&gt;</span>
+  ps.pyls-mypy ps.pyls-isort ps.pyls-black
+]))</code></pre>
+      </div><div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h3 id="real-life-examples">Real life examples</h3></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<ul>
+<li><a href="https://github.com/jagajaga/my_configs/blob/master/.nixpkgs/common.nix">Jagajaga’s config</a></li>
+</ul>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<ul>
+<li><a href="https://github.com/andrewrk/dotfiles/blob/master/.nixpkgs/config.nix">andrewrk&#39;s config</a></li>
+</ul>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<ul>
+<li><a href="https://github.com/wagnerf42/nixos-config/blob/master/config/my_vim.nix">wagnerf42&#39;s config (good for rust language)</a></li>
+</ul>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h3 id="youcompleteme">YouCompleteMe</h3></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Currently the youcompleteme plugin uses <a href="https://github.com/NixOS/nixpkgs/blob/8e7b1f2ac2e261d5a644fef860a0d050ea227c06/pkgs/misc/vim-plugins/default.nix#L695">unwrapped clang on linux</a>. This causes it to not find <code>stdlib.h</code>. There is a <a href="https://github.com/andrewrk/genesis/blob/5f49cd9a8c2b61b9859a22102bc3f732add9461a/.ycm_extra_conf.py">workaround</a> you can put in your <code>.ycm_extra_conf.py</code> file, which works by executing the C/C++ compiler and getting it to output the list of search paths - which includes the search path to find <code>stdlib.h</code>.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>A better alternative to youcompleteme for C/C++ is to use <a href="https://github.com/cquery-project/cquery/">cquery</a> in combination with the <a href="https://github.com/autozimu/LanguageClient-neovim">LanguageClient-neovim</a>. It will also find in c header files when used in a nix-shell if you install cquery from nixpkgs as it uses a custom <a href="https://github.com/NixOS/nixpkgs/commit/04f3b76dcec21f2fcba6b1b0afbb3ed224165050#diff-11cdfc0385b9e017089c1ac09c5b838e">shell wrapper</a></p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h2 id="gvim-and-gview">gvim and gview</h2></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>You can enable <code>guiSupport</code> to make <code>gvim</code> available, though this won&#39;t give you <code>gview</code>:</p>
+</div>
+
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">(pkgs.vim-full.customize {
+  <span class="hljs-attr">guiSupport</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+})</code></pre>
+      </div><p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="category:CLI_Applications" class="wikilink" title="Category:CLI Applications">Category:CLI Applications</a> <a href="category:Text_Editor```{{#translation:}}%60%60%60" class="wikilink" title="Category:Text Editor```
+{{#translation:}}
+```">Category:Text Editor```
+{{#translation:}}</p>
+<div class="code-container">
+        
+        <pre><code class="language-</a> hljs"></code></pre>
+      </div>
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

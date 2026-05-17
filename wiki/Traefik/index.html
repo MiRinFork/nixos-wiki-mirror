@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Traefik</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Traefik</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Traefik -->
+
+<p><a href="https://traefik.io/">Traefik</a> is a <a href="wikipedia:Reverse_proxy" class="wikilink" title="reverse proxy">reverse proxy</a> and <a href="wikipedia:Load_balancing_(computing)" class="wikilink" title="load balancer">load balancer</a>.</p>
+<h2 id="installation">Installation</h2><p>To install Traefik, add the following to your NixOS configuration:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs">s<span class="hljs-attr">ervices.traefik.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><p>[<a href="https://search.nixos.org/options?show=services.traefik">https://search.nixos.org/options?show=services.traefik</a>. More options] are available.</p>
+<h2 id="configuration">Configuration</h2><h4 id="using-nix">Using Nix</h4><div class="code-container">
+        
+        <pre><code class="language-nixos hljs">  <span class="hljs-attr">services.traefik</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+    <span class="hljs-attr">staticConfigOptions</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">entryPoints</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">web</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">address</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;:80&quot;</span>;
+          <span class="hljs-attr">asDefault</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+          <span class="hljs-attr">http.redirections.entrypoint</span> <span class="hljs-operator">=</span> {
+            <span class="hljs-attr">to</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;websecure&quot;</span>;
+            <span class="hljs-attr">scheme</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https&quot;</span>;
+          };
+        };
+
+        <span class="hljs-attr">websecure</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">address</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;:443&quot;</span>;
+          <span class="hljs-attr">asDefault</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+          <span class="hljs-attr">http.tls.certResolver</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;letsencrypt&quot;</span>;
+        };
+      };
+
+      <span class="hljs-attr">log</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">level</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;INFO&quot;</span>;
+        <span class="hljs-attr">filePath</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${config.services.traefik.dataDir}</span>/traefik.log&quot;</span>;
+        <span class="hljs-attr">format</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;json&quot;</span>;
+      };
+
+      <span class="hljs-attr">certificatesResolvers.letsencrypt.acme</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">email</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;postmaster@YOUR.DOMAIN&quot;</span>;
+        <span class="hljs-attr">storage</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${config.services.traefik.dataDir}</span>/acme.json&quot;</span>;
+        <span class="hljs-attr">httpChallenge.entryPoint</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;web&quot;</span>;
+      };
+
+      <span class="hljs-attr">api.dashboard</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-comment"># Access the Traefik dashboard on &lt;Traefik IP&gt;:8080 of your server</span>
+      <span class="hljs-comment"># api.insecure = true;</span>
+    };
+
+    <span class="hljs-attr">dynamicConfigOptions</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">http.routers</span> <span class="hljs-operator">=</span> {};
+      <span class="hljs-attr">http.services</span> <span class="hljs-operator">=</span> {};
+    };
+  };</code></pre>
+      </div><h4 id="using-non-nix-configuration-files">Using non-Nix configuration files</h4><p>If you are migrating from a Non-NixOS system, you might be interested in the <code>staticConfigFile</code> and <code>dynamicConfigFile</code> options.</p>
+<p>You can set <code>staticConfigFile</code> like this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs">s<span class="hljs-attr">ervices.traefik.staticConfigFile</span> <span class="hljs-operator">=</span> <span class="hljs-symbol">./static_config.toml</span>;</code></pre>
+      </div><p>But you need to be careful about how you set the <code>services.traefik.dynamicConfigFile</code> option, if you use a path like shown above, your file will end up in the <a href="https://mirror.nixoscn.org/wiki/Traefik/Nix_store" class="wikilink" title="Nix store">Nix store</a>, and it will change every time you update your configuration, which means Traefik won&#39;t be able to reload with your changes automatically, which defeats the point of using the dynamic config file.</p>
+<p>A way to avoid this is to use <code>etc.environment</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs"><span class="hljs-comment"># Note the quotes around the path!</span>
+s<span class="hljs-attr">ervices.traefik.dynamicConfigFile</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/etc/traefik/dynamic_config.toml&quot;</span>;
+<span class="hljs-comment"># If you use staticConfigFile instead, update your file provider accordingly.</span>
+s<span class="hljs-attr">ervices.traefik.staticConfigOptions.providers.file.watch</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+environment.etc.<span class="hljs-string">&quot;traefik/dynamic_config.toml&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">user</span> <span class="hljs-operator">=</span> config.systemd.services.traefik.serviceConfig.User;
+    <span class="hljs-attr">group</span> <span class="hljs-operator">=</span> config.systemd.services.traefik.serviceConfig.Group;
+    <span class="hljs-attr">mode</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;400&quot;</span>;
+    <span class="hljs-attr">text</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        # ...
+    &#x27;&#x27;</span>;
+    <span class="hljs-comment"># Or,</span>
+    <span class="hljs-comment"># source = ./dynamic_config.toml     </span>
+};</code></pre>
+      </div><p>Additionally, you can not use a <code>...ConfigFile</code> option and a <code>...ConfigOptions</code> for either static or dynamic configuration. The file options always take precedence over the options options, which are ignored.</p>
+<p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="category:Networking" class="wikilink" title="Category:Networking">Category:Networking</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

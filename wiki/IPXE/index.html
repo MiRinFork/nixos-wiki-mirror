@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IPXE</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / IPXE</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: IPXE -->
+
+<p><a href="https://ipxe.org/">iPXE</a> is an open-source network boot firmware.</p>
+<h2 id="customize-nix-package">Customize Nix Package</h2><p>While common iPXE configurations are already built &amp; cached centrally, building custom iPXE images can be useful to make it easier to use in different environments, e.g. equipped with otherwise unsupported hardware. All <a href="https://ipxe.org/buildcfg">build configuration options</a>, <a href="https://ipxe.org/appnote/hardware_drivers">hardware drivers</a> &amp; <a href="https://ipxe.org/appnote/buildtargets">pre-configured targets</a> are listed in the official iPXE documentation. This section should help you to “translate“ the instructions from the iPXE documentation to a working nix equivalent.</p>
+<p>The iPXE <a href="https://github.com/NixOS/nixpkgs/blob/master/pkgs/by-name/ip/ipxe/package.nix">package.nix</a> in <a href="https://mirror.nixoscn.org/wiki/IPXE/Nixpkgs" class="wikilink" title="Nixpkgs">Nixpkgs</a> allows you to change the build configuration and/or to build targets with a specific set of drivers. For that the package defines attributes which can be easily overriden.</p>
+<p><code>additionalOptions</code> allows you to define <a href="https://ipxe.org/buildcfg">build configuration options</a>. Where iPXE requires you to add a <code>#define OPTION_NAME</code> to a C header file, you can do the same by adding <code>&quot;OPTION_NAME&quot;</code> to the option list. Be aware that the iPXE option does not list all available options by design, you can find others by examining the C header files in <code>src/config</code> in their <a href="https://github.com/ipxe/ipxe.git">GitHub repository</a>. <code>additionalTargets</code> allows you to build iPXE artifacts for use in different environments. It is an attribute set, mapping from a target name to the resulting name of the output file. For iPXE, the target name defines which drivers (or set of drivers from a pre-configured target) should be compiled into your additional artifact. The general syntax of the target name is <code>[platform]/[driver].[extension]</code>, where multiple drivers are separated with <code>--</code>.<sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/IPXE#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup> The syntax is further explained <a href="https://ipxe.org/appnote/buildtargets">here</a>, where also a list of pre-configured targets (i.e. set of drivers) designed for common use cases is presented. A list of additional drivers is available <a href="https://ipxe.org/appnote/hardware_drivers">there</a>.</p>
+<h3 id="example-as-standalone-flake">Example as Standalone Flake</h3><p>Following is a <a href="https://mirror.nixoscn.org/wiki/IPXE/Flakes" class="wikilink" title="flake">flake</a> as a full standalone example. Its intended use is to be able to quickly compile a custom iPXE artifact for use on outside systems.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;custom iPXE build for USB network cards&quot;</span>;
+  <span class="hljs-attr">inputs.nixpkgs.url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:NixOS/nixpkgs/unstable&quot;</span>;
+  <span class="hljs-attr">outputs</span> <span class="hljs-operator">=</span>
+    { nixpkgs, ... }:
+    {
+      <span class="hljs-attr">packages.x86_64-linux.ipxe</span> <span class="hljs-operator">=</span> nixpkgs.legacyPackages.x86_64-linux.ipxe.override {
+        <span class="hljs-attr">additionalOptions</span> <span class="hljs-operator">=</span> [
+          <span class="hljs-string">&quot;USB_HCD_USBIO&quot;</span>
+        ];
+        <span class="hljs-attr">additionalTargets</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-comment"># build for platform: x86_64-efi</span>
+          <span class="hljs-comment"># with driver (sets): ipxe, ecm, ncm</span>
+          <span class="hljs-comment"># build a (normal) efi binary</span>
+          <span class="hljs-string">&quot;bin-x86_64-efi/ipxe--ecm--ncm.efi&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ipxe-usbnet.efi&quot;</span>;
+        };
+      };
+    };
+}</code></pre>
+      </div><p>Given the flake above, you can build your additional target by running <code>nix build nixpkgs#ipxe</code>. Then the custom artifact should be available behind the <code>result</code> symlink, in this example as <code>result/ipxe-usbnet.efi</code>. This does also compile the default outputs, but this should not be a big problem as they share nearly all of their code and so the compiler can reuse most of its work for all targets.</p>
+<p><a href="category:Booting" class="wikilink" title="Category:Booting">Category:Booting</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p><a href="https://ipxe.org/appnote/buildtargets">https://ipxe.org/appnote/buildtargets</a> <a href="https://mirror.nixoscn.org/wiki/IPXE#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

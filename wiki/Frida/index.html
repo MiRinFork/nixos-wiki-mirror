@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Frida</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Frida</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Frida -->
+
+<p><a href="https://www.frida.re/">Frida</a> is a dynamic binary instrumentation framework.</p>
+<h2 id="using-the-genesis-39-s-nur-package">Using the genesis&#39;s NUR package</h2><p>Setup <a href="https://github.com/nix-community/NUR">NUR</a> as described. Then install frida from genesis&#39;s repository:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-shell -p nur.repos.genesis.frida-tools</span>
+<span class="hljs-meta prompt_">nix-shell&gt; </span><span class="language-bash">frida-trace -i <span class="hljs-string">&quot;recv*&quot;</span> firefox</span></code></pre>
+      </div><p>The python bindings are available via <code>nur.repos.genesis.python3Packages.frida</code> Both frida and frida-tools packages are based on pypi, feel free to post a PR to add support for your platform to them.</p>
+<h2 id="using-frida-39-s-own-binaries">Using frida&#39;s own binaries</h2><p>The project provides pre-compiled binaries that almost work out of the box (when installed via <code>pip install frida-tools</code>) However at runtime it unpacks a helper called <code>frida-helper-64</code> that uses <code>/lib64/ld-linux-x86-64.so.2</code> as its link-loader. The error message will be similar to this one:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">frida-trace -i <span class="hljs-string">&quot;recv*&quot;</span> 1</span>
+&quot;/run/user/1000/frida-ea4a59ca62f7c8d1d49bd898ec313eeb/frida-helper-64&quot;: No such file or directory (os error 2)</code></pre>
+      </div><p>Since the helper is not accessible on the filesystem it cannot patched with patchelf. A simple hack is to symlink an arbitrary link loader to this directory:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">ldd /bin/sh</span>
+...
+/nix/store/83lrbvbmxrgv7iz49mgd42yvhi473xp6-glibc-2.27/lib/ld-linux-x86-64.so.2 =&gt; /nix/store/83lrbvbmxrgv7iz49mgd42yvhi473xp6-glibc-2.27/lib64/ld-linux-x86-64.so.2 (0x00007fa78b289000)
+<span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">ln</span> -s /nix/store/83lrbvbmxrgv7iz49mgd42yvhi473xp6-glibc-2.27/lib/ld-linux-x86-64.so.2 /lib64/ld-linux-x86-64.so.2</span></code></pre>
+      </div><h2 id="compile-from-source">Compile from source</h2><p>Frida provides a pre-compiled SDK. Since it assumes many binaries in <code>/usr/bin/</code>, the best option is to use <code>buildFHSUserEnv</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-keyword">with</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> {};
+<span class="hljs-keyword">let</span>
+  <span class="hljs-attr">fhs</span> <span class="hljs-operator">=</span> pkgs.buildFHSUserEnv {
+    <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;frida-env&quot;</span>;
+    <span class="hljs-attr">targetPkgs</span> <span class="hljs-operator">=</span> <span class="hljs-params">pkgs:</span> <span class="hljs-keyword">with</span> pkgs; [
+      gcc_multi
+      binutils
+      gnumake
+      which
+      git
+      (python3.withPackages (<span class="hljs-params">p:</span> [ p.setuptools p.wheel ]))
+      nodejs
+      perl
+      curl
+      glibc_multi
+      yarn
+    ];
+    <span class="hljs-attr">profile</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+      export hardeningDisable=all
+      export SSL_CERT_FILE=&quot;<span class="hljs-subst">${cacert}</span>/etc/ssl/certs/ca-bundle.crt&quot;
+      # initialize sdk
+      make
+      # npm does not frida-gum/bindings/gumjs/node_modules -&gt; bug?
+      (cd frida-gum/bindings/gumjs &amp;&amp; yarn install)
+
+      # for frida-python wheel
+      export FRIDA_VERSION=$(git describe --tags)
+      export FRIDA_EXTENSION=$(realpath build/frida-linux-x86_64/<span class="hljs-subst">${python3.sitePackages}</span>/_frida.so)
+      export SOURCE_DATE_EPOCH=&quot;315532800&quot;
+    &#x27;&#x27;</span>;
+  };
+<span class="hljs-keyword">in</span> fhs.env</code></pre>
+      </div><p>Afterwards the build system can be used as documented:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash"> make python-linux-x86_64</span></code></pre>
+      </div><p>The python egg can be build then like this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">cd</span> frida-python</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">python setup.py bdist_wheel</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">pip install dist/frida-*.whl</span></code></pre>
+      </div><p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>St</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / St</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: St -->
+
+<p><code>st</code> the suckless terminal or the simple terminal</p>
+<p>most things here apply for dwm and other suckless software too</p>
+<p>The examples below only assume you are running Linux (at the time of this writing, darwin/OS X does not support <code>st</code>).</p>
+<h2 id="installing">Installing</h2><h3 id="nixos">NixOS</h3><p>Add <code>st</code> to the list of available packages in your <code>configuration.nix</code>.</p>
+<p>System-wide:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+  st
+];</code></pre>
+      </div><p>Only available to certain users:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">u<span class="hljs-attr">sers.users.alice.packages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+  st
+];</code></pre>
+      </div><h3 id="other-linux-distributions">Other Linux distributions</h3><p>You will need to write a roughly equivalent nix expression and install it the imperative way.</p>
+<p>E.g.</p>
+<p><code>my-custom-st</code></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># pinned nixpkgs from nix.dev &gt; &quot;toward reproducibility&quot;</span>
+{ pkgs <span class="hljs-operator">?</span> <span class="hljs-built_in">import</span> (<span class="hljs-built_in">fetchTarball</span> <span class="hljs-string">&quot;https://github.com/NixOS/nixpkgs/archive/3590f02e7d5760e52072c1a729ee2250b5560746.tar.gz&quot;</span>) {}
+}:
+<span class="hljs-comment"># specifics elided for brevity</span>
+pkgs.st.overrideAttrs { ... }</code></pre>
+      </div><p>Followed by:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-env -i -f my-custom-st</span></code></pre>
+      </div><h2 id="patching">Patching</h2><p>Most customization of <code>st</code> that alters its base feature set comes in the form of applying patches to the source code.</p>
+<h3 id="obtaining-hashes">Obtaining hashes</h3><p>To apply a patch you need to obtain the hash, the hash should be obtained with the following command</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-prefetch-url &lt;url&gt;</span></code></pre>
+      </div><p>example</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-prefetch-url https://st.suckless.org/patches/rightclickpaste/st-rightclickpaste-0.8.2.diff</span></code></pre>
+      </div><h3 id="patches">Patches</h3><p>Can be applied by including them in an attribute override in your systemPackages declaration:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+  (st.overrideAttrs (<span class="hljs-params">oldAttrs:</span> <span class="hljs-keyword">rec</span> {
+    <span class="hljs-attr">patches</span> <span class="hljs-operator">=</span> [
+      <span class="hljs-comment"># You can specify local patches</span>
+      <span class="hljs-symbol">./path/to/local.diff</span>
+      <span class="hljs-comment"># Fetch them directly from `st.suckless.org`</span>
+      (fetchpatch {
+        <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://st.suckless.org/patches/rightclickpaste/st-rightclickpaste-0.8.2.diff&quot;</span>;
+        <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;1y4fkwn911avwk3nq2cqmgb2rynbqibgcpx7yriir0lf2x2ww1b6&quot;</span>;
+      })
+      <span class="hljs-comment"># Or from any other source</span>
+      (fetchpatch {
+        <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://raw.githubusercontent.com/fooUser/barRepo/1111111/somepatch.diff&quot;</span>;
+        <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;222222222222222222222222222222222222222222&quot;</span>;
+      })
+    ];
+  }))
+];</code></pre>
+      </div><h3 id="patch-dependencies">Patch Dependencies</h3><p>Can be included with the <code>buildInputs</code> line like in the following ligature patch example:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+  (st.overrideAttrs (<span class="hljs-params">oldAttrs:</span> <span class="hljs-keyword">rec</span> {
+    <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> oldAttrs.buildInputs <span class="hljs-operator">++</span> [ harfbuzz ];
+    <span class="hljs-attr">patches</span> <span class="hljs-operator">=</span> [
+      (fetchpatch {
+        <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://st.suckless.org/patches/ligatures/0.8.3/st-ligatures-20200430-0.8.3.diff&quot;</span>;
+        <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;67b668c77677bfcaff42031e2656ce9cf173275e1dfd6f72587e8e8726298f09&quot;</span>;
+      })
+    ];
+  }))
+];</code></pre>
+      </div><h2 id="config">Config</h2><p>Configuration is accomplished through a <code>config.h</code> file.</p>
+<h3 id="header-file">Header file</h3><div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+  (st.overrideAttrs (<span class="hljs-params">oldAttrs:</span> <span class="hljs-keyword">rec</span> {
+    <span class="hljs-comment"># Using a local file</span>
+    <span class="hljs-attr">configFile</span> <span class="hljs-operator">=</span> writeText <span class="hljs-string">&quot;config.def.h&quot;</span> (<span class="hljs-built_in">builtins.readFile</span> .<span class="hljs-operator">/</span>path<span class="hljs-operator">/</span>to<span class="hljs-operator">/</span>local<span class="hljs-operator">/</span>config.h);
+    <span class="hljs-comment"># Or one pulled from GitHub</span>
+    <span class="hljs-comment"># configFile = writeText &quot;config.def.h&quot; (builtins.readFile &quot;${fetchFromGitHub { owner = &quot;LukeSmithxyz&quot;; repo = &quot;st&quot;; rev = &quot;8ab3d03681479263a11b05f7f1b53157f61e8c3b&quot;; sha256 = &quot;1brwnyi1hr56840cdx0qw2y19hpr0haw4la9n0rqdn0r2chl8vag&quot;; }}/config.h&quot;);</span>
+    <span class="hljs-attr">postPatch</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${oldAttrs.postPatch}</span><span class="hljs-char escape_">\n</span> cp <span class="hljs-subst">${configFile}</span> config.def.h&quot;</span>;
+  }))
+];</code></pre>
+      </div><h2 id="all-together-now">All together now</h2><div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+  (st.overrideAttrs (<span class="hljs-params">oldAttrs:</span> <span class="hljs-keyword">rec</span> {
+    <span class="hljs-comment"># ligatures dependency</span>
+    <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> oldAttrs.buildInputs <span class="hljs-operator">++</span> [ harfbuzz ];
+    <span class="hljs-attr">patches</span> <span class="hljs-operator">=</span> [
+      <span class="hljs-comment"># ligatures patch</span>
+      (fetchpatch {
+        <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://st.suckless.org/patches/ligatures/0.8.3/st-ligatures-20200430-0.8.3.diff&quot;</span>;
+        <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;67b668c77677bfcaff42031e2656ce9cf173275e1dfd6f72587e8e8726298f09&quot;</span>;
+      })
+    ];
+    <span class="hljs-comment"># version controlled config file</span>
+    <span class="hljs-attr">configFile</span> <span class="hljs-operator">=</span> writeText <span class="hljs-string">&quot;config.def.h&quot;</span> (<span class="hljs-built_in">builtins.readFile</span> <span class="hljs-string">&quot;<span class="hljs-subst">${fetchFromGitHub { <span class="hljs-attr">owner</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;me&quot;</span>; <span class="hljs-attr">repo</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;my-custom-st-stuff&quot;</span>; <span class="hljs-attr">rev</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;1111222233334444&quot;</span>; <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;11111111111111111111111111111111111&quot;</span>; }</span>}/config.h&quot;</span>);
+    <span class="hljs-attr">postPatch</span> <span class="hljs-operator">=</span> oldAttrs.postPatch <span class="hljs-operator">++</span> <span class="hljs-string">&#x27;&#x27;cp <span class="hljs-subst">${configFile}</span> config.def.h&#x27;&#x27;</span>;
+  }))
+];</code></pre>
+      </div><h2 id="using-dwm">Using DWM</h2><p>However, this will not work for <code>dwm</code>. (Probably <code>services.xserver.windowManager.dwm</code> can only see the <code>dwm</code> in <code>pkgs</code>, not the one in <code>environment.systemPackages</code>.) But you can use an overlay, like this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">ixpkgs.overlays</span> <span class="hljs-operator">=</span> [
+  (<span class="hljs-params">self:</span> <span class="hljs-params">super:</span> {
+    <span class="hljs-attr">dwm</span> <span class="hljs-operator">=</span> super.dwm.overrideAttrs (<span class="hljs-params">oldAttrs:</span> <span class="hljs-keyword">rec</span> {
+      <span class="hljs-attr">patches</span> <span class="hljs-operator">=</span> [
+        <span class="hljs-symbol">./path/to/my-dwm-patch.patch</span>
+        ];
+      <span class="hljs-attr">configFile</span> <span class="hljs-operator">=</span> super.writeText <span class="hljs-string">&quot;config.h&quot;</span> (<span class="hljs-built_in">builtins.readFile</span> .<span class="hljs-operator">/</span>dwm-config.h);
+      <span class="hljs-attr">postPatch</span> <span class="hljs-operator">=</span> oldAttrs.postPatch <span class="hljs-keyword">or</span> <span class="hljs-string">&quot;&quot;</span> <span class="hljs-operator">+</span> <span class="hljs-string">&quot;<span class="hljs-char escape_">\n</span>echo &#x27;Using own config file...&#x27;<span class="hljs-char escape_">\n</span> cp <span class="hljs-subst">${configFile}</span> config.def.h&quot;</span>;
+      });
+    })
+  ];</code></pre>
+      </div><p>It should also be mentioned that the <code>st.overrideAttrs</code> should be added to the overlays when using <code>dwm</code> with dwm changes and st changes the overlay could look like this</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">ixpkgs.overlays</span> <span class="hljs-operator">=</span> [
+  (<span class="hljs-params">self:</span> <span class="hljs-params">super:</span> {
+    <span class="hljs-attr">dwm</span> <span class="hljs-operator">=</span> super.dwm.overrideAttrs (<span class="hljs-params">oldAttrs:</span> <span class="hljs-keyword">rec</span> {
+      <span class="hljs-attr">patches</span> <span class="hljs-operator">=</span> [
+        <span class="hljs-symbol">./path/to/my-dwm-patch.patch</span>
+        ];
+      <span class="hljs-attr">configFile</span> <span class="hljs-operator">=</span> super.writeText <span class="hljs-string">&quot;config.h&quot;</span> (<span class="hljs-built_in">builtins.readFile</span> .<span class="hljs-operator">/</span>dwm-config.h);
+      <span class="hljs-attr">postPatch</span> <span class="hljs-operator">=</span> oldAttrs.postPatch <span class="hljs-keyword">or</span> <span class="hljs-string">&quot;&quot;</span> <span class="hljs-operator">+</span> <span class="hljs-string">&quot;<span class="hljs-char escape_">\n</span>echo &#x27;Using own config file...&#x27;<span class="hljs-char escape_">\n</span> cp <span class="hljs-subst">${configFile}</span> config.def.h&quot;</span>;
+      });
+    })
+    <span class="hljs-attr">st</span> <span class="hljs-operator">=</span> super.st.overrideAttrs (<span class="hljs-params">oldAttrs:</span> <span class="hljs-keyword">rec</span> {
+      <span class="hljs-attr">patches</span> <span class="hljs-operator">=</span> [
+        <span class="hljs-symbol">./path/to/my-dwm-patch.patch</span>
+        ];
+      <span class="hljs-attr">configFile</span> <span class="hljs-operator">=</span> super.writeText <span class="hljs-string">&quot;config.h&quot;</span> (<span class="hljs-built_in">builtins.readFile</span> .<span class="hljs-operator">/</span>st-config.h);
+      <span class="hljs-attr">postPatch</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${oldAttrs.postPatch}</span><span class="hljs-char escape_">\n</span>cp <span class="hljs-subst">${configFile}</span> config.def.h<span class="hljs-char escape_">\n</span>&quot;</span>
+      });
+    })
+  ];</code></pre>
+      </div><h2 id="remote-config">Remote config</h2><p>If instead, you would prefer to build a pre-configured repository or realize more intense configuration, fork the mainline repository (or find one you like) and replace the value of the <code>src</code> attribute in the override.</p>
+<h3 id="forks">Forks</h3><p>Luke smiths st fork is used as the example</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+  (st.overrideAttrs (<span class="hljs-params">oldAttrs:</span> <span class="hljs-keyword">rec</span> {
+    <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> fetchFromGitHub {
+      <span class="hljs-attr">owner</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;LukeSmithxyz&quot;</span>;
+      <span class="hljs-attr">repo</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;st&quot;</span>;
+      <span class="hljs-attr">rev</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;8ab3d03681479263a11b05f7f1b53157f61e8c3b&quot;</span>;
+      <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;1brwnyi1hr56840cdx0qw2y19hpr0haw4la9n0rqdn0r2chl8vag&quot;</span>;
+    };
+    <span class="hljs-comment"># Make sure you include whatever dependencies the fork needs to build properly!</span>
+    <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> oldAttrs.buildInputs <span class="hljs-operator">++</span> [ harfbuzz ];
+  <span class="hljs-comment"># If you want it to be always up to date use fetchTarball instead of fetchFromGitHub</span>
+  <span class="hljs-comment"># src = builtins.fetchTarball {</span>
+  <span class="hljs-comment">#   url = &quot;https://github.com/lukesmithxyz/st/archive/master.tar.gz&quot;;</span>
+  <span class="hljs-comment"># };</span>
+  }))
+];</code></pre>
+      </div><h2 id="troubleshooting">Troubleshooting</h2><h3 id="see-files-after-patching">See files after patching</h3><div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-shell st-test.nix</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">unpackPhase</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">ls</span></span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">cd</span> theunpackeddir</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">patchPhase</span></code></pre>
+      </div><p><a href="https://nixos.org/manual/nixpkgs/stable/#sec-stdenv-phases">Additional phases</a></p>
+<p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

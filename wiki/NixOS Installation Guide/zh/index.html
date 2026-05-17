@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NixOS Installation Guide/zh</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide">NixOS Installation Guide</a><span aria-hidden="true"> / </span>zh</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: NixOS Installation Guide/zh -->
+
+<p><languages/> 本指南是官方手册 <a href="https://nixos.org/nixos/manual/index.html#ch-installation">1</a> 的配套指南。它描述了如何将 <a href="special:MyLanguage/NixOS" class="wikilink" title="NixOS">NixOS</a> 安装为完整的操作系统。有关在现有操作系统中安装 <a href="special:MyLanguage/Nix" class="wikilink" title="Nix">Nix</a> 的说明，请参阅 <a href="special:MyLanguage/Nix_Installation_Guide" class="wikilink" title="Nix 安装指南">Nix 安装指南</a>。</p>
+<p>除了涵盖官方手册中的步骤外，它还提供了针对常见用例的已知有效操作。当官方手册与本指南之间存在差异时，支持用例以手册中描述的为准。</p>
+<p><span id="Installation_target"></span></p>
+<h2 id="安装目标">安装目标</h2><p>NixOS可以安装在越来越多种类的硬件上:</p>
+<ul>
+<li>常规(Intel或AMD)台式机, 笔记本电脑, 或是物理可访问的服务器, 该页面包含了它们</li>
+<li>单板计算机(如树莓派)和其他ARM开发板, 见 <a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/zh/NixOS_on_ARM" class="wikilink" title="NixOS on ARM">NixOS on ARM</a></li>
+<li>云服务器和远程服务器, 见 <a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/zh/NixOS_friendly_hosters" class="wikilink" title="NixOS friendly hosters">NixOS friendly hosters</a></li>
+</ul>
+<p><span id="Installation_method"></span></p>
+<h2 id="安装方式">安装方式</h2><p>NixOS, 如同绝大部分基于Linux的操作系统一样, 可以通过多种方式进行安装.</p>
+<ol>
+<li>传统方式, 通过安装媒介启动.(会在下面讲述.)</li>
+<li><a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/zh/Installing_from_Linux" class="wikilink" title="通过已存在的Linux安装启动媒介">通过已存在的Linux安装启动媒介</a></li>
+</ol>
+<p><span id="Making_the_installation_media"></span></p>
+<h2 id="制作安装媒介">制作安装媒介</h2><p>从NixOS 14.11开始, 安装程序ISO(镜像文件)是混合型的. 这意味着它通过CD和USB驱动器都可以启动. 它也可以在EFI系统上启动, 如大多数现代主板和苹果系统. 接下来的指导将假设使用复制镜像文件到USB驱动器的标准方式. 当使用CD或者DVD时, 刻录到光盘的通常方式应当也适用于该iso文件.</p>
+<p><span id="&quot;Burning&quot;_to_USB_drive"></span></p>
+<h3 id="quot-刻录-quot-到usb驱动器">&quot;刻录&quot;到USB驱动器</h3><p>首先, 下载一个<a href="https://nixos.org/download.html#nixos-iso">NixOS ISO镜像</a> 或者 <a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/zh/Creating_a_NixOS_live_CD" class="wikilink" title="创建一个自定义ISO文件">创建一个自定义ISO文件</a>. 接着插入一个空间大到足够容纳镜像的USB. 然后遵循平台的指令:</p>
+<p><span id="From_Linux"></span></p>
+<h4 id="在linux上">在Linux上</h4><ol>
+<li>通过 <code>lsblk</code> 或 <code>fdisk -l</code> 找到正确的设备. 在接下来的步骤中, 把<i><code>/dev/sdX</code></i> 替换为正确的设备.</li>
+<li>复制到设备: <code>cp nixos-xxx.iso </code><em><code>/dev/sdX</code></em></li>
+</ol>
+<p>也可通过 <code>dd if=nixos.iso of=/dev/sdX bs=4M status=progress conv=fdatasync</code> 写入硬盘镜像</p>
+<p><span id="From_macOS"></span></p>
+<h4 id="在macos上">在macOS上</h4><ol>
+<li>使用<code>diskutil list</code>找到正确的设备, 比如说<i><code>diskX</code></i>.</li>
+<li>使用<code>diskutil unmountDisk </code><i><code>diskX</code></i>取消挂载.</li>
+<li>使用<code>sudo dd if=</code><b><code>path_to_nixos.iso</code></b><code> of=/dev/</code><i><code>diskX</code></i>进行刻录</li>
+</ol>
+<p><span id="From_Windows"></span></p>
+<h4 id="在windows上">在Windows上</h4><ol>
+<li>下载USBwriter.</li>
+<li>启动USBwriter.</li>
+<li>选择下载的ISO文件作为&#39;Source&#39;</li>
+<li>选择USB驱动器作为&#39;Target&#39;</li>
+<li>点击&#39;Write&#39;</li>
+<li>当USBWriter完成写入操作后, 安全拔出USB驱动器</li>
+</ol>
+<p><span id="Alternative_installation_media_instructions"></span></p>
+<h3 id="可选的安装媒介指导">可选的安装媒介指导</h3><p>之前的方式是制作USB安装媒介的受支持方式.</p>
+<p>这些方式也同样有记录, 它们可以使用USB驱动器启动多个发行版. 这种方式不被支持, 结果可能因人而异.</p>
+<ul>
+<li><a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/zh/NixOS_Installation_Guide/Unetbootin" class="wikilink" title="使用 Unetbootin">使用 Unetbootin</a></li>
+<li><a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/zh/NixOS_Installation_Guide/Manual_USB_Creation" class="wikilink" title="手动 USB 创建">手动 USB 创建</a></li>
+<li><a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/zh/NixOS_Installation_Guide/multibootusb" class="wikilink" title="multibootusb">multibootusb</a></li>
+</ul>
+<h2 id="启动-boot-安装媒介">启动(Boot)安装媒介</h2><p>由于安装镜像为混合镜像，因此可在传统 BIOS 模式或 <a href="special:MyLanguage/UEFI" class="wikilink" title="UEFI">UEFI</a> 模式下启动。</p>
+<p>无论使用哪种方式启动安装媒介, 你可能需要修改主板或者电脑的配置, 以允许从光盘驱动器(对于CD/DVD)或者从一个外部的USB驱动器启动.</p>
+<p><span id="Legacy_bios_boot"></span></p>
+<h3 id="legacy-bios启动">Legacy bios启动</h3><p>这是在没有EFI/UEFI的机器上唯一的启动方式.</p>
+<p><span id="UEFI_boot"></span></p>
+<h3 id="uefi启动">UEFI启动</h3><p>安装媒介的EFI引导加载程序未经过签名, 也没有使用经过签名的shim来启动. 这意味着只有禁用了Secure Boot(安全启动)才能启动.</p>
+<p><span id="Connecting_to_the_internet"></span></p>
+<h2 id="连接到网络">连接到网络</h2><p>安装过程<strong>几乎肯定</strong>需要有效的网络连接. 无网络的安装是可行的, 但是可用的软件包集合是受限的.</p>
+<p><span id="Wired"></span></p>
+<h3 id="有线网络">有线网络</h3><p>对于内核提供的网络接口, DHCP(动态主机配置协议)解析应当在shell可用之前就已经完成.</p>
+<p><span id="Tethered_(Internet_Sharing)"></span></p>
+<h2 id="有线连接-网络共享">有线连接（网络共享）</h2><p>如果你无法通过网线或者wifi连接到网络, 你可以使用智能手机的网络共享能力. 依赖于你的手机的能力, 只需要内核自带的驱动就可以提供有效的网络连接.</p>
+<p><span id="Wireless"></span></p>
+<h3 id="无线网络">无线网络</h3><p><a href="special:MyLanguage/NetworkManager" class="wikilink" title="NetworkManager">NetworkManager</a> 安装在图形化 ISO 镜像上，这意味着可以在命令行上使用 <code>nmtui</code> 命令连接到网络。</p>
+<p>使用左上方的&quot;Applications(应用)&quot;标签页或者在底部的启动栏, 打开一个终端应用, 在那里启动 <code>nmtui</code>. 这可以让你&#39;activate(激活)&#39;一个(无线)连接 - 你应该可以在列表里看到你那里的SSID(无线网络名称), 除此之外你还可以添加一个新的连接. 当无线连接处于活动状态, 并且你已经测试过了时, 一开始就启动的安装程序很可能还没有检测到新的连接. 关掉安装程序, 再重新从屏幕底部的启动栏打开它. 这时它应该会检测到新的网络连接而继续.</p>
+<p>在最小化 ISO 镜像上，或者您更熟悉 <a href="special:MyLanguage/wpa_supplicant" class="wikilink" title="wpa_supplicant">wpa_supplicant</a>，那么您也可以运行 <code>wpa_passphrase ESSID | sudo tee /etc/wpa_supplicant.conf</code> 命令，然后输入您的密码并执行 <code>systemctl restart wpa_supplicant</code> 命令。</p>
+<p><span id="Partitioning"></span></p>
+<h2 id="partitioning-分区操作">Partitioning(分区操作)</h2><p>要对持久存储进行分区，请运行 <code>sudo fdisk /dev/diskX</code> 并按照 MBR 或 (U)EFI 的说明进行操作。要确定您使用的启动模式，请运行：</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">[ -d /sys/firmware/efi/efivars ] &amp;&amp; <span class="hljs-built_in">echo</span> <span class="hljs-string">&quot;UEFI&quot;</span> || <span class="hljs-built_in">echo</span> <span class="hljs-string">&quot;Legacy&quot;</span></span></code></pre>
+      </div><p>这里给出了一个非常简单的示例设置。</p>
+<p><span id="Legacy_Boot_(MBR)"></span></p>
+<h3 id="传统启动-legacy-boot-mbr">传统启动（Legacy Boot, MBR）</h3><ul>
+<li>o (dos硬盘标签)</li>
+<li>n new</li>
+<li>p primary (4 primary in total)</li>
+<li>1 (分区编号[1/4])</li>
+<li>2048 first sector (alignment for performance)</li>
+<li>+500M last sector (引导扇区的大小)</li>
+<li>rm signature (Y), if ex. =&gt; warning of overwriting existing system, could use wipefs</li>
+<li>n</li>
+<li>p</li>
+<li>2</li>
+<li>default (填满分区)</li>
+<li>default (填满分区)</li>
+<li>w (写入)</li>
+</ul>
+<h3 id="uefi">UEFI</h3><ul>
+<li>g (gpt硬盘标签)</li>
+<li>n</li>
+<li>1 (分区编号[1/128])</li>
+<li>2048 first sector</li>
+<li>+500M last sector (引导扇区的大小)</li>
+<li>t</li>
+<li>1 (EFI系统)</li>
+<li>n</li>
+<li>2</li>
+<li>default (填满分区)</li>
+<li>default (填满分区)</li>
+<li>w (写入)</li>
+</ul>
+<p><span id="Format_partitions"></span></p>
+<h3 id="格式化分区">格式化分区</h3><p>以下示例使用 <a href="special:MyLanguage/ext4" class="wikilink" title="ext4">ext4</a> 文件系统格式。如果您希望使用其他文件系统格式，例如 <a href="special:MyLanguage/Btrfs" class="wikilink" title="Btrfs">Btrfs</a> 或 <a href="special:MyLanguage/ZFS" class="wikilink" title="ZFS">ZFS</a>：</p>
+<ul>
+<li><a href="special:MyLanguage/Bcachefs#NixOS_installation_on_bcachefs" class="wikilink" title="在 bcachefs 上安装 NixOS">在 bcachefs 上安装 NixOS</a></li>
+<li><a href="special:MyLanguage/Btrfs#Installation_of_NixOS_on_btrfs" class="wikilink" title="在 btrfs 上安装 NixOS">在 btrfs 上安装 NixOS</a></li>
+<li><a href="special:MyLanguage/LVM#Basic_Setup" class="wikilink" title="LVM 基础设置">LVM 基础设置</a></li>
+<li><a href="special:MyLanguage/ZFS#Simple_NixOS_ZFS_on_root_installation" class="wikilink" title="Simple NixOS ZFS on root installation">Simple NixOS ZFS on root installation</a></li>
+</ul>
+<p>这对于有多个分区设置的情况很有用, 使分区更容易处理</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">lsblk <span class="hljs-comment"># lists current system block devices</span></span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">mkfs.fat -F 32 -n boot /dev/sdX1</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">mkfs.ext4 /dev/sdX2 -L nixos</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">mount /dev/disk/by-label/nixos /mnt</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-built_in">mkdir</span> -p /mnt/boot</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">mount /dev/disk/by-label/boot /mnt/boot</span></code></pre>
+      </div><p><span id="NixOS_configuration"></span></p>
+<h2 id="nixos-配置">NixOS 配置</h2><p>NixOS 通过 <a href="special:MyLanguage/Overview_of_the_NixOS_Linux_distribution#Declarative_Configuration" class="wikilink" title="声明式配置">声明式配置</a> 文件进行配置。要生成默认配置文件，请运行 <a href="special:MyLanguage/nixos-generate-config" class="wikilink" title="Special:MyLanguage/nixos-generate-config">Special:MyLanguage/nixos-generate-config</a>：</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">nixos-generate-config --root /mnt</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">nano /mnt/etc/nixos/configuration.nix</span></code></pre>
+      </div><p>有关使用系统配置的信息，请参阅 <a href="special:MyLanguage/NixOS_system_configuration" class="wikilink" title="NixOS 系统配置">NixOS 系统配置</a>。有关特定于桌面的配置，请参阅 <a href="special:MyLanguage/NixOS_as_a_desktop" class="wikilink" title="桌面设备上的 NixOS">桌面设备上的 NixOS</a>。</p>
+<p>最重要的变化：</p>
+<ul>
+<li>键盘布局（keyboard layout）, 也就是 <a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/zh/Keyboard_Layout_Customization" class="wikilink" title="services.xserver.xkb.layout"><code>services.xserver.xkb.layout</code></a></li>
+<li><a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/zh/networking" class="wikilink" title="网络">网络</a> (wifi), 若出现问题, 请参阅下方的修复方法</li>
+<li>安装 <a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/zh/:Category:Text_Editor" class="wikilink" title="编辑器">编辑器</a> 来编辑配置</li>
+</ul>
+<p>具有自我说明性的NixOS选项可以在<a href="https://search.nixos.org/options">NixOS选项搜索</a>上搜索到.</p>
+<p><span id="Swap_file"></span></p>
+<h2 id="交换文件">交换文件</h2><p>有关配置交换空间的更多方法，请参阅 <a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/zh/Swap" class="wikilink" title="Swap">Swap</a>。以下示例演示了如何创建和启用一个 <a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/zh/Swap#Swap_file" class="wikilink" title="交换文件">交换文件</a>：</p>
+<p><span id="Bootloader"></span></p>
+<h3 id="引导加载程序">引导加载程序</h3><p>NixOS 支持多种 <a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/zh/Bootloader" class="wikilink" title="引导加载程序">引导加载程序</a>，例如 <a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/zh/GNU_GRUB" class="wikilink" title="GNU GRUB">GNU GRUB</a> 和 <a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/zh/Systemd/boot" class="wikilink" title="Systemd/boot">Systemd/boot</a>。</p>
+<p>Systemd-boot 是推荐的引导加载程序。以下示例演示了如何在配置中启用 systemd-boot：</p>
+<p>您可能还希望配置 <a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/zh/Secure_Boot" class="wikilink" title="安全启动">安全启动</a>。</p>
+<p><span id="Users"></span></p>
+<h3 id="用户">用户</h3><p>有关创建和管理用户的信息，请参阅 <a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/zh/User_management" class="wikilink" title="用户管理">用户管理</a> 和 。请参阅以下示例：</p>
+<p><span id="NixOS_installation"></span></p>
+<h2 id="安装-nixos">安装 NixOS</h2><div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-built_in">cd</span> /mnt</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">nixos-install</span></code></pre>
+      </div><p>安装后：运行<code>passwd</code>更改用户密码。</p>
+<p>如果网络出现问题, 请尝试下面的一种方法:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">nixos-rebuild switch --option substitute <span class="hljs-literal">false</span> <span class="hljs-comment"># no downloads</span></span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">nixos-rebuild switch --option binary-caches <span class="hljs-string">&quot;&quot;</span> <span class="hljs-comment"># no downloads</span></span></code></pre>
+      </div><ul>
+<li>设置 wpa_supplicant 标志来连接到 wifi</li>
+</ul>
+<hr />
+
+<p><span id="Additional_notes_for_specific_hardware"></span></p>
+<h2 id="有关特定硬件的附加说明">有关特定硬件的附加说明</h2><p>这些是有关特定硬件问题的收集到的说明或链接.</p>
+<ul>
+<li>博客文章：如何在 <a href="http://grahamc.com/blog/nixos-on-dell-9560">Dell 9560</a> 上安装 NixOS</li>
+<li>品牌服务器可能需要在 initrd 中包含额外的内核模块（在 configuration.nix 中配置 <code>boot.initrd.extraKernelModules</code>）。例如，HP Proliant 需要“hpsa”模块才能访问磁盘驱动器。</li>
+</ul>
+<p><a href="category:Guide" class="wikilink" title="分类：指南">分类：指南</a> <a href="category:Deployment" class="wikilink" title="分类：开发">分类：开发</a> <a href="category:NixOS" class="wikilink" title="分类：NixOS">分类：NixOS</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

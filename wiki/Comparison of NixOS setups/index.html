@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Comparison of NixOS setups</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Comparison of NixOS setups</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Comparison of NixOS setups -->
+
+<p>This table provides a <strong>comparison of NixOS setups</strong>, may them be templates, user or domain-specific setups, and more. It can be useful to NixOS users who want to take inspiration and learn from existing configurations.</p>
+<h2 id="definitions">Definitions</h2><p>Name<br>Name of the setup.</p>
+<p>Domain<br>The application of the setup, including template, user configuration, or domain-specific configuration.</p>
+<p>Flakes<br>Whether it implements <a href="https://mirror.nixoscn.org/wiki/Comparison%20of%20NixOS%20setups/Flakes" class="wikilink" title="Flakes">Flakes</a> or not.</p>
+<p>Home Manager<br>Whether it makes use of <a href="https://mirror.nixoscn.org/wiki/Comparison%20of%20NixOS%20setups/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> or not.</p>
+<p>Secrets<br>A list of supported <a href="https://mirror.nixoscn.org/wiki/Comparison%20of%20NixOS%20setups/Comparison_of_secret_managing_schemes" class="wikilink" title="secret management schemes">secret management schemes</a>.</p>
+<p>File system<br>A list of the main file systems used (e.g. BTRFS, ZFS, EXT4, etc).</p>
+<p>System encryption<br>Whether it has encryption on a system level or not, and the software it uses for encryption (e.g. LUKS, ZFS native, etc).</p>
+<p>Opt-in state<br>Whether it supports opt-in state or not.</p>
+<p>Display server<br>A list of supported display servers (e.g. X, Wayland, etc)</p>
+<p>Desktop environment<br>A list of supported desktop environments (e.g. i3, GNOME, KDE, LXQt, Sway, XFCE, Xmonad, etc).</p>
+<p>Maintained<br>Whether its repository has commits in the last 10 months or not.</p>
+<p>Repository<br>Link to the repository.</p>
+<h2 id="general-information">General information</h2><table>
+<thead>
+<tr>
+<th><p>Name</p></th>
+<th><p>Domain</p></th>
+<th><p><a href="https://mirror.nixoscn.org/wiki/Comparison%20of%20NixOS%20setups/Flakes" class="wikilink" title="Flakes">Flakes</a></p></th>
+<th><p><a href="https://mirror.nixoscn.org/wiki/Comparison%20of%20NixOS%20setups/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a></p></th>
+<th><p><a href="https://mirror.nixoscn.org/wiki/Comparison%20of%20NixOS%20setups/Comparison_of_secret_managing_schemes" class="wikilink" title="Secrets">Secrets</a></p></th>
+<th><p>File system</p></th>
+<th><p>System encryption</p></th>
+<th><p>Opt-in state</p></th>
+<th><p>Display server</p></th>
+<th><p>Desktop environment / Window manager</p></th>
+<th><p>Maintained</p></th>
+<th><p>Repository</p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><p>Digga</p></td>
+<td><p>Library, framework</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>agenix</p></td>
+<td><p>None</p></td>
+<td><p>No</p></td>
+<td><p>No</p></td>
+<td><p>None</p></td>
+<td><p>None</p></td>
+<td><p><a href="https://github.com/divnix/digga/issues/503">No</a></p></td>
+<td><p><a href="https://github.com/divnix/digga">divnix/digga</a></p></td>
+</tr>
+<tr>
+<td><p>DevOS</p></td>
+<td><p>Template (Digga)</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>agenix</p></td>
+<td><p>None</p></td>
+<td><p>No</p></td>
+<td><p>No</p></td>
+<td><p>None</p></td>
+<td><p>None</p></td>
+<td><p><a href="https://github.com/divnix/digga/issues/503">No</a></p></td>
+<td><p><a href="https://github.com/divnix/digga/tree/main/examples/devos">divnix/digga/examples/devos</a></p></td>
+</tr>
+<tr>
+<td><p>hlissner/dotfiles</p></td>
+<td><p>User configuration</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>agenix</p></td>
+<td><p><a href="https://mirror.nixoscn.org/wiki/Comparison%20of%20NixOS%20setups/ZFS" class="wikilink" title="ZFS">ZFS</a></p></td>
+<td><p>Yes (LUKS)</p></td>
+<td><p>No</p></td>
+<td><p>X</p></td>
+<td><p>bspwm</p></td>
+<td><p>Yes</p></td>
+<td><p><a href="https://github.com/hlissner/dotfiles">hlissner/dotfiles</a></p></td>
+</tr>
+<tr>
+<td><p>~hutzdog/dotfiles</p></td>
+<td><p>User configuration</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>pass-secret-service</p></td>
+<td><p><a href="https://mirror.nixoscn.org/wiki/Comparison%20of%20NixOS%20setups/Btrfs" class="wikilink" title="Btrfs">Btrfs</a></p></td>
+<td><p>No</p></td>
+<td><p>No</p></td>
+<td><p>X</p></td>
+<td><p>Awesome</p></td>
+<td><p>No</p></td>
+<td><p><a href="https://man.sr.ht/~hutzdog/dotfiles">~hutzdog/dotfiles</a></p></td>
+</tr>
+<tr>
+<td><p>nixos-flake-example</p></td>
+<td><p>Template</p></td>
+<td><p>Yes</p></td>
+<td><p>No</p></td>
+<td><p>None</p></td>
+<td><p>None</p></td>
+<td><p>No</p></td>
+<td><p>No</p></td>
+<td><p>None</p></td>
+<td><p>None</p></td>
+<td><p>No</p></td>
+<td><p><a href="https://github.com/colemickens/nixos-flake-example">colemickens/nixos-flake-example</a></p></td>
+</tr>
+<tr>
+<td><p>SoxinOS</p></td>
+<td><p>Template</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>sops-nix</p></td>
+<td><p>None</p></td>
+<td><p>No</p></td>
+<td><p>No</p></td>
+<td><p>X</p></td>
+<td><p>i3</p></td>
+<td><p>Yes</p></td>
+<td><p><a href="https://github.com/SoxinOS/soxin">SoxinOS/soxin</a></p></td>
+</tr>
+<tr>
+<td><p>not-os</p></td>
+<td><p>Domain-specific<br />
+(embedded system)</p></td>
+<td><p>No</p></td>
+<td><p>No</p></td>
+<td><p>None</p></td>
+<td><p>None</p></td>
+<td><p>No</p></td>
+<td><p>No</p></td>
+<td><p>None</p></td>
+<td><p>None</p></td>
+<td><p>Yes</p></td>
+<td><p><a href="https://github.com/cleverca22/not-os">cleverca22/not-os</a></p></td>
+</tr>
+<tr>
+<td><p>NixOS-WSL</p></td>
+<td><p>Template (WSL)</p></td>
+<td><p>Yes</p></td>
+<td><p>No</p></td>
+<td><p>None</p></td>
+<td><p>None</p></td>
+<td><p>No</p></td>
+<td><p>No</p></td>
+<td><p>None</p></td>
+<td><p>None</p></td>
+<td><p>Yes</p></td>
+<td><p><a href="https://github.com/Trundle/NixOS-WSL">Trundle/NixOS-WSL</a></p></td>
+</tr>
+<tr>
+<td><p>Simple NixOS Mailserver</p></td>
+<td><p>Domain-specific<br />
+(mail server)</p></td>
+<td><p>Yes</p></td>
+<td><p>No</p></td>
+<td><p>None</p></td>
+<td><p>None</p></td>
+<td><p>No</p></td>
+<td><p>No</p></td>
+<td><p>None</p></td>
+<td><p>None</p></td>
+<td><p>Yes</p></td>
+<td><p><a href="https://gitlab.com/simple-nixos-mailserver/nixos-mailserver">simple-nixos-mailserver/nixos-mailserver</a></p></td>
+</tr>
+<tr>
+<td><p>Nix Portable</p></td>
+<td><p>Domain-specific<br />
+(portable Nix binary)</p></td>
+<td><p>Yes</p></td>
+<td><p>No</p></td>
+<td><p>None</p></td>
+<td><p>None</p></td>
+<td><p>No</p></td>
+<td><p>No</p></td>
+<td><p>None</p></td>
+<td><p>None</p></td>
+<td><p>Yes</p></td>
+<td><p><a href="https://github.com/DavHau/nix-portable">DavHau/nix-portable</a></p></td>
+</tr>
+<tr>
+<td><p>rasendubi/dotfiles</p></td>
+<td><p>User configuration</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>GPG, Yubikey</p></td>
+<td><p>None</p></td>
+<td><p>No</p></td>
+<td><p>No</p></td>
+<td><p>X</p></td>
+<td><p>EXWM</p></td>
+<td><p>Yes</p></td>
+<td><p><a href="https://github.com/rasendubi/dotfiles">rasendubi/dotfiles</a></p></td>
+</tr>
+<tr>
+<td><p>RGBCube/NCC</p></td>
+<td><p>User configuration</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>agenix</p></td>
+<td><p><a href="https://mirror.nixoscn.org/wiki/Comparison%20of%20NixOS%20setups/Btrfs" class="wikilink" title="Btrfs">Btrfs</a>, <a href="https://mirror.nixoscn.org/wiki/Comparison%20of%20NixOS%20setups/Ext4" class="wikilink" title="Ext4">Ext4</a></p></td>
+<td><p>No</p></td>
+<td><p>No</p></td>
+<td><p>Wayland</p></td>
+<td><p>Hyprland</p></td>
+<td><p>Yes</p></td>
+<td><p><a href="https://github.com/RGBCube/NCC">RGBCube/NCC</a></p></td>
+</tr>
+<tr>
+<td><p>puffnfresh/nix-files</p></td>
+<td><p>User configuration</p></td>
+<td><p>No</p></td>
+<td><p>Yes</p></td>
+<td></td>
+<td><p><a href="https://mirror.nixoscn.org/wiki/Comparison%20of%20NixOS%20setups/ZFS" class="wikilink" title="ZFS">ZFS</a></p></td>
+<td><p>No</p></td>
+<td><p>No</p></td>
+<td><p>X, Wayland</p></td>
+<td><p>XMona, Xfce, Sway</p></td>
+<td><p>Yes</p></td>
+<td><p><a href="https://github.com/puffnfresh/nix-files">puffnfresh/nix-files</a></p></td>
+</tr>
+<tr>
+<td><p>Shabka</p></td>
+<td><p>User configuration</p></td>
+<td><p>No</p></td>
+<td><p>Yes</p></td>
+<td></td>
+<td><p><a href="https://mirror.nixoscn.org/wiki/Comparison%20of%20NixOS%20setups/Btrfs" class="wikilink" title="Btrfs">Btrfs</a></p></td>
+<td><p>No</p></td>
+<td><p>No</p></td>
+<td><p>X</p></td>
+<td><p>i3</p></td>
+<td><p>No</p></td>
+<td><p><a href="https://github.com/kalbasit/shabka">kalbasit/shabka</a></p></td>
+</tr>
+<tr>
+<td><p>MatthewCroughan/nixcfg</p></td>
+<td><p>User configuration</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>None</p></td>
+<td><p><a href="https://mirror.nixoscn.org/wiki/Comparison%20of%20NixOS%20setups/ZFS" class="wikilink" title="ZFS">ZFS</a></p></td>
+<td><p>Yes (LUKS)</p></td>
+<td><p>No</p></td>
+<td><p>Wayland</p></td>
+<td><p>Sway</p></td>
+<td><p>No</p></td>
+<td><p><a href="https://github.com/MatthewCroughan/nixcfg">MatthewCroughan/nixcfg</a></p></td>
+</tr>
+<tr>
+<td><p>Icy-Thought/Snowflake</p></td>
+<td><p>User configuration</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>agenix</p></td>
+<td><p><a href="https://mirror.nixoscn.org/wiki/Comparison%20of%20NixOS%20setups/Ext4" class="wikilink" title="Ext4">Ext4</a></p></td>
+<td><p>No</p></td>
+<td><p>No</p></td>
+<td><p>X</p></td>
+<td><p>Xmonad, LeftWM, Gnome, KDE Plasma</p></td>
+<td><p>Yes</p></td>
+<td><p><a href="https://github.com/Icy-Thought/Snowflake">Icy-Thought/Snowflake</a></p></td>
+</tr>
+<tr>
+<td><p>NixOSEncryptedLiveCD</p></td>
+<td><p>Domain-specific</p></td>
+<td><p>No</p></td>
+<td><p>No</p></td>
+<td></td>
+<td></td>
+<td><p>Yes (LUKS)</p></td>
+<td><p>Yes</p></td>
+<td><p>X, Wayland</p></td>
+<td><p>GNOME, KDE, Mate, LXQt, Enlightenment, Sway, Xfce, Lumina</p></td>
+<td><p>No</p></td>
+<td><p><a href="https://github.com/adrianparvino/NixOSEncryptedLiveCD">adrianparvino/NixOSEncryptedLiveCD</a></p></td>
+</tr>
+<tr>
+<td><p>tudurom/dotfiles</p></td>
+<td><p>User configuration</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>agenix</p></td>
+<td><p><a href="https://mirror.nixoscn.org/wiki/Comparison%20of%20NixOS%20setups/Btrfs" class="wikilink" title="Btrfs">Btrfs</a>, <a href="https://mirror.nixoscn.org/wiki/Comparison%20of%20NixOS%20setups/ZFS" class="wikilink" title="ZFS">ZFS</a></p></td>
+<td><p>Yes (LUKS)</p></td>
+<td><p>Yes</p></td>
+<td><p>X, Wayland</p></td>
+<td><p>Sway, Gnome</p></td>
+<td><p>Yes</p></td>
+<td><p><a href="https://github.com/tudurom/dotfiles">tudurom/dotfiles</a></p></td>
+</tr>
+<tr>
+<td><p>balsoft/nixos-config</p></td>
+<td><p>User configuration</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td></td>
+<td><p><a href="https://mirror.nixoscn.org/wiki/Comparison%20of%20NixOS%20setups/Ext4" class="wikilink" title="Ext4">Ext4</a></p></td>
+<td><p>Yes (LUKS)</p></td>
+<td><p>Yes</p></td>
+<td><p>Wayland</p></td>
+<td><p>Sway</p></td>
+<td><p>Yes</p></td>
+<td><p><a href="https://github.com/balsoft/nixos-config">balsoft/nixos-config</a></p></td>
+</tr>
+<tr>
+<td><p>srid/nixos-config</p></td>
+<td><p>User configuration</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td></td>
+<td><p><a href="https://mirror.nixoscn.org/wiki/Comparison%20of%20NixOS%20setups/Ext4" class="wikilink" title="Ext4">Ext4</a></p></td>
+<td><p>No</p></td>
+<td><p>No</p></td>
+<td><p>X</p></td>
+<td><p>Xmonad, Gnome, KDE Plasma</p></td>
+<td><p>Yes</p></td>
+<td><p><a href="https://github.com/srid/nixos-config">srid/nixos-config</a></p></td>
+</tr>
+<tr>
+<td><p>mt-caret/nix-config</p></td>
+<td><p>User configuration</p></td>
+<td><p>No</p></td>
+<td><p>Yes</p></td>
+<td></td>
+<td><p><a href="https://mirror.nixoscn.org/wiki/Comparison%20of%20NixOS%20setups/Btrfs" class="wikilink" title="Btrfs">Btrfs</a></p></td>
+<td><p>No</p></td>
+<td><p>Yes</p></td>
+<td><p>X</p></td>
+<td><p>Xmonad</p></td>
+<td><p>No</p></td>
+<td><p><a href="https://github.com/mt-caret/nix-config">mt-caret/nix-config</a></p></td>
+</tr>
+<tr>
+<td><p>grahamc/nixos-config</p></td>
+<td><p>User configuration</p></td>
+<td><p>No</p></td>
+<td><p>No</p></td>
+<td></td>
+<td><p><a href="https://mirror.nixoscn.org/wiki/Comparison%20of%20NixOS%20setups/ZFS" class="wikilink" title="ZFS">ZFS</a></p></td>
+<td><p>Yes (LUKS)</p></td>
+<td><p>No</p></td>
+<td><p>X, Wayland</p></td>
+<td><p>i3, Sway</p></td>
+<td><p>No</p></td>
+<td><p><a href="https://github.com/grahamc/nixos-config">grahamc/nixos-config</a></p></td>
+</tr>
+<tr>
+<td><p><a href="user:Ericson2314" class="wikilink" title="Ericson2314">Ericson2314</a>/nixos-configuration</p></td>
+<td><p>User configuration</p></td>
+<td><p>No</p></td>
+<td><p>Yes</p></td>
+<td></td>
+<td><p><a href="https://mirror.nixoscn.org/wiki/Comparison%20of%20NixOS%20setups/ZFS" class="wikilink" title="ZFS">ZFS</a></p></td>
+<td><p>Yes (LUKS)</p></td>
+<td><p>No</p></td>
+<td><p>X, Wayland</p></td>
+<td><p>Sway, Xmonad</p></td>
+<td><p>Yes</p></td>
+<td><p><a href="https://github.com/Ericson2314/nixos-configuration">Ericson2314/nixos-configuration</a></p></td>
+</tr>
+<tr>
+<td><p>vms.nix</p></td>
+<td><p>Domain-specific<br />
+(virtual machines)</p></td>
+<td><p>No</p></td>
+<td><p>No</p></td>
+<td></td>
+<td><p><a href="https://mirror.nixoscn.org/wiki/Comparison%20of%20NixOS%20setups/Ext4" class="wikilink" title="Ext4">Ext4</a></p></td>
+<td><p>No</p></td>
+<td><p>No</p></td>
+<td><p>None</p></td>
+<td><p>None</p></td>
+<td><p>No</p></td>
+<td><p><a href="https://github.com/Nekroze/vms.nix">Nekroze/vms.nix</a></p></td>
+</tr>
+<tr>
+<td><p>engmark/root</p></td>
+<td><p>User configuration</p></td>
+<td><p>No</p></td>
+<td><p>No</p></td>
+<td><p>None</p></td>
+<td><p>None</p></td>
+<td><p>No</p></td>
+<td><p>No</p></td>
+<td><p>X, Wayland</p></td>
+<td><p>GNOME, KDE Plasma</p></td>
+<td><p>Yes</p></td>
+<td><p><a href="https://gitlab.com/engmark/root">engmark/root</a></p></td>
+</tr>
+<tr>
+<td><p>kiara/cfg</p></td>
+<td><p>User configuration</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>sops-nix</p></td>
+<td><p><a href="https://mirror.nixoscn.org/wiki/Comparison%20of%20NixOS%20setups/Btrfs" class="wikilink" title="Btrfs">Btrfs</a></p></td>
+<td><p>Yes (LUKS)</p></td>
+<td><p>Yes</p></td>
+<td><p>Wayland</p></td>
+<td><p>Niri</p></td>
+<td><p>Yes</p></td>
+<td><p><a href="https://codeberg.org/kiara/cfg">kiara/cfg</a></p></td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="external-links">External links</h2><ul>
+<li><a href="https://github.com/search?o=desc&amp;p=1&amp;q=nixos+language%3Anix&amp;s=stars&amp;type=Repositories">GitHub search by most starred &quot;nixos language:nix&quot;</a></li>
+<li><a href="https://gitlab.com/explore/projects/topics/nixos?sort=stars_desc&amp;visibility_level=20">Most starred public NixOS repos on GitLab</a></li>
+</ul>
+<p><a href="category:Community" class="wikilink" title="Category:Community">Category:Community</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

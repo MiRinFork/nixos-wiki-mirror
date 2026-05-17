@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VSCodium</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / VSCodium</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: VSCodium -->
+
+<p>VSCodium is a build of <a href="https://mirror.nixoscn.org/wiki/VSCodium/Visual_Studio_Code" class="wikilink" title="Visual Studio Code">Visual Studio Code</a> without the proprietary bits that are included in the official distribution. See <a href="https://github.com/VSCodium/vscodium#readme">https://github.com/VSCodium/vscodium#readme</a> for more background.</p>
+<h2 id="installation">Installation</h2><h3 id="nixos">NixOS</h3><div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [ vscodium ];</code></pre>
+      </div><p>Extensions can be managed using the &#39;vscode-with-extensions&#39; package:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+  (vscode-<span class="hljs-keyword">with</span>-extensions.override {
+    <span class="hljs-attr">vscode</span> <span class="hljs-operator">=</span> vscodium;
+    <span class="hljs-attr">vscodeExtensions</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> vscode-extensions; [
+      bbenoist.nix
+      ms-python.python
+      ms-azuretools.vscode-docker
+      ms-vscode-remote.remote-ssh
+    ] <span class="hljs-operator">++</span> pkgs.vscode-utils.extensionsFromVscodeMarketplace [
+      {
+        <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;dscodegpt&quot;</span>;
+        <span class="hljs-attr">publisher</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;DanielSanMedium&quot;</span>;
+        <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;3.4.10&quot;</span>;
+        <span class="hljs-attr">hash</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sha256-zjaM9YME0wfBOwhJTacnQbQvw35QL5NvXIBAx5d/bjI=&quot;</span>;
+      }
+    ];
+  })
+];</code></pre>
+      </div><p>Some examples here: <a href="https://github.com/search?q=extensionFromVscodeMarketplace&amp;type=code">GitHub search for &quot;extensionFromVscodeMarketplace&quot;</a></p>
+<p>is a manual way to fetch extensions. However, to keep updated from upstream, <a href="https://github.com/nix-community/nix-vscode-extensions">nix-community/nix-vscode-extensions</a> provides the Nix expressions for the majority of available extensions from Open VSX and VSCode Marketplace. A GitHub Action updates the extensions daily.</p>
+<p>It&#39;s also possible to install VSCodium via <a href="https://mirror.nixoscn.org/wiki/VSCodium/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">p<span class="hljs-attr">rograms.vscode</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">package</span> <span class="hljs-operator">=</span> pkgs.vscodium;
+  <span class="hljs-attr">profiles.default.extensions</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs.vscode-extensions; [
+    dracula-theme.theme-dracula
+    vscodevim.vim
+    yzhang.markdown-all-<span class="hljs-keyword">in</span>-one
+  ];
+};</code></pre>
+      </div><ul>
+<li>See for more options: <a href="https://nix-community.github.io/home-manager/options.xhtml#opt-programs.vscode.enable">Home Manager Manual: Options - programs.vscode</a></li>
+<li>Search for extensions with configurations: <a href="https://search.nixos.org/packages?type=packages&amp;query=vscode-extensions">NixOS Search: vscode-extensions</a></li>
+</ul>
+<p>Please note that some Visual Studio Code extensions have licenses that restrict their use to the official Visual Studio Code builds and therefore do not work with VSCodium. See <a href="https://github.com/VSCodium/vscodium/blob/master/docs/index.md#proprietary-debugging-tools">this note on the VSCodium docs page</a> for what&#39;s been found so far and possible workarounds. In particular, <a href="https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-ssh">remote-ssh</a> does not work yet with VSCodium.</p>
+<h3 id="non-nixos">Non-NixOS</h3><div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-env -iA nixos.vscodium</span></code></pre>
+      </div><h3 id="use-vs-code-extensions-without-additional-configuration">Use VS Code extensions without additional configuration</h3><p>With the package vscodium.fhs, the editor launches inside a <a href="https://en.wikipedia.org/wiki/Filesystem_Hierarchy_Standard">FHS</a> compliant chroot environment using buildFHSUserEnv. This reintroduces directories such as /bin, /lib, and /usr, which allows for extensions which ship pre-compiled binaries to work with little to no additional nixification.</p>
+<p>Example usage:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [ vscodium.fhs ];</code></pre>
+      </div><p>Home-manager:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">p<span class="hljs-attr">rograms.vscode</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">package</span> <span class="hljs-operator">=</span> pkgs.vscodium.fhs;
+};</code></pre>
+      </div><p>Adding extension-specific dependencies, these will be added to the FHS environment:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># needed for rust lang server extension</span>
+p<span class="hljs-attr">rograms.vscode.package</span> <span class="hljs-operator">=</span> pkgs.vscodium.fhsWithPackages (<span class="hljs-params">ps:</span> <span class="hljs-keyword">with</span> ps; [ rustup zlib ]);</code></pre>
+      </div><h2 id="creating-development-environments-using-nix-shell">Creating development environments using nix-shell</h2><p>Instead of using configuration.nix to add packages (e.g. Python or NodeJS) for developing code on VSCode, you can instead use nix-shell. This will allow you to seamlessly create development environments with the correct packages for your project, without rebuilding and restarting NixOS. See <a href="https://mirror.nixoscn.org/wiki/VSCodium/Development_environment_with_nix-shell" class="wikilink" title=" this page"> this page</a> for further instructions in building nix-shell development environments.</p>
+<p>The extension <a href="https://marketplace.visualstudio.com/items?itemName=arrterian.nix-env-selector">nix-env-selector</a> will make switching between different nix-shell environments within VSCode so you can switch between different coding projects easily. It has a guide for setting up nix-shell environments for VSCode.</p>
+<h2 id="troubleshooting">Troubleshooting</h2><h3 id="issues-running-vscodium-on-wayland">Issues running Vscodium on Wayland</h3><p>In case of a broken graphical interface while running Vscodium on <a href="https://mirror.nixoscn.org/wiki/VSCodium/Wayland" class="wikilink" title="Wayland">Wayland</a>, removing following cache directories might resolve the issues:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">rm</span> -r ~/.config/VSCodium/GPUCache ~/.config/VSCodium/Crashpad</span></code></pre>
+      </div><p>An other workaround is to run Vscodium without GPU acceleration</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">codium --disable-gpu</span></code></pre>
+      </div><p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="category:IDE" class="wikilink" title="Category:IDE">Category:IDE</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

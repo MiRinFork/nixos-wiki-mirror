@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Appimage/zh</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/Appimage">Appimage</a><span aria-hidden="true"> / </span>zh</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Appimage/zh -->
+
+<p><languages/> <a href="https://appimage.org/">AppImage</a> 是一种 Linux 应用程序的单体打包格式。它将所有依赖项都包含在一个文件中，该文件由一个可执行文件和一个附加的文件系统组成。</p>
+<p><span id="Usage"></span></p>
+<h2 id="用法">用法</h2><p><span id="Run"></span></p>
+<h3 id="运行">运行</h3><p>在大多数发行版中，只需下载 <code>.AppImage</code> 文件，使用 <code>chmod +x $AppImage</code> 使其可执行，然后执行即可。但这在 NixOS 中无法直接使用，因为 AppImage 文件通常（即使并非总是）依赖于硬编码路径中的某些系统库。</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-shell -p appimage-run</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">appimage-run <span class="hljs-variable">$AppImageFile</span></span></code></pre>
+      </div><p><span id="Packaging"></span></p>
+<h3 id="打包">打包</h3><p>请参阅 <a href="https://nixos.org/manual/nixpkgs/stable/#sec-pkgs-appimageTools">nixpkgs 手册中包装 AppImage 软件的部分</a>。简而言之，提取 AppImage，并将所有依赖项添加为 Nix 构建依赖项。 以下示例是 Quba 程序的 Derivation，它以 AppImage 的形式分发。</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  lib,
+  appimageTools,
+  fetchurl,
+}:
+
+<span class="hljs-keyword">let</span>
+  <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;1.4.0&quot;</span>;
+  <span class="hljs-attr">pname</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;quba&quot;</span>;
+
+  <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> fetchurl {
+    <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://github.com/ZUGFeRD/quba-viewer/releases/download/v<span class="hljs-subst">${version}</span>/Quba-<span class="hljs-subst">${version}</span>.AppImage&quot;</span>;
+    <span class="hljs-attr">hash</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sha256-EsTF7W1np5qbQQh3pdqsFe32olvGK3AowGWjqHPEfoM=&quot;</span>;
+  };
+
+  <span class="hljs-attr">appimageContents</span> <span class="hljs-operator">=</span> appimageTools.extractType1 { <span class="hljs-keyword">inherit</span> name src; };
+<span class="hljs-keyword">in</span>
+appimageTools.wrapType2 <span class="hljs-keyword">rec</span> {
+  <span class="hljs-keyword">inherit</span> pname version src;
+
+  <span class="hljs-attr">extraInstallCommands</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    substituteInPlace $out/share/applications/<span class="hljs-subst">${pname}</span>.desktop \
+      --replace-fail &#x27;Exec=AppRun&#x27; &#x27;Exec=<span class="hljs-subst">${meta.mainProgram}</span>&#x27;
+  &#x27;&#x27;</span>;
+
+  <span class="hljs-attr">meta</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Viewer for electronic invoices&quot;</span>;
+    <span class="hljs-attr">homepage</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://github.com/ZUGFeRD/quba-viewer&quot;</span>;
+    <span class="hljs-attr">downloadPage</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://github.com/ZUGFeRD/quba-viewer/releases&quot;</span>;
+    <span class="hljs-attr">license</span> <span class="hljs-operator">=</span> lib.licenses.asl20;
+    <span class="hljs-attr">sourceProvenance</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> lib.sourceTypes; [ binaryNativeCode ];
+    <span class="hljs-attr">maintainers</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> lib.maintainers; [ onny ];
+    <span class="hljs-attr">platforms</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;x86_64-linux&quot;</span> ];
+  };
+}</code></pre>
+      </div><p><span id="Configuration"></span></p>
+<h2 id="配置">配置</h2><p><span id="Register_AppImage_files_as_a_binary_type_to_binfmt_misc"></span></p>
+<h3 id="将-appimage-文件作为二进制类型注册到-binfmt_misc">将 AppImage 文件作为二进制类型注册到 binfmt_misc</h3><p>您可以通过 <a href="https://en.wikipedia.org/wiki/Binfmt_misc#External_links">binfmt_misc</a> 来告诉 <a href="special:MyLanguage/Linux_kernel" class="wikilink" title="Linux 内核">Linux 内核</a>在执行某些二进制文件时使用哪个解释器（例如 <code>appimage-run</code>），具体方式可以通过文件扩展名或魔数匹配来实现。下面的 NixOS 配置会注册 AppImage 文件（魔数为“AI”+ 0x02 的 ELF 文件），并使用 <code>appimage-run</code> 作为解释器运行：</p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs">p<span class="hljs-attr">rograms.appimage</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">binfmt</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+};</code></pre>
+      </div><p>这样 AppImage 文件就可以像普通程序一样直接调用</p>
+<p><a href="category:Software" class="wikilink" title="Category:Software">Category:Software</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

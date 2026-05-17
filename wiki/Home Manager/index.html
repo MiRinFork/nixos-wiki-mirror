@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Home Manager</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Home Manager</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Home Manager -->
+
+<p><a href="https://github.com/nix-community/home-manager">Home Manager</a> is a system for managing a user environment using the Nix package manager. In other words, Home Manager lets you</p>
+<ul>
+<li>install software declaratively in your user profile, rather than using nix-env</li>
+<li>manage dotfiles in the home directory of your user.</li>
+</ul>
+<p>Home Manager has many <a href="https://nix-community.github.io/home-manager/options.xhtml">options</a>, which can look daunting at first, but most of those options only boil down to creating some dotfiles and installing some software in a similar way to nix-env.</p>
+<h2 id="configuration">Configuration</h2><p>Home Manager can be configured as a user in <code>~/.config/home-manager/home.nix</code> or as a module inside configuration.nix.</p>
+<h3 id="installation-as-a-user">Installation as a user</h3><p>Follow the <a href="https://nix-community.github.io/home-manager/index.xhtml#ch-installation">official guide</a></p>
+<p>Your configuration is stored in <code>~/.config/home-manager/home.nix</code>. Each time you modify it, rerun <code>home-manager switch</code> for changes to have effect.</p>
+<p>To work correctly, Home Manager needs your shell to source <code>~/.nix-profile/etc/profile.d/hm-session-vars.sh</code>. The most convenient way to do so is to have Home Manager manage your whole shell configuration, eg <code>programs.bash.enable = true;</code> or <code>programs.zsh.enable = true;</code>. But in this case your whole bashrc is managed with Home Manager: the years of customization you accumulated in your former .bashrc must be migrated to Home Manager options, which may take some time. The quick and dirty way to do the migration is to move your bashrc to some other location and source it from Home Manager:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs, ...}: {
+  <span class="hljs-attr">programs.bash</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">bashrcExtra</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+      . ~/oldbashrc
+    &#x27;&#x27;</span>;
+  };
+}</code></pre>
+      </div><h3 id="usage-as-a-nixos-module">Usage as a NixOS module</h3><p>Here is a nixos module template you can use:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ config, pkgs, ... }:
+<span class="hljs-keyword">let</span>
+  <span class="hljs-attr">home-manager</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">builtins.fetchTarball</span> <span class="hljs-string">&quot;https://github.com/nix-community/home-manager/archive/master.tar.gz&quot;</span>;
+<span class="hljs-keyword">in</span>
+{
+  <span class="hljs-attr">imports</span> <span class="hljs-operator">=</span> [
+    (<span class="hljs-built_in">import</span> <span class="hljs-string">&quot;<span class="hljs-subst">${home-manager}</span>/nixos&quot;</span>)
+  ];
+
+  <span class="hljs-attr">home-manager.users.my_username</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-comment">/* The home.stateVersion option does not have a default and must be set */</span>
+    <span class="hljs-attr">home.stateVersion</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;18.09&quot;</span>;
+    <span class="hljs-comment">/* Here goes the rest of your home-manager config, e.g. home.packages = [ pkgs.foo ]; */</span>
+  };
+}</code></pre>
+      </div><p>It can either be incorporated in <code>/etc/nixos/configuration.nix</code> or be placed in a standalone file and imported in configuration.nix: <code>imports = [ ./thefile.nix ]</code>.</p>
+<p>Whenever you change you Home Manager configuration, you must rerun <code>nixos-rebuild switch</code>. With this method, changing the configuration of an unprivileged user requires to run a command as root.</p>
+<h3 id="usage-as-a-nixos-module-in-a-flake">Usage as a NixOS module in a Flake</h3><p>Here is the skeleton of how to add Home Manager as a module to your system(s) via your <a href="https://mirror.nixoscn.org/wiki/Home%20Manager/Flakes" class="wikilink" title="flake">flake</a>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">inputs</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">nixpkgs.url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:NixOS/nixpkgs/nixos-25.05&quot;</span>;
+    <span class="hljs-attr">home-manager</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:nix-community/home-manager/release-25.05&quot;</span>;
+      <span class="hljs-attr">inputs.nixpkgs.follows</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nixpkgs&quot;</span>;
+    };
+  };
+  <span class="hljs-attr">outputs</span> <span class="hljs-operator">=</span>
+    {
+      self,
+      nixpkgs,
+      home-manager,
+      ...
+    }@<span class="hljs-params">inputs:</span>
+    {
+      nixosConfigurations.<span class="hljs-symbol">&lt;HOSTNAME&gt;</span> <span class="hljs-operator">=</span> nixpkgs.lib.nixosSystem { <span class="hljs-comment"># replace &lt;HOSTNAME&gt; with your actual hostname</span>
+        <span class="hljs-attr">system</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;x86_64-linux&quot;</span>;
+        <span class="hljs-attr">modules</span> <span class="hljs-operator">=</span> [
+          <span class="hljs-symbol">./configuration.nix</span>
+          home-manager.nixosModules.default
+          {
+            <span class="hljs-attr">home-manager</span> <span class="hljs-operator">=</span> {
+              <span class="hljs-attr">useGlobalPkgs</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+              <span class="hljs-attr">useUserPackages</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+              users.<span class="hljs-symbol">&lt;USERNAME&gt;</span> <span class="hljs-operator">=</span> <span class="hljs-symbol">./home.nix</span>; <span class="hljs-comment"># replace &lt;USERNAME&gt; with your actual username</span>
+            };
+          }
+        ];
+      };
+    };
+}</code></pre>
+      </div><p>Here&#39;s an example of Home Manager configuration in ./home.nix</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ config, pkgs, ... }:
+
+{
+  <span class="hljs-comment"># This value determines the Home Manager release that your</span>
+  <span class="hljs-comment"># configuration is compatible with. This helps avoid breakage</span>
+  <span class="hljs-comment"># when a new Home Manager release introduces backwards</span>
+  <span class="hljs-comment"># incompatible changes.</span>
+  <span class="hljs-comment">#</span>
+  <span class="hljs-comment"># You can update Home Manager without changing this value. See</span>
+  <span class="hljs-comment"># the Home Manager release notes for a list of state version</span>
+  <span class="hljs-comment"># changes in each release.</span>
+  <span class="hljs-attr">home.stateVersion</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;24.11&quot;</span>;
+}</code></pre>
+      </div><p>Of course you&#39;ll probably want to keep more stuff in there than just a state version, but the state version is required.</p>
+<p>The downside to doing it this way over the User config is that you have to do a full system rebuild; the Home Manager config is part of the full system, and so must be built as root or at least a trusted user.</p>
+<h2 id="usage">Usage</h2><h3 id="using-home-manager-to-install-package-declaratively">Using Home Manager to install package declaratively</h3><p>Nix-env has problematic behavior due to its imperative nature. For example, after installing java 8 with <code>nix-env -i jdk8</code>, running <code>nix-env --upgrade</code> upgrades java to 10 despite the fact that we initially explicitly requested java 8.</p>
+<p>Installing software with Home Manager avoids this problem:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs, ...}: {
+  <span class="hljs-attr">home.packages</span> <span class="hljs-operator">=</span> [ pkgs.jdk8 ];
+}</code></pre>
+      </div><p>It is a perfectly valid use case for Home Manager to only install software with <code>home.packages</code> without managing dotfiles at all.</p>
+<h3 id="usage-on-non-nixos-linux">Usage on non-NixOS Linux</h3><p>Home Manager has an option to automatically set some environment variables that will ease usage of software installed with nix on non-NixOS linux (fixing local issues, settings XDG_DATA_DIRS, etc.):</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs, ...}: {
+  <span class="hljs-attr">targets.genericLinux.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+}</code></pre>
+      </div><h3 id="managing-your-dotfiles">Managing your dotfiles</h3><p>Home Manager has options to configure many common tools. As an example, adding the following</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">programs.git</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">user</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;my_git_username&quot;</span>;
+        <span class="hljs-attr">email</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;my_git_username@gmail.com&quot;</span>;
+      };
+    };
+  };</code></pre>
+      </div><p>will make Home Manager generate a <code>.config/git/config</code> file for you.</p>
+<p>Even for programs for which Home Manager doesn&#39;t have configuration options, you can use it to manage your dotfiles directly, e.g.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  xdg.configFile.<span class="hljs-string">&quot;i3blocks/config&quot;</span>.source <span class="hljs-operator">=</span> <span class="hljs-symbol">./i3blocks.conf</span>;
+  home.file.<span class="hljs-string">&quot;.gdbinit&quot;</span>.text <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+      set auto-load safe-path /nix/store
+  &#x27;&#x27;</span>;</code></pre>
+      </div><p>This will create symlink <code>$XDG_CONFIG_HOME/i3blocks/config</code> and <code>~/.gdbinit</code>.</p>
+<p>You have the whole list of the options available in Home Manager <a href="https://nix-community.github.io/home-manager/options.xhtml">here</a></p>
+<h3 id="examples">Examples</h3><ul>
+<li><a href="https://github.com/yrashk/nix-home/blob/master/home.nix">Yurii Rashkovskii&#39;s home.nix</a></li>
+<li><a href="https://git.sr.ht/~ben/config">bsima&#39;s configs</a></li>
+<li><a href="https://github.com/drupol/nixos-x260">drupol&#39;s config, with flakes</a></li>
+</ul>
+<h2 id="faq">FAQ</h2><h3 id="i-cannot-set-gnome-or-gtk-themes-via-home-manager">I cannot set GNOME or Gtk themes via Home Manager</h3><p>If you get <a href="https://nix-community.github.io/home-manager/index.xhtml#_why_do_i_get_an_error_message_about_literal_ca_desrt_dconf_literal_or_literal_dconf_service_literal">an error about or </a> on NixOS, add</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">p<span class="hljs-attr">rograms.dconf.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><p>to your system configuration.</p>
+<h3 id="installed-apps-don-t-show-up-in-ubuntu-39-s-gnome-39-s-quot-show-applications-quot">Installed apps don’t show up in Ubuntu&#39;s/GNOME&#39;s &quot;Show Applications&quot;</h3><p>Consider some of the workarounds here: <a href="https://github.com/nix-community/home-manager/issues/1439">https://github.com/nix-community/home-manager/issues/1439</a>.</p>
+<h3 id="workaround-with-home-on-tmpfs-and-standalone-installation">Workaround with <code>home on tmpfs</code> and standalone installation</h3><p>home-on-tmpfs users who installed Home Manager standalone may meet problems that cannot load configs after reboot, caused by auto cleaning symlink under the toplevel of the home directory. You need to ensure <code>/home/</code><user><code>/.nix-profile</code> exists since the standalone install will not act symlink while the system boots.</p>
+<p>If your toplevel of home is on tmpfs, one possible workaround is manually write <code>activationScripts</code> to link the directory:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">system.activationScripts</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-comment"># workaround with tmpfs as home and home-manager, since it not preserve</span>
+    <span class="hljs-comment"># ~/.nix-profile symlink after reboot.</span>
+    <span class="hljs-attr">profile-init.text</span> <span class="hljs-operator">=</span>
+      <span class="hljs-string">&#x27;&#x27;
+        ln -sfn /home/<span class="hljs-subst">${user}</span>/.local/state/nix/profiles/profile /home/<span class="hljs-subst">${user}</span>/.nix-profile
+      &#x27;&#x27;</span>;
+  };</code></pre>
+      </div><p>Other files may also need to manually symlink in this case.</p>
+<h2 id="templates">Templates</h2><ul>
+<li><a href="https://github.com/juspay/nix-dev-home">https://github.com/juspay/nix-dev-home</a> A Home Manager template providing useful tools &amp; settings for Nix-based development.</li>
+</ul>
+<h2 id="alternatives">Alternatives</h2><ul>
+<li><a href="https://mirror.nixoscn.org/wiki/Home%20Manager/Wrappers_vs._Dotfiles" class="wikilink" title="Wrappers vs. Dotfiles">Wrappers vs. Dotfiles</a> shows how (per-user) wrapper scripts can be used in place of dotfiles in the user&#39;s home directory</li>
+<li><a href="https://github.com/viperML/wrapper-manager">wrapper-manager</a>, an implementation of the idea above using the module system</li>
+</ul>
+<h2 id="see-also">See also</h2><ul>
+<li>Starting from a machine with a minimal freshly installed NixOS ISO (KDE Plasma version), this video outlines the basics of using Home Manager as of 2021: <a href="http://enia.cc/r/wilt-nixos-install-home-manager">Wil T&#39;s &quot;<em>NixOS Installation Guide</em>&quot; (Home Manager section starts at 27:22)</a></li>
+</ul>
+<p><a href="category:Software" class="wikilink" title="Category:Software">Category:Software</a> <a href="category:Home_Manager" class="wikilink" title="Category:Home Manager">Category:Home Manager</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

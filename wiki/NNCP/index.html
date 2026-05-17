@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NNCP</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / NNCP</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: NNCP -->
+
+<blockquote>
+<p>NNCP (Node to Node copy) is a collection of utilities simplifying secure store-and-forward files, mail and command exchanging.</p>
+<p>These utilities are intended to help build up small size (dozens of nodes) ad-hoc friend-to-friend (F2F) statically routed darknet delay-tolerant networks for fire-and-forget secure reliable files, file requests, Internet mail and commands transmission. All packets are integrity checked, end-to-end encrypted, explicitly authenticated by known participants public keys. Onion encryption is applied to relayed packets. Each node acts both as a client and server, can use push and poll behaviour model. Also there is multicasting areas support.</p>
+<p>Out-of-box offline sneakernet/floppynet, dead drops, sequential and append-only CD-ROM/tape storages, air-gapped computers support. But online TCP daemon with full-duplex resumable data transmission exists.</p>
+</blockquote>
+<p><cite><a href="http://www.nncpgo.org/">http://www.nncpgo.org/</a></cite></p>
+<h2 id="configuration">Configuration</h2><p>NNCP can be installed and configured manually or via <a href="https://nixos.org/manual/nixos/unstable/options.html#opt-programs.nncp.enable">NixOS configuration</a>.</p>
+<p>In any case the first step is to generate a configuration file.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nncp-cfgnew -nocomments &gt; /etc/secrets/nncp.hjson</span></code></pre>
+      </div><p>This generated file should be stripped down to include only the <code>self</code> and <code>neigh</code> sections:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">{
+  self: {
+    # DO NOT show anyone your private keys!!!
+    id: HFTEI…SITTA
+    exchpub: RG2SF…7JEYA
+    exchprv: 4YAON…LWCMA
+    signpub: ASKTA…EFVSQ
+    signprv: Z6Q4R…SC2ZI
+    noiseprv: ACJVW…7G7NA
+    noisepub: J2W5C…SZM6Q
+  }
+  neigh: {
+    self: {
+      id: HFTEI…SITTA
+      exchpub: RG2SF…7JEYA
+      signpub: ASKTA…EFVSQ
+      noisepub: J2W5C…SZM6Q
+    }
+  }
+}</code></pre>
+      </div><p>The location of this file should be defined in your NixOS configuration at <a href="https://nixos.org/manual/nixos/unstable/options.html#opt-programs.nncp.secrets">programs.nncp.secrets</a>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">programs.nncp</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">secrets</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;/etc/secrets/nncp.hjson&quot;</span> ];
+  };
+}</code></pre>
+      </div><p>In this example the secret keys are stored outside the Nix store an we will add public keys for neighboring nodes in the NixOS configuration.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">programs.nncp</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">secrets</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;/etc/secrets/nncp.hjson&quot;</span> ];
+    <span class="hljs-attr">neigh</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">carol</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-comment"># information that Carol has given us about her &quot;self&quot;.</span>
+        <span class="hljs-attr">id</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;D6BOO…YTYWQ&quot;</span>;
+        <span class="hljs-attr">exchpub</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;V4WJ6…4VA3Q&quot;</span>;
+        <span class="hljs-attr">signpub</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;NZLTN…HCGOA&quot;</span>;
+        <span class="hljs-attr">noisepub</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;UNL2J…7FRDA&quot;</span>;
+        <span class="hljs-comment"># We can connect directly to Carol over network.</span>
+        <span class="hljs-attr">addr</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">lan</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;[fe80::1234%igb0]:5400&quot;</span>;
+          <span class="hljs-attr">internet</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;carol.example.com:3389&quot;</span>;
+          <span class="hljs-attr">proxied</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;|ssh remote.host nncp-daemon -ucspi&quot;</span>;
+        };
+      };
+      <span class="hljs-attr">bob</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-comment"># information that Bob has given us about his &quot;self&quot;.</span>
+        <span class="hljs-attr">id</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;3I3HC…F4P4Q&quot;</span>;
+        <span class="hljs-attr">exchpub</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;7VJN7…BWUTQ&quot;</span>;
+        <span class="hljs-attr">signpub</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;E6XSC…5VYRA&quot;</span>;
+        <span class="hljs-attr">noisepub</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;TAKXG…Z6MZQ&quot;</span>;
+        <span class="hljs-comment"># We cannot connect to Bob but we can relay packets to him thru Carol.</span>
+        <span class="hljs-attr">via</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;carol&quot;</span> ];
+      };
+    };
+  };
+}</code></pre>
+      </div><h2 id="callers-and-daemons">Callers and Daemons</h2><p>The NNCP caller and daemon can be enabled for NixOS using the options <code>services.nncp.caller</code> and <code>services.nncp.daemon</code>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">services.nncp</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">let</span>
+    <span class="hljs-attr">attrs</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">extraArgs</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;-autotoss&quot;</span> ];
+    };
+  <span class="hljs-keyword">in</span> {
+    <span class="hljs-attr">caller</span> <span class="hljs-operator">=</span> attrs;
+    <span class="hljs-attr">daemon</span> <span class="hljs-operator">=</span> attrs;
+  };
+}</code></pre>
+      </div><h2 id="copying-nix-store-paths">Copying Nix store paths</h2><p>NNCP can be use to transport the closures of Nix store paths between machines.</p>
+<p>NNCP config:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  programs.nncp.settings.neigh.${NODE}.exec.nix-store-<span class="hljs-built_in">import</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nix-store --import&quot;</span>;
+}</code></pre>
+      </div><p>Export command:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-store --<span class="hljs-built_in">export</span> ./result | nncp-exec <span class="hljs-string">&quot;<span class="hljs-variable">$NODE</span>&quot;</span> nix-store-import</span></code></pre>
+      </div><h2 id="email">Email</h2><p>NNCP is an ideal transport for secure email.</p>
+<h3 id="receiving-email">Receiving email</h3><div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># NixOS module for Alice that allows reception of mail from Bob and Carol as well as mail relayed thru her mailserver.</span>
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+
+{
+  <span class="hljs-attr">programs.nncp.settings.neigh</span> <span class="hljs-operator">=</span>
+    <span class="hljs-keyword">let</span>
+      <span class="hljs-attr">mailer.exec.sendmail</span> <span class="hljs-operator">=</span> [
+        <span class="hljs-string">&quot;/run/wrappers/bin/sendmail&quot;</span> <span class="hljs-comment"># Pipe mail into the system sendmail.</span>
+        <span class="hljs-string">&quot;alice&quot;</span>                      <span class="hljs-comment"># Redirect messages to the &quot;alice&quot; user.</span>
+      ];
+    <span class="hljs-keyword">in</span>
+    {
+      <span class="hljs-attr">bob</span> <span class="hljs-operator">=</span> mailer;
+      <span class="hljs-attr">carol</span> <span class="hljs-operator">=</span> mailer;
+      <span class="hljs-attr">mailserver</span> <span class="hljs-operator">=</span> mailer; <span class="hljs-comment"># This is Alice&#x27;s mailserver, described later. </span>
+    };
+
+  <span class="hljs-comment"># Use opensmtpd for the system sendmail command.</span>
+  <span class="hljs-attr">services.opensmtpd</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">setSendmail</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">serverConfiguration</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+      listen on lo
+
+      # Deliver mail into Alice&#x27;s home directory.
+      action &quot;inbox&quot; maildir &quot;%{user.directory}/mail&quot;
+
+      match for local action &quot;inbox&quot;
+    &#x27;&#x27;</span>;
+  };
+
+}</code></pre>
+      </div><h3 id="sending-mail">Sending mail</h3><p>To send mail alice configures her client to relay mail to her mailserver by using nncp-exec as if it were <code>sendmail</code>.</p>
+<p><code>nncp-exec -noprogress mailserver sendmail -f alice@example.org -t</code></p>
+<h3 id="relaying-email">Relaying email</h3><p>To send mail to domains via STMP a relay is required that implements the <a href="wikipedia:Sender_Policy_Framework" class="wikilink" title="SPF">SPF</a> standard. Configuring SPF and other DNS based standards is not described here.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># NixOS module for Alice&#x27;s STMP relay server.</span>
+{ config, lib, ... }:
+
+<span class="hljs-keyword">let</span>
+  <span class="hljs-attr">domain</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;example.org&quot;</span>;
+  <span class="hljs-attr">fqdn</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;example.org&quot;</span>;
+  <span class="hljs-attr">certCfg</span> <span class="hljs-operator">=</span> config.security.acme.certs.${fqdn};
+  <span class="hljs-attr">certDir</span> <span class="hljs-operator">=</span> certCfg.directory;
+  <span class="hljs-attr">smtpdCertDir</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/var/lib/smtp&quot;</span>;
+<span class="hljs-keyword">in</span>
+{
+  <span class="hljs-comment"># Allow incoming SMTP connections.</span>
+  <span class="hljs-attr">networking.firewall.allowedTCPPorts</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-number">25</span>
+    <span class="hljs-number">465</span>
+  ];
+
+  <span class="hljs-comment"># Receive mail from Alice&#x27;s NNCP node and pipe it into sendmail unaltered.</span>
+  <span class="hljs-attr">programs.nncp.settings.neigh.alice.exec.sendmail</span> <span class="hljs-operator">=</span> [ 
+    <span class="hljs-string">&quot;/run/wrappers/bin/sendmail&quot;</span>
+  ];
+
+  <span class="hljs-comment"># Get a certificate for SMTP from ACME.</span>
+  <span class="hljs-attr">security.acme</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">acceptTerms</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    certs.${fqdn} <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">email</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;admin@<span class="hljs-subst">${domain}</span>&quot;</span>;
+      <span class="hljs-attr">reloadServices</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;opensmtpd.service&quot;</span> ];
+      <span class="hljs-attr">postRun</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        mkdir -p <span class="hljs-subst">${smtpdCertDir}</span>
+        cp <span class="hljs-subst">${certDir}</span>/cert.pem <span class="hljs-subst">${smtpdCertDir}</span>/cert
+        cp <span class="hljs-subst">${certDir}</span>/key.pem <span class="hljs-subst">${smtpdCertDir}</span>/key
+        chown 0:0 <span class="hljs-subst">${smtpdCertDir}</span>/*
+      &#x27;&#x27;</span>;
+    };
+  };
+
+  <span class="hljs-comment"># Wrap nncp-exec so that the unpriviledged</span>
+  <span class="hljs-comment"># smtpd can produce outgoing NNCP packets.</span>
+  <span class="hljs-attr">security.wrappers.nncp-exec</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">setuid</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">owner</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;root&quot;</span>;
+    <span class="hljs-attr">group</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;uucp&quot;</span>;
+    <span class="hljs-attr">source</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${config.programs.nncp.package}</span>/bin/nncp-exec&quot;</span>;
+  };  
+
+  <span class="hljs-comment"># Configure an smtpd.</span>
+  <span class="hljs-attr">services.opensmtpd</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">setSendmail</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; <span class="hljs-comment"># Create the sendmail command for incoming NNCP mails.</span>
+    <span class="hljs-attr">serverConfiguration</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+      # Use the ACME certificate.
+      pki <span class="hljs-subst">${fqdn}</span> cert &quot;<span class="hljs-subst">${smtpdCertDir}</span>/cert&quot;
+      pki <span class="hljs-subst">${fqdn}</span> key &quot;<span class="hljs-subst">${smtpdCertDir}</span>/key&quot;
+
+      # Configure SMTP listeners.
+      # Authentication is by domain only, there are no logins here.
+      listen on lo
+      listen on eth0 smtps pki <span class="hljs-subst">${fqdn}</span> # Classical SMTP.
+      listen on eth0 tls pki <span class="hljs-subst">${fqdn}</span>   # Listen with TLS.
+      listen on tun0 mask-src          # Listen on a tunnel interface but
+                                       # omit the details from headers.
+
+      # Configure a NNCP Mail Delivery Agent (MDA) for local users.
+      action &quot;nncp&quot; mda &quot;/run/wrappers/bin/nncp-exec -quiet %{dest.user:strip} sendmail&quot;
+
+      # Configure SMTP relaying to external domains.
+      action &quot;relay&quot; relay tls helo <span class="hljs-subst">${domain}</span>
+
+      # Rules for mail received at this smtpd.
+      match from any for domain &quot;<span class="hljs-subst">${domain}</span>&quot; action &quot;nncp&quot;
+      match from local for any action &quot;relay&quot;
+    &#x27;&#x27;</span>;
+  };
+}</code></pre>
+      </div><p><a href="category:Networking" class="wikilink" title="Category:Networking">Category:Networking</a> <a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="category:CLI" class="wikilink" title="Category:CLI">Category:CLI</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

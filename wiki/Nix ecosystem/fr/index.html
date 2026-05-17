@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nix ecosystem/fr</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/Nix%20ecosystem">Nix ecosystem</a><span aria-hidden="true"> / </span>fr</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Nix ecosystem/fr -->
+
+<p><languages/> L**&#39;Écosystème cœur de Nix** est un éventail de technologies créées pour construire de manière reproductible et configurer/gérer de manière déclarative des paquets et systèmes ainsi que leurs dépendances. Ceci est rendu possible via un transfert du paradigme fonctionnel des programmes au domaine système grâce à un langage dédié (DSL) dynamique et fonctionnel à évaluation paresseuse appelé <a href="https://mirror.nixoscn.org/wiki/Nix%20ecosystem/fr/Overview_of_the_Nix_Language" class="wikilink" title="langage Nix">langage Nix</a> qui permet la génération d&#39;artefacts reproductibles.</p>
+<p>Il existe également de nombreuses autres <a href="https://mirror.nixoscn.org/wiki/Nix%20ecosystem/fr/applications" class="wikilink" title="applications">applications</a> (<em><strong>Écosystème Nix étendu)</strong></em> développées par la communauté Nix, utilisant et supportant ces technologies centrales.</p>
+<p><span id="Official_ecosystem"></span></p>
+<h2 id="cosyst-me-officiel">Écosystème officiel</h2><table>
+<thead>
+<tr>
+<th>Composant</th>
+<th>Manuel</th>
+<th>Description</th>
+<th>Usage</th>
+<th>Licence</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a href="special:MyLanguage/NixOS" class="wikilink" title="NixOS">NixOS</a></td>
+<td><a href="https://nixos.org/nixos/manual/">Manuel NixOS</a></td>
+<td>Une distribution Linux dont « tous » les composants sont générés par Nix, permettant ainsi une gestion reproductible et déclarative de la configuration à l&#39;échelle du système, ainsi que des mises à jour et des retours en arrière atomiques.</td>
+<td>Configurer de manière déclarative les postes de travail, les serveurs et les clusters</td>
+<td>MIT</td>
+</tr>
+<tr>
+<td><a href="special:MyLanguage/Nixpkgs" class="wikilink" title="Nixpkgs">Nixpkgs</a></td>
+<td><a href="https://nixos.org/nixpkgs/manual/">Manuel Nixpkgs</a></td>
+<td>Le plus grand référentiel communautaire de paquets Nix et de modules NixOS ; les versions officielles de NixOS y sont hébergées.</td>
+<td>Partager des paquets Nix et des modules NixOS</td>
+<td>MIT</td>
+</tr>
+<tr>
+<td><a href="special:MyLanguage/Hydra" class="wikilink" title="Hydra">Hydra</a></td>
+<td><a href="https://nixos.org/hydra/manual/">Manuel Hydra</a></td>
+<td>Un système de construction continue d&#39;artefact basé sur Nix.</td>
+<td>Fermes de construction d’artefacts pour l&#39;intégration continue</td>
+<td>GPL-3.0</td>
+</tr>
+<tr>
+<td><a href="special:MyLanguage/Nix" class="wikilink" title="Nix">Nix</a></td>
+<td><a href="https://nixos.org/nix/manual/">Manuel Nix</a></td>
+<td>Un gestionnaire de paquets qui analyse les expressions Nix décrivant la construction d&#39;artefacts reproductibles, plaçant le résultat dans un emplacement de l&#39;espace de stockage avec un hachage de l&#39;arborescence des dépendances, évitant ainsi l&#39;enfer des dépendances et permettant l&#39;installation de plusieurs versions d&#39;un même programme ainsi que les restaurations.</td>
+<td>Construction d&#39;artefacts reproductibles et gestion des paquets Linux &amp; Darwin</td>
+<td>LGPL-2.1</td>
+</tr>
+</tbody></table>
+<p>Composants au cœur de l&#39;écosystème Nix</p>
+<table style="width:20%;">
+<caption><strong>Pile de l'écosystème au cœur de NixOS</strong></caption>
+<colgroup>
+<col style="width: 20%" />
+</colgroup>
+<tbody>
+<tr>
+<td style="text-align: center; border: 1px solid var(--border-color-base); background: var(--background-color-neutral); padding: 1.6rem" width="2%"><div style="font-size: 1.3em; font-weight: bold">
+<p>NixOS</p>
+</div>
+<p>Une distribution Linux et un système de configuration développés à l'aide de Nixpkgs.</p></td>
+</tr>
+<tr>
+<td style="text-align: center; border: 1px solid var(--border-color-base); background: var(--background-color-neutral); padding: 1.6rem" width="2%"><div style="font-size: 1.3em; font-weight: bold">
+<p>Nixpkgs</p>
+</div>
+<p>Un vaste dépôt de paquets géré par la communauté.</p></td>
+</tr>
+<tr>
+<td style="text-align: center; border: 1px solid var(--border-color-base); background: var(--background-color-neutral); padding: 1.6rem" width="2%"><div style="font-size: 1.3em; font-weight: bold">
+<p>Nix</p>
+</div>
+<p>Un système de compilation épuré et fonctionnel.</p></td>
+</tr>
+</tbody>
+</table>
+
+<p><span id="Usage_of_NixOS"></span></p>
+<h2 id="utilisation-de-nixos">Utilisation de NixOS</h2><p>Les utilisateurs installent la distribution <em>NixOS</em> sur leur ordinateur comme n&#39;importe quelle autre distribution Linux. Ils découvrent les paquets disponibles et les options de configuration de <em>Nixpgs</em> via <a href="https://search.nixos.org/">https://search.nixos.org</a> et ce wiki. Ils utilisent le langage <em>Nix</em> pour décrire de manière déclarative dans un fichier texte quels logiciels doivent être installés et comment configurer le système. Ils exécutent deux programmes en ligne de commande dans un terminal afin d&#39;obtenir un système tel qu&#39;ils l&#39;ont décrit. Ils utilisent ce système comme n&#39;importe quel autre système Linux.</p>
+<p><span id="Development_of_NixOS"></span></p>
+<h2 id="d-veloppement-de-nixos">Développement de NixOS</h2><p>Les développeurs de <em>NixOS</em> travaillent principalement dans <em>Nixpkgs</em> en décrivant dans des fichiers textes écrits en langage <em>Nix</em> comment les logiciels doivent être construits. Après une revue par les pairs des changements, ils sont intégrés dans <em>Nixpkgs</em>. Certains de ces paquets sont pré-construits par <em>Hydra</em> afin de réduire le temps d&#39;installation pour les utilisateurs de <em>NixOS</em>.</p>
+<ul>
+<li>La gestion des paquets s&#39;effectue via « Nixpkgs » et n&#39;est pas réservée à « NixOS », ni même aux plateformes basées sur Linux. Les responsables de paquets qui ne sont pas exclusifs à « NixOS » (tels que les outils nécessaires au fonctionnement de la distribution elle-même) prennent généralement en charge plusieurs plateformes, bien que cela ne soit pas strictement obligatoire.</li>
+</ul>
+<!-- -->
+
+<ul>
+<li>Le système de modules est le principal moyen de configuration des services fonctionnant sous « NixOS ». Ce domaine s&#39;étend de la configuration « de bas niveau », comme les fichiers d&#39;unité « systemd » ou la configuration personnalisée du noyau, jusqu&#39;à la génération de fichiers de configuration pour des services spécifiques. Le système de modules est le principal moyen pour les utilisateurs de configurer « NixOS » ; il se trouve dans le sous-répertoire <code>nixos/</code> de « Nixpkgs ».</li>
+</ul>
+<!-- -->
+
+<ul>
+<li>La documentation est en grande partie intégrée aux données des paquets et du système de modules, bien que le dépôt « Nixpkgs » contienne également des fichiers Markdown autonomes. La documentation comprend également la gestion du site web, du wiki et d&#39;autres aspects de l&#39;écosystème au sens large. Les deux premières catégories sont presque exclusivement constituées de code en langage « Nix » écrit dans des fichiers texte, tandis que la dernière est un mélange de code « Nix », de fichiers Markdown et de divers autres formats.</li>
+</ul>
+<p>Toutes les contributions à « Nixpkgs », qu&#39;elles concernent ou non « NixOS », sont soumises à un examen par les pairs avant d&#39;être intégrées à « Nixpkgs ». De nombreux paquets, ainsi que la documentation et les ressources complémentaires telles que les images ISO ou les archives tar, sont précompilés sur « Hydra » afin de réduire le temps de mise à jour pour les utilisateurs de « NixOS ».</p>
+<p>Ces trois catégories sont les plus importantes en termes de volume de contributions, mais de nombreux contributeurs s&#39;impliquent également dans des activités liées à la fondation NixOS, qu&#39;il s&#39;agisse de gérer l&#39;infrastructure sur laquelle fonctionnent le site web « Hydra » et d&#39;autres outils, ou de développer les outils nécessaires à NixOS.</p>
+<table>
+<thead>
+<tr>
+<th>Type de développement</th>
+<th>Lieu du Développement</th>
+<th>Exemples</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Emballage indépendant de la plateforme</td>
+<td><em>Nixpkgs</em></td>
+<td><a href="https://github.com/NixOS/nixpkgs/blob/bf3287dac860542719fe7554e21e686108716879/pkgs/tools/misc/coreutils/default.nix">coreutils package</a>, <a href="https://github.com/NixOS/nixpkgs/tree/5fe6820251dfab92c84ff356a7c7c336f8d8490c/pkgs/stdenv"><em>stdenv</em> framework</a>, <a href="https://github.com/NixOS/nixpkgs/blob/5fe6820251dfab92c84ff356a7c7c336f8d8490c/pkgs/applications/office/libreoffice/default.nix">Libreoffice package</a></td>
+</tr>
+<tr>
+<td>Outils indépendants de la plateforme</td>
+<td>« Nixpkgs » et divers dépôts</td>
+<td><a href="https://github.com/NixOS/nix">upstream/default Nix implementation (CppNix)</a>, <a href="https://github.com/NixOS/hydra"><em>Hydra</em> source code</a>, <a href="https://github.com/NixOS/nixpkgs-merge-bot"><em>Nixpkgs</em> merge bot</a></td>
+</tr>
+<tr>
+<td>Outils « NixOS »</td>
+<td>principalement « Nixpkgs »</td>
+<td><a href="https://github.com/NixOS/nixpkgs/tree/5fe6820251dfab92c84ff356a7c7c336f8d8490c/pkgs/by-name/ni/nixos-rebuild-ng">nixos-rebuild-ng source code</a>, <a href="https://github.com/NixOS/nixpkgs/blob/5fe6820251dfab92c84ff356a7c7c336f8d8490c/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"><em>NixOS</em> Installation ISOs</a></td>
+</tr>
+<tr>
+<td>Système de modules <em>NixOS</em></td>
+<td><em>Nixpkgs</em></td>
+<td><a href="https://github.com/NixOS/nixpkgs/blob/master/nixos/modules/services/display-managers/default.nix">Display Manager configuration</a>, <a href="https://github.com/NixOS/nixpkgs/blob/master/nixos/modules/services/databases/mysql.nix">MySQL (and derivative) database configuration</a></td>
+</tr>
+<tr>
+<td>Infrastructure</td>
+<td></td>
+<td><a href="https://github.com/NixOS/nixos-wiki-infra">Infrastructure for this Wiki</a>, <a href="https://github.com/NixOS/infra"><em>NixOS</em> infra</a></td>
+</tr>
+<tr>
+<td>Documentation</td>
+<td></td>
+<td><a href="https://wiki.nixos.org/">This Wiki</a>, <a href="https://github.com/NixOS/nixpkgs/blob/8d92119c540d78599ba208010c722a60958810f4/doc/stdenv/stdenv.chapter.md"><em>stdenv</em> documentation</a>, <a href="https://github.com/NixOS/nixpkgs/blob/master/nixos/doc/manual/configuration/ipv6-config.section.md"><em>NixOS</em> IPv6 configuration</a> (visible in the <a href="https://nixos.org/manual/nixos/stable/#sec-ipv6">IPv6 section of the <em>NixOS</em> manual</a>), <a href="https://github.com/NixOS/nixpkgs/blob/master/CONTRIBUTING.md"><em>Nixpkgs</em> Contribution Guidelines</a></td>
+</tr>
+<tr>
+<td>Organisation Technique</td>
+<td></td>
+<td><a href="https://github.com/NixOS/nixpkgs/issues/390768"><em>NixOS</em> RelEng</a>, <a href="https://github.com/NixOS/rfcs/"><em>Nix</em> and <em>NixOS</em> RFCs</a></td>
+</tr>
+<tr>
+<td>Autre</td>
+<td></td>
+<td><a href="https://github.com/NixOS/nixos-artwork"><em>NixOS</em> artwork</a>, <a href="https://discourse.nixos.org/"><em>NixOS</em> (and related) discourse</a>, <a href="https://github.com/NixOS/foundation"><em>NixOS Foundation</em></a></td>
+</tr>
+</tbody></table>
+<p>Quelques exemples de développement de « NixOS », accompagnés de liens.</p>
+<p>Voir aussi: <a href="https://github.com/NixOS/org">Référentiel de l&#39;organisation Nix</a>.</p>
+<p><a href="category:Pedias" class="wikilink" title="Category:Pedias">Category:Pedias</a> <a href="category:NixOS" class="wikilink" title="Category:NixOS">Category:NixOS</a> <a href="category:nix" class="wikilink" title="Category:nix">Category:nix</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

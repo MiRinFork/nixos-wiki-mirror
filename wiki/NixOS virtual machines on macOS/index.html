@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NixOS virtual machines on macOS</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / NixOS virtual machines on macOS</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: NixOS virtual machines on macOS -->
+
+<p>NixOS is based on Linux, but a lot of developers are using MacBooks. The <a href="https://github.com/LnL7/nix-darwin">nix-darwin</a> project aims to bring the convenience of a declarative system approach to macOS and it is built around Nixpkgs (much like NixOS). After installing Nix, <code>nix-darwin</code> will help us with the following goals:</p>
+<ol>
+<li>Build a complete NixOS (Linux) system.</li>
+<li>Build this system as a virtual machine image.</li>
+<li>Create a script that runs such an image locally using QEMU-KVM.</li>
+<li>Build integration tests based on running virtual machines.</li>
+</ol>
+<p>For point 1, the challenge is to build Linux binaries from MacOS. This can be solved by using the <code>linux-builder</code> feature provided by the <code>nix-darwin</code> project. (A similar solution is possible without <code>nix-darwin</code>, but requires additional manual setup.) Once we have access to a Linux builder, we need to use the <code>system</code> configuration option natively supported by Nix.</p>
+<p>Point 2 is similar to point 1.</p>
+<p>Point 3 is similar to point 2, except that it requires a script and a local QEMU KVM. This means that we need to configure the <code>system</code> option to be <code>aarch64-linux</code> for the system we are building, but leave it as <code>aarch64-darwin</code> for the script + QEMU-KVM part.</p>
+<p>Once done, we can run the resulting Linux virtual machine on a MacOS M1. Note that the Linux builder is actually such a virtual machine.</p>
+<p>Point 4 is similar to point 3, but since the tests are <strong>built</strong> using virtual machines, it means that these virtual machines are running inside the Linux builder. This is not a problem if our environment supports nested virtualization.</p>
+<p>Conversely, it&#39;s a problem if it doesn&#39;t support nested virtualization. As it happens, M1 doesn&#39;t support nested virtualization. So it can run a Linux builder, or any other NixOS virtual machine, but it cannot do so inside e.g. the Linux builder.</p>
+<p>Another situation where this is a problem is with the M1 runners provided by GitHub: the runner is itself a virtual machine running on M1, so we can&#39;t even start a Linux builder in a GitHub workflow.</p>
+<p>GitHub has announced support for <code>macos-15-xlarge</code> in Q4 2024.</p>
+<p>Before understanding the above limitations, I experimented on an OakHost M2.S machine. The notes that follow are the result of this experiment.</p>
+<h2 id="nix-on-m2-s">Nix on M2.S</h2><p>OakHost is a company that specializes in providing MacOS machines. The machines are usually rented by the month, but they also have a 1-week offer: <a href="https://www.oakhost.net/try-macos">&quot;try-macos&quot;</a> M2.S. After paying, you get an IP address and a password to SSH into the machine. The username is &quot;customer&quot;.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">ssh customer@xxx.xxx.xxx.xxx</span></code></pre>
+      </div><p>I haven&#39;t done this process enough times to write a script, but the steps to get Nix and <code>nix-darwin</code> installed, and then configured to get a Linux builder, are as follows.</p>
+<p>Allow our user to use <code>sudo</code> without retyping the password each time:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">% </span><span class="language-bash"><span class="hljs-built_in">export</span> NIX_USER=<span class="hljs-string">&quot;customer&quot;</span></span>
+<span class="hljs-meta prompt_">% </span><span class="language-bash"><span class="hljs-built_in">echo</span> <span class="hljs-string">&quot;%admin ALL = NOPASSWD: ALL&quot;</span> | <span class="hljs-built_in">sudo</span> <span class="hljs-built_in">tee</span> /etc/sudoers.d/passwordless</span></code></pre>
+      </div><p>Install Nix by downloading the install script, making it executable, and running it (we cat <code>/dev/null</code> so the install script doesn&#39;t run interactively):</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">% </span><span class="language-bash">curl -sL https://nixos.org/releases/nix/nix-2.9.2/install &gt;/Users/<span class="hljs-variable">${NIX_USER}</span>/install-nix</span>
+<span class="hljs-meta prompt_">% </span><span class="language-bash"><span class="hljs-built_in">chmod</span> +x /Users/<span class="hljs-variable">$NIX_USER</span>/install-nix</span>
+<span class="hljs-meta prompt_">% </span><span class="language-bash"><span class="hljs-built_in">cat</span> /dev/null | <span class="hljs-built_in">sudo</span> -i -H -u <span class="hljs-variable">$NIX_USER</span> -- sh /Users/<span class="hljs-variable">${NIX_USER}</span>/install-nix --daemon</span>
+<span class="hljs-meta prompt_">% </span><span class="language-bash"><span class="hljs-built_in">rm</span> /Users/<span class="hljs-variable">${NIX_USER}</span>/install-nix</span></code></pre>
+      </div><p>Once Nix is installed, we need a new shell to actually get access to the <code>nix</code> commands. An alternative is to source the correct file:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">% </span><span class="language-bash">. /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh</span>
+<span class="hljs-meta prompt_">% </span><span class="language-bash">nix --version</span></code></pre>
+      </div><h2 id="nix-darwin">nix-darwin</h2><p><a href="https://github.com/LnL7/nix-darwin"><code>nix-darwin</code></a> is a project to configure a macOS system using Nix modules, similar to what is done in NixOS.</p>
+<p>First configure the <code>nixpkgs</code> and <code>nix-darwin</code> channels, ...</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">% </span><span class="language-bash"><span class="hljs-built_in">sudo</span> -i -H -u <span class="hljs-variable">$NIX_USER</span> -- nix-channel --add https://github.com/LnL7/nix-darwin/archive/master.tar.gz darwin</span>
+<span class="hljs-meta prompt_">% </span><span class="language-bash"><span class="hljs-built_in">sudo</span> -i -H -u <span class="hljs-variable">$NIX_USER</span> -- nix-channel --add https://nixos.org/channels/nixpkgs-24.05-darwin nixpkgs</span>
+<span class="hljs-meta prompt_">% </span><span class="language-bash"><span class="hljs-built_in">sudo</span> -i -H -u <span class="hljs-variable">$NIX_USER</span> -- nix-channel --update</span></code></pre>
+      </div><p>... then install <code>nix-darwin</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">% </span><span class="language-bash">installer=$(nix-build https://github.com/LnL7/nix-darwin/archive/master.tar.gz -A installer --no-out-link)</span>
+<span class="hljs-meta prompt_">% </span><span class="language-bash"><span class="hljs-built_in">echo</span> N | <span class="hljs-built_in">sudo</span> -i -H -u <span class="hljs-variable">$NIX_USER</span> -- <span class="hljs-string">&quot;<span class="hljs-variable">$installer</span>/bin/darwin-installer&quot;</span></span></code></pre>
+      </div><p>The <code>nix-darwin</code> configuration is then located in <code>/Users/customer/.nixpkgs/darwin-configuration.nix</code>.</p>
+<h2 id="linux-builder"><code>linux-builder</code></h2><p>We can change the configuration file to enable <code>linux-builder</code>. Don&#39;t configure it any further at this point; we want to download a pre-built <code>linux-builder</code> from the official nix binary cache. Otherwise, we&#39;ll have to build it ourselves (and we won&#39;t be able to, since it would require a <code>linux-builder</code>, which we don&#39;t have yet).</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">    <span class="hljs-attr">nix.package</span> <span class="hljs-operator">=</span> pkgs.nix;
+    <span class="hljs-attr">nix.linux-builder.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">nix.settings.trusted-users</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;@admin&quot;</span> ];</code></pre>
+      </div><p>In my case, using the channel configured above didn&#39;t allow me to get a pre-built <code>linux-builder</code> from the cache.</p>
+<p>Instead I got this error; it means we&#39;re trying to build something that requires a Linux builder and we don&#39;t have it (yet).</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">% </span><span class="language-bash">. /etc/static/zshrc</span>
+<span class="hljs-meta prompt_">&gt; </span><span class="language-bash">darwin-rebuild switch</span>
+...
+error: a &#x27;aarch64-linux&#x27; with features {} is required to build &#x27;/nix/store/2931ap3xi18184kzw7ms9lyfm9ngxaag-X-Restart-Triggers-sshd.drv&#x27;, but I am a &#x27;aarch64-darwin&#x27; with features {apple-virt, benchmark, big-parallel, nixos-test}</code></pre>
+      </div><p>We can force a specific <code>nixpkgs</code> (and hope that the corresponding <code>linux-builder</code> is in the cache). This worked at the time of this writing:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ config, pkgs, ... }:
+<span class="hljs-keyword">let</span>
+  <span class="hljs-attr">system</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;aarch64-darwin&quot;</span>;
+  <span class="hljs-attr">pkgs-darwin</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> (<span class="hljs-built_in">builtins.fetchTarball</span> {
+    <span class="hljs-comment"># nixpkgs-24.05-darwin</span>
+    <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://github.com/nixos/nixpkgs/archive/bf32c404263862fdbeb6e5f87a4bcbc6a01af565.tar.gz&quot;</span>;
+    <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;132bd16a1wp145wz4m16w2maz0md6y2hp0qn5x1102wkyr9gkk0n&quot;</span>;
+  }) { <span class="hljs-keyword">inherit</span> system; };
+<span class="hljs-keyword">in</span>
+{
+...
+
+  <span class="hljs-attr">nix.linux-builder.package</span> <span class="hljs-operator">=</span> pkgs-darwin.darwin.linux-builder;
+...
+}</code></pre>
+      </div><p>We can confirm that we can start the <code>linux-builder</code> with something like:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">&gt; </span><span class="language-bash">darwin-rebuild switch</span>
+<span class="hljs-meta prompt_">&gt; </span><span class="language-bash">nix-build \
+  --impure \
+  --<span class="hljs-built_in">expr</span> <span class="hljs-string">&#x27;(with import &lt;nixpkgs&gt; { system = &quot;aarch64-linux&quot;; }; runCommand &quot;uname&quot; {} &quot;uname -a &gt; $out&quot;)&#x27;</span></span>
+<span class="hljs-meta prompt_">&gt; </span><span class="language-bash"><span class="hljs-built_in">cat</span> result</span>
+Linux localhost 6.6.45 #1-NixOS SMP Sun Aug 11 10:47:28 UTC 2024 aarch64 GNU/Linux</code></pre>
+      </div><p>Note: If you run the <code>nix-build</code> command above, you&#39;ll see logs similar to these, indicating that the <code>linux-builder</code> is being used:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs">building &#x27;/nix/store/hlvznfa3iwjsrxq3jpn4j4li2pnqbfki-uname.drv&#x27; on &#x27;ssh-ng://builder@linux-builder&#x27;...
+...
+copying path &#x27;/nix/store/wl2b6fy25y11kl5fbg928j18c7mj26b5-uname&#x27; from &#x27;ssh-ng://builder@linux-builder&#x27;...</code></pre>
+      </div><p>Note: I think the <code>--option sandbox false</code> is not passed to the Linux builder when using <code>nix-build</code>. So we set it in the above configuration file.</p>
+<h2 id="linux-builder-further-configuration"><code>linux-builder</code>, further configuration</h2><p>Remote builders can be configured with additional features. Here, we enable the &quot;kvm&quot;, and &quot;nixos-test&quot; features, and disable the sandbox. We also suggest additional tweaks and exposing the builder&#39;s logs:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">nix.linux-builder</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">config</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">nix.settings.sandbox</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+    };
+    <span class="hljs-attr">ephemeral</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">package</span> <span class="hljs-operator">=</span> pkgs-darwin.darwin.linux-builder;
+    <span class="hljs-attr">maxJobs</span> <span class="hljs-operator">=</span> <span class="hljs-number">4</span>;
+    <span class="hljs-attr">supportedFeatures</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;kvm&quot;</span> <span class="hljs-string">&quot;benchmark&quot;</span> <span class="hljs-string">&quot;big-parallel&quot;</span> <span class="hljs-string">&quot;nixos-test&quot;</span> ];
+  };
+  <span class="hljs-attr">nix.package</span> <span class="hljs-operator">=</span> pkgs.nix;
+  <span class="hljs-attr">nix.settings.experimental-features</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;nix-command&quot;</span> <span class="hljs-string">&quot;flakes&quot;</span> ];
+  <span class="hljs-attr">nix.settings.system-features</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;nixos-test&quot;</span> <span class="hljs-string">&quot;apple-virt&quot;</span> ];
+  <span class="hljs-attr">nix.settings.trusted-users</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;@admin&quot;</span> ];
+
+  <span class="hljs-attr">launchd.daemons.linux-builder</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">serviceConfig</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">StandardOutPath</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/var/log/darwin-builder.log&quot;</span>;
+      <span class="hljs-attr">StandardErrorPath</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/var/log/darwin-builder.log&quot;</span>;
+    };
+  };</code></pre>
+      </div><p>Note: Notice how further configuring the Linux builder uses the running Linux builder to build the new one.</p>
+<h2 id="linux-builder-with-x86_64-linux-emulation"><code>linux-builder</code>, with <code>x86_64-linux</code> emulation</h2><p>Building upon previous example, the remote builder can be enhanced to build x86_64 packages without creating a second VM or builder<sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/NixOS%20virtual%20machines%20on%20macOS#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">ix.linux-builder</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-comment"># ...</span>
+  <span class="hljs-attr">systems</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;x86_64-linux&quot;</span> <span class="hljs-string">&quot;aarch64-linux&quot;</span> ];
+  <span class="hljs-attr">config.boot.binfmt.emulatedSystems</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;x86_64-linux&quot;</span> ];
+};</code></pre>
+      </div><h2 id="direnv"><code>direnv</code></h2><p>Optionally, we might want to use <code>direnv</code>. <code>nix-darwin</code> also makes it easy to get it installed:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">programs.direnv.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">programs.direnv.nix-direnv.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><p>(Don&#39;t forget to run again <code>darwin-rebuild switch</code> after changing the configuration file.)</p>
+<h2 id="resetting-an-oakhost-machine">Resetting an OakHost machine</h2><p>It is a manual process to reset the OakHost machine to a state similar to when you received it.</p>
+<p>At first, I tried to follow these steps, but it was a dead end:</p>
+<p>We shut down the machine:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">&gt; </span><span class="language-bash"><span class="hljs-built_in">sudo</span> shutdown -h now</span></code></pre>
+      </div><p>The OakHost documentation recommands waiting 1 minute before proceeding with the next step.</p>
+<p>In the OakHost web interface, click the &quot;Force Power Off&quot; button, then the &quot;Open KVM Screen&quot; button (located in the &quot;Remote Access&quot; tab).</p>
+<p>You will be greeted with two main icons: &quot;Macintosh HD&quot; and &quot;Options&quot;.</p>
+<p>I choose &quot;Options&quot;, then select &quot;Continue&quot;, then a disk icon on the right to boot the machine, then &quot;Reinstall macOS Sonoma&quot;, then. &quot;Continue&quot; and &quot;Continue&quot;.</p>
+<p>After a while, you&#39;ll get an &quot;OakHost Customer&quot; login prompt. At this point, SSH access is available again (with the same initial password).</p>
+<p>But the <code>/etc/nix/</code> directory was still populated from my previous attempt !</p>
+<p>What we want instead is to keep the machine running, then use the KVM to follow these steps: From the Apple menu (the Apple logo), click &quot;System settings...&quot;, then &quot;General&quot;, then &quot;Transfer or Reset&quot;, and finally &quot;Erase all contents and settings...&quot;.</p>
+<p>The machine reboots, and we can install the system manually. I skip everything I can, including using an Apple ID. As a full name, the original was OakHost Customer and the account name was &quot;customer&quot;.</p>
+<p>Once you&#39;re logged into the machine, don&#39;t forget to enable &quot;Remote login&quot; for SSH in &quot;System settings...&quot;, &quot;General&quot;, &quot;Sharing&quot;. At this point we disconnect the KVM screen.</p>
+<p>Someone at OakHost suggested disabling sleep mode.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">% </span><span class="language-bash"><span class="hljs-built_in">sudo</span> pmset -a displaysleep 0</span>
+<span class="hljs-meta prompt_">% </span><span class="language-bash"><span class="hljs-built_in">sudo</span> systemsetup -setcomputersleep Off</span>
+<span class="hljs-meta prompt_">% </span><span class="language-bash"><span class="hljs-built_in">sudo</span> pmset -a hibernatemode 0</span></code></pre>
+      </div><p>This is not necessary for us, but they also added this:</p>
+<blockquote>
+<p>One additional detail: If you want to sign in to the Mac using your iCloud account, please first run the following line to disable the &quot;Find My Mac” module. This won’t impact any iCloud services. Otherwise resetting the device might prove problematic later on due to theft protection:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">&gt; </span><span class="language-bash"><span class="hljs-built_in">sudo</span> defaults write /Library/Preferences/com.apple.icloud.managed.plist DisableFMMiCloudSetting -bool <span class="hljs-literal">true</span></span></code></pre>
+      </div></blockquote>
+<p>The original machine had also Screen Sharing enabled.</p>
+<h2 id="further-reading">Further reading</h2><ul>
+<li><a href="https://nixcademy.com/posts/macos-linux-builder/">Build and Deploy Linux Systems from macOS</a>, Nixcademy</li>
+<li><a href="https://nixcademy.com/posts/running-nixos-integration-tests-on-macos/">Run NixOS Integration Tests on macOS</a>, Nixcademy</li>
+</ul>
+<p><a href="category:macOS" class="wikilink" title="Category:macOS">Category:macOS</a> <a href="category:nix-darwin" class="wikilink" title="Category:nix-darwin">Category:nix-darwin</a> <a href="category:Tutorial" class="wikilink" title="Category:Tutorial">Category:Tutorial</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p><a href="https://github.com/nix-darwin/nix-darwin/issues/1192#issuecomment-2619629531">https://github.com/nix-darwin/nix-darwin/issues/1192#issuecomment-2619629531</a> <a href="https://mirror.nixoscn.org/wiki/NixOS%20virtual%20machines%20on%20macOS#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

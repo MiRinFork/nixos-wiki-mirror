@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kernel Debugging with QEMU</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Kernel Debugging with QEMU</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Kernel Debugging with QEMU -->
+
+<h2 id="set-up-the-qemu-vm">Set up the QEMU VM</h2><h3 id="with-a-nix-built-kernel">With a Nix-built kernel</h3><p>Use a NixOS config like below. See <a href="https://mirror.nixoscn.org/wiki/Kernel%20Debugging%20with%20QEMU/Linux_kernel#Custom_configuration" class="wikilink" title="Linux kernel#Custom configuration">Linux kernel#Custom configuration</a> for more information about patching and configuring the kernel&#39;s build.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ config, pkgs, lib, modulesPath, ... }:
+
+{
+  <span class="hljs-attr">imports</span> <span class="hljs-operator">=</span> [
+    (modulesPath <span class="hljs-operator">+</span> <span class="hljs-string">&quot;/virtualisation/qemu-vm.nix&quot;</span>)
+  ];
+
+  <span class="hljs-attr">boot.kernelPackages</span> <span class="hljs-operator">=</span> pkgs.linuxPackagesFor (pkgs.linux.overrideAttrs(<span class="hljs-params">a:</span> {
+    <span class="hljs-comment"># To make sure debug_info is not stripped from kernel modules</span>
+    <span class="hljs-attr">dontStrip</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  }));
+
+  <span class="hljs-attr">boot.kernelPatches</span> <span class="hljs-operator">=</span> [
+    {
+      <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;enable debugging information&quot;</span>;
+      <span class="hljs-attr">patch</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;
+      <span class="hljs-attr">structuredExtraConfig</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">GDB_SCRIPTS</span> <span class="hljs-operator">=</span> lib.kernel.yes;
+        <span class="hljs-attr">DEBUG_INFO</span> <span class="hljs-operator">=</span> lib.kernel.yes;
+        <span class="hljs-attr">KALLSYMS</span> <span class="hljs-operator">=</span> lib.kernel.yes;
+      };
+    }
+    {
+      <span class="hljs-comment"># https://lkml.kernel.org/r/20250618134629.25700-2-johannes@sipsolutions.net</span>
+      <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;scripts: gdb: move MNT_* constants to gdb-parsed&quot;</span>;
+      <span class="hljs-attr">patch</span> <span class="hljs-operator">=</span> (pkgs.fetchpatch {
+        <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/patch/?id=41a7f737685eed2700654720d3faaffdf0132135&quot;</span>;
+        <span class="hljs-attr">hash</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sha256-cWlM6hLGhHUQI87jDbAvLdUb+T34Am+hpjda35Myxfw=&quot;</span>;
+      });
+    }
+  ];
+  <span class="hljs-attr">boot.kernelParams</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-comment"># Avoid kernel address space layout randomization</span>
+    <span class="hljs-string">&quot;nokaslr&quot;</span>
+  ];
+  <span class="hljs-attr">virtualisation.qemu.options</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-comment"># make qemu listen for gdb on :1234</span>
+    <span class="hljs-string">&quot;-s&quot;</span>
+  ];
+
+  <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+    vim
+    iotop
+    gdb
+  ];
+  
+  <span class="hljs-attr">system.stateVersion</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;25.05&quot;</span>;
+}</code></pre>
+      </div><h4 id="loading-module-symbols-and-accurate-kernel-sources">Loading module symbols and accurate kernel sources</h4><p>Make sure you&#39;re using a branch of nixpkgs that has <a href="https://github.com/NixOS/nixpkgs/pull/432405">https://github.com/NixOS/nixpkgs/pull/432405</a> applied.</p>
+<p>This generates a script that starts gdb with module symbols and kernel sources attached:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">users.motd</span> <span class="hljs-operator">=</span>
+    <span class="hljs-keyword">let</span>
+      <span class="hljs-attr">gdbScript</span> <span class="hljs-operator">=</span> pkgs.writeScript <span class="hljs-string">&quot;attach-gdb.sh&quot;</span> <span class="hljs-string">&#x27;&#x27;
+        mkdir -p /tmp/gdb
+        cd /tmp/gdb
+        rm -rf *
+
+        ls <span class="hljs-subst">${pkgs.srcOnly config.boot.kernelPackages.kernel}</span> | while read line ; do ln -s <span class="hljs-subst">${pkgs.srcOnly config.boot.kernelPackages.kernel}</span>/$line $line ; done
+
+        mkdir kos
+        cd kos
+
+        cp <span class="hljs-subst">${config.boot.kernelPackages.kernel}</span>/lib/modules/*/kernel/fs/netfs/* .
+        cp <span class="hljs-subst">${config.boot.kernelPackages.kernel}</span>/lib/modules/*/kernel/fs/9p/* .
+        cp <span class="hljs-subst">${config.boot.kernelPackages.kernel}</span>/lib/modules/*/kernel/net/9p/* .
+        xz -d *
+        GDB_SCRIPT_DIR=$(echo <span class="hljs-subst">${config.boot.kernelPackages.kernel.dev}</span>/lib/modules/*/build/scripts/gdb)
+
+        gdb \
+          -ex &quot;python import sys; sys.path.insert(0, &#x27;$GDB_SCRIPT_DIR&#x27;)&quot; \
+          -ex &quot;target remote :1234&quot; \
+          -ex &quot;source $GDB_SCRIPT_DIR/vmlinux-gdb.py&quot; \
+          -ex &quot;lx-symbols&quot; \
+          <span class="hljs-subst">${config.boot.kernelPackages.kernel.dev}</span>/vmlinux
+      &#x27;&#x27;</span>;
+    <span class="hljs-keyword">in</span> <span class="hljs-string">&#x27;&#x27;
+      look at /repro/default.json
+
+      kernel at <span class="hljs-subst">${config.boot.kernelPackages.kernel}</span>
+      kernel dev at <span class="hljs-subst">${config.boot.kernelPackages.kernel.dev}</span>
+
+      attach gdb with <span class="hljs-subst">${gdbScript}</span> on the host
+    &#x27;&#x27;</span>;</code></pre>
+      </div><h3 id="with-a-manually-built-kernel">With a manually-built kernel</h3><p>Clone the repository</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">git <span class="hljs-built_in">clone</span> https://github.com/torvalds/linux.git</span></code></pre>
+      </div><p>For kernel dependencies, create a <code>shell.nix</code> file in the cloned repo:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs <span class="hljs-operator">?</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> {} }:
+
+pkgs.stdenv.mkDerivation {
+  <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;linux-kernel-build&quot;</span>;
+  <span class="hljs-attr">nativeBuildInputs</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+    getopt
+    flex
+    bison
+    gcc
+    gnumake
+    bc
+    pkg-config
+    binutils
+  ];
+  <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+    elfutils
+    ncurses
+    openssl
+    zlib
+  ];
+}</code></pre>
+      </div><p>Older kernel versions might buildFHSUserEnv as they have absolute shebangs:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs <span class="hljs-operator">?</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> {} }:
+
+(pkgs.buildFHSUserEnv {
+  <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;linux-kernel-build&quot;</span>;
+  <span class="hljs-attr">targetPkgs</span> <span class="hljs-operator">=</span> <span class="hljs-params">pkgs:</span> (<span class="hljs-keyword">with</span> pkgs;  [
+    getopt
+    flex
+    bison
+    elfutils
+    binutils
+    ncurses.dev
+    openssl.dev
+    zlib.dev
+    gcc
+    gnumake
+    bc
+  ]);
+  <span class="hljs-attr">runScript</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;bash&quot;</span>;
+}).env</code></pre>
+      </div><h4 id="generate-a-config-for-kvm">Generate a config for KVM</h4><p>If on <code>make</code> you get asked some questions, just press enter till you are done, this will select the default answer.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">cd</span> linux</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">make mrproper <span class="hljs-comment"># Clears all artifacts, do this especially if you upgrade from a significant old version</span></span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-shell shell.nix</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">make defconfig kvm_guest.config</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">scripts/config --set-val DEBUG_INFO y <span class="hljs-comment"># For gdb debug symbols</span></span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">scripts/config --set-val DEBUG y <span class="hljs-comment"># All pr_debug messages get printed</span></span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">scripts/config --set-val GDB_SCRIPTS y</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">scripts/config --set-val DEBUG_DRIVER y <span class="hljs-comment"># Enable printk messages in drivers</span></span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">everything as one <span class="hljs-built_in">command</span> <span class="hljs-keyword">for</span> copy<span class="hljs-string">&#x27;n&#x27;</span><span class="hljs-built_in">paste</span></span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">scripts/config --set-val DEBUG_INFO y --set-val DEBUG y  --set-val GDB_SCRIPTS y --set-val DEBUG_DRIVER y</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">this might ask <span class="hljs-keyword">for</span> further options, just press enter <span class="hljs-keyword">for</span> every question</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">make -j$(<span class="hljs-built_in">nproc</span>)</span></code></pre>
+      </div><h4 id="create-a-bootable-nixos-image-with-no-kernel">Create a bootable NixOS image with no kernel</h4><p>Save this as <code>nixos-image.nix</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs <span class="hljs-operator">?</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> {} }:
+<span class="hljs-built_in">import</span> (pkgs.path <span class="hljs-operator">+</span> <span class="hljs-string">&quot;/nixos/lib/make-disk-image.nix&quot;</span>) {
+  <span class="hljs-attr">config</span> <span class="hljs-operator">=</span> (<span class="hljs-built_in">import</span> (pkgs.path <span class="hljs-operator">+</span> <span class="hljs-string">&quot;/nixos/lib/eval-config.nix&quot;</span>) {
+    <span class="hljs-keyword">inherit</span> (pkgs) system;
+    <span class="hljs-attr">modules</span> <span class="hljs-operator">=</span> [{
+      <span class="hljs-attr">imports</span> <span class="hljs-operator">=</span> [ <span class="hljs-symbol">./nixos-config.nix</span> ];
+    }];
+  }).config;
+  <span class="hljs-keyword">inherit</span> pkgs;
+  <span class="hljs-keyword">inherit</span> (pkgs) lib;
+  <span class="hljs-attr">diskSize</span> <span class="hljs-operator">=</span> <span class="hljs-number">2048</span>;
+  <span class="hljs-attr">partitionTableType</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;none&quot;</span>;
+  <span class="hljs-comment"># for a different format</span>
+  <span class="hljs-attr">format</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;qcow2&quot;</span>;
+}</code></pre>
+      </div><p>Than follows the nixos configuration in a file named <code>nixos-config.nix</code></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs, lib, modulesPath, ... }:
+
+{
+  <span class="hljs-attr">imports</span> <span class="hljs-operator">=</span> [
+    (modulesPath <span class="hljs-operator">+</span> <span class="hljs-string">&quot;/profiles/qemu-guest.nix&quot;</span>)
+  ];
+  <span class="hljs-attr">boot.loader.grub.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+  <span class="hljs-attr">boot.initrd.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+  <span class="hljs-attr">boot.isContainer</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">boot.loader.initScript.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-comment">## login with empty password</span>
+  <span class="hljs-attr">users.extraUsers.root.initialHashedPassword</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;</span>;
+
+  <span class="hljs-attr">networking.firewall.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+
+  <span class="hljs-attr">services.getty.helpLine</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    Log in as &quot;root&quot; with an empty password.
+    If you are connect via serial console:
+    Type Ctrl-a c to switch to the qemu console
+    and `quit` to stop the VM.
+  &#x27;&#x27;</span>;
+
+  <span class="hljs-attr">services.getty.autologinUser</span> <span class="hljs-operator">=</span> lib.mkDefault <span class="hljs-string">&quot;root&quot;</span>;
+
+  <span class="hljs-attr">documentation.doc.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+  <span class="hljs-attr">documentation.man.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+  <span class="hljs-attr">documentation.nixos.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+  <span class="hljs-attr">documentation.info.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+  <span class="hljs-attr">programs.bash.enableCompletion</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+  <span class="hljs-attr">programs.command-not-found.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+}</code></pre>
+      </div><p>Than build with the following commands:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-build</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">copy out</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">install -m644 result/nixos.qcow2 qemu-image.img</span></code></pre>
+      </div><p>Than follow with the next step is launching qemu.</p>
+<h4 id="create-a-bootable-debian-image-with-replaceable-kernel">Create a bootable Debian image with replaceable kernel</h4><p>If you want to build a different Linux distro you can use the following instructions to build a debian instead:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"> $ </span><span class="language-bash">nix-shell -p debootstrap qemu</span>
+<span class="hljs-meta prompt_"> $ </span><span class="language-bash">qemu-img create qemu-image.img 5G</span>
+<span class="hljs-meta prompt_"> $ </span><span class="language-bash">mkfs.ext2 qemu-image.img</span>
+<span class="hljs-meta prompt_"> $ </span><span class="language-bash"><span class="hljs-built_in">mkdir</span> mount-point.dir</span>
+<span class="hljs-meta prompt_"> $ </span><span class="language-bash"><span class="hljs-built_in">sudo</span> mount -o loop qemu-image.img mount-point.dir</span>
+<span class="hljs-meta prompt_"> $ </span><span class="language-bash"><span class="hljs-built_in">sudo</span> debootstrap --<span class="hljs-built_in">arch</span> amd64 buster mount-point.dir</span>
+<span class="hljs-meta prompt_"> $ </span><span class="language-bash"><span class="hljs-built_in">sudo</span> <span class="hljs-built_in">chroot</span> mount-point.dir /bin/bash -i</span>
+<span class="hljs-meta prompt_"> $ </span><span class="language-bash"><span class="hljs-built_in">export</span> PATH=<span class="hljs-variable">$PATH</span>:/bin</span>
+<span class="hljs-meta prompt_"> $ </span><span class="language-bash">passwd <span class="hljs-comment"># Set root password</span></span>
+<span class="hljs-meta prompt_"> $ </span><span class="language-bash"><span class="hljs-built_in">exit</span></span>
+<span class="hljs-meta prompt_"> $ </span><span class="language-bash"><span class="hljs-built_in">sudo</span> umount mount-point.dir</span></code></pre>
+      </div><h4 id="installing-tools-to-the-image">Installing tools to the image</h4><p>The filesystem is mounted read only so to add tools like lspci. Mount and chroot then use apt to install the needed binaries.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"> $ </span><span class="language-bash"><span class="hljs-built_in">sudo</span>  mount -o loop qemu-image.img mount-point.dir</span>
+<span class="hljs-meta prompt_"> $ </span><span class="language-bash"><span class="hljs-built_in">sudo</span> <span class="hljs-built_in">chroot</span> mount-point.dir /bin/bash -i</span>
+<span class="hljs-meta prompt_"> $ </span><span class="language-bash"><span class="hljs-built_in">export</span> PATH=<span class="hljs-variable">$PATH</span>:/bin</span>
+<span class="hljs-meta prompt_"> $ </span><span class="language-bash">apt install pciutils tree</span>
+<span class="hljs-meta prompt_"> $ </span><span class="language-bash"><span class="hljs-built_in">sudo</span> umount mount-point.dir</span> </code></pre>
+      </div><h4 id="launch-qemu">Launch qemu</h4><p>You can find a slighty stripped version of qemu in a package called <code>qemu_kvm</code> (qemu without emulation support for other cpu architectures). The <code>nokaslr</code> kernel flag is important to be able to set breakpoints in kernel memory. You can also skip the <code>-S</code> to not make qemu break on startup and waiting for gdb.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"> $ </span><span class="language-bash">qemu-system-x86_64 -s -S \
+    -kernel <span class="hljs-built_in">arch</span>/x86/boot/bzImage \
+    -hda qemu-image.img \
+    -append <span class="hljs-string">&quot;root=/dev/sda console=ttyS0 nokaslr&quot;</span> \
+    -enable-kvm \
+    -nographic</span></code></pre>
+      </div><h4 id="connect-with-gdb">Connect with gdb</h4><div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"> $ </span><span class="language-bash"><span class="hljs-built_in">echo</span> <span class="hljs-string">&quot;add-auto-load-safe-path `pwd`/scripts/gdb/vmlinux-gdb.py&quot;</span> &gt;&gt; ~/.gdbinit</span>
+<span class="hljs-meta prompt_"> $ </span><span class="language-bash">gdb -ex <span class="hljs-string">&quot;target remote :1234&quot;</span> ./vmlinux</span>
+ (gdb) continue</code></pre>
+      </div><p>Note that setting breakpoints in early boot might not work for all functions. If a breakpoint is not triggered as expected try to set the breakpoint later when the VM is fully booted.</p>
+<h4 id="language-server-support">Language server support</h4><p>If you want language server support for the kernel code you can generate a compile_commands.json with</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">python ./scripts/clang-tools/gen_compile_commands.py</span> </code></pre>
+      </div><p>This can be used for example in combination with clangd, which scales well to size of the linux kernel.</p>
+<h4 id="debugging-drivers">Debugging drivers</h4><p>Make sure the driver you want to inspect is not compiled into the kernel, look for the option to enable compilation of your driver, to do this execute:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"> $ </span><span class="language-bash">make nconfig</span></code></pre>
+      </div><p>press <code>F8</code> and search for your driver, and check if it is set to &quot;Module&quot; with <M>. After compilation copy the driver.ko into the mounted <code>qemu-image.img</code>. Unmount start the kernel and break at the <code>load_module</code> function and <code>insmod driver.ko</code>. Happy hacking!</p>
+<h4 id="bugs">Bugs</h4><p>1. With the nixos-config provided above, the console does not work properly. boot.isContainer = true; implies console.enable = false; that disables console. The following can be used as a workaround.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">c<span class="hljs-attr">onsole.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+systemd.services.<span class="hljs-string">&quot;serial-getty@ttyS0&quot;</span>.enable <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><h2 id="using-ktest-with-nixos">Using ktest with NixOS</h2><p>Yellow onion has integrated nixos vms into ktest:</p>
+<p><a href="https://github.com/YellowOnion/ktest/commit/73fadcff949236927133141fcba4bfd76df632e7">https://github.com/YellowOnion/ktest/commit/73fadcff949236927133141fcba4bfd76df632e7</a></p>
+<p>This integration also allows to use incremental kernel builds for rapid development. Checkout the commit message for details.</p>
+<p><a href="category:Virtualization" class="wikilink" title="Category:Virtualization">Category:Virtualization</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

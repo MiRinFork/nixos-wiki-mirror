@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NixOS on ARM/Radxa ROCK 4</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM">NixOS on ARM</a><span aria-hidden="true"> / </span>Radxa ROCK 4</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: NixOS on ARM/Radxa ROCK 4 -->
+
+<div class="infobox">
+
+<table>
+<thead>
+<tr>
+<th colspan="2" class="title"><p><a href="https://radxa.com/products/rock4/">Radxa ROCK 4</a></p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td colspan="2"><figure>
+<img src="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/Radxa%20ROCK%204/Radxa_ROCK_4BP.jpg" title="Radxa Rock 4" width="256" />
+<figcaption>Radxa Rock 4</figcaption>
+</figure></td>
+</tr>
+<tr>
+<td><p>Manufacturer</p></td>
+<td><p><a href="https://radxa.com/">Radxa</a></p></td>
+</tr>
+<tr>
+<td><p>Architecture</p></td>
+<td><p>AArch64</p></td>
+</tr>
+<tr>
+<td><p>Bootloader</p></td>
+<td><p>U-Boot</p></td>
+</tr>
+<tr>
+<td><p>Boot order</p></td>
+<td><p>SPI NOR Flash, eMMC, SD</p></td>
+</tr>
+<tr>
+<td><p>Maintainer</p></td>
+<td><p><a href="https://github.com/msgilligan">msgilligan</a></p></td>
+</tr>
+</tbody>
+</table>
+
+</div>
+
+<p>The <a href="https://radxa.com/products/rock4/4bp">Radxa ROCK 4B+</a> is a Single-Board Computer with a Rockchip RK3399 SoC.</p>
+<ul>
+<li><strong>CPU</strong>: ARM Cortex-A72 and Cortex-A53</li>
+<li><strong>GPU</strong>: Mali-T860 MP4</li>
+<li><strong>RAM</strong>: 2GB/4GB LPDDR4</li>
+<li><strong>MMC</strong>: eMMC Connector for up to 128GB</li>
+<li><strong>NET</strong>: 1 Gigabit Ethernet</li>
+<li><strong>USB</strong>: 1x USB3 OTG/HOST Type-A, 1x USB 3 Type-A, 2x USB 2 Type-A</li>
+<li><strong>PCIe</strong>: M.2 M Key M connector (4-lane PCIe 2.1) supports NVMe SSD</li>
+</ul>
+<p>The <a href="https://github.com/nabam/nixos-rockchip">nixos-rockchip</a> SD-card images have been tested with both the ROCK 4B+ and ROCK 4 SE variants.</p>
+<h2 id="status">Status</h2><p>Support of this system is YMMV (your mileage may vary).</p>
+<p>U-Boot bootloaders are available in different variants:</p>
+<ul>
+<li>U-Boot<ul>
+<li><a href="https://github.com/u-boot/u-boot/">Mainline</a> - Supports ?? boot options</li>
+<li><a href="https://github.com/NixOS/nixpkgs/blob/master/pkgs/misc/uboot/default.nix">Nixpkgs</a> - tested by @ryjelsum, seemingly working but not thoroughly used</li>
+</ul>
+</li>
+</ul>
+<p>The official hardware documentation can be found <a href="https://docs.radxa.com/en/rock4">on the Radxa Documentation site</a>.</p>
+<h2 id="bootloader-firmware">Bootloader Firmware</h2><h3 id="u-boot-firmware">U-Boot Firmware</h3><ul>
+<li><code>nixos-rockchip</code> uses the mainline U-Boot repository.</li>
+<li>As an alternative for using nixos-rockchip, There is also support for ROCK 4 U-Boot in Nixpkgs.</li>
+</ul>
+<p>This build of u-boot is built using the defconfig from u-boot&#39;s repositories, so it should be equivalent to &#39;stock&#39; u-boot, but be aware there may be unknown differences, as it has not been thoroughly tested. The following command will build the u-boot bootloader with Nix on a non-aarch64 system, and output its path as a &#39;result&#39; symlink in the current directory:</p>
+<p><code>nix-build &#39;</code><nixpkgs><code>&#39; -A pkgsCross.aarch64-multiplatform.ubootRockPi4</code></p>
+<p>This will build u-boot as two separate files, <code>idbloader.img</code> and <code>u-boot.itb</code>. To flash the bootloader, follow the directions provided in u-boot&#39;s repos for <a href="https://github.com/u-boot/u-boot/blob/af69289d61876d8e62449ee2da2dc6683bcb8198/doc/README.rockchip#L486">how to transfer these files to storage (SD card or EMMC) for usage</a>.</p>
+<p><code>sudo dd if=idbloader.img of=/dev/sdc seek=64; sudo dd if=u-boot.itb of=/dev/sdc seek=16384</code></p>
+<p>After this, take special care to leave the first ~16mb of the target disk unpartitioned during installation, as this will contain u-boot and overwriting this region will overwrite the bootloader.</p>
+<p>The stock UEFI ISO boots fine for installation purposes. If you wish to flash directly to SD/EMMC, the extlinux &#39;sdimage&#39; may require a minor u-boot env change (<code>env set ramdisk_addr_r 0x06800000</code>, <code>env save</code>) in order to boot, but should work after this change has been made.</p>
+<h4 id="spi-flash-installation-from-sd-card">SPI flash installation from SD card</h4><p>In Nixpkgs only SD card binaries are built by default. To get U-Boot binary for SPI flash and change other relevant settings the image needs to be built with overrides. To include <code>u-boot-rockchip-spi.bin</code> in <code>result/</code> folder it needs to added to the <code>filesToInstall</code>. Also included here is <code>u-boot-rockchip.bin</code> which includes <code>idbloader.img</code> and <code>u-boot.itb</code> in a single file.</p>
+<p>By default this image is meant for Rock (Pi) 4A board. You might want to change this to another Rock 4 family board like Rock (Pi) 4C by setting <code>defconfig</code> to be <code>&quot;rock-pi-4c-rk3399_defconfig&quot;</code> or Rock 4SE with <code>&quot;rock-4se-rk3399_defconfig&quot;</code>. Another option is <code>extraConfig</code> where you can add overrides of defconfigs for example to use Rock (Pi) 4A defconfig but change device tree path to plus version of the boards by changing <code>CONFIG_DEFAULT_DEVICE_TREE</code> and <code>CONFIG_DEFAULT_FDT_FILE</code>.</p>
+<p>Lastly at least on Rock (Pi) 4C there seems to be an issue upstream with a diagnostic blue LED turned on preventing SPI flash access. Here is a patch included to fix this in <code>extraPatches</code>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nix-build -E <span class="hljs-string">&quot;
+with import &lt;nixpkgs&gt; { };
+pkgsCross.aarch64-multiplatform.ubootRockPi4.override {
+  defconfig = \&quot;rock-pi-4c-rk3399_defconfig\&quot;;
+  filesToInstall = [ \&quot;u-boot-rockchip.bin\&quot; \&quot;u-boot-rockchip-spi.bin\&quot; ];
+  extraPatches = [ (fetchpatch {
+    url=\&quot;https://gist.githubusercontent.com/Diamondtroller/e82d1c4a8b55beac26cc38209414a8b8/raw/ae4795cd4bf690c575fafa6b98714c47d548da1d/spi.patch\&quot;;
+    hash=\&quot;sha256-rEbmywPeOR5smIRhYUwcsfPeK+LiEMO2b3lmwrnJ+k4=\&quot;;
+    }) ];
+}&quot;</span></code></pre>
+      </div><p>After building U-Boot images SD card needs to be modified to have two partitions. One partition is meant for U-Boot, which will be the environment to flash the SPI chip, while second partition will contain the U-Boot binary file suitable for SPI chip. Create file system for second partition. Start of the first partition shouldn&#39;t be changed, other values can be changed as long as the files fit.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">echo</span> -e <span class="hljs-string">&#x27;label: gpt\nunit: sectors\nsector-size: 512\nfirst-lba:64\n\nstart=64, size=16M, name=&quot;U-Boot&quot;\nsize=8M, name=&quot;Payload&quot;&#x27;</span> | <span class="hljs-built_in">sudo</span> sfdisk /dev/mmcblk0
+<span class="hljs-built_in">sudo</span> mkfs.ext4 /dev/mmcblk0p2</code></pre>
+      </div><p>Here are provided commands to copy the file to the second partition.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">mkdir</span> /tmp/mnt
+<span class="hljs-built_in">sudo</span> mount /dev/mmcblk0p2 /tmp/mnt
+<span class="hljs-built_in">sudo</span> <span class="hljs-built_in">cp</span> result/u-boot-rockchip-spi.bin /tmp/mnt
+<span class="hljs-built_in">sudo</span> umount /dev/mmcblk0p2</code></pre>
+      </div><p>And here is the command to write U-Boot to the first partition.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">sudo</span> <span class="hljs-built_in">dd</span> <span class="hljs-keyword">if</span>=result/u-boot-rockchip.bin of=/dev/mmcblk0p1 bs=1M</code></pre>
+      </div><p>Insert the SD card into your board and boot into it. In case where you have corrupted or non-booting U-Boot in the flash you need to short SPI clock pin. Pin 25 is the ground pin and pin 23 is the SPI clock pin, connect those. You can see diagram of pins in <a href="https://docs.radxa.com/en/rock4/hardware/rock4-gpio">official docs</a>. However when you have booted into the U-Boot on SD card, this wire should be removed to access the flash. The idea is to prevent BootROM from trying to boot off of SPI flash. You can read about bootflow more in <a href="https://opensource.rock-chips.com/wiki_Boot_option#Boot_flow">Rockchip wiki</a>. When the board has booted into U-Boot enter these commands based on <a href="https://docs.u-boot.org/en/latest/board/rockchip/rockchip.html#spi">U-Boot docs</a>:</p>
+<ol>
+<li>probe the SPI flash for reading and writing, you should get SF: followed by info about SPI flash chip.</li>
+<li>load u-boot-rockchip-spi.bin file from mmc (SD card) on bus 1, partition 2 to the memory just after U-Boot.</li>
+<li>write to the SPI flash the contents of the file which are loaded into the memory.</li>
+</ol>
+<!-- -->
+
+<div class="code-container">
+        
+        <pre><code class="language- hljs">=&gt; sf probe
+=&gt; load mmc 1:2 $kernel_addr_r u-boot-rockchip-spi.bin
+=&gt; sf update $fileaddr 0 $filesize</code></pre>
+      </div><h2 id="system-configuration">System configuration</h2><p>The following directions are for usage with <code>nixos-rockchip</code>.</p>
+<p>Use the instructions in the <a href="https://github.com/nabam/nixos-rockchip/blob/main/README.md">README</a>.</p>
+<p>Use the following command to build the Rock 4B image:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nix build .#RadxaRock4</code></pre>
+      </div><p>or for the Rock 4SE:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nix build .#RadxaRock4SE</code></pre>
+      </div><h3 id="nabam-nixos-rockchip-github-project">nabam/nixos-rockchip GitHub Project</h3><p><a href="https://github.com/nabam/nixos-rockchip">nabam/nixos-rockchip</a> is a Nix flake for building several Rockchip SBC images, including Rock 4B and Rock 4SE.</p>
+<p><a href="category:NixOS_on_ARM" class="wikilink" title="Category:NixOS on ARM">Category:NixOS on ARM</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

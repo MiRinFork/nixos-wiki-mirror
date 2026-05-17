@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Certbot</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Certbot</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Certbot -->
+
+<p><a href="https://github.com/certbot/certbot">Certbot</a> is <a href="https://www.eff.org/">Electronic Frontier Foundation</a>&#39;s <a href="https://mirror.nixoscn.org/wiki/Certbot/ACME" class="wikilink" title="ACME">ACME</a> client, which is written in Python and provides conveniences like automatic web server configuration and a built-in webserver for the HTTP challenge. Certbot is recommended by <a href="https://letsencrypt.org/">Let&#39;s Encrypt</a>.</p>
+<h2 id="installation">Installation</h2><p>Install <em>certbot</em> application and enable <em>systemd-timer</em> for automated renewal of certificates</p>
+<h2 id="usage">Usage</h2><p>It is possible to use several different methods to generate and configure certificates. Verification is done manually, via web servers or DNS records. Not all methods are covered here, for more information please consult the <a href="https://eff-certbot.readthedocs.io/en/stable/">upstream documentation</a>.</p>
+<p>Generated certificates and keys by using the commands below will be stored as <code>/etc/letsencrypt/live/example.org/fullchain.pem</code> and <code>/etc/letsencrypt/live/example.org/privkey.pem</code>, readable by the <code>acme</code> group.</p>
+<h3 id="manual-dns-challenge">Manual DNS challenge</h3><p>The following command will generate a SSL certificate key pair for the domain <code>example.org</code> using the DNS authentication mechanism. After running this command, you&#39;ll get asked by the script to paste a specific key into your DNS records for <code>example.org</code>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">certbot certonly --manual --preferred-challenges dns -d example.org --register-unsafely-without-email --agree-tos</span></code></pre>
+      </div><h3 id="dns-challenge-using-a-plugin">DNS challenge using a plugin</h3><p>Currently there are several <em>certbot</em> plugins <a href="https://search.nixos.org/packages?query=certbot-dns">already packaged</a>. While the plugin usage should be similar for most of them, you should look up upstream documentation on how to use them. In this example we&#39;re going to configure and use <a href="https://github.com/oGGy990/certbot-dns-inwx">the plugin</a> for the hosting provider <a href="https://www.inwx.com/en">INWX</a>.</p>
+<p>Installing <em>certbot</em> system wide with specific plugin included</p>
+<p>Shared secret must be set in the configuration but you only have to configure the value if you&#39;re using 2FA on INWX.</p>
+<p>Manually configure and generate certificates for <code>example.org</code> using the <em>inwx</em>-plugin</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">certbot certonly -a dns-inwx -d example.org --register-unsafely-without-email --agree-tos</span></code></pre>
+      </div><p>Now that a specific domain is configured to get renewed using the plugin, the <em>systemd-timer</em> of the <em>certbot</em> module will automatically renew it after expiration.</p>
+<p><a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

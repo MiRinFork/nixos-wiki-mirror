@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NixOS on ARM/Raspberry Pi 4</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM">NixOS on ARM</a><span aria-hidden="true"> / </span>Raspberry Pi 4</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: NixOS on ARM/Raspberry Pi 4 -->
+
+<div class="infobox">
+
+<table>
+<thead>
+<tr>
+<th colspan="2" class="title"><p>Raspberry Pi 4 Family</p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td colspan="2"><figure>
+<img src="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/Raspberry%20Pi%204/Raspberry_Pi_4,_2_GB_RAM_version_4.jpg" title="A Raspberry Pi 4." width="256" />
+<figcaption>A Raspberry Pi 4.</figcaption>
+</figure></td>
+</tr>
+<tr>
+<td><p>Manufacturer</p></td>
+<td><p>Raspberry Pi Foundation</p></td>
+</tr>
+<tr>
+<td><p>Architecture</p></td>
+<td><p>AArch64</p></td>
+</tr>
+<tr>
+<td><p>Bootloader</p></td>
+<td><p>Custom or U-Boot</p></td>
+</tr>
+<tr>
+<td><p>Boot order</p></td>
+<td><p>Configurable; SD, USB, Netboot</p></td>
+</tr>
+<tr>
+<td><p>Maintainer</p></td>
+<td></td>
+</tr>
+<tr>
+<td colspan="2" class="title"><p>Raspberry Pi 4B</p></td>
+</tr>
+<tr>
+<td><p>SoC</p></td>
+<td><p>BCM2711</p></td>
+</tr>
+</tbody>
+</table>
+
+</div>
+
+<p>The Raspberry Pi family of devices is a series of single-board computers made by the Raspberry Pi Foundation. They are all based on Broadcom System-on-a-chip (SoCs).</p>
+<h2 id="status">Status</h2><p>The Raspberry Pi 4 Family is only supported as <strong>AArch64</strong>. Use as armv7 is community supported.</p>
+<h2 id="board-specific-installation-notes">Board-specific installation notes</h2><p>First follow the <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/Raspberry%20Pi%204/NixOS_on_ARM#Installation" class="wikilink" title="generic installation steps">generic installation steps</a> to get the installer image and install using the <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/Raspberry%20Pi%204/NixOS_on_ARM#NixOS_installation_.26_configuration" class="wikilink" title="installation and configuration steps">installation and configuration steps</a>.</p>
+<p>The Raspberry Pi 4B works with the <a href="https://hydra.nixos.org/job/nixos/trunk-combined/nixos.sd_image.aarch64-linux">generic SD image</a>.</p>
+<p>Sample instructions for <a href="https://nix.dev/tutorials/installing-nixos-on-a-raspberry-pi">installing NixOS on a Raspberry Pi</a> are available at nix.dev.</p>
+<h3 id="configuration">Configuration</h3><p>Using <code>nixos-generate-config</code> will generate the required minimal configuration.</p>
+<p>Raspberry Pi 4 is well-supported on modern kernels. However, if you encounter issues with GPU support or other deviceTree quirks, you may wish to add the nixos-hardware channel:</p>
+<p><code> nix-channel --add <a href="https://github.com/NixOS/nixos-hardware/archive/master.tar.gz">https://github.com/NixOS/nixos-hardware/archive/master.tar.gz</a> nixos-hardware</p>
+<p>nix-channel --update </code></p>
+<h3 id="config-txt"><code>config.txt</code></h3><p>To edit options only available through <code>config.txt</code>, as of May 12, 2025, you can only do so non-declaratively:</p>
+<p>For example, <a href="https://www.raspberrypi-spy.co.uk/2020/11/overclocking-the-raspberry-pi-400/">overclocking</a> the Raspberry Pi 400 can be done by adding the following:</p>
+<h3 id="usb-boot">USB boot</h3><p>For USB booting to work properly, a firmware update might be needed:</p>
+<p>Now reboot the device so it can update the firmware from the boot partition.</p>
+<h3 id="gpu-support">GPU support</h3><p>The following configuration samples are built on the assumption that they are added to an already working configuration. They are not complete configurations.</p>
+<h4 id="without-gpu">Without GPU</h4><h4 id="with-gpu">With GPU</h4><p>In <a href="https://github.com/NixOS/nixos-hardware/pull/261">nixos-hardware#261</a> an option has been added to use the <code>fkms-3d</code> (<a href="https://wiki.archlinux.org/title/Kernel_mode_setting">modesetting</a>) overlay which uses the <a href="https://www.raspberrypi.com/news/vc4-and-v3d-opengl-drivers-for-raspberry-pi-an-update/">V3D renderer</a>. This will only work with the vendor kernel, which is the default in NixOS.</p>
+<h3 id="tools">Tools</h3><p>The raspberry tools are available in the <code>libraspberrypi</code> package and include commands like <code>vcgencmd</code> to measure temperature and CPU frequency.</p>
+<h3 id="audio">Audio</h3><p>In addition to the usual config, you will need to enable hardware audio support:</p>
+<p>If you&#39;re running headless, you can also disable HDMI audio and force use of the headphones jack by adding <code>hdmi_ignore_edid_audio=1</code> on a line below <code>dtparam=audio=on</code>.</p>
+<h3 id="networking">Networking</h3><p>Ethernet and wifi interfaces should work out of the box. In addition to normal network configuration, consider disabling wifi powersaving if you experience slowness or issues with the host becoming unreachable on the network shortly after boot. For NetworkManager, the following configuration is sufficient:</p>
+<h3 id="using-gpio-pins-as-non-root">Using GPIO pins as non-root</h3><p>By default, the GPIO pins are enabled, but can only be accessed by the root user. This can be addressed by adding a <a href="https://wiki.archlinux.org/title/Udev">udev</a> rule to your configuration that changes the ownership of <code>/dev/gpiomem</code> and the other required devices.</p>
+<p>The following code adds a group <code>gpio</code> and adds the user <code>mygpiouser</code> to that group. You probably want to put your own user name here.</p>
+<p>The <code>extraRules</code> changes the owner of <code>gpiomem</code> and all other files needed for GPIO to work to <code>root:gpio</code> and changes the permissions to <code>0660</code>. Therefore, the root user and anyone in the gpio group can now access the GPIO pins. Permissions on the <code>/dev/gpiochip*</code> devices are needed to support access through the newer <strong>GPIO character device</strong> interface (see <a href="https://libgpiod.readthedocs.io/en/latest/">libgpiod</a>).</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-comment"># Create gpio group</span>
+  <span class="hljs-attr">users.groups.gpio</span> <span class="hljs-operator">=</span> {};
+
+  <span class="hljs-comment"># Change permissions gpio devices</span>
+  <span class="hljs-attr">services.udev.extraRules</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    SUBSYSTEM==&quot;bcm2835-gpiomem&quot;, KERNEL==&quot;gpiomem&quot;, GROUP=&quot;gpio&quot;,MODE=&quot;0660&quot;
+    SUBSYSTEM==&quot;gpio&quot;, KERNEL==&quot;gpiochip*&quot;, ACTION==&quot;add&quot;, RUN+=&quot;<span class="hljs-subst">${pkgs.bash}</span>/bin/bash -c &#x27;chown root:gpio /sys/class/gpio/export /sys/class/gpio/unexport ; chmod 220 /sys/class/gpio/export /sys/class/gpio/unexport&#x27;&quot;
+    SUBSYSTEM==&quot;gpio&quot;, KERNEL==&quot;gpio*&quot;, ACTION==&quot;add&quot;,RUN+=&quot;<span class="hljs-subst">${pkgs.bash}</span>/bin/bash -c &#x27;chown root:gpio /sys%p/active_low /sys%p/direction /sys%p/edge /sys%p/value ; chmod 660 /sys%p/active_low /sys%p/direction /sys%p/edge /sys%p/value&#x27;&quot;
+    SUBSYSTEM==&quot;gpio&quot;, KERNEL==&quot;gpiochip*&quot;, ACTION==&quot;add&quot;, RUN+=&quot;<span class="hljs-subst">${pkgs.bash}</span>/bin/bash -c &#x27;chown root:gpio /dev/gpiochip* &amp;&amp; chmod 0660 /dev/gpiochip*&#x27;&quot;
+  &#x27;&#x27;</span>;
+
+  <span class="hljs-comment"># Add user to group</span>
+  <span class="hljs-attr">users</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">users.mygpiouser</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">extraGroups</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;gpio&quot;</span> ... ];
+      ....
+    };
+  };</code></pre>
+      </div><h3 id="enabling-the-spi">Enabling the SPI</h3><p>To enable the SPI, you would normally add <code>dtparam=spi=on</code> to <code>/boot/config.txt</code>. This is not possible on NixOS, and instead you have to apply a device tree overlay. For this we use the <code>hardware.deviceTree.overlays</code> option. After applying the overlay, we add an <code>spi</code> group and change the owner of the <code>spidev</code> device to it, similarly to <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/Raspberry%20Pi%204#Using_GPIO_pins_as_non_root" class="wikilink" title="GPIO">GPIO</a>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">hardware.raspberry-pi.<span class="hljs-string">&quot;4&quot;</span>.apply-overlays-dtmerge.enable <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+<span class="hljs-attr">hardware.deviceTree</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">filter</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;*-rpi-*.dtb&quot;</span>;
+  <span class="hljs-attr">overlays</span> <span class="hljs-operator">=</span> [
+    {
+      <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;spi&quot;</span>;
+      <span class="hljs-attr">dtboFile</span> <span class="hljs-operator">=</span> <span class="hljs-symbol">./spi0-0cs.dtbo</span>;
+    }
+  ];
+};
+
+<span class="hljs-attr">users.groups.spi</span> <span class="hljs-operator">=</span> {};
+
+<span class="hljs-attr">services.udev.extraRules</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+  SUBSYSTEM==&quot;spidev&quot;, KERNEL==&quot;spidev0.0&quot;, GROUP=&quot;spi&quot;, MODE=&quot;0660&quot;
+&#x27;&#x27;</span>;</code></pre>
+      </div><p>The the <code>spi0-0cs.dtso</code> file can be downloaded <a href="https://github.com/raspberrypi/firmware/blob/master/boot/overlays/spi0-0cs.dtbo">here</a>. You might have to change the <code>compatible</code> field to &quot;raspberrypi&quot; in the dtbo file.</p>
+<h3 id="hdmi-cec">HDMI-CEC</h3><p>A few bits and pieces for using HDMI-CEC on the Pi4:</p>
+<h3 id="enabling-bluetooth">Enabling Bluetooth</h3><p>One might get bluetooth to work with this in the configuration file:</p>
+<h2 id="customizing-amp-generating-sd-image-without-installation-step">Customizing &amp; Generating SD image without installation step</h2><p>There&#39;s a nix-community project to support fine-grained kernel &amp; config.txt, and generate the image directly:</p>
+<p><a href="https://github.com/nix-community/raspberry-pi-nix/">nix-community/raspberry-pi-nix</a></p>
+<p>For a minimal flake-based image that boots directly into Wi-Fi with Tailscale preconfigured and no Ethernet required, see <a href="https://gitlab.com/hunorg/nixos-rpi-headless">nixos-rpi-headless</a>. It also includes workarounds for brcmfmac Wi-Fi driver quirks..</p>
+<h2 id="notes-about-the-boot-process">Notes about the boot process</h2><p>Unless using an extremely early WIP image, the Raspberry Pi 4B boots using the U-Boot platform firmware.</p>
+<h3 id="updating-u-boot-firmware">Updating U-Boot/Firmware</h3><p><a href="https://nix.dev/tutorials/installing-nixos-on-a-raspberry-pi#updating-firmware">source</a></p>
+<h2 id="troubleshooting">Troubleshooting</h2><h3 id="audio-not-playing-and-bluetooth-no-controller-available">Audio not playing and Bluetooth: no controller available</h3><p>On the Raspberry Pi kernel, the jack may never play audio, and no Bluetooth devices may ever be found. To get this to work, it is recommended to switch to the mainline kernel. See <a href="https://github.com/NixOS/nixpkgs/issues/123725">nixpkgs#123725</a> for more info.</p>
+<h3 id="touch-screen-not-working">Touch screen not working</h3><p>You have to declare this in your <code>configuration.nix</code><sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/Raspberry%20Pi%204#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">hardware.raspberry-pi.<span class="hljs-string">&quot;4&quot;</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">touch-ft5406.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+};</code></pre>
+      </div><section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p><a href="https://discourse.nixos.org/t/cant-get-nixos-x-to-work-on-a-raspberry-pi-with-dsi-display/44532/3">https://discourse.nixos.org/t/cant-get-nixos-x-to-work-on-a-raspberry-pi-with-dsi-display/44532/3</a> <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/Raspberry%20Pi%204#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

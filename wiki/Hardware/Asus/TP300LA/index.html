@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hardware/Asus/TP300LA</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/Hardware">Hardware</a><span aria-hidden="true"> / </span><a href="https://mirror.nixoscn.org/wiki/Hardware/Asus">Asus</a><span aria-hidden="true"> / </span>TP300LA</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Hardware/Asus/TP300LA -->
+
+<h2 id="hardware-support">Hardware Support</h2><p>Most hardware functions as expected without changes, this includes brightness, wifi, bluetooth, webcam, sound and HDMI out.</p>
+<p>Only specific or uncommon hardware notes have been added.</p>
+<h3 id="function-keys">Function keys</h3><p>Function keys for airplane mode, brightness, screen disable, and volume works<sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Hardware/Asus/TP300LA#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup>. The screen setup function key is mapping to <kbd>Super_L</kbd>+<kbd>P</kbd>. The windows key on the side of the device will map to a <kbd>Super_L</kbd> <strong>press and release</strong> on release, there is no way to map to it being held.</p>
+<p>The <code>auto</code> brightness key doesn&#39;t map to anything.</p>
+<h3 id="sensors">Sensors</h3><p>Both orientation sensors and light sensors are supported under NixOS 17.09, using <a href="https://mirror.nixoscn.org/wiki/Hardware/Asus/TP300LA/IIO" class="wikilink" title="IIO">IIO</a><sup><a id="footnote-ref-2" href="https://mirror.nixoscn.org/wiki/Hardware/Asus/TP300LA#footnote-2" data-footnote-ref aria-describedby="footnote-label">2</a></sup>.</p>
+<p>The orientation sensor isn&#39;t oriented like the screen, <a href="https://github.com/systemd/systemd/pull/7752">PR#7752 on systemd</a> will add the required configuration upstream, hopefully it will be present in the next stable release of NixOS.</p>
+<p>Meanwhile, adding this to your configuration.nix will configure the sensor appropriately.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ config }:
+{
+  <span class="hljs-attr">hardware.sensor.iio.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-comment"># Accelerometer orientation; upstreaming in progress.</span>
+  <span class="hljs-comment"># https://github.com/systemd/systemd/pull/7752</span>
+  <span class="hljs-attr">services.udev.extraHwdb</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    sensor:modalias:acpi:INVN6500*:dmi:*svn*ASUSTeK*:*pn*TP300LA*
+     ACCEL_MOUNT_MATRIX=0, 1, 0; 1, 0, 0; 0, 0, 1
+  &#x27;&#x27;</span>;
+}</code></pre>
+      </div><p>A reboot may be the easiest way to refresh everything for <code>iio-sensor-proxy</code>. Test using <code>monitor-sensor</code>.</p>
+<hr />
+
+<references />
+
+<p><a href="category:Hardware" class="wikilink" title="Category:Hardware">Category:Hardware</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p>Tested using kernel 4.14 on NixOS 17.09 <a href="https://mirror.nixoscn.org/wiki/Hardware/Asus/TP300LA#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+<li id="footnote-2">
+<p>Tested using kernel 4.14 on NixOS 17.09 <a href="https://mirror.nixoscn.org/wiki/Hardware/Asus/TP300LA#footnote-ref-2" data-footnote-backref aria-label="Back to reference 2">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nix Hash</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Nix Hash</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Nix Hash -->
+
+<p><a href="https://en.wikipedia.org/wiki/Cryptographic_hash_function">Cryptographic hashes</a> play an essential role in a lot of places in the Nix ecosystem. When using a hash somewhere, two criteria are essential to do so properly: the <strong>algorithm</strong> used and the <strong>encoding</strong> (and, to some extent, <em>what</em> is hashed).</p>
+<p>Supported algorithms are <code>md5</code>, <code>sha1</code>, <code>sha256</code>, <code>sha512</code>, <code>BLAKE3</code>. The first two are deprecated and should not be used anymore, but you may still stumble upon them in existing code.</p>
+<p>A hash – which is simply a sequence of bytes – is usually encoded in order to be representable as string. Common encodings are <code>base16</code> (commonly called &quot;hex&quot;), <code>base32</code> and <code>base64</code>. Note that the base32 is a <a href="https://github.com/NixOS/nix/blob/c70e1433abb61012dffdcd4559ec2aa87672e15c/src/libutil/hash.cc#L91-L112"><strong>custom one</strong></a> that is not documented nor standardized in any way! If possible, use the provided hashing tools to convert hashes to it (see below). base32 is used by Nix in a lot of places because it is shorter than hex but can still safely be part of a file path (as it contains no slashes).</p>
+<h2 id="usage">Usage</h2><p>Many derivations are so-called <em>fixed-output</em> derivations, meaning that you need to know and specify the hash of the output in advance. As an example, let&#39;s look at nixpkgs function <code>fetchurl</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">rc</span> <span class="hljs-operator">=</span> fetchurl {
+  <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://example.org/downloads/source-code.zip&quot;</span>;
+  <span class="hljs-attr">hash</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sha256-IdU23rswdtT26QRL2e8VyMWLKfnL1K1AawWDEKVl3rw=&quot;</span>;
+};</code></pre>
+      </div><p>The format of the hash follows the <a href="https://www.w3.org/TR/SRI/#introduction">SRI (Subresource Integrity)</a> specification.</p>
+<h3 id="updating-packages">Updating packages</h3><p><a href="https://nixos.org/manual/nixpkgs/stable/#chap-pkgs-fetchers-caveats">Using TOFU to get the new hash</a></p>
+<h2 id="what-exactly-is-hashed">What exactly is hashed</h2><p>Some content can either be hashed &quot;flat&quot; or &quot;recursively&quot;. &quot;flat&quot; (sometimes also called &quot;file&quot;) is simply taking the hash of the file, byte by byte, and will give you the same result as for example `sha256sum -b myfile.zip`. &quot;recursive&quot; (or sometimes &quot;path&quot;) hashing takes multiple files, path names and metadata (attributes) into consideration. It works by <abbr title="nix archive (file format)">NAR</abbr>ing the input before hashing.</p>
+<p>For <code>fetchurl</code>, the option to switch between both is called <code>recursiveHash</code> and defaults to <code>false</code>.</p>
+<p><code>fetchzip</code> on the other hand will download the file, unzip it and then recursively hash the output. There&#39;s no option. The motivation behind this is that sometimes, the content is always the same, but the archive may change. This is because zip files are inherently non-deterministic, and might be generated automatically. If they are regenerated, they&#39;ll have a different hash, although the content is the same. <code>recursiveHash</code> works around that.</p>
+<h2 id="tools">Tools</h2><ul>
+<li><a href="https://nixos.org/manual/nix/stable/command-ref/nix-hash.html">nix-hash</a></li>
+<li><a href="https://nixos.org/manual/nix/stable/command-ref/new-cli/nix3-hash">nix hash</a> (<a href="https://mirror.nixoscn.org/wiki/Nix%20Hash/nix_command" class="wikilink" title="nix command">nix command</a>)</li>
+</ul>
+<p>When dealing with remote files, <code>nix-prefetch-url</code> offers a handy shortcut for downloading the file into the Nix store and printing out its hash. (<code>nix-prefetch-url --unpack</code> is its <code>fetchzip</code> equivalent.)</p>
+<p>To get an SRI hash, which isn&#39;t supported by <code>nix-prefetch-url</code>, use <code>nix store prefetch-file </code><a href="https://"><code>https://</code></a><code>...</code> instead.</p>
+<h2 id="libraries">Libraries</h2><ul>
+<li><a href="https://github.com/NixOS/nix/blob/master/src/libutil/hash.cc#L83">Original C++ implementation</a></li>
+<li><a href="https://github.com/kolloch/nix-base32">Rust implementation</a></li>
+<li><a href="https://gist.github.com/colemickens/27ad622adfaf8c980f3b5066b21604ba">Go implementation</a></li>
+<li><a href="https://github.com/dritter/nix-hasher/blob/master/src/Hasher.php#L18-L49">PHP Implementation</a></li>
+<li><a href="https://github.com/loophp/path-hasher">PHP Implementation (NAR serialization + Hash)</a></li>
+</ul>
+<h2 id="further-reading">Further reading</h2><ul>
+<li>Eelco Dolstra&#39;s <a href="https://edolstra.github.io/pubs/phd-thesis.pdf">PhD thesis</a>, section 5.1.</li>
+<li><a href="https://github.com/NixOS/nix/issues/806">Github Issue</a> about which encoding is used where, and what pitfalls can arise from it.</li>
+</ul>
+<p><a href="category:_Nix" class="wikilink" title="Category: Nix">Category: Nix</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

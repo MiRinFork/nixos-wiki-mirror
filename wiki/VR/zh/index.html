@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VR/zh</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/VR">VR</a><span aria-hidden="true"> / </span>zh</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: VR/zh -->
+
+<h2 id="monado">Monado</h2><p><a href="https://monado.freedesktop.org/">Monado</a> 是一个开源的 OpenXR 运行时。它使用内置驱动程序支持各种硬件，使其可以运行任何 OpenXR 程序，并且在 OpenComposite 的帮助下，还可以运行大多数 OpenVR 应用程序。</p>
+<p>可以使用其 NixOS 选项 配置 Monado：</p>
+<p>为了配置 Monado，您可能需要添加其他环境变量：</p>
+<p>配置完成后，Monado 可以在 <a href="special:MyLanguage/systemd" class="wikilink" title="systemd">systemd</a> 用户会话中启动和停止。</p>
+<p>例如，以下命令将启动 Monado，然后打印其日志输出：</p>
+<p><span id="Hand_Tracking"></span></p>
+<h3 id="手部追踪">手部追踪</h3><p>您可能会注意到，由于缺少手部追踪数据，运行 <code>monado-services</code> 会失败。有两种方法可以解决这个问题：完全禁用手部追踪，或下载手部追踪数据。</p>
+<p>要禁用手部追踪，请修改环境变量以包含 <code>WMR_HANDTRACKING = &quot;0&quot;;</code>，使其如下所示。</p>
+<p>要使手部追踪功能正常工作，您需要启用 <code>git-lfs</code>。启用 <code>git-lfs</code> 的标准方法是通过以下配置</p>
+<p>确保 <code>git-lfs</code> 功能启用后，运行以下命令并重新启动 <code>monado-service</code></p>
+<p>有关可用环境变量和调整的更多信息，请参阅 <a href="https://lvra.gitlab.io/docs/fossvr/monado/">Linux VR Adventures wiki</a> 和 <a href="https://monado.freedesktop.org/getting-started.html#environment-variables">Monado 文档关于环境变量的部分</a></p>
+<h2 id="opencomposite">OpenComposite</h2><p><a href="https://gitlab.com/znixian/OpenOVR">OpenComposite</a> 是一个兼容层，用于在 Monado 等 OpenXR 运行时上运行 OpenVR 应用程序。它与 DXVK 或 vkd3d 等工具类似，但用于将 OpenVR 调用转换为 OpenXR。</p>
+<p>为了在 SteamVR 以外的任何平台上运行 OpenVR 游戏，您需要配置 <code>~/.config/openvr/openvrpaths.vrpath</code> 中定义的 OpenVR 运行时路径。一个可靠的方法是使用 <a href="special:MyLanguage/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> 创建此文件。</p>
+<p>如果此文件未设置为只读，SteamVR 将添加其运行时路径，因此可以使用 Home Manager。</p>
+<p>启用 OpenComposite 的示例配置可能如下所示：</p>
+<p>如果您计划在 Steam 上玩任何 OpenVR 游戏或通过 Proton 游玩 OpenXR 游戏，则必须以这种方式使用 OpenComposite。在大多数情况下，您还必须允许 Steam 运行时访问您的 OpenXR 运行时的 Socket 路径，方法是使用以下 Steam 上 XR 应用程序的启动选项：<code>env PRESSURE_VESSEL_FILESYSTEMS_RW=$XDG_RUNTIME_DIR/monado_comp_ipc %command%</code>。此示例适用于 Monado，其他 XR 运行时可能有所不同。</p>
+<h2 id="wivrn">WiVRn</h2><p>WiVRn 是一款基于 Monado 构建的 OpenXR 流媒体应用程序。它能够将独立的 VR 头戴设备无线连接到 Linux 计算机。如果您的头戴设备不是无线的，请查阅 <a href="special:MyLanguage/VR#Monado" class="wikilink" title="Monado">Monado</a>。 WiVRn 模块的示例用法：</p>
+<p>与 Monado 一样，您还须添加 WiVRn 的启动参数以允许访问 Socket：<code>PRESSURE_VESSEL_FILESYSTEMS_RW=$XDG_RUNTIME_DIR/wivrn/comp_ipc %command%</code></p>
+<h2 id="envision">Envision</h2><p>Envision 是用于 FOSS VR 程序栈的编排器（Orchestrator）。它负责构建和配置 Monado、WiVRn、OpenComposite 以及 FOSS VR 程序栈的其他实用程序，例如 Lighthouse 驱动程序、OpenHMD、Survive 和 WMR。您可以使用 Envision 模块启用它：</p>
+<h2 id="steamvr">SteamVR</h2><p><a href="https://store.steampowered.com/app/250820/SteamVR/">SteamVR</a> 是一个专有的 OpenVR 运行时，兼容 OpenXR。它是 <a href="special:MyLanguage/Steam" class="wikilink" title="Steam">Steam</a> 的一部分，除了启用 Steam 之外，在 NixOS 上无需进行任何其他设置。</p>
+<p>通过 Steam 安装 SteamVR 并插入兼容 SteamVR 的耳机后，SteamVR 应该就可以正常工作。</p>
+<p>在初始设置时，SteamVR 会请求提升权限，以便为其某个二进制文件设置文件能力（file capability）。这是使异步再投影技术正常工作所必需的。客户端需要拥有 <code>CAP_SYS_NICE</code> 授权来获取高优先级环境，这是异步再投影技术的必要条件。</p>
+<p><span id="Patching_AMDGPU_to_allow_high_priority_queues"></span></p>
+<h3 id="修补-amdgpu-以允许高优先级队列">修补 AMDGPU 以允许高优先级队列</h3><p>通过应用 <a href="https://github.com/Frogging-Family/community-patches/blob/a6a468420c0df18d51342ac6864ecd3f99f7011e/linux61-tkg/cap_sys_nice_begone.mypatch">此补丁</a>，AMDGPU 内核驱动程序将忽略进程权限并允许任何应用程序创建高优先级环境（high priority contexts）。</p>
+<p><span id="Applying_as_a_NixOS_kernel_patch"></span></p>
+<h4 id="作为-nixos-内核补丁进行应用">作为 NixOS 内核补丁进行应用</h4><p>为了解决 <code>CAP_SYS_NICE</code> 要求，我们可以使用以下 NixOS 配置片段应用内核补丁：</p>
+<p>也可以只修补 amdgpu 并将其构建为树外模块（out-of-tree module），如 <a href="special:MyLanguage/Linux_kernel#Patching_a_single_In-tree_kernel_module" class="wikilink" title="Pacthing a single In-tree Kernel Module">Pacthing a single In-tree Kernel Module</a> 中所述</p>
+<p><span id="Patching_bubblewrap_to_allow_capabilities"></span></p>
+<h3 id="修补-bubblewrap-以允许启用能力-capabilities">修补 bubblewrap 以允许启用能力（capabilities）</h3><p>通过修改用于运行 Steam 的 bubblewrap 二进制文件，您可以允许该 FHS 环境中的进程获取能力。这样就无需直接修补内核了。</p>
+<p>作为额外的更改，您可能还需要用指向修改后的 bwrap 二进制文件的符号链接替换 ​​Steam 自己的 bwrap 二进制文件，该链接位于 <code>~/.local/share/Steam/ubuntu12_32/steam-runtime/usr/libexec/steam-runtime-tools-0/srt-bwrap</code>。</p>
+<p>当 steam-runtime 更新时，Steam 会定期用自己的二进制文件替换此修改，因此您可能需要在功能异常时，重新应用此修改。</p>
+<h2 id="wlx-overlay-s">wlx-overlay-s</h2><p><a href="https://github.com/galister/wlx-overlay-s">wlx-overlay-s</a> 是一个轻量级的 OpenXR/OpenVR 覆盖层，适用于 Wayland 和 X11 桌面。它原生兼容 SteamVR 以及 Monado/WiVRn。</p>
+<p><span id="SteamVR_autostart"></span></p>
+<h4 id="steamvr-自动启动">SteamVR 自动启动</h4><p>在 SteamVR（或任何 OpenVR 合成器）中启动 wlx-overlay-s 时，它会注册一个自动启动清单。目前，此清单将引用 wlx-overlay-s 的 Nix 存储路径，该路径可能会在重建 NixOS/Nix 配置文件后被垃圾回收。一种解决方法是定期运行以下命令来更新清单的存储路径：</p>
+<p><span id="See_also"></span></p>
+<h2 id="另见">另见</h2><ul>
+<li><a href="https://lvra.gitlab.io/">Linux VR Adventures Wiki</a></li>
+</ul>
+<p><a href="category:Video/zh" class="wikilink" title="分类：视频">分类：视频</a> <a href="category:Hardware/zh" class="wikilink" title="分类：硬件">分类：硬件</a> <a href="category:Desktop/zh" class="wikilink" title="分类：桌面">分类：桌面</a> <a href="category:Gaming/zh" class="wikilink" title="分类：游戏">分类：游戏</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

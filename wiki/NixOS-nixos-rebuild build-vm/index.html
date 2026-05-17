@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NixOS-nixos-rebuild build-vm</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / NixOS-nixos-rebuild build-vm</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: NixOS:nixos-rebuild build-vm -->
+
+<p>The commands</p>
+<ul>
+<li><code>nixos-rebuild build-vm</code></li>
+<li><code>nixos-rebuild build-vm-with-bootloader</code></li>
+</ul>
+<p>will build a virtual machine running NixOS with your system&#39;s configuration (usually <code>/etc/nixos/configuration.nix</code>) by using <a href="https://mirror.nixoscn.org/wiki/NixOS-nixos-rebuild%20build-vm/Qemu" class="wikilink" title="Qemu">Qemu</a>.</p>
+<p>One of its usages is for testing new configurations without needing to try them on the host.</p>
+<h1 id="usage">Usage</h1><h2 id="create-login-user">Create login user</h2><p>Before calling one of the commands above, you will have to create a user with an initial password first which you can login to because your passwords of your current system are not carried over to the virtual machine.</p>
+<p>Here is an example for a default user which you can simply add to your system config:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">u<span class="hljs-attr">sers.users.nixosvmtest.isSystemUser</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+<span class="hljs-attr">users.users.nixosvmtest.initialPassword</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;test&quot;</span>;
+
+<span class="hljs-attr">users.groups.nixosvmtest</span> <span class="hljs-operator">=</span> {};
+<span class="hljs-attr">users.users.nixosvmtest.group</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nixosvmtest&quot;</span>;</code></pre>
+      </div><p>See this <a href="https://discourse.nixos.org/t/default-login-and-password-for-nixos/4683/2">discourse-answer</a> for more information.</p>
+<h2 id="create-and-run-virtual-machine">Create and run virtual machine</h2><p>Create the virtual machine by using of the commands above. Afterwards you will find an executable file in <code>./result/bin</code>. By executing the file qemu will open up and you can start testing the system.</p>
+<h2 id="examples">Examples</h2><div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-comment"># build vm of your system config</span>
+nixos-rebuild build-vm
+
+<span class="hljs-comment"># e.g. to specify the environment variables / cores used</span>
+nixos-rebuild build-vm\
+  -I nixos-config=./configuration.nix\
+  -I nix_path=<span class="hljs-string">&#x27;&lt;nixpkgs/nixos&gt;&#x27;</span>\
+  --max-jobs 4\
+  --show-trace
+
+<span class="hljs-comment"># From the man page: This boots using the regular boot loader of your configuration</span>
+<span class="hljs-comment"># rather than booting directly into the kernel and initial ramdisk of the system.</span>
+nixos-rebuild build-vm-with-bootloader</code></pre>
+      </div><h1 id="configure-virtual-machine">Configure Virtual Machine</h1><p>By default, the virtual machine is configured to have 1 CPU and 1024MiB memory. It may be too small for testing with a desktop environment enabled inside. You can configure the allocated resources with either</p>
+<ul>
+<li><a href="https://search.nixos.org/options?channel=25.05&amp;show=virtualisation.vmVariant&amp;query=virtualisation.vmVariant"><code>virtualisation.vmVariant</code></a></li>
+<li><a href="https://search.nixos.org/options?channel=25.05&amp;show=virtualisation.vmVariantWithBootLoader&amp;query=virtualisation.vmVariant"><code>virtualisation.vmVariantWithBootloader</code></a></li>
+</ul>
+<p>by adding the following to your config:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># replace `vmVariant` with `vmVariantWithBootLoader` if you are going to use `build-vm-with-bootloder`.</span>
+v<span class="hljs-attr">irtualisation.vmVariant</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-comment"># the following configuration is added only when building VM with `build-vm`</span>
+  <span class="hljs-attr">virtualisation</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">memorySize</span> <span class="hljs-operator">=</span> <span class="hljs-number">2048</span>; <span class="hljs-comment"># use 2048MiB memory</span>
+    <span class="hljs-attr">cores</span> <span class="hljs-operator">=</span> <span class="hljs-number">3</span>;         <span class="hljs-comment"># use 3 cpu cores</span>
+  };
+}</code></pre>
+      </div><h1 id="troubleshooting">Troubleshooting</h1><h2 id="still-can-39-t-login-after-updating-configuration">Still can&#39;t login after updating configuration</h2><p>When running a virtual machine a file called <code>$hostname.qcow2</code> is created in your current working directory. After changing your <code>/etc/nixos/configuration.nix</code> delete this file, rebuild and then start the new virtual machine. Now you should be able to login.</p>
+<h1 id="networking">Networking</h1><h2 id="qemu">qemu</h2><p>To enable connecting from your host to your virtual machine, you&#39;ll need to forcefully override the default networking settings to apply those from <a href="https://wiki.qemu.org/Documentation/Networking#How_to_get_SSH_access_to_a_guest">https://wiki.qemu.org/Documentation/Networking#How_to_get_SSH_access_to_a_guest</a> instead. For example, to expose the VM&#39;s port 80 on the (unprivileged) port 8009 of the &#39;localhost&#39; of the host:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ config, pkgs, lib, modulesPath, ... }:
+
+{
+  <span class="hljs-attr">imports</span> <span class="hljs-operator">=</span> [
+    (modulesPath <span class="hljs-operator">+</span> <span class="hljs-string">&quot;/virtualisation/qemu-vm.nix&quot;</span>)
+  ];
+
+  <span class="hljs-attr">virtualisation.qemu.networkingOptions</span> <span class="hljs-operator">=</span> lib.mkForce [
+    <span class="hljs-string">&quot;-device e1000,netdev=net0&quot;</span>
+    <span class="hljs-string">&quot;-netdev user,id=net0,hostfwd=tcp:127.0.0.1:8009-:80,<span class="hljs-char escape_">\$</span>{QEMU_NET_OPTS:+,$QEMU_NET_OPTS}&quot;</span>
+  ];
+
+  <span class="hljs-attr">networking.firewall.allowedTCPPorts</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-number">80</span>
+  ];
+}</code></pre>
+      </div><h1 id="alternatives">Alternatives</h1><h2 id="bootable-iso">Bootable ISO</h2><p>Build it as a <a href="https://nix.dev/tutorials/nixos/building-bootable-iso-image">bootable ISO image</a>:</p>
+<h2 id="vm">VM</h2><div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ 
+...
+  <span class="hljs-attr">imports</span> <span class="hljs-operator">=</span> [ 
+    <span class="hljs-operator">&lt;</span>nixos<span class="hljs-operator">/</span>nixos<span class="hljs-operator">/</span>modules<span class="hljs-operator">/</span>virtualisation<span class="hljs-operator">/</span>virtualbox-image.nix<span class="hljs-operator">&gt;</span> ]
+...</code></pre>
+      </div><p><code>nix build -f &#39;</code>&lt;nixpkgs/nixos&gt;<code>&#39; -I nixos-config=./configuration.nix config.system.build.virtualBoxOVA</code> <a href="https://discourse.nixos.org/t/nixos-rebuild-build-vm-not-portable-across-linux-distributions/28564/4">Source</a></p>
+<p><a href="category:Virtualization" class="wikilink" title="Category:Virtualization">Category:Virtualization</a> <a href="category:NixOS" class="wikilink" title="Category:NixOS">Category:NixOS</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

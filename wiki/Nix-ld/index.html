@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nix-ld</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Nix-ld</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Nix-ld -->
+
+<h2 id="nix-ld">Nix-ld</h2><p><a href="https://github.com/nix-community/nix-ld">Nix-ld</a> is a module that is really practical to enable to have a more &quot;traditional&quot; experience in NixOS by recreating the loaders like <code>/lib/ld-linux.so.2</code>, needed to run any executable that is not patched by nix. It is not needed when installing regular packages &quot;the nix way&quot;, but it is really handy to quickly test a binary not packaged for nix, or when developing, for instance in <a href="https://mirror.nixoscn.org/wiki/Nix-ld/JavaScript" class="wikilink" title="javascript">javascript</a>/<a href="https://mirror.nixoscn.org/wiki/Nix-ld/node.js" class="wikilink" title="nodejs">nodejs</a>, since these languages often pre-download many binaries (of course, a proper packaging is of course better, but potentially too tedious when quickly prototyping).</p>
+<p>To enable it, you just need to put in your <code>/etc/nixos/configuration.nix</code> the following:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs">p<span class="hljs-attr">rograms.nix-ld</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">libraries</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+      <span class="hljs-comment">## Put here any library that is required when running a package</span>
+      <span class="hljs-comment">## ...</span>
+      <span class="hljs-comment">## Uncomment if you want to use the libraries provided by default in the steam distribution</span>
+      <span class="hljs-comment">## but this is quite far from being exhaustive</span>
+      <span class="hljs-comment">## https://github.com/NixOS/nixpkgs/issues/354513</span>
+      <span class="hljs-comment"># (pkgs.runCommand &quot;steamrun-lib&quot; {} &quot;mkdir $out; ln -s ${pkgs.steam-run.fhsenv}/usr/lib64 $out/lib&quot;)</span>
+    ];
+  };
+  <span class="hljs-comment">## Uncomment if you used steamrun&#x27;s libraries</span>
+  <span class="hljs-comment"># nixpkgs.config.allowUnfree = true;</span></code></pre>
+      </div><p>By default, nix-ld comes with only a few libraries, and you need to manually add your own. A simple (but a bit tedious) approach to know which library to add is to run the program, and check for errors like:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">$ ./blender
+./blender: error <span class="hljs-keyword">while</span> loading shared libraries: libxkbcommon.so.0: cannot open shared object file: No such file or directory</code></pre>
+      </div><p>Then, you can search the package that provides the missing library via:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">$ nix run github:nix-community/nix-index-database -- lib/libxkbcommon.so.0 --top-level
+libxkbcommon.out                                      0 s /nix/store/4di7f8w515xl6grwv13pk6855awav0b1-libxkbcommon-1.8.1/lib/libxkbcommon.so.0
+libxkbcommon.out                                342,952 x /nix/store/4di7f8w515xl6grwv13pk6855awav0b1-libxkbcommon-1.8.1/lib/libxkbcommon.so.0.8.1</code></pre>
+      </div><p>so here you would add for instance xorg.libXxf86vm.</p>
+<p>It is however a bit long to find all these libraries, so you may want to just copy/paste this pre-made list until <a href="https://github.com/NixOS/nixpkgs/issues/354513">something is done to provide a decent list in Nixpkgs</a> (to avoid cluttering you configuration, copy it in a separate nix file and import it it your main configuration):</p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs">{ config, pkgs, lib, ... }:
+{
+  <span class="hljs-comment"># Allow unfree packages</span>
+  <span class="hljs-attr">nixpkgs.config.allowUnfree</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-comment"># Automatically creates a loader in /lib/* to avoid patching stuff</span>
+  <span class="hljs-comment"># To disable it temporarily use</span>
+  <span class="hljs-comment"># unset NIX_LD</span>
+  <span class="hljs-attr">programs.nix-ld</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">libraries</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+      <span class="hljs-comment"># List by default</span>
+      zlib
+      zstd
+      stdenv.cc.cc
+      curl
+      openssl
+      attr
+      libssh
+      bzip2
+      libxml2
+      acl
+      libsodium
+      util-linux
+      xz
+      systemd
+      
+      <span class="hljs-comment"># My own additions</span>
+      xorg.libXcomposite
+      xorg.libXtst
+      xorg.libXrandr
+      xorg.libXext
+      xorg.libX11
+      xorg.libXfixes
+      libGL
+      libva
+      pipewire
+      xorg.libxcb
+      xorg.libXdamage
+      xorg.libxshmfence
+      xorg.libXxf86vm
+      libelf
+
+      <span class="hljs-comment"># Required</span>
+      glib
+      gtk2
+
+      <span class="hljs-comment"># Inspired by steam</span>
+      <span class="hljs-comment"># https://github.com/NixOS/nixpkgs/blob/master/pkgs/by-name/st/steam/package.nix#L36-L85</span>
+      networkmanager      
+      vulkan-loader
+      libgbm
+      libdrm
+      libxcrypt
+      coreutils
+      pciutils
+      zenity
+      <span class="hljs-comment"># glibc_multi.bin # Seems to cause issue in ARM</span>
+      
+      <span class="hljs-comment"># # Without these it silently fails</span>
+      xorg.libXinerama
+      xorg.libXcursor
+      xorg.libXrender
+      xorg.libXScrnSaver
+      xorg.libXi
+      xorg.libSM
+      xorg.libICE
+      gnome2.GConf
+      nspr
+      nss
+      cups
+      libcap
+      SDL2
+      libusb1
+      dbus-glib
+      ffmpeg
+      <span class="hljs-comment"># Only libraries are needed from those two</span>
+      libudev0-shim
+      
+      <span class="hljs-comment"># needed to run unity</span>
+      gtk3
+      icu
+      libnotify
+      gsettings-desktop-schemas
+      <span class="hljs-comment"># https://github.com/NixOS/nixpkgs/issues/72282</span>
+      <span class="hljs-comment"># https://github.com/NixOS/nixpkgs/blob/2e87260fafdd3d18aa1719246fd704b35e55b0f2/pkgs/applications/misc/joplin-desktop/default.nix#L16</span>
+      <span class="hljs-comment"># log in /home/leo/.config/unity3d/Editor.log</span>
+      <span class="hljs-comment"># it will segfault when opening files if you don’t do:</span>
+      <span class="hljs-comment"># export XDG_DATA_DIRS=/nix/store/0nfsywbk0qml4faa7sk3sdfmbd85b7ra-gsettings-desktop-schemas-43.0/share/gsettings-schemas/gsettings-desktop-schemas-43.0:/nix/store/rkscn1raa3x850zq7jp9q3j5ghcf6zi2-gtk+3-3.24.35/share/gsettings-schemas/gtk+3-3.24.35/:$XDG_DATA_DIRS</span>
+      <span class="hljs-comment"># other issue: (Unity:377230): GLib-GIO-CRITICAL **: 21:09:04.706: g_dbus_proxy_call_sync_internal: assertion &#x27;G_IS_DBUS_PROXY (proxy)&#x27; failed</span>
+      
+      <span class="hljs-comment"># Verified games requirements</span>
+      xorg.libXt
+      xorg.libXmu
+      libogg
+      libvorbis
+      SDL
+      SDL2_image
+      glew110
+      libidn
+      tbb
+      
+      <span class="hljs-comment"># Other things from runtime</span>
+      flac
+      freeglut
+      libjpeg
+      libpng
+      libpng12
+      libsamplerate
+      libmikmod
+      libtheora
+      libtiff
+      pixman
+      speex
+      SDL_image
+      SDL_ttf
+      SDL_mixer
+      SDL2_ttf
+      SDL2_mixer
+      libappindicator-gtk2
+      libdbusmenu-gtk2
+      libindicator-gtk2
+      libcaca
+      libcanberra
+      libgcrypt
+      libvpx
+      librsvg
+      xorg.libXft
+      libvdpau
+      <span class="hljs-comment"># ...</span>
+      <span class="hljs-comment"># Some more libraries that I needed to run programs</span>
+      pango
+      cairo
+      atk
+      gdk-pixbuf
+      fontconfig
+      freetype
+      dbus
+      alsa-lib
+      expat
+      <span class="hljs-comment"># for blender</span>
+      libxkbcommon
+
+      libxcrypt-legacy <span class="hljs-comment"># For natron</span>
+      libGLU <span class="hljs-comment"># For natron</span>
+
+      <span class="hljs-comment"># Appimages need fuse, e.g. https://musescore.org/fr/download/musescore-x86_64.AppImage</span>
+      fuse
+      e2fsprogs
+    ];
+  };  
+
+}</code></pre>
+      </div><p>Once activated (you may need to reboot the first time you enable nix-ld to make sure the environment variables are properly set), I was for instance able to run blender 4.4.3 using the <a href="https://download.blender.org/release/Blender4.4/blender-4.4.3-linux-x64.tar.xz">unpatched binary provided by the blender foundation</a>, and develop npm projects with <code>npm install</code> like in any normal linux distribution.</p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

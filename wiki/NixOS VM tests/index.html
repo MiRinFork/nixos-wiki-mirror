@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NixOS VM tests</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / NixOS VM tests</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: NixOS VM tests -->
+
+<p>WARNING: this page is mostly outdated as <a href="https://nixos.org/manual/nixos/stable/#chap-developing-the-test-driver">https://nixos.org/manual/nixos/stable/#chap-developing-the-test-driver</a> mentions that <code>pkgs.nixosTest</code>, <code>testing-python.nix</code> and <code>make-test-python.nix</code> are outdated. Beside the documentation, you may also like <a href="https://nix.dev/tutorials/nixos/integration-testing-using-virtual-machines.html">https://nix.dev/tutorials/nixos/integration-testing-using-virtual-machines.html</a></p>
+<p>The primary documentation for the <a href="https://nixos.org/manual/nixos/stable/index.html#sec-nixos-tests">NixOS VM testing framework</a> is in <a href="https://nixos.org/manual/nixos/stable/index.html#sec-nixos-tests">the NixOS manual</a>, and in <a href="https://nixos.org/manual/nixpkgs/unstable/#tester-runNixOSTest">the Nixpkgs manual</a>. A tutorial can be found at <a href="https://nix.dev/tutorials/nixos/integration-testing-using-virtual-machines">1</a>.</p>
+<p>The test infrastructure entry point is nixos/lib/testing.nix. Alternatively, for out-of-tree tests you can invoke it via Nixpkgs as the nixosTest function, which reuses your already evaluated Nixpkgs to generate your node configurations. The test infra relies on the qemu build-vm code to generate virtual machines.</p>
+<p>It will generate a test driver (a wrapper of nixos/lib/test-driver/test-driver.py) in charge of creating the network. It will start one vde-switch and its associated socket per vlan (defined in virtualisation.vlans). IPs are assigned declaratively according to the number of vlan via the function `assignIPAddresses`.</p>
+<p>The driver (of the form /nix/store/668bqxvsv6rn9hy8n4nmaps9ma2i5k4r-nixos-test-driver-<TESTNAME>) will launch the different vms passed as arguments. The wrapper `bin/nixos-run-vms` is in charge to start the driver with the correct VM script as arguments.</p>
+<p>Once the driver is loaded, depending on the environment variables `tests` it will run in an interactive mode or run some python code (`test_script()`). In interactive mode, you can run `start_all()` to start and keep the VM alive</p>
+<h2 id="connecting-to-an-interactive-vm-via-ssh">Connecting to an interactive VM via SSH</h2><p>Add this to your test config:</p>
+<p><code>interactive.sshBackdoor.enable = true;</code></p>
+<p>Now you can connect to this VM via (on linux):</p>
+<p><code>ssh -o User=root vsock/3</code></p>
+<p>If you are on MacOS or have multiple VMs look at the shell output that do run the interactive tests: <img src="https://mirror.nixoscn.org/wiki/NixOS%20VM%20tests/Screenshot_of_interactive_test_just_started.png" title="Screenshot of just started nixos test for meilisearch (interactive)" width="444" height="444" alt="Screenshot of just started nixos test for meilisearch (interactive)" /></p>
+<h2 id="how-to-debug-tests">How to debug tests ?</h2><p>You can run the tests interactively as described in <a href="https://nixos.org/manual/nixos/stable/index.html#sec-running-nixos-tests-interactively">2</a>. When you run `nix-build ./nixos/tests/login.nix`, the resulting output gives you a summary of the results, but to gain access to the VM, you can run</p>
+<p><code>nix repl ./nixos/tests/login.nix</code></p>
+<p>and see the ran VM via `driver.outPath`.</p>
+<h2 id="i-don-39-t-see-any-prompt-qemu-window-pitch-black">I don&#39;t see any prompt ? (qemu window pitch black)</h2><p>Check the output for</p>
+<p><code>malformed JSON string, neither array, object, number, string or atom, at character offset 0 (before &quot;\x{0}\x{0}\x{0}\x{0}...&quot;) at /nix/store/1hkp2n6hz3ybf2rvkjkwrzgbjkrrakzl-update-users-groups.pl line 11`</code></p>
+<p>You should purge the state present in rm -rf /tmp/vm-state-<VM_NAME></p>
+<h2 id="setting-virtualisation-vlans-does-not-create-the-expected-interfaces">Setting `virtualisation.vlans` does not create the expected interfaces</h2><p>There are two sides to the problem: 1. By default the qemu-vm setups a `user` based nic: virtualisation.qemu.networkingOptions. You need to override the option to get rid of this interface. 2. As of this writing nixpkgs will generate interfaces starting from `eth1` (instead of `eth0`).</p>
+<p>Keys: <a href="https://en.wikibooks.org/wiki/QEMU/Monitor#sendkey_keys">https://en.wikibooks.org/wiki/QEMU/Monitor#sendkey_keys</a></p>
+<h2 id="home-manager-example">home-manager example</h2><p>It is possible to use home-manager to manage packages per user. This example shows how to add home-manager to a single file configuration.</p>
+<p>The complete `hmtest.nix` file content looks like the following:</p>
+<p><code> let</code><br><code>   nixpkgs = builtins.fetchTarball &quot;</code><a href="https://github.com/nixOS/nixpkgs/archive/22.05.tar.gz"><code>https://github.com/nixOS/nixpkgs/archive/22.05.tar.gz</code></a><code>&quot;;</code><br><code>   pkgs = import nixpkgs {};</code><br><code>   home-manager = builtins.fetchTarball &quot;</code><a href="https://github.com/nix-community/home-manager/archive/release-22.05.tar.gz"><code>https://github.com/nix-community/home-manager/archive/release-22.05.tar.gz</code></a><code>&quot;;</code><br><code> in</code><br><code>   pkgs.nixosTest {</code><br><code>     nodes.machine = { config, pkgs, ... }: {</code><br><code>       imports = [</code><br><code>         (import &quot;${home-manager}/nixos&quot;)</code><br><code>       ];</code><br><code> </code><br><code>       boot.loader.systemd-boot.enable = true;</code><br><code>       boot.loader.efi.canTouchEfiVariables = true;</code><br><code> </code><br><code>       services.xserver.enable = true;</code><br><code>       services.xserver.displayManager.gdm.enable = true;</code><br><code>       services.xserver.desktopManager.gnome.enable = true;</code><br><code> </code><br><code>       users.users.alice = {</code><br><code>         isNormalUser = true;</code><br><code>         extraGroups = [ &quot;wheel&quot; ]; # Enable ‘sudo’ for the user.</code><br><code>       };</code><br><code> </code><br><code>       home-manager.users.alice = {</code><br><code>         home.packages = [</code><br><code>           pkgs.firefox</code><br><code>           pkgs.thunderbird</code><br><code>         ];</code><br><code>       };</code><br><code> </code><br><code>       system.stateVersion = &quot;22.05&quot;;</code><br><code>     };</code><br><code>     testScript = {nodes, ...}: &#39;&#39;</code><br><code>       machine.wait_for_unit(&quot;default.target&quot;)</code><br><code>       machine.succeed(&quot;su -- alice -c &#39;which firefox&#39;&quot;)</code><br><code>       machine.fail(&quot;su -- root -c &#39;which firefox&#39;&quot;)</code><br><code>     &#39;&#39;;</code><br><code>   }</code></p>
+<h2 id="wayland-application-example">wayland application example</h2><p>The configuration we are using is starting the gnome desktop manager using wayland. To test if a wayland application is working is more complicated because we need to automate the login into gnome and automated startup of the application. Additionally we need to enable access to gnome dbus interface. To do this we need to modify the configuration the automated start of the application including automated login to gnome/wayland</p>
+<p>In the machine configuration we need to enable autologin for the user alice.</p>
+<p><code>     services.xserver.displayManager.autoLogin.enable = true;</code><br><code>     services.xserver.displayManager.autoLogin.user = &quot;alice&quot;;</code></p>
+<p>To simplify our script we pin the uid of the user to 1000.</p>
+<p><code>       uid = 1000;</code></p>
+<p>We specify a service that auto start firefox after login, which is easier than doing this in the test script.</p>
+<p><code>     environment.systemPackages = [</code><br><code>       (pkgs.makeAutostartItem {</code><br><code>         name = &quot;firefox&quot;;</code><br><code>         package = pkgs.firefox;</code><br><code>       })</code><br><code>     ];</code></p>
+<p>Because gnome doesn&#39;t allow the evaluation of javascript to get information about open windows we need to override the gnome-shell startup service to start gnome-shell in unsafe mode:</p>
+<p><code>     systemd.user.services = {</code><br><code>       &quot;org.gnome.Shell@wayland&quot; = {</code><br><code>         serviceConfig = {</code><br><code>           ExecStart = [</code><br><code>             # Clear the list before overriding it.</code><br><code>             &quot;&quot;</code><br><code>             # Eval API is now internal so Shell needs to run in unsafe mode.</code><br><code>             &quot;${pkgs.gnome.gnome-shell}/bin/gnome-shell --unsafe-mode&quot;</code><br><code>           ];</code><br><code>         };</code><br><code>       };</code></p>
+<p>The test script utilizes the gnome dbus interface to get a list of open wayland windows. we wait until firefox appear to be started and make a screenshot that will be found in the result folder.</p>
+<p><code>   testScript = {nodes, ...}: let</code><br><code>     user = nodes.machine.config.users.users.alice;</code><br><code>     bus = &quot;DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/${toString user.uid}/bus&quot;;</code><br><code>     gdbus = &quot;${bus} gdbus&quot;;</code><br><code>     su = command: &quot;su - ${user.name} -c &#39;${command}&#39;&quot;;</code><br><code>     gseval = &quot;call --session -d org.gnome.Shell -o /org/gnome/Shell -m org.gnome.Shell.Eval&quot;;</code><br><code>     wmClass = su &quot;${gdbus} ${gseval} global.display.focus_window.wm_class&quot;;</code><br><code>   in &#39;&#39;</code><br><code>     machine.wait_until_succeeds(&quot;${wmClass} | grep -q &#39;firefox&#39;&quot;)</code><br><code>     machine.sleep(20)</code><br><code>     machine.screenshot(&quot;screen&quot;)</code><br><code>   &#39;&#39;;</code></p>
+<p>The complete `firefoxtest.nix` file looks like the following:</p>
+<p><code> let</code><br><code>   nixpkgs = builtins.fetchTarball &quot;</code><a href="https://github.com/nixOS/nixpkgs/archive/22.05.tar.gz"><code>https://github.com/nixOS/nixpkgs/archive/22.05.tar.gz</code></a><code>&quot;;</code><br><code>   pkgs = import nixpkgs {};</code><br><code>   home-manager = builtins.fetchTarball &quot;</code><a href="https://github.com/nix-community/home-manager/archive/release-22.05.tar.gz"><code>https://github.com/nix-community/home-manager/archive/release-22.05.tar.gz</code></a><code>&quot;;</code><br><code> in</code><br><code>   pkgs.nixosTest {</code><br><code>     nodes.machine = {...}: {</code><br><code>       imports = [</code><br><code>         (import &quot;${home-manager}/nixos&quot;)</code><br><code>       ];</code><br><code>       boot.loader.systemd-boot.enable = true;</code><br><code>       boot.loader.efi.canTouchEfiVariables = true;</code><br><code> </code><br><code>       services.xserver.enable = true;</code><br><code>       services.xserver.displayManager.gdm.enable = true;</code><br><code>       services.xserver.desktopManager.gnome.enable = true;</code><br><code>       services.xserver.displayManager.autoLogin.enable = true;</code><br><code>       services.xserver.displayManager.autoLogin.user = &quot;alice&quot;;</code><br><code> </code><br><code>       users.users.alice = {</code><br><code>         isNormalUser = true;</code><br><code>         extraGroups = [&quot;wheel&quot;]; # Enable ‘sudo’ for the user.</code><br><code>         uid = 1000;</code><br><code>       };</code><br><code> </code><br><code>       home-manager.users.alice = {</code><br><code>         home.packages = [</code><br><code>           pkgs.firefox</code><br><code>           pkgs.thunderbird</code><br><code>         ];</code><br><code>       };</code><br><code> </code><br><code>       system.stateVersion = &quot;22.05&quot;;</code><br><code> </code><br><code>       environment.systemPackages = [</code><br><code>         (pkgs.makeAutostartItem {</code><br><code>           name = &quot;firefox&quot;;</code><br><code>           package = pkgs.firefox;</code><br><code>         })</code><br><code>       ];</code><br><code> </code><br><code>       systemd.user.services = {</code><br><code>         &quot;org.gnome.Shell@wayland&quot; = {</code><br><code>           serviceConfig = {</code><br><code>             ExecStart = [</code><br><code>               # Clear the list before overriding it.</code><br><code>               &quot;&quot;</code><br><code>               # Eval API is now internal so Shell needs to run in unsafe mode.</code><br><code>               &quot;${pkgs.gnome.gnome-shell}/bin/gnome-shell --unsafe-mode&quot;</code><br><code>             ];</code><br><code>           };</code><br><code>         };</code><br><code>       };</code><br><code>     };</code><br><code> </code><br><code>     testScript = {nodes, ...}: let</code><br><code>       user = nodes.machine.config.users.users.alice;</code><br><code>       #uid = toString user.uid;</code><br><code>       bus = &quot;DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/${toString user.uid}/bus&quot;;</code><br><code>       gdbus = &quot;${bus} gdbus&quot;;</code><br><code>       su = command: &quot;su - ${user.name} -c &#39;${command}&#39;&quot;;</code><br><code>       gseval = &quot;call --session -d org.gnome.Shell -o /org/gnome/Shell -m org.gnome.Shell.Eval&quot;;</code><br><code>       wmClass = su &quot;${gdbus} ${gseval} global.display.focus_window.wm_class&quot;;</code><br><code>     in &#39;&#39;</code><br><code>       machine.wait_until_succeeds(&quot;${wmClass} | grep -q &#39;firefox&#39;&quot;)</code><br><code>       machine.sleep(20)</code><br><code>       machine.screenshot(&quot;screen&quot;)</code><br><code>     &#39;&#39;;</code><br><code>   }</code></p>
+<h2 id="tests-that-need-multiple-virtual-machines">Tests that need multiple virtual machines</h2><p>Tests can involve multiple virtual machines.</p>
+<p>This example uses the use-case of a <a href="https://en.m.wikipedia.org/wiki/REST">REST</a> interface to a <a href="https://www.postgresql.org/">PostgreSQL</a> database. The following example Nix expression is adapted from <a href="https://www.haskellforall.com/2020/11/how-to-use-nixos-for-lightweight.html">How to use NixOS for lightweight integration tests</a>.</p>
+<p>This tutorial follows <a href="https://postgrest.org/en/stable/tutorials/tut0.html">PostgREST tutorial</a>, a generic <a href="https://restfulapi.net/">RESTful API</a> for PostgreSQL.</p>
+<p>If you skim over the official tutorial, you&#39;ll notice there&#39;s quite a bit of setup in order to test if all the steps work.</p>
+<p>The setup includes:</p>
+<p>- A virtual machine named `server` running PostgreSQL and PostgREST.</p>
+<p>- A virtual machine named `client` running HTTP client queries using `curl`.</p>
+<p>- A `testScript` orchestrating testing logic between `client` and `server`.</p>
+<p>The complete `postgrest.nix` file looks like the following:</p>
+<p><code> let</code><br><code>   # Pin Nixpkgs, as some packages are broken in the 22.11 release</code><br><code>   nixpkgs = fetchTarball &quot;</code><a href="https://github.com/NixOS/nixpkgs/archive/0f8f64b54ed07966b83db2f20c888d5e035012ef.tar.gz"><code>https://github.com/NixOS/nixpkgs/archive/0f8f64b54ed07966b83db2f20c888d5e035012ef.tar.gz</code></a><code>&quot;;</code><br><code>   pkgs = import nixpkgs { config = {}; overlays = []; };</code><br><code> </code><br><code>   # Single source of truth for all tutorial constants</code><br><code>   database = &quot;postgres&quot;;</code><br><code>   schema        = &quot;api&quot;;</code><br><code>   table         = &quot;todos&quot;;</code><br><code>   username      = &quot;authenticator&quot;;</code><br><code>   password      = &quot;mysecretpassword&quot;;</code><br><code>   webRole       = &quot;web_anon&quot;;</code><br><code>   postgrestPort = 3000;</code><br><code> </code><br><code>   # NixOS module shared between server and client</code><br><code>   sharedModule = {</code><br><code>     # Since it&#39;s common for CI not to have $DISPLAY available, explicitly disable graphics support</code><br><code>     virtualisation.graphics = false;</code><br><code>   };</code><br><code> </code><br><code> in </code><br><code>   pkgs.nixosTest {</code><br><code>     # NixOS tests are run inside a virtual machine, and here you specify its system type</code><br><code>     system = &quot;x86_64-linux&quot;;</code><br><code>     name = &quot;postgres-test&quot;;</code><br><code>     nodes = {</code><br><code>       server = { config, pkgs, ... }: {</code><br><code>         imports = [ sharedModule ];</code><br><code> </code><br><code>         networking.firewall.allowedTCPPorts = [ postgrestPort ];</code><br><code> </code><br><code>         services.postgresql = {</code><br><code>           enable = true;</code><br><code> </code><br><code>           initialScript = pkgs.writeText &quot;initialScript.sql&quot; &#39;&#39;</code><br><code>             create schema ${schema};</code><br><code> </code><br><code>             create table ${schema}.${table} (</code><br><code>                 id serial primary key,</code><br><code>                 done boolean not null default false,</code><br><code>                 task text not null,</code><br><code>                 due timestamptz</code><br><code>             );</code><br><code> </code><br><code>             insert into ${schema}.${table} (task) values (&#39;finish tutorial 0&#39;), (&#39;pat self on back&#39;);</code><br><code> </code><br><code>             create role ${webRole} nologin;</code><br><code>             grant usage on schema ${schema} to ${webRole};</code><br><code>             grant select on ${schema}.${table} to ${webRole};</code><br><code> </code><br><code>             create role ${username} inherit login password &#39;${password}&#39;;</code><br><code>             grant ${webRole} to ${username};</code><br><code>           &#39;&#39;;</code><br><code>         };</code><br><code> </code><br><code>         users = {</code><br><code>           mutableUsers = false;</code><br><code>           users = {</code><br><code>             # For ease of debugging the VM as the `root` user</code><br><code>             root.password = &quot;&quot;;</code><br><code> </code><br><code>             # Create a system user that matches the database user so that you</code><br><code>             # can use peer authentication. The tutorial defines a password,</code><br><code>             # but it&#39;s not necessary.</code><br><code>             &quot;${username}&quot;.isSystemUser = true;</code><br><code>           };</code><br><code>         };</code><br><code> </code><br><code>         systemd.services.postgrest = {</code><br><code>           wantedBy = [ &quot;multi-user.target&quot; ];</code><br><code>           after = [ &quot;postgresql.service&quot; ];</code><br><code>           script =</code><br><code>             let</code><br><code>               configuration = pkgs.writeText &quot;tutorial.conf&quot; &#39;&#39;</code><br><code>                   db-uri = &quot;postgres://${username}:${password}@localhost:${toString config.services.postgresql.port}/${database}&quot;</code><br><code>                   db-schema = &quot;${schema}&quot;</code><br><code>                   db-anon-role = &quot;${username}&quot;</code><br><code>               &#39;&#39;;</code><br><code>             in &quot;${pkgs.haskellPackages.postgrest}/bin/postgrest ${configuration}&quot;;</code><br><code>           serviceConfig.User = username;</code><br><code>         };</code><br><code>       };</code><br><code> </code><br><code>       client = {</code><br><code>         imports = [ sharedModule ];</code><br><code>       };</code><br><code>     };</code><br><code> </code><br><code>     # Disable linting for simpler debugging of the testScript</code><br><code>     skipLint = true;</code><br><code> </code><br><code>     testScript = &#39;&#39;</code><br><code>       import json</code><br><code>       import sys</code><br><code> </code><br><code>       start_all()</code><br><code> </code><br><code>       server.wait_for_open_port(${toString postgrestPort})</code><br><code> </code><br><code>       expected = [</code><br><code>           {&quot;id&quot;: 1, &quot;done&quot;: False, &quot;task&quot;: &quot;finish tutorial 0&quot;, &quot;due&quot;: None},</code><br><code>           {&quot;id&quot;: 2, &quot;done&quot;: False, &quot;task&quot;: &quot;pat self on back&quot;, &quot;due&quot;: None},</code><br><code>       ]</code><br><code> </code><br><code>       actual = json.loads(</code><br><code>           client.succeed(</code><br><code>               &quot;${pkgs.curl}/bin/curl </code><a href="http://server:$%7BtoString"><code>http://server:${toString</code></a><code> postgrestPort}/${table}&quot;</code><br><code>           )</code><br><code>       )</code><br><code> </code><br><code>       assert expected == actual, &quot;table query returns expected content&quot;</code><br><code>     &#39;&#39;;</code><br><code> }</code></p>
+<p>Unlike the previous example, the virtual machines need an expressive name to distinguish them. For this example we choose `client` and `server`.</p>
+<p>Set up all machines and run the test script:</p>
+<p><code> nix-build postgrest.nix</code></p>
+<p><code> ...</code><br><code> test script finished in 10.96s</code><br><code> cleaning up</code><br><code> killing client (pid 10)</code><br><code> killing server (pid 22)</code><br><code> (0.00 seconds)</code><br><code> /nix/store/bx7z3imvxxpwkkza10vb23czhw7873w2-vm-test-run-unnamed</code></p>
+<h2 id="further-reading">Further reading</h2><ul>
+<li><a href="https://nixcademy.com/posts/running-nixos-integration-tests-on-macos/">Run NixOS Integration Tests on macOS, Nixcademy</a></li>
+<li><a href="https://nixcademy.com/posts/nixos-integration-tests/">Unveiling the Power of the NixOS Integration Test Driver (Part 1), Nixcademy</a></li>
+<li><a href="https://nixcademy.com/posts/nixos-integration-tests-part-2/">Unveiling the Power of the NixOS Integration Test Driver (Part 2), Nixcademy</a></li>
+</ul>
+<p><a href="category:NixOS" class="wikilink" title="Category:NixOS">Category:NixOS</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

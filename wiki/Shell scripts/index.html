@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shell scripts</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Shell scripts</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Shell scripts -->
+
+<p>the package <code>writeShellScript</code> can be used to add shell scripts to nix expressions</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">someBuildHelper</span> <span class="hljs-operator">=</span> { name, sha256 }:
+    stdenv.mkDerivation {
+      <span class="hljs-keyword">inherit</span> name;
+      <span class="hljs-attr">outputHashMode</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;recursive&quot;</span>;
+      <span class="hljs-attr">outputHashAlgo</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sha256&quot;</span>;
+      <span class="hljs-attr">outputHash</span> <span class="hljs-operator">=</span> sha256;
+      <span class="hljs-attr">builder</span> <span class="hljs-operator">=</span> writeShellScript <span class="hljs-string">&quot;builder.sh&quot;</span> <span class="hljs-string">&#x27;&#x27;
+        echo &quot;hi, my name is <span class="hljs-char escape_">&#x27;&#x27;$</span>{0}&quot; # escape bash variable
+        echo &quot;hi, my hash is <span class="hljs-subst">${sha256}</span>&quot; # use nix variable
+        echo &quot;hello world&quot; &gt;output.txt
+      &#x27;&#x27;</span>;
+    };</code></pre>
+      </div><h2 id="external-builder-sh-script">External builder.sh script</h2><p>Longer bash scripts are usually stored as external script files, and called from Nix:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># default.nix</span>
+{
+  <span class="hljs-attr">outputTxtDrv</span> <span class="hljs-operator">=</span> stdenv.mkDerivation <span class="hljs-keyword">rec</span> {
+    <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;output.txt&quot;</span>;
+    <span class="hljs-comment"># disable unpackPhase etc</span>
+    <span class="hljs-attr">phases</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;buildPhase&quot;</span>;
+    <span class="hljs-attr">builder</span> <span class="hljs-operator">=</span> <span class="hljs-symbol">./builder.sh</span>;
+    <span class="hljs-attr">nativeBuildInputs</span> <span class="hljs-operator">=</span> [ coreutils jq ];
+    <span class="hljs-attr">PATH</span> <span class="hljs-operator">=</span> lib.makeBinPath nativeBuildInputs;
+    <span class="hljs-comment"># only strings can be passed to builder</span>
+    <span class="hljs-attr">someString</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;hello&quot;</span>;
+    <span class="hljs-attr">someNumber</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">builtins.toString</span> <span class="hljs-number">42</span>;
+    <span class="hljs-attr">someJson</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">builtins.toJSON</span> { <span class="hljs-attr">dst</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;world&quot;</span>; };
+  };
+}</code></pre>
+      </div><div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-comment"># builder.sh</span>
+<span class="hljs-built_in">echo</span> <span class="hljs-string">&quot;<span class="hljs-variable">$someString</span> <span class="hljs-subst">$(echo <span class="hljs-string">&quot;<span class="hljs-variable">$someJson</span>&quot;</span> | jq -r &#x27;.dst&#x27;)</span> <span class="hljs-variable">$someNumber</span>&quot;</span> &gt;<span class="hljs-variable">$out</span></code></pre>
+      </div><p>See also</p>
+<ul>
+<li><a href="https://github.com/NixOS/nixpkgs/issues/23099">make a derivation with no source</a></li>
+<li><a href="https://nixos.org/guides/nix-pills/working-derivation.html">Nix Pills: Chapter 7. Working Derivation</a></li>
+</ul>
+<h3 id="runcommand-builder-sh">runCommand + builder.sh</h3><p>Instead of <code>stdenv.mkDerivation</code>, we can also use <code>runCommand</code> to call an external bash script:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># default.nix</span>
+{
+  <span class="hljs-attr">outputTxtDrv</span> <span class="hljs-operator">=</span> runCommand <span class="hljs-string">&quot;output.txt&quot;</span> {
+    <span class="hljs-attr">nativeBuildInputs</span> <span class="hljs-operator">=</span> [ coreutils jq ];
+    <span class="hljs-comment"># only strings can be passed to builder</span>
+    <span class="hljs-attr">someString</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;hello&quot;</span>;
+    <span class="hljs-attr">someNumber</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">builtins.toString</span> <span class="hljs-number">42</span>;
+    <span class="hljs-attr">someJson</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">builtins.toJSON</span> { <span class="hljs-attr">dst</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;world&quot;</span>; };
+  } (<span class="hljs-built_in">builtins.readFile</span> .<span class="hljs-operator">/</span>builder.sh);
+}</code></pre>
+      </div><h2 id="packaging">Packaging</h2><p>example:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># nix-build -E &#x27;with import &lt;nixpkgs&gt; { }; callPackage ./default.nix { }&#x27;</span>
+
+{ stdenv
+, lib
+, fetchFromGitHub
+, bash
+, subversion
+, makeWrapper
+}:
+  stdenv.mkDerivation {
+    <span class="hljs-attr">pname</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github-downloader&quot;</span>;
+    <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;08049f6&quot;</span>;
+    <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> fetchFromGitHub {
+      <span class="hljs-comment"># https://github.com/Decad/github-downloader</span>
+      <span class="hljs-attr">owner</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Decad&quot;</span>;
+      <span class="hljs-attr">repo</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github-downloader&quot;</span>;
+      <span class="hljs-attr">rev</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;08049f6183e559a9a97b1d144c070a36118cca97&quot;</span>;
+      <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;073jkky5svrb7hmbx3ycgzpb37hdap7nd9i0id5b5yxlcnf7930r&quot;</span>;
+    };
+    <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> [ bash subversion ];
+    <span class="hljs-attr">nativeBuildInputs</span> <span class="hljs-operator">=</span> [ makeWrapper ];
+    <span class="hljs-attr">installPhase</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+      mkdir -p $out/bin
+      cp github-downloader.sh $out/bin/github-downloader.sh
+      wrapProgram $out/bin/github-downloader.sh \
+        --prefix PATH : <span class="hljs-subst">${lib.makeBinPath [ bash subversion ]}</span>
+    &#x27;&#x27;</span>;
+  }</code></pre>
+      </div><p><code>wrapProgram</code> will move the original script to <code>.github-downloader.sh-wrapped</code></p>
+<h3 id="command-not-found">Command not found</h3><p>for example, the script throws the error <code>svn: command not found</code>, because the dependency <code>subversion</code> is missing.</p>
+<p>when a command is missing, you can use <code>nix-locate</code> to find the package name. for example, the <code>stat</code> command:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-locate bin/stat | grep <span class="hljs-string">&#x27;bin/stat{{content}}#x27;</span></span>
+coreutils.out                                         0 s /nix/store/vr96j3cxj75xsczl8pzrgsv1k57hcxyp-coreutils-8.31/bin/stat</code></pre>
+      </div><h2 id="debugging-embedded-scripts">Debugging embedded scripts</h2><p>When a bash script fails, it prints only an error message, but no code location.</p>
+<p>To trace commands and line numbers, we can use</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># test-trace.nix</span>
+{ runCommand, coreutils }:
+  runCommand <span class="hljs-string">&quot;output.txt&quot;</span> {
+    <span class="hljs-attr">nativeBuildInputs</span> <span class="hljs-operator">=</span> [ coreutils ];
+  } <span class="hljs-string">&#x27;&#x27;
+    # line 5 in nix file = line 1 in bash script -&gt; offset 4
+    PS4=&#x27;+ Line $(expr $LINENO + 4): &#x27;
+    set -o xtrace # print commands
+
+    echo hello &gt;$out # line 9 in nix file
+
+    set +o xtrace # hide commands
+  &#x27;&#x27;</span></code></pre>
+      </div><div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-build -E <span class="hljs-string">&#x27;with import &lt;nixpkgs&gt; { }; callPackage ./test-trace.nix { }&#x27;</span></span>
+this derivation will be built:
+  /nix/store/2v5biwny8plpyk2bv6cfr41ppp0a1i4k-output.txt.drv
+building &#x27;/nix/store/2v5biwny8plpyk2bv6cfr41ppp0a1i4k-output.txt.drv&#x27;...
+++ Line 9: echo hello
+++ Line 11: set +o xtrace
+/nix/store/ppidmnpd5m762x9kqj8jd3g7df7dknrz-output.txt</code></pre>
+      </div><h2 id="posix-shell">Posix Shell</h2><p>some environments (like OpenWRT, via <code>busybox</code>) offer only a &quot;limited&quot; shell (<code>sh</code> instead of <code>bash</code>).</p>
+<p>on nixos, posix shells are provided by the packages <code>dash</code> and <code>posh</code></p>
+<h2 id="see-also">See also</h2><ul>
+<li><a href="https://nixos.org/manual/nixpkgs/stable/#ssec-stdenv-functions">Shell functions section in the Nixpkgs manual</a></li>
+<li><a href="https://gist.github.com/travisbhartwell/f972aab227306edfcfea">nix-shell and Shebang Lines</a></li>
+<li><a href="https://ertt.ca/nix/shell-scripts/">Shell Scripts with Nix</a></li>
+</ul>
+<p><a href="category:Development" class="wikilink" title="Category:Development">Category:Development</a> <a href="category:Shell" class="wikilink" title="Category:Shell">Category:Shell</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

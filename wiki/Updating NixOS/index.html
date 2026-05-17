@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Updating NixOS</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Updating NixOS</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Updating NixOS -->
+
+<h2 id="introduction">Introduction</h2><p><a href="https://mirror.nixoscn.org/wiki/Updating%20NixOS/NixOS" class="wikilink" title="NixOS">NixOS</a> stands out due to its declarative configuration and atomic updates, which ensure that system updates are predictable, reversible, and don’t risk breaking the setup. This approach guarantees consistency across versions, allowing any changes to be easily rolled back. NixOS also offers flexibility, multi-version support, and advanced dependency management, making it an excellent choice for developers and system administrators.</p>
+<p>As part of this process, only repository channels are updated or removed during updates. The system <strong>requires an internet connection</strong> to download the latest changes, and users <strong>cannot</strong> directly modify the system. For optimal stability, security, and access to new features, regular updates — ideally <strong>once a week</strong> — are recommended.</p>
+<h2 id="rebuilding-the-system-after-editing-configuration-nix-file">Rebuilding the system after editing configuration.nix file</h2><p>To apply the configuration changes made in <code>/etc/nixos/configuration.nix</code> without updating the channels, <a href="https://mirror.nixoscn.org/wiki/Updating%20NixOS/Nixpkgs" class="wikilink" title="Nixpkgs">Nixpkgs</a> and package versions. This is typically used when you&#39;ve edited the system configuration, and you just want to apply those changes:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">nixos-rebuild switch</span></code></pre>
+      </div><h2 id="for-non-flake-configurations">For non-flake configurations</h2><p>What follows is a short set of instructions. Further details can be found in the <a href="https://nixos.org/manual/nixos/stable/#sec-upgrading">NixOS Manual.</a></p>
+<h3 id="updating-nixos-channels">Updating NixOS channels</h3><div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">nix-channel --update</span></code></pre>
+      </div><p>For more information on channels, see the main <a href="https://mirror.nixoscn.org/wiki/Updating%20NixOS/Channel_branches" class="wikilink" title="Channel branches">Channel branches</a> page.</p>
+<h3 id="rebuilding-the-system-after-updating-channels">Rebuilding the system after updating channels</h3><p>If you want to not only apply your configuration changes but also update the packages and system environment to the latest versions available from the Nixpkgs repository. This is typically used when you want to ensure you are using the latest versions of your software and system services:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">nixos-rebuild switch</span></code></pre>
+      </div><p>To apply configuration changes and new package updates only <strong>after</strong> rebooting the system, use the following command instead:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">nixos-rebuild boot</span></code></pre>
+      </div><h3 id="updating-channel-and-rebuilding-the-system">Updating channel and rebuilding the system</h3><p>The below command is a shortcut equivalent to running <strong>nix-channel --update nixos; nixos-rebuild switch</strong> previously described:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">nixos-rebuild switch --upgrade</span></code></pre>
+      </div><h3 id="changing-nixpkgs-version">Changing Nixpkgs version</h3><p>To see what is the latest channel available, see <a href="https://channels.nixos.org/">https://channels.nixos.org</a></p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">nix-channel --add https://channels.nixos.org/nixos-&lt;version&gt; nixos</span></code></pre>
+      </div><h3 id="deleting-old-generations">Deleting old generations</h3><div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">nix-collect-garbage -d</span></code></pre>
+      </div><h3 id="example-of-a-system-update">Example of a system update</h3><div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">nix-channel --update &amp;&amp; nixos-rebuild switch &amp;&amp; reboot</span></code></pre>
+      </div><h2 id="for-flake-based-configurations">For flake based configurations</h2><p>Because <a href="https://mirror.nixoscn.org/wiki/Updating%20NixOS/Flakes" class="wikilink" title="Flakes">Flakes</a> do not use channels and instead rely on explicitly defined inputs, updating a configuration involves modifying the system’s <code>flake.nix</code> to reference the desired versions of inputs. For example:</p>
+<p>Once the input URLs have been updated, refresh the flake lockfile with:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">nix flake update</span></code></pre>
+      </div><p>Finally, rebuild the system configuration to apply the changes:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">nixos-rebuild switch</span></code></pre>
+      </div><h2 id="tips-and-tricks">Tips and tricks</h2><h3 id="limiting-the-maximum-number-of-running-jobs">Limiting the maximum number of running jobs</h3><p>Sometimes, the update process may hang when the system CPU has a high number of cores. You can limit the maximum number of running jobs:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">nixos-rebuild switch --option max-jobs 8</span></code></pre>
+      </div><p>To make the change permanent, add the following to your configuration.nix:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">ix</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">max-jobs</span> <span class="hljs-operator">=</span> <span class="hljs-number">8</span>;
+  };
+};</code></pre>
+      </div><p><a href="category:NixOS" class="wikilink" title="Category:NixOS">Category:NixOS</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

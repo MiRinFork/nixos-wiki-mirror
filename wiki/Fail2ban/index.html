@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fail2ban</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Fail2ban</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Fail2ban -->
+
+<p><a href="https://www.fail2ban.org/">Fail2ban</a> is an intrusion prevention software. It scans through log files to find signs of malicious intent. In general, Fail2ban will update the firewall rules to reject the offending IP address for a set amount of time.</p>
+<p>Fail2Ban uses the concept of a &quot;jail&quot; to modularize its configuration. A jail consists of an action (such as blocking a port using iptables) that is triggered when a filter (regular expression) applied to a log file triggers/matches more than a certain number of times in a certain time period. Actions that ship with Fail2Ban are defined in</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-operator">/</span>etc<span class="hljs-operator">/</span>fail2ban<span class="hljs-operator">/</span>action.d</code></pre>
+      </div><p>, while filters are defined in</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-operator">/</span>etc<span class="hljs-operator">/</span>fail2ban<span class="hljs-operator">/</span>filter.d</code></pre>
+      </div><p>.</p>
+<h2 id="basic-usage">Basic Usage</h2><p>Enable Fail2ban <a href="https://mirror.nixoscn.org/wiki/Fail2ban/NixOS_modules" class="wikilink" title="NixOS module">NixOS module</a> with the expression:</p>
+<p>NixOS comes with a pre-configured SSH jail which will observe errors in the <a href="https://mirror.nixoscn.org/wiki/Fail2ban/SSH#OpenSSH_Server" class="wikilink" title="SSH daemon">SSH daemon</a> and ban offending IPs. If all you need is basic rate-limiting and only have the SSH port exposed, you don&#39;t have to setup anything else.</p>
+<p>For additional configuration options, see the module documentation.</p>
+<h2 id="advanced-usage">Advanced Usage</h2><p>The Fail2ban NixOS module exposes various parameters for adjusting the configuration. In the following, all options mentioned are implicitly prefixed with</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">services.fail2ban</code></pre>
+      </div><p>, unless specified otherwise.</p>
+<ul>
+<li><p>The</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">maxretry</code></pre>
+      </div><p>option allows you to specify how many failures are required for an IP address to be blocked.</p>
+</li>
+<li><p>To prevent being locked out accidentally, use</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">ignoreIP</code></pre>
+      </div><p>to define IP allow lists or IP ranges to be never checked. In the example below, common LAN IP address ranges as well as the specific IP &#39;8.8.8.8&#39; and the address associated with the hostname &quot;wiki.nixos.org&quot; are excluded from any bans. Note that the loopback addresses &quot;127.0.0.0/8&quot; and &quot;::1&quot; are added by default.</p>
+</li>
+<li><div class="code-container">
+        
+        <pre><code class="language-nix hljs">bantime</code></pre>
+      </div><p>specifies for how much time an IP address is blocked after reaching the maximum number of failures. Note that the bantime can be increased for every violation by setting</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">b<span class="hljs-attr">antime-increment.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><p>. The bantime increment can then be customized by specifying a formula (in Python) like</p>
+<div class="code-container">
+        
+        <pre><code class="language-python hljs">ban.Time * math.exp(<span class="hljs-built_in">float</span>(ban.Count+<span class="hljs-number">1</span>)*banFactor)/math.exp(<span class="hljs-number">1</span>*banFactor)</code></pre>
+      </div><p>with</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">bantime-increment.formula</code></pre>
+      </div><p>, the multipliers with</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">bantime-increment.multipliers</code></pre>
+      </div><p>, the maximum bantime with</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">bantime-increment.maxtime</code></pre>
+      </div><p>and the indication to consider the bans issued throughout multiple jails with</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">bantime-increment.overalljails</code></pre>
+      </div></li>
+<li><div class="code-container">
+        
+        <pre><code class="language-nix hljs">banaction</code></pre>
+      </div><p>specifies which of the actions in</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-operator">/</span>etc<span class="hljs-operator">/</span>fail2ban<span class="hljs-operator">/</span>action.d</code></pre>
+      </div><p>should be the default ban action (e.g., iptables, iptables-new, iptables-multiport, iptables-ipset-proto6-allports, shorewall, etc.)</p>
+</li>
+<li><div class="code-container">
+        
+        <pre><code class="language-nix hljs">extraPackages</code></pre>
+      </div><p>contains a list of derivations whose outputs are needed by Fail2ban actions</p>
+</li>
+</ul>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">services.fail2ban</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+   <span class="hljs-comment"># Ban IP after 5 failures</span>
+    <span class="hljs-attr">maxretry</span> <span class="hljs-operator">=</span> <span class="hljs-number">5</span>;
+    <span class="hljs-attr">ignoreIP</span> <span class="hljs-operator">=</span> [
+      <span class="hljs-comment"># Allow list for some subnets</span>
+      <span class="hljs-string">&quot;10.0.0.0/8&quot;</span> <span class="hljs-string">&quot;172.16.0.0/12&quot;</span> <span class="hljs-string">&quot;192.168.0.0/16&quot;</span>
+      <span class="hljs-string">&quot;8.8.8.8&quot;</span> <span class="hljs-comment"># allow a specific IP</span>
+      <span class="hljs-string">&quot;wiki.nixos.org&quot;</span> <span class="hljs-comment"># resolve the IP via DNS</span>
+    ];
+    <span class="hljs-attr">bantime</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;24h&quot;</span>; <span class="hljs-comment"># Ban IPs for one day on the first ban</span>
+    <span class="hljs-attr">bantime-increment</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; <span class="hljs-comment"># Enable increment of bantime after each violation</span>
+      <span class="hljs-attr">formula</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ban.Time * math.exp(float(ban.Count+1)*banFactor)/math.exp(1*banFactor)&quot;</span>;
+      <span class="hljs-attr">multipliers</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;1 2 4 8 16 32 64&quot;</span>;
+      <span class="hljs-attr">maxtime</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;168h&quot;</span>; <span class="hljs-comment"># Do not ban for more than 1 week</span>
+      <span class="hljs-attr">overalljails</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; <span class="hljs-comment"># Calculate the bantime based on all the violations</span>
+    };
+    <span class="hljs-attr">jails</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">apache-nohome-iptables.settings</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-comment"># Block an IP address if it accesses a non-existent</span>
+        <span class="hljs-comment"># home directory more than 5 times in 10 minutes,</span>
+        <span class="hljs-comment"># since that indicates that it&#x27;s scanning.</span>
+        <span class="hljs-attr">filter</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;apache-nohome&quot;</span>;
+        <span class="hljs-attr">action</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;iptables-multiport[name=HTTP, port=&quot;http,https&quot;]&#x27;&#x27;</span>;
+        <span class="hljs-attr">logpath</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/var/log/httpd/error_log*&quot;</span>;
+        <span class="hljs-attr">backend</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;auto&quot;</span>;
+        <span class="hljs-attr">findtime</span> <span class="hljs-operator">=</span> <span class="hljs-number">600</span>;
+        <span class="hljs-attr">bantime</span>  <span class="hljs-operator">=</span> <span class="hljs-number">600</span>;
+        <span class="hljs-attr">maxretry</span> <span class="hljs-operator">=</span> <span class="hljs-number">5</span>;
+      };
+    };
+  };</code></pre>
+      </div><p>These settings are written to <code>/etc/fail2ban/jail.local</code>, where fail2ban will read them.</p>
+<h2 id="extending-fail2ban">Extending Fail2ban</h2><p>Fail2ban capabilities can be freely extended by adding new jails, filters, and actions; the first ones of them are already covered in the &quot;Basic usage&quot; section, while the other two need dedicated config files to be created in the</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-operator">/</span>etc<span class="hljs-operator">/</span>fail2ban<span class="hljs-operator">/</span>filter.d</code></pre>
+      </div><p>and</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-operator">/</span>etc<span class="hljs-operator">/</span>fail2ban<span class="hljs-operator">/</span>action.d</code></pre>
+      </div><p>folders.</p>
+<p>In order to do this, you&#39;ll have to add a</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">environment.etc</code></pre>
+      </div><p>section to your NixOS config file and specify there the contents of your custom actions and filters:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">environment.etc</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-comment"># Define an action that will trigger a Ntfy push notification upon the issue of every new ban</span>
+    <span class="hljs-string">&quot;fail2ban/action.d/ntfy.local&quot;</span>.text <span class="hljs-operator">=</span> pkgs.lib.mkDefault (pkgs.lib.mkAfter <span class="hljs-string">&#x27;&#x27;
+      [Definition]
+      norestored = true # Needed to avoid receiving a new notification after every restart
+      actionban = curl -H &quot;Title: &lt;ip&gt; has been banned&quot; -d &quot;&lt;name&gt; jail has banned &lt;ip&gt; from accessing $(hostname) after &lt;failures&gt; attempts of hacking the system.&quot; https://ntfy.sh/Fail2banNotifications
+    &#x27;&#x27;</span>);
+    <span class="hljs-comment"># Defines a filter that detects URL probing by reading the Nginx access log</span>
+    <span class="hljs-string">&quot;fail2ban/filter.d/nginx-url-probe.local&quot;</span>.text <span class="hljs-operator">=</span> pkgs.lib.mkDefault (pkgs.lib.mkAfter <span class="hljs-string">&#x27;&#x27;
+      [Definition]
+      failregex = ^&lt;HOST&gt;.*(GET /(wp-|admin|boaform|phpmyadmin|<span class="hljs-char escape_">\.</span>env|<span class="hljs-char escape_">\.</span>git)|<span class="hljs-char escape_">\.</span>(dll|so|cfm|asp)|(<span class="hljs-char escape_">\?</span>|&amp;)(=PHPB8B5F2A0-3C92-11d3-A3A9-4C7B08C10000|=PHPE9568F36-D428-11d2-A769-00AA001ACF42|=PHPE9568F35-D428-11d2-A769-00AA001ACF42|=PHPE9568F34-D428-11d2-A769-00AA001ACF42)|<span class="hljs-char escape_">\\</span>x[0-9a-zA-Z]{2})
+    &#x27;&#x27;</span>);
+  };</code></pre>
+      </div><p>The defined filters and actions can then be used in a new jail (created as seen above):</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">services.fail2ban</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-comment"># --- snip ---</span>
+    <span class="hljs-attr">jails</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">nginx-url-probe.settings</span> <span class="hljs-operator">=</span> { 
+        <span class="hljs-attr">enabled</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+        <span class="hljs-attr">filter</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nginx-url-probe&quot;</span>;
+        <span class="hljs-attr">logpath</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/var/log/nginx/access.log&quot;</span>;
+        <span class="hljs-attr">action</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;%(action_)s[blocktype=DROP]
+                 ntfy&#x27;&#x27;</span>;
+        <span class="hljs-attr">backend</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;auto&quot;</span>; <span class="hljs-comment"># Do not forget to specify this if your jail uses a log file</span>
+        <span class="hljs-attr">maxretry</span> <span class="hljs-operator">=</span> <span class="hljs-number">5</span>; 
+        <span class="hljs-attr">findtime</span> <span class="hljs-operator">=</span> <span class="hljs-number">600</span>;
+      }; 
+    };
+  };</code></pre>
+      </div><p>For more details on how to develop Fail2ban filters please see <a href="https://fail2ban.readthedocs.io/en/latest/filters.html">the official documentation</a>.</p>
+<h2 id="see-also">See also</h2><ul>
+<li>Linode&#39;s tutorial on how to setup Fail2ban (not NixOS-specific): <a href="https://www.linode.com/docs/guides/using-fail2ban-to-secure-your-server-a-tutorial/">https://www.linode.com/docs/guides/using-fail2ban-to-secure-your-server-a-tutorial/</a></li>
+<li>Solène&#39;s blog post on how to extend Fail2ban on NixOS: <a href="https://dataswamp.org/~solene/2022-10-02-nixos-fail2ban.html">https://dataswamp.org/~solene/2022-10-02-nixos-fail2ban.html</a></li>
+</ul>
+<p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="category:Networking" class="wikilink" title="Category:Networking">Category:Networking</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

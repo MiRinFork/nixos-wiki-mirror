@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Install NixOS on Rackspace Cloud Servers</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Install NixOS on Rackspace Cloud Servers</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Install NixOS on Rackspace Cloud Servers -->
+
+<p>This page is a slightly modified version of <a href="https://mirror.nixoscn.org/wiki/Install%20NixOS%20on%20Rackspace%20Cloud%20Servers/Install_NixOS_on_Online.Net" class="wikilink" title="the instructions for Online.net">the instructions for Online.net</a>, which in turn are based on <a href="https://mirror.nixoscn.org/wiki/Install%20NixOS%20on%20Rackspace%20Cloud%20Servers/Install_NixOS_on_Linode" class="wikilink" title="the instructions for Linode">the instructions for Linode</a>, and all real credit goes to the authors of that page. I won&#39;t bother explaining as much here, so if something is unclear, please refer back to the original page. I&#39;ve tested this with Rackspace 2GB Perf1 Cloud Servers in Chicago and other regions.</p>
+<p>Start by installing a flavor of Linux (don&#39;t care which, since we&#39;ll be blowing it away) using the standard Rackspace control panel.</p>
+<p>Let the image get built. When it&#39;s ready, click on the server and boot it into rescue mode. This will give you a temporary password for the rescue image, and then login at the given IP address. The machine is a Debian Jessie image.</p>
+<h2 id="preparation">Preparation</h2><h2 id="install-some-necessary-stuff">Install some necessary stuff</h2><p>You&#39;ll need bzip2 later. Also, you&#39;ll need to set up some group permissions so NixOS can install properly:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">apt-get update &amp;&amp; apt-get install bzip2</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">addgroup nixbld &amp;&amp; adduser --disabled-password nixbld0 &amp;&amp; usermod -a -G nixbld nixbld0</span></code></pre>
+      </div><p>The user is temporary; you&#39;ll be erasing everything, after all.</p>
+<h3 id="check-your-partitions">Check your partitions</h3><p>Rackspace servers, by default, all come with two drives: a single &#39;system disk&#39;, and a &#39;data disk&#39;. These are located on separate devices. System disks are designed to be stored as &#39;machine images&#39;, since this is the disk the machine boots off of. We&#39;ll ignore the data disk for the rest of this page.</p>
+<p>NOTE: 1GB rackspace images do not have a &#39;data disk&#39; at all. All other Virtual machines come with a data disk.</p>
+<p>Normally, your system disk is available under <code>/dev/xvda</code>. When you boot into the rescue image though, the disk is `/dev/xvdb`.</p>
+<p>Now, make sure your partitions are where you expect them, on <code>/dev/xvdb</code>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">fdisk -l /dev/xvdb</code></pre>
+      </div><p>Here&#39;s what mine look like on a 2gb cloud image:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">Disk /dev/xvdb: 40 GiB, 42949672960 bytes, 83886080 sectors
+Units: sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disklabel <span class="hljs-built_in">type</span>: dos
+Disk identifier: 0x0004cdc6
+
+Device     Boot Start       End   Blocks  Id System
+/dev/xvda1 *     2048  83875364 41936658+ 83 Linux</code></pre>
+      </div><h3 id="format-your-partitions">Format your partitions</h3><p>This will blast away any existing data on your main disk, so make sure you&#39;re okay with that.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">mkfs.ext4 /dev/xvdb1 -L nixos</code></pre>
+      </div><h3 id="mount-your-freshly-minted-filesystems">Mount your freshly minted filesystems</h3><p>and mount the new ones we made:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">mount /dev/xvdb1 /mnt &amp;&amp; <span class="hljs-built_in">mkdir</span> /mnt/boot</span></code></pre>
+      </div><h2 id="nix-flavored-stuff">Nix-flavored stuff</h2><h3 id="get-nix-onto-the-rescue-system">Get nix onto the rescue system</h3><p>We&#39;ll need some nix packages to install nix on the target:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">bash &lt;(curl https://nixos.org/nix/install)
+. /root/.nix-profile/etc/profile.d/nix.sh
+nix-channel --remove nixpkgs
+nix-channel --add http://nixos.org/channels/nixos-unstable nixos
+nix-channel --update
+
+<span class="hljs-built_in">cat</span> &lt;&lt;<span class="hljs-string">EOF &gt; configuration.nix
+{ fileSystems.&quot;/&quot; = {};
+  boot.loader.grub.enable = false;
+}
+EOF</span>
+
+<span class="hljs-built_in">export</span> NIX_PATH=nixpkgs=/root/.nix-defexpr/channels/nixos:nixos=/root/.nix-defexpr/channels/nixos/nixos
+<span class="hljs-built_in">export</span> NIXOS_CONFIG=/root/configuration.nix
+nix-env -i -A config.system.build.nixos-install -A config.system.build.nixos-option -A config.system.build.nixos-generate-config -f <span class="hljs-string">&quot;&lt;nixos&gt;&quot;</span></code></pre>
+      </div><h3 id="make-configuration-for-your-target-system">Make configuration for your target system</h3><p>Generate a default configuration:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nixos-generate-config --root /mnt</code></pre>
+      </div><p>This will generate <code>/mnt/etc/nixos/configuration.nix</code> and <code>/mnt/etc/nixos/hardware-configuration.nix</code>. Eyeball the latter (<code>nano</code> is preinstalled) to make sure the filesystem config looks reasonable and that it&#39;s detected your cores correctly. Then customize the former to your liking. You&#39;ll need to explicitly set up your networking information accordingly.</p>
+<p>If you need to figure out your current network settings to fill in the gaps in the settings file, try <code>cat /etc/resolv.conf</code> and <code>cat /etc/network/interfaces</code>.</p>
+<p>Here&#39;s a sample config from my box:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ config, pkgs, ... }:
+
+{
+  <span class="hljs-attr">imports</span> <span class="hljs-operator">=</span>
+    [ <span class="hljs-comment"># Include the results of the hardware scan.</span>
+      <span class="hljs-symbol">./hardware-configuration.nix</span>
+    ];
+
+  <span class="hljs-comment"># Use the GRUB 2 boot loader.</span>
+  <span class="hljs-attr">boot.loader.grub.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">boot.loader.grub.version</span> <span class="hljs-operator">=</span> <span class="hljs-number">2</span>;
+  <span class="hljs-comment"># Define on which hard drive you want to install Grub.</span>
+  <span class="hljs-attr">boot.loader.grub.device</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/dev/xvdb&quot;</span>;
+
+  <span class="hljs-attr">networking.hostName</span>        <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nixos&quot;</span>; <span class="hljs-comment"># Define your hostname.</span>
+  <span class="hljs-attr">networking.interfaces.eth0</span> <span class="hljs-operator">=</span> { <span class="hljs-attr">ipAddress</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;166.78.116.171&quot;</span>; <span class="hljs-attr">prefixLength</span> <span class="hljs-operator">=</span> <span class="hljs-number">24</span>; };
+  <span class="hljs-attr">networking.defaultGateway</span>  <span class="hljs-operator">=</span> <span class="hljs-string">&quot;166.78.116.1&quot;</span>;
+  <span class="hljs-attr">networking.nameservers</span>     <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;173.203.4.8&quot;</span> <span class="hljs-string">&quot;173.203.4.9&quot;</span> ];
+
+  <span class="hljs-attr">time.timeZone</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;America/Chicago&quot;</span>;
+
+  <span class="hljs-attr">i18n</span> <span class="hljs-operator">=</span> {
+     <span class="hljs-attr">defaultLocale</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;en_US.UTF-8&quot;</span>;
+  };
+
+  <span class="hljs-comment"># environment.systemPackages = with pkgs; [</span>
+  <span class="hljs-comment">#   wget</span>
+  <span class="hljs-comment"># ];</span>
+
+  <span class="hljs-attr">services.openssh.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+  <span class="hljs-attr">security.sudo.wheelNeedsPassword</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+
+  <span class="hljs-attr">users.extraUsers.youruser</span> <span class="hljs-operator">=</span> 
+    { <span class="hljs-attr">createHome</span>      <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">home</span>            <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/home/youruser&quot;</span>;
+      <span class="hljs-attr">description</span>     <span class="hljs-operator">=</span> <span class="hljs-string">&quot;your name&quot;</span>;
+      <span class="hljs-attr">extraGroups</span>     <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;wheel&quot;</span> ];
+      <span class="hljs-attr">useDefaultShell</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">openssh.authorizedKeys.keys</span> <span class="hljs-operator">=</span> [
+        <span class="hljs-string">&quot;&lt;your pubkey here&gt;&quot;</span>
+      ];
+    };
+}</code></pre>
+      </div><p>Note something <b>very important</b>: we set GRUB to install to <code>/dev/xvdb</code>, which is the right thing to do when we install <i>from the rescue image</i>. Once we reboot, we need to change this to point back to `/dev/xvda`, in case of GRUB updates.</p>
+<h3 id="actually-install-the-system">Actually install the system</h3><div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">unset</span> NIXOS_CONFIG
+nixos-install</code></pre>
+      </div><p>That should spend some time downloading and copying stuff around, and then should fail without error. After that, tell the web console to exit rescue mode - your machine will be rebooted, and then you can login to NixOS!</p>
+<h3 id="reboot-and-fix-boot-loader-grub-device">Reboot and fix boot.loader.grub.device</h3><p>As mentioned above, after your reboot for the first time, you need to go back to <code>/etc/nixos/configuration.nix</code> and make sure <code>boot.loader.grub.device</code> is changed to look back at <code>/dev/xvda</code> instead. This way your bootloader is properly configured when GRUB may update.</p>
+<h2 id="troubleshooting">Troubleshooting</h2><p>If <code>nixos-install</code> fails to download files from the internet, check that your rescue image&#39;s <code>/etc/resolv.conf</code>is not a symlink. The issue should be fixed now, but at some point the <code>nixos-install</code> chroot process would not copy symlinks appropriately, so things would not resolve in the jail.</p>
+<p>See <a href="https://github.com/NixOS/nixpkgs/commit/6ebe4a6a523bbab3388453ac119ab08e295a7e06">this commit</a> for the fix.</p>
+<p><a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="category:Deployment" class="wikilink" title="Category:Deployment">Category:Deployment</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

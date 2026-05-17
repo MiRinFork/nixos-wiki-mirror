@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mesa</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Mesa</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Mesa -->
+
+<p><a href="https://www.mesa3d.org/">Mesa</a> is an open source implementation of several graphics APIs including OpenGL and Vulkan.</p>
+<p>You can change the Mesa version using the <code>hardware.graphics.package</code> option as of NixOS 25.05.</p>
+<h2 id="enabling-vulkan-layers">Enabling Vulkan Layers</h2><p>Vulkan Layers are not enabled by default in <a href="https://github.com/NixOS/nixpkgs/blob/master/pkgs/development/libraries/mesa/default.nix">Nixpkgs</a>. You can override the existing Mesa packages and specify them in <code>config.hardware.opengl</code>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">h<span class="hljs-attr">ardware</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">opengl</span> <span class="hljs-operator">=</span>
+    <span class="hljs-keyword">let</span>
+      <span class="hljs-attr">fn</span> <span class="hljs-operator">=</span> <span class="hljs-params">oa:</span> {
+        <span class="hljs-attr">nativeBuildInputs</span> <span class="hljs-operator">=</span> oa.nativeBuildInputs <span class="hljs-operator">++</span> [ pkgs.glslang ];
+        <span class="hljs-attr">mesonFlags</span> <span class="hljs-operator">=</span> oa.mesonFlags <span class="hljs-operator">++</span> [ <span class="hljs-string">&quot;-Dvulkan-layers=device-select,overlay&quot;</span> ];
+<span class="hljs-comment">#       patches = oa.patches ++ [ ./mesa-vulkan-layer-nvidia.patch ]; See below </span>
+        <span class="hljs-attr">postInstall</span> <span class="hljs-operator">=</span> oa.postInstall <span class="hljs-operator">+</span> <span class="hljs-string">&#x27;&#x27;
+            mv $out/lib/libVkLayer* $drivers/lib
+
+            #Device Select layer
+            layer=VkLayer_MESA_device_select
+            substituteInPlace $drivers/share/vulkan/implicit_layer.d/<span class="hljs-char escape_">&#x27;&#x27;$</span>{layer}.json \
+              --replace &quot;lib<span class="hljs-char escape_">&#x27;&#x27;$</span>{layer}&quot; &quot;$drivers/lib/lib<span class="hljs-char escape_">&#x27;&#x27;$</span>{layer}&quot;
+
+            #Overlay layer
+            layer=VkLayer_MESA_overlay
+            substituteInPlace $drivers/share/vulkan/explicit_layer.d/<span class="hljs-char escape_">&#x27;&#x27;$</span>{layer}.json \
+              --replace &quot;lib<span class="hljs-char escape_">&#x27;&#x27;$</span>{layer}&quot; &quot;$drivers/lib/lib<span class="hljs-char escape_">&#x27;&#x27;$</span>{layer}&quot;
+          &#x27;&#x27;</span>;
+      };
+    <span class="hljs-keyword">in</span>
+    <span class="hljs-keyword">with</span> pkgs; {
+      <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">driSupport32Bit</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">package</span> <span class="hljs-operator">=</span> (mesa.overrideAttrs fn).drivers;
+      <span class="hljs-attr">package32</span> <span class="hljs-operator">=</span> (pkgsi686Linux.mesa.overrideAttrs fn).drivers;
+    };</code></pre>
+      </div><p>Nvidia users may need to apply this patch for the <code>Device Select</code> layer to work.</p>
+<div class="code-container">
+        
+        <pre><code class="language-diff hljs">diff b/src/vulkan/device-select-layer/device_select_layer.c a/src/vulkan/device-select-layer/device_select_layer.c
+<span class="hljs-comment">--- b/src/vulkan/device-select-layer/device_select_layer.c</span>
+<span class="hljs-comment">+++ a/src/vulkan/device-select-layer/device_select_layer.c</span>
+<span class="hljs-meta">@@ -454,12 +454,8 @@</span>
+       exit(0);
+    } else {
+       unsigned selected_index = get_default_device(info, selection, physical_device_count, physical_devices);
+<span class="hljs-deletion">-      selected_physical_device_count = physical_device_count;</span>
+<span class="hljs-addition">+      selected_physical_device_count = 1;</span>
+       selected_physical_devices[0] = physical_devices[selected_index];
+<span class="hljs-deletion">-      for (unsigned i = 0; i &lt; physical_device_count - 1; ++i) {</span>
+<span class="hljs-deletion">-         unsigned  this_idx = i &lt; selected_index ? i : i + 1;</span>
+<span class="hljs-deletion">-         selected_physical_devices[i + 1] = physical_devices[this_idx];</span>
+<span class="hljs-deletion">-      }</span>
+    }
+
+    if (selected_physical_device_count == 0) {</code></pre>
+      </div><h2 id="default-drivers">Default drivers</h2><p>In case you wonder where does <code>[&quot;auto&quot;]</code> in mesa&#39;s attributes lead you, this might be another way to see them (for 22.3.0<a href="https://gitlab.freedesktop.org/mesa/mesa/-/blob/mesa-22.3.0/meson.build">1</a>):</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">, galliumDrivers <span class="hljs-operator">?</span>
+  <span class="hljs-comment"># Search for `gallium_drivers.contains(&#x27;auto&#x27;)` in meson.build</span>
+  <span class="hljs-keyword">if</span> stdenv.isLinux <span class="hljs-keyword">then</span>
+    <span class="hljs-keyword">if</span> stdenv.isi686 <span class="hljs-operator">||</span> stdenv.isx86_64  <span class="hljs-keyword">then</span> [<span class="hljs-string">&quot;r300&quot;</span> <span class="hljs-string">&quot;r600&quot;</span> <span class="hljs-string">&quot;radeonsi&quot;</span> <span class="hljs-string">&quot;nouveau&quot;</span> <span class="hljs-string">&quot;virgl&quot;</span> <span class="hljs-string">&quot;svga&quot;</span> <span class="hljs-string">&quot;swrast&quot;</span> <span class="hljs-string">&quot;iris&quot;</span> <span class="hljs-string">&quot;crocus&quot;</span> <span class="hljs-string">&quot;i915&quot;</span>]
+    <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> stdenv.isAarch64 <span class="hljs-keyword">then</span> [<span class="hljs-string">&quot;v3d&quot;</span> <span class="hljs-string">&quot;vc4&quot;</span> <span class="hljs-string">&quot;freedreno&quot;</span> <span class="hljs-string">&quot;etnaviv&quot;</span> <span class="hljs-string">&quot;nouveau&quot;</span> <span class="hljs-string">&quot;svga&quot;</span> <span class="hljs-string">&quot;tegra&quot;</span> <span class="hljs-string">&quot;virgl&quot;</span> <span class="hljs-string">&quot;lima&quot;</span> <span class="hljs-string">&quot;panfrost&quot;</span> <span class="hljs-string">&quot;swrast&quot;</span>]
+    <span class="hljs-keyword">else</span> <span class="hljs-built_in">throw</span> <span class="hljs-string">&quot;Unsupported platform: this derivation only supports i686/x86_64/aarch64&quot;</span>
+  <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> stdenv.isDarwin <span class="hljs-keyword">then</span> [<span class="hljs-string">&quot;swrast&quot;</span>]
+  <span class="hljs-keyword">else</span> <span class="hljs-built_in">throw</span> <span class="hljs-string">&quot;Unsupported platform: this derivation only supports Linux/Darwin&quot;</span>
+, vulkanDrivers <span class="hljs-operator">?</span>
+  <span class="hljs-comment"># Search for `_vulkan_drivers.contains(&#x27;auto&#x27;)` in meson.build</span>
+  <span class="hljs-keyword">if</span> stdenv.isLinux <span class="hljs-keyword">then</span>
+    <span class="hljs-keyword">if</span> stdenv.isi686 <span class="hljs-operator">||</span> stdenv.isx86_64   <span class="hljs-keyword">then</span> [<span class="hljs-string">&quot;amd&quot;</span> <span class="hljs-string">&quot;intel&quot;</span> <span class="hljs-string">&quot;intel_hasvk&quot;</span> <span class="hljs-string">&quot;swrast&quot;</span>]
+    <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> stdenv.isAarch64 <span class="hljs-operator">||</span> stdenv.isArch32 <span class="hljs-keyword">then</span> [<span class="hljs-string">&quot;swrast&quot;</span>]
+    <span class="hljs-keyword">else</span> <span class="hljs-built_in">throw</span> <span class="hljs-string">&quot;Unsupported platform: this derivation only supports i686/x86_64/aarch64&quot;</span>
+  <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> stdenv.isDarwin <span class="hljs-keyword">then</span>  []
+  <span class="hljs-keyword">else</span> <span class="hljs-built_in">throw</span> <span class="hljs-string">&quot;Unsupported platform: this derivation only supports Linux/Darwin&quot;</span></code></pre>
+      </div><h2 id="intel-xe-driver-warning-spam">Intel Xe Driver Warning Spam</h2><p>If you&#39;re using the Intel Xe driver you may end up getting a lot of <code>MESA: warning: Support for this platform is experimental with Xe KMD, bug reports may be ignored.</code> messages spam in your console when running various tools. You can disable this spam by setting the <a href="https://docs.mesa3d.org/envvars.html">MESA_LOG_FILE</a> environment variable to some file location (like <code>/dev/null</code>). To make the change permanent you could add it to your <code>environment.variables</code> attribute set in your nix config. The downside to this approach is that you won&#39;t see legitimate Mesa warnings or errors on your console afterwards.</p>
+<p>Starting with <a href="https://docs.mesa3d.org/relnotes/25.1.0.html">Mesa 25.1.0</a>, you can suppress the warning with <code>INTEL_XE_IGNORE_EXPERIMENTAL_WARNING=1</code>.</p>
+<p><a href="category:_Video" class="wikilink" title="Category: Video">Category: Video</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

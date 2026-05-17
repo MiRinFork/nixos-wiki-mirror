@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Zotero</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Zotero</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Zotero -->
+
+<p><a href="https://www.zotero.org/">Zotero</a> is a free and open-source bibliography manager. It provides tools to classify references under various organization schemes (tags, folders). Zotero can automatically generate a bibliography using a set of pre-built citation styles. Companion web-browser plugins allow for saving references from the web with pre-filled metadata.</p>
+<h2 id="installation">Installation</h2><p>Under NixOS,</p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+    zotero
+];</code></pre>
+      </div><h2 id="configuration">Configuration</h2><h3 id="zotero-libreoffice-add-on">Zotero LibreOffice add-on</h3><p>The Nix derivation ships with the <a href="https://mirror.nixoscn.org/wiki/Zotero/LibreOffice" class="wikilink" title="LibreOffice">LibreOffice</a> integration. It is located in</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">${pkgs.zotero}<span class="hljs-operator">/</span>lib<span class="hljs-operator">/</span>integration<span class="hljs-operator">/</span>libreoffice<span class="hljs-operator">/</span>Zotero_LibreOffice_Integration.oxt</code></pre>
+      </div><p>This can also be done through <code>nix build nixpkgs#zotero</code>, then locating the file in the <code>result</code> folder.</p>
+<p>For LibreOffice to correctly enable the plugin, it must be provided with a folder containing a Java Runtime Environment (JRE). You can install any JRE available in nixpkgs, for instance <code>jre8</code> and make it available for LibreOffice.</p>
+<p>To do so, go in the LibreOffice options, at LibreOffice -&gt; Advanced, and point it to the path of the installed JRE.</p>
+<p>You can obtain the aforementioned path with the following script:</p>
+<p><code>nix derivation show nixpkgs#jre8 | {echo &quot;/nix/store/&quot;; jq &#39;.derivations[].outputs.jre.path&#39;;} | xargs echo | sed &quot;s/\ //&quot;</code></p>
+<h2 id="zotero-firefox-add-on">Zotero Firefox add-on</h2><p>The Zotero Firefox add-on works as expected with one caveat; the pdftotext and pdfinfo plugins it needs in order to index and pull metadata from PDFs you wish to add to your library.</p>
+<p>The solution, for now, is as follows (this assumes that you have the Zotero plugin installed and configured sans PDF support): <strong>NB: The symlinks DO NOT survive an update between Firefox versions, so everytime your Firefox is updated you will have to repeat the below process!</strong> In your filesystem navigate to ~/.mozilla/firefox/<profile>/zotero Create the following symlinks and ensure that they are named EXACTLY as described here:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">ln</span> -s /run/current-system/sw/bin/pdftotext pdftotext-Linux-&lt;architecture&gt; (e.g., pdftotext-Linux-x86_64)
+<span class="hljs-built_in">ln</span> -s /run/current-system/sw/bin/pdfinfo pdfinfo-Linux-&lt;architecture&gt;</code></pre>
+      </div><p>Launch Firefox and go to the Zotero add-on preferences; click on the &quot;Search&quot; tab and you should find that both, pdftotext and pdfinfo, are recognized and their version is either &quot;UNKNOWN&quot; or the correct version number. This is trivial and should not deter you. You can now use the PDF metadata retrieval capabilities.</p>
+<h2 id="references">References</h2><p><a href="https://github.com/NixOS/nixpkgs/blob/master/pkgs/by-name/zo/zotero/package.nix">Zotero derivation source in Nixpkgs</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

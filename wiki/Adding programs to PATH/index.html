@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Adding programs to PATH</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Adding programs to PATH</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Adding programs to PATH -->
+
+<p>Here is a collection of methods to add a program to the <code>PATH</code> environment variable with <a href="https://mirror.nixoscn.org/wiki/Adding%20programs%20to%20PATH/Nix_(package_manager)" class="wikilink" title="Nix (package manager)">Nix (package manager)</a> with packages from <a href="https://mirror.nixoscn.org/wiki/Adding%20programs%20to%20PATH/Nixpkgs" class="wikilink" title="Nixpkgs">Nixpkgs</a>.</p>
+<p>The <code>PATH</code> environment variable (often referred to as &quot;the PATH&quot;) is an environment variable that tells programs where to find other programs. When you run a command <code>hello</code> in a bash shell, it basically searches for an executable named <code>hello</code> in every directory listed in <code>PATH</code>.</p>
+<p>The NixOS method supports installing <a href="https://mirror.nixoscn.org/wiki/Adding%20programs%20to%20PATH/udev" class="wikilink" title="udev">udev</a> rules, which may be required for programs interacting with hardware. Services should be enabled and configured with NixOS options rather than by adding them manually to <code>environment.systemPackages</code>.</p>
+<p>Here we are using the package <code>hello</code> as an example. Unless stated otherwise, package attribute names (with necessary prefixes like <code>nixpkgs\#</code> or <code>pkgs.</code>) can be repeated to add more packages.</p>
+<h2 id="persistent">Persistent</h2><p>These methods install the packages globally (not local to a specific development shell), persist the installation between reboots and symlink paths together into a specific directory (see the NixOS options and for details).</p>
+<h3 id="nixos">NixOS</h3><p>Modify your Home Manager configuration to include the meaning of the following example.</p>
+<h3 id="home-manager"><a href="https://mirror.nixoscn.org/wiki/Adding%20programs%20to%20PATH/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a></h3><p>Modify your Home Manager configuration to include the meaning of the following example.</p>
+<h3 id="nix-env"><code>nix-env</code></h3><p><code>nix-env -iA hello</code></p>
+<h3 id="nix-profile-flakes"><code>nix profile</code> (Flakes)</h3><p><code>nix profile install nixpkgs\#hello</code></p>
+<h2 id="temporary">Temporary</h2><p>These installation methods are temporary and local to the specific development shell. Only environment variables are modified; symbolic links to packages will not be created outside the Nix store. As such, applications installed with these methods will not show up in your desktop environment&#39;s application menu as their <code>.desktop</code> files are not in the global <code>XDG_DATA_DIRS</code> environment variable&#39;s paths.</p>
+<h3 id="ad-hoc-shell-using-nix-shell--p">Ad-hoc shell using <code>nix-shell -p</code></h3><p>Run the following command to create a new shell with the <code>hello</code> package from Nixpkgs.</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell-session hljs">[username@hostname:~]$ nix-shell -p hello
+
+[nix-shell:~]$ hello
+Hello, world!
+
+[nix-shell:~]$</code></pre>
+      </div><h3 id="ad-hoc-shell-using-nix-shell-flakes">Ad-hoc shell using <code>nix shell</code> (Flakes)</h3><p>Run the following command to create a new shell with the <code>hello</code> package from the <code>nixpkgs</code> <a href="https://mirror.nixoscn.org/wiki/Adding%20programs%20to%20PATH/Flakes" class="wikilink" title="flake">flake</a> added to the <code>PATH</code> environment variable.</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell-session hljs">[username@hostname:~]$ nix shell nixpkgs\#hello
+
+[username@hostname:~]$ hello
+Hello, world!
+
+[username@hostname:~]$</code></pre>
+      </div><p>You may also consider the <code>nix run</code> command useful. It reads the package&#39;s <code>meta.mainProgram</code> attribute and runs it.</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell-session hljs">[username@hostname:~]$ nix run nixpkgs\#hello
+Hello, world!
+
+[username@hostname:~]$</code></pre>
+      </div><h3 id="declarative-shell-using-shell-nix-and-nix-shell">Declarative shell using <code>shell.nix</code> and <code>nix-shell</code></h3><p>Write the file below and run the command <code>nix-shell</code>.</p>
+<h3 id="declarative-shell-using-flake-nix-and-nix-develop-flakes">Declarative shell using <code>flake.nix</code> and <code>nix develop</code> (Flakes)</h3><p>Below is a minimal example using flakes. Write the file below and run the command <code>nix develop</code>.Here is an example of a it working:</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell-session hljs">[username@hostname:/tmp/example]$ hello
+-bash: hello: command not found
+
+[username@hostname:/tmp/example]$ nix develop
+warning: creating lock file &quot;/tmp/example/flake.lock&quot;:
+• Added input 'nixpkgs':
+    'github:NixOS/nixpkgs/00c21e4c93d963c50d4c0c89bfa84ed6e0694df2?narHash=sha256-AYqlWrX09%2BHvGs8zM6ebZ1pwUqjkfpnv8mewYwAo%2BiM%3D' (2026-02-04)
+[username@hostname:/tmp/example]$ hello
+Hello, world!
+
+[username@hostname:/tmp/example]$</code></pre>
+      </div><p><a href="category:Tutorial" class="wikilink" title="Category:Tutorial">Category:Tutorial</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

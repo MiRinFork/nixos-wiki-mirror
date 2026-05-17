@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Keyd</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Keyd</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Keyd -->
+
+<p><a href="https://github.com/rvaiya/keyd">Keyd</a> is a key remapping daemon, similar to kmonad.</p>
+<h3 id="activate-keyd-in-nixos">Activate Keyd in NixOs</h3><p>To activate keyd in NixOs, you can simply add in the rest of your <code>/etc/nixos/configuration.nix</code></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">services.keyd</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  };
+
+  <span class="hljs-comment"># Optional, but makes sure that when you type the make palm rejection work with keyd</span>
+  <span class="hljs-comment"># https://github.com/rvaiya/keyd/issues/723</span>
+  environment.etc.<span class="hljs-string">&quot;libinput/local-overrides.quirks&quot;</span>.text <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    [Serial Keyboards]
+    MatchUdevType=keyboard
+    MatchName=keyd virtual keyboard
+    AttrKeyboardIntegration=internal
+  &#x27;&#x27;</span>;</code></pre>
+      </div><p>After rebuilding your configuration, you should have keyd daemon running.</p>
+<h3 id="configure-keyd-the-quick-and-dirty-way">Configure Keyd: the quick and dirty way</h3><p>In order to configure your system, you have two options: if you want to quickly test your configuration (avoids you to wait a full <code>nixos-rebuild switch</code> every time you change one option), you can simply write your configuration files in a file like <code>/etc/keyd/test.conf</code> containing something like:</p>
+<div class="code-container">
+        
+        <pre><code class="language-conf hljs">[ids]
+*
+
+[main]
+capslock = layer(control);</code></pre>
+      </div><p>and apply your change via</p>
+<div class="code-container">
+        
+        <pre><code class="language-conf hljs">$ systemctl restart keyd</code></pre>
+      </div><p>This is practical to quickly test the configuration but in not very &quot;Nixy&quot; as the configuration is not contained in your beloved <code>/etc/nixos/configuration.nix</code>… hence the second option:</p>
+<h3 id="configure-keyd-in-your-configuration-nix">Configure Keyd in your configuration.nix</h3><p>You can then move your configuration to <code>/etc/nixos/configuration.nix</code> by adding to your configuration something like:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.keyd</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">keyboards</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-comment"># The name is just the name of the configuration file, it does not really matter</span>
+    <span class="hljs-attr">default</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">ids</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;*&quot;</span> ]; <span class="hljs-comment"># what goes into the [id] section, here we select all keyboards</span>
+      <span class="hljs-comment"># Everything but the ID section:</span>
+      <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-comment"># The main layer, if you choose to declare it in Nix</span>
+        <span class="hljs-attr">main</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">capslock</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;layer(control)&quot;</span>; <span class="hljs-comment"># you might need to also enclose the key in quotes if it contains non-alphabetical symbols</span>
+        };
+        <span class="hljs-attr">otherlayer</span> <span class="hljs-operator">=</span> {};
+      };
+      <span class="hljs-attr">extraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        # put here any extra-config, e.g. you can copy/paste here directly a configuration, just remove the ids part
+      &#x27;&#x27;</span>;
+    };
+  };
+};</code></pre>
+      </div><p>Note that for now, ids MUST be present in the file, so it means that layouts cannot be defined this way as reported in <a href="https://github.com/NixOS/nixpkgs/issues/284797">https://github.com/NixOS/nixpkgs/issues/284797</a>. Yet, you can still use <code>environment.etc</code> to create them as usual.</p>
+<h3 id="disabling-copilot-key">Disabling Copilot key</h3><p>An increasing number of new laptops come with a useless Copilot key that you might want to disable or remap. Follow these steps to do so:</p>
+<p>Start a shell with keyd available <code>nix-shell -p keyd</code> to monitor what the Copilot key does and see your keyboard id. From that shell, run <code>sudo keyd monitor</code> and press the Copilot key.</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">AT Translated Set 2 keyboard    0001:0001:09b4e68d  leftmeta down
+AT Translated Set 2 keyboard    0001:0001:09b4e68d  leftshift down
+AT Translated Set 2 keyboard    0001:0001:09b4e68d  f23 down
+AT Translated Set 2 keyboard    0001:0001:09b4e68d  f23 up
+AT Translated Set 2 keyboard    0001:0001:09b4e68d  leftshift up
+AT Translated Set 2 keyboard    0001:0001:09b4e68d  leftmeta up</code></pre>
+      </div><p>You may then edit your configuration accordingly:</p>
+<h3 id="dealing-with-layouts-amp-unicode-support">Dealing with Layouts &amp; Unicode Support</h3><p>If you want to define a layout (like you custom qwerty), you can also do it directly in keyd, but keep in mind that keyd can manipulate keycodes (basically the position of the key on the keyboard that is named based on a qwerty layout by convention), but not keysyms (what actual symbol you will type), since keyd they basically recreates a fake keyboard that will be, later in the chain, processed by X11/ibus/… So if you want to use a layout, you need to be sure that the layout used by the user is set to US (e.g. in X11 via <code>setxkbmap us</code>). If you want to produce symbols not accessible by the US keyboard map (e.g. emoji etc), then keyd will basically create for you a XCompose file that you need to include (you may also need to enable Ibus for this), that is located in <code>&quot;${keyd}/share/keyd/keyd.compose&quot;</code>. See keyd documentation for more details.</p>
+<p>The compose file can be enabled on a per-user basis by setting <code>~/.XCompose</code> to be a copy of or a symlink to that compose file. In home-manager, this can be configured like so:</p>
+<p>Alternatively, the compose file can be adjusted system-wide by setting the $XCOMPOSEFILE environment variable. This can be adjusted set in your configuration like so: However, this approach is less reliable, and may not work with all applications, such as web browsers or electron apps.</p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TPM</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / TPM</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: TPM -->
+
+<p>TPM (Trusted Platform Module) is a secure microprocessor commonly embedded in modern computers. It can be used for boot chain audit, key storage and random number generation.</p>
+<h2 id="nixos-configuration">NixOS configuration</h2><p>A minimal NixOS configuration to be able to use the TPM from userspace can be:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ecurity.tpm2.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+<span class="hljs-attr">security.tpm2.pkcs11.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;  <span class="hljs-comment"># expose /run/current-system/sw/lib/libtpm2_pkcs11.so</span>
+s<span class="hljs-attr">ecurity.tpm2.tctiEnvironment.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;  <span class="hljs-comment"># TPM2TOOLS_TCTI and TPM2_PKCS11_TCTI env variables</span>
+u<span class="hljs-attr">sers.users.YOUR_USER.extraGroups</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;tss&quot;</span> ];  <span class="hljs-comment"># tss group has access to TPM devices</span></code></pre>
+      </div><p>After rebooting with this configuration, <code>TPM2TOOLS_TCTI</code> and <code>TPM2_PKCS11_TCTI</code> should point to <code>device:/dev/tpmrm0</code> and your user should be able to read and write to <code>/dev/tpmrm0</code>.</p>
+<h2 id="using-a-tpm2-with-openssh">Using a TPM2 with OpenSSH</h2><p>For example, the following commands create a new token associated with PIN-code <code>YOUR_PIN</code> (Personal Identification Number) and a recovery SOPIN-code <code>YOUR_SOPIN</code> (Security Officer Personal Identification Number) and then a new secp256r1 key:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">tpm2_ptool init
+tpm2_ptool addtoken --pid=1 --label=ssh --userpin=YOUR_PIN --sopin=YOUR_SOPIN
+tpm2_ptool addkey --label=ssh --userpin=YOUR_PIN --algorithm=ecc256</code></pre>
+      </div><p>Now you may show your public key:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">ssh-keygen -D /run/current-system/sw/lib/libtpm2_pkcs11.so</code></pre>
+      </div><p>To tell OpenSSH to use the TPM2 during login, you may add the following line to your <code>~/.ssh/config</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">PKCS11Provider /run/current-system/sw/lib/libtpm2_pkcs11.so</code></pre>
+      </div><p>To load your ssh key into the running <code>ssh-agent</code>, use <code>ssh-add -s</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">ssh-add -s /run/current-system/sw/lib/libtpm2_pkcs11.so</code></pre>
+      </div><p>Note that by default, <code>ssh-agent</code> refuses to load PKCS#11 modules outside a whitelist of trusted paths, and <code>/nix/store</code> paths are not included in this default list. You may need to start the agent with the <code>-P</code> flag to allow the library paths:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">ssh-agent -P <span class="hljs-string">&quot;/run/current-system/sw/lib/*,/nix/store/*/lib/*&quot;</span></code></pre>
+      </div><p>For a persistent setup, you can configure the system-wide agent in your <code>configuration.nix</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs">p<span class="hljs-attr">rograms.ssh</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">startAgent</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">agentPKCS11Whitelist</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${config.security.tpm2.pkcs11.package}</span>/lib/*,/run/current-system/sw/lib/*&quot;</span>;
+};</code></pre>
+      </div><h2 id="frequently-asked-questions">Frequently Asked Questions</h2><h3 id="how-does-the-pin-code-bruteforce-protection-work">How does the PIN-code bruteforce protection work?</h3><p>You may run the following command to query the variable properties of your TPM:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nix-shell -p tpm2-tools --run <span class="hljs-string">&quot;tpm2_getcap properties-variable&quot;</span></code></pre>
+      </div><ul>
+<li><code>TPM2_PT_LOCKOUT_COUNTER</code> is the current number of failed attempts,</li>
+<li><code>TPM2_PT_MAX_AUTH_FAIL</code> is the maximum number of failed attempts before lockdown,</li>
+<li><code>TPM2_PT_LOCKOUT_INTERVAL</code> and <code>TPM2_PT_LOCKOUT_RECOVERY</code> are durations in seconds for recovery.</li>
+</ul>
+<h3 id="how-to-get-tpm-model-information">How to get TPM model information?</h3><p>The following command will dump found strings from the raw TPM2 certificates:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nix-shell -p tpm2-tools --run <span class="hljs-string">&quot;tpm2_getekcertificate&quot;</span> | strings</code></pre>
+      </div><p>Usually, you may find a vendor such as <code>STMicroelectronics</code> or <code>Infineon Technologies</code> and a model such as <code>ST33HTPxAHB61</code>.</p>
+<p>To get firmware version information, you might want to look at:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nix-shell -p tpm2-tools --run <span class="hljs-string">&quot;tpm2_getcap properties-fixed&quot;</span></code></pre>
+      </div><h2 id="references">References</h2><ul>
+<li><a href="https://wiki.archlinux.org/title/Trusted_Platform_Module">https://wiki.archlinux.org/title/Trusted_Platform_Module</a></li>
+<li><a href="https://learn.microsoft.com/en-us/windows/security/information-protection/tpm/change-the-tpm-owner-password">https://learn.microsoft.com/en-us/windows/security/information-protection/tpm/change-the-tpm-owner-password</a></li>
+<li><a href="https://blog.ledger.com/ssh-with-tpm/">https://blog.ledger.com/ssh-with-tpm/</a></li>
+</ul>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

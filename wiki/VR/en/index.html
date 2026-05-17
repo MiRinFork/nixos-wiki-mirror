@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VR/en</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/VR">VR</a><span aria-hidden="true"> / </span>en</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: VR/en -->
+
+<h2 id="monado">Monado</h2><p><a href="https://monado.freedesktop.org/">Monado</a> is an open source OpenXR runtime. It offers support for a variety of hardware using its built-in drivers and can be used to run any OpenXR and, with the help of OpenComposite, most OpenVR applications.</p>
+<p>Monado can be configured using its NixOS options :</p>
+<p>In order to configure Monado, you might want to add additional environment variables:</p>
+<p>Once configured, Monado can be started and stopped in a <a href="https://mirror.nixoscn.org/wiki/VR/en/systemd" class="wikilink" title="systemd">systemd</a> user session.</p>
+<p>For example, the following commands will start Monado and then follow its log output:</p>
+<h3 id="hand-tracking">Hand Tracking</h3><p>You may notice that running <code>monado-services</code> will fail due to the lack of hand tracking data. There are 2 ways to remedy this, either disable hand tracking altogether, or download the hand tracking data.</p>
+<p>To disable hand tracking, modify the environment variable to include <code>WMR_HANDTRACKING = &quot;0&quot;;</code>, so that it will look like this.</p>
+<p>To get hand tracking to work, you require <code>git-lfs</code> to be enabled. The standard way of enabling <code>git-lfs</code> is through the configuration below</p>
+<p>After making sure <code>git-lfs</code> is enabled, run these commands and restart <code>monado-service</code></p>
+<p>For further information about available environment variables and tweaks, read the <a href="https://lvra.gitlab.io/docs/fossvr/monado/">Linux VR Adventures wiki</a> and the <a href="https://monado.freedesktop.org/getting-started.html#environment-variables">Monado documentation about environment variables</a></p>
+<h2 id="opencomposite">OpenComposite</h2><p><a href="https://gitlab.com/znixian/OpenOVR">OpenComposite</a> is a compatibility layer for running OpenVR applications on an OpenXR runtime like Monado. It is comparable to tools like DXVK or vkd3d, but for translating OpenVR calls to OpenXR.</p>
+<p>In order to run OpenVR games on anything other than SteamVR, you need to configure the OpenVR runtime path defined in <code>~/.config/openvr/openvrpaths.vrpath</code>. A reliable way to do this is to use <a href="https://mirror.nixoscn.org/wiki/VR/en/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> to create this file.</p>
+<p>If this file is not set to read-only, SteamVR will add its runtime path back, hence the use for Home Manager.</p>
+<p>An example configuration for enabling OpenComposite may look like this:</p>
+<p>If you are planning to play any OpenVR game on Steam or OpenXR games through Proton, you will have to use OpenComposite in this manner. In most cases you also have to allow access to the socket path of your OpenXR runtime to Steam&#39;s runtime, by using the following launch options for XR applications on Steam: <code>env PRESSURE_VESSEL_FILESYSTEMS_RW=$XDG_RUNTIME_DIR/monado_comp_ipc %command%</code>. This example is for Monado, while other XR runtimes might differ.</p>
+<h2 id="wivrn">WiVRn</h2><p>WiVRn is an OpenXR streaming application built around Monado. It wirelessly connects a standalone VR headset to a Linux computer. If your headset is not wireless, look at <a href="https://mirror.nixoscn.org/wiki/VR/en/VR#Monado" class="wikilink" title="Monado">Monado</a> instead. Example usage of the WiVRn module:</p>
+<p>Like Monado, you will also have to add the launch argument for WiVRn to allow access to the socket: <code>PRESSURE_VESSEL_FILESYSTEMS_RW=$XDG_RUNTIME_DIR/wivrn/comp_ipc %command%</code></p>
+<h2 id="envision">Envision</h2><p>Envision is an orchestrator for the FOSS VR stack. It handles the building and configuration of Monado, WiVRn, OpenComposite, and other utilities of the FOSS VR stack such as the Lighthouse driver, OpenHMD, Survive, and WMR. You can enable it with the Envision module:</p>
+<h2 id="steamvr">SteamVR</h2><p><a href="https://store.steampowered.com/app/250820/SteamVR/">SteamVR</a> is a proprietary OpenVR runtime with compatibility for OpenXR. It is part of <a href="https://mirror.nixoscn.org/wiki/VR/en/Steam" class="wikilink" title="Steam">Steam</a> and doesn&#39;t need any additional setup on NixOS apart from enabling Steam.</p>
+<p>After installing SteamVR through Steam and plugging in a SteamVR-compatible headset, SteamVR should work for the most part.</p>
+<p>On initial setup, SteamVR will ask for elevated permissions, to set up a file capability for one of its binaries. This is needed to allow asynchronous reprojection to work. Clients need the <code>CAP_SYS_NICE</code> capability to acquire a high-priority context, which is a requirement for asynchronous reprojection.</p>
+<h3 id="patching-amdgpu-to-allow-high-priority-queues">Patching AMDGPU to allow high priority queues</h3><p>By applying <a href="https://github.com/Frogging-Family/community-patches/blob/a6a468420c0df18d51342ac6864ecd3f99f7011e/linux61-tkg/cap_sys_nice_begone.mypatch">this patch</a>, the AMDGPU kernel driver will ignore process privileges and allow any application to create high priority contexts.</p>
+<h4 id="applying-as-a-nixos-kernel-patch">Applying as a NixOS kernel patch</h4><p>To workaround the <code>CAP_SYS_NICE</code> requirement, we can apply a kernel patch using the following NixOS configuration snippet:</p>
+<p>It is also possible to just patch amdgpu and build it as an out-of-tree module, as described in <a href="https://mirror.nixoscn.org/wiki/VR/en/Linux_kernel#Patching_a_single_In-tree_kernel_module" class="wikilink" title="Linux_kernel#Patching_a_single_In-tree_kernel_module">Linux_kernel#Patching_a_single_In-tree_kernel_module</a></p>
+<h3 id="patching-bubblewrap-to-allow-capabilities">Patching bubblewrap to allow capabilities</h3><p>By modifying the bubblewrap binary used for running Steam, you can allow processes in that FHS environment to acquire capabilities. This removes the need for patching the kernel directly.</p>
+<p>as an additional change, you may also need to replace Steam&#39;s own bwrap binary with a symbolic link to this modified bwrap binary, found at <code>~/.local/share/Steam/ubuntu12_32/steam-runtime/usr/libexec/steam-runtime-tools-0/srt-bwrap</code>.</p>
+<p>Steam will periodically replace this modification with its own binary when steam-runtime updates, so you may need to re-apply this change if it breaks.</p>
+<h2 id="wlx-overlay-s">wlx-overlay-s</h2><p><a href="https://github.com/galister/wlx-overlay-s">wlx-overlay-s</a> is a lightweight OpenXR/OpenVR overlay for Wayland and X11 desktops. It works with SteamVR as well as Monado/WiVRn natively.</p>
+<h4 id="steamvr-autostart">SteamVR autostart</h4><p>When launching wlx-overlay-s in SteamVR (or any OpenVR compositor) it will register an autostart manifest. Currently, this manifest will reference a Nix store path of wlx-overlay-s, which might get garbage collected after rebuilds of your NixOS/Nix profile. A workaround is to regularly run the following command to update the manifest&#39;s store path:</p>
+<h2 id="see-also">See also</h2><ul>
+<li><a href="https://lvra.gitlab.io/">Linux VR Adventures Wiki</a></li>
+</ul>
+<p><a href="category:Video" class="wikilink" title="Category:Video">Category:Video</a> <a href="category:Hardware" class="wikilink" title="Category:Hardware">Category:Hardware</a> <a href="category:Desktop" class="wikilink" title="Category:Desktop">Category:Desktop</a> <a href="category:Gaming" class="wikilink" title="Category:Gaming">Category:Gaming</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

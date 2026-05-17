@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OBS Studio</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / OBS Studio</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: OBS Studio -->
+
+<p><a href="https://obsproject.com/">OBS Studio</a> is free and open-source software for video recording and live streaming, licensed under the GNU GPLv2 license.</p>
+<h3 id="installing-plugins">Installing Plugins</h3><p>Plugins are available from the <code>obs-studio-plugins</code> package set.</p>
+<p>They can be installed by using either the <a href="https://mirror.nixoscn.org/wiki/OBS%20Studio/NixOS" class="wikilink" title="NixOS">NixOS</a> or <a href="https://mirror.nixoscn.org/wiki/OBS%20Studio/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> module:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ config, pkgs, ... }:
+{
+  <span class="hljs-attr">programs.obs-studio</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+    <span class="hljs-comment"># optional Nvidia hardware acceleration</span>
+    <span class="hljs-attr">package</span> <span class="hljs-operator">=</span> (
+      pkgs.obs-studio.override {
+        <span class="hljs-attr">cudaSupport</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      }
+    );
+
+    <span class="hljs-attr">plugins</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs.obs-studio-plugins; [
+      wlrobs
+      obs-backgroundremoval
+      obs-pipewire-audio-capture
+      obs-vaapi <span class="hljs-comment">#optional AMD hardware acceleration</span>
+      obs-gstreamer
+      obs-vkcapture
+    ];
+  };
+}</code></pre>
+      </div><p>or by wrapping the package with <code>wrapOBS</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> [
+  (pkgs.wrapOBS {
+    <span class="hljs-attr">plugins</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs.obs-studio-plugins; [
+      wlrobs
+      obs-backgroundremoval
+      obs-pipewire-audio-capture
+      obs-vaapi <span class="hljs-comment">#optional AMD hardware acceleration</span>
+      obs-gstreamer
+      obs-vkcapture
+    ];
+  })
+];</code></pre>
+      </div><p><strong>Package collision</strong>: Including both <code>obs-studio</code> and <code>(pkgs.wrapOBS {...</code> in <code>environment.systemPackages</code> will result in a package collision; if plugins are needed, only include the &quot;wrapped&quot; version, which sets the plugins directory to include Nix-managed plugins (see <a href="https://github.com/NixOS/nixpkgs/blob/master/pkgs/applications/video/obs-studio/wrapper.nix">pkgs/applications/video/obs-studio/wrapper.nix</a>.</p>
+<p><strong>Missing hardware acceleration</strong>: Sometimes you need to set &quot;Output Mode&quot; to Advanced in settings Output tab to see the hardware accelerated Video Encoders options.</p>
+<h3 id="using-the-virtual-camera">Using the Virtual Camera</h3><p>The virtual camera requires the <code>v4l2loopback</code> <a href="https://mirror.nixoscn.org/wiki/OBS%20Studio/Linux_kernel#Custom_kernel_modules" class="wikilink" title="kernel module">kernel module</a> to be installed, a loopback device configured, and polkit enabled so OBS can access the virtual device.</p>
+<p>This can be done in NixOS with:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs">p<span class="hljs-attr">rograms.obs-studio.enableVirtualCamera</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><p>Or by setting the kernel options manually, this is useful if you need to add an additional loopback device as shown below:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ config, ... }:
+{
+  <span class="hljs-attr">boot.extraModulePackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> config.boot.kernelPackages; [
+    v4l2loopback
+  ];
+  <span class="hljs-attr">boot.kernelModules</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;v4l2loopback&quot;</span> ];
+  <span class="hljs-attr">boot.extraModprobeConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    options v4l2loopback devices=1 video_nr=1 card_label=&quot;OBS Cam&quot; exclusive_caps=1
+  &#x27;&#x27;</span>;
+  <span class="hljs-attr">security.polkit.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+}</code></pre>
+      </div><p>It is possible to use <a href="https://mirror.nixoscn.org/wiki/OBS%20Studio/Droidcam" class="wikilink" title="Droidcam">Droidcam</a> as virtual camera.</p>
+<p>If you use a digital camera as a webcam via <a href="http://gphoto.org/">gphoto2</a> you will need an additional loopback device to use this camera as a virtual camera. For a setup like this you may wish to change the above v4l2loopback module config to something like this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">b<span class="hljs-attr">oot.extraModprobeConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+  options v4l2loopback devices=2 video_nr=1,2 card_label=&quot;OBS Cam, Virt Cam&quot; exclusive_caps=1
+&#x27;&#x27;</span>;</code></pre>
+      </div><p>For more the <a href="https://wiki.archlinux.org/title/V4l2loopback#Loading_the_kernel_module">arch wiki entry on v4l2loopback</a> is a good reference.</p>
+<p>In addition to <code>gphoto2</code> you will need the <code>v4l-utils</code> and <code>ffmpeg</code> packages so that you can use gphoto2 to send the raw feed from your camera to the virtual camera via ffmpeg for example using a command like this<sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/OBS%20Studio#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">gphoto2 --stdout autofocusdrive=1 --capture-movie | ffmpeg -i - -vcodec rawvideo -pix_fmt yuv420p -threads 0 -f v4l2 /dev/video2</code></pre>
+      </div><p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p><a href="https://austingil.com/dslr-webcam-linux/">https://austingil.com/dslr-webcam-linux/</a> <a href="https://mirror.nixoscn.org/wiki/OBS%20Studio#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

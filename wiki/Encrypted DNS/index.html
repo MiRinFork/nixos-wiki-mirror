@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Encrypted DNS</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Encrypted DNS</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Encrypted DNS -->
+
+<p>By default, DNS traffic is sent in plain text over the internet; it can be monitored or spoofed by any party along the path, including your ISP. DNSSEC authenticates the DNS records themselves, but can&#39;t stop your ISP monitoring domains or dropping queries.</p>
+<p><strong>Encrypted DNS</strong> protocols aim to address this hole by encrypting queries and responses in transit between DNS resolvers and clients; the most widely deployed ones are <a href="wikipedia:DNS_over_HTTPS" class="wikilink" title="DNS over HTTPS">DNS over HTTPS</a> (DoH), <a href="wikipedia:DNS_over_TLS" class="wikilink" title="DNS over TLS">DNS over TLS</a> (DoT), and <a href="https://dnscrypt.info/">DNSCrypt</a>.</p>
+<p>NixOS has modules for multiple encrypted DNS proxies, including <a href="https://github.com/DNSCrypt/dnscrypt-proxy">dnscrypt-proxy 2</a>, <a href="https://github.com/AdguardTeam/dnsproxy">dnsproxy</a> and <a href="https://dnsprivacy.org/wiki/display/DP/DNS+Privacy+Daemon+-+Stubby">Stubby</a>. <code>services.dnscrypt-proxy</code> is generally recommended, as it has the widest protocol and feature support, and is written in a memory-safe language. For DNS over TLS (DoT) support, <code>services.dnsproxy</code> can be used. Detailed comparison of DNS proxies can be found on <a href="https://wiki.archlinux.org/title/Domain_name_resolution#DNS_servers">ArchLinux Wiki</a>.</p>
+<h2 id="setting-nameservers">Setting nameservers</h2><p>No matter what proxy you use, you should set your DNS nameservers statically and make sure that your network manager won&#39;t override your carefully set nameservers with some random settings it received over DHCP.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">networking</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">nameservers</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;127.0.0.1&quot;</span> <span class="hljs-string">&quot;::1&quot;</span> ];
+    <span class="hljs-comment"># If using dhcpcd:</span>
+    <span class="hljs-attr">dhcpcd.extraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nohook resolv.conf&quot;</span>;
+    <span class="hljs-comment"># If using NetworkManager:</span>
+    <span class="hljs-attr">networkmanager.dns</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;none&quot;</span>;
+  }
+
+  <span class="hljs-comment"># Make sure you don&#x27;t have services.resolved.enable on.</span>
+}</code></pre>
+      </div><p>If you&#39;d prefer to keep using resolvconf then you can set <code>networking.resolvconf.useLocalResolver</code> instead. Note that it uses the IPv4 loopback address only.</p>
+<h2 id="secure-dns-and-captive-portal">Secure DNS and Captive Portal</h2><p>Secure DNS will break most captive portals like those of public or hotel wifi access points, resulting in inability to gain internet access through such access points.</p>
+<p>In that case, use <code>networkctl status ${wlan interface}</code> to show the default DNS provided by the network, and temporarily change nameserver inside <code>/etc/resolv.conf</code> from <code>127.0.0.53</code> to the provided one.</p>
+<p>Alternatively, if you have Chromium installed, you can use the <code>programs.captive-browser.enable</code> Chromium wrapper, which is &quot;Dedicated Chrome instance to log into captive portals without messing with DNS settings&quot;.</p>
+<h2 id="dnscrypt-proxy2">dnscrypt-proxy2</h2><h3 id="basic-configuration">Basic configuration</h3><div class="code-container">
+        
+        <pre><code class="language-nixos hljs"><span class="hljs-keyword">let</span>
+  <span class="hljs-attr">hasIPv6Internet</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">StateDirectory</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;dnscrypt-proxy&quot;</span>;
+<span class="hljs-keyword">in</span>
+{
+  <span class="hljs-comment"># See https://wiki.nixos.org/wiki/Encrypted_DNS</span>
+  <span class="hljs-attr">services.dnscrypt-proxy</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-comment"># See https://github.com/DNSCrypt/dnscrypt-proxy/blob/master/dnscrypt-proxy/example-dnscrypt-proxy.toml</span>
+    <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">sources.public-resolvers</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">urls</span> <span class="hljs-operator">=</span> [
+          <span class="hljs-string">&quot;https://raw.githubusercontent.com/DNSCrypt/dnscrypt-resolvers/master/v3/public-resolvers.md&quot;</span>
+          <span class="hljs-string">&quot;https://download.dnscrypt.info/resolvers-list/v3/public-resolvers.md&quot;</span>
+        ];
+        <span class="hljs-attr">minisign_key</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;RWQf6LRCGA9i53mlYecO4IzT51TGPpvWucNSCh1CBM0QTaLn73Y7GFO3&quot;</span>; <span class="hljs-comment"># See https://github.com/DNSCrypt/dnscrypt-resolvers/blob/master/v3/public-resolvers.md</span>
+        <span class="hljs-attr">cache_file</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/var/lib/<span class="hljs-subst">${StateDirectory}</span>/public-resolvers.md&quot;</span>;
+      };
+
+      <span class="hljs-comment"># Use servers reachable over IPv6 -- Do not enable if you don&#x27;t have IPv6 connectivity</span>
+      <span class="hljs-attr">ipv6_servers</span> <span class="hljs-operator">=</span> hasIPv6Internet;
+      <span class="hljs-attr">block_ipv6</span> <span class="hljs-operator">=</span> <span class="hljs-operator">!</span> (hasIPv6Internet);
+
+      <span class="hljs-attr">require_dnssec</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">require_nolog</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+      <span class="hljs-attr">require_nofilter</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+      <span class="hljs-comment"># If you want, choose a specific set of servers that come from your sources.</span>
+      <span class="hljs-comment"># Here it&#x27;s from https://github.com/DNSCrypt/dnscrypt-resolvers/blob/master/v3/public-resolvers.md</span>
+      <span class="hljs-comment"># If you don&#x27;t specify any, dnscrypt-proxy will automatically rank servers</span>
+      <span class="hljs-comment"># that match your criteria and choose the best one.</span>
+      <span class="hljs-comment"># server_names = [ ... ];</span>
+    };
+  };
+
+  <span class="hljs-attr">systemd.services.dnscrypt-proxy.serviceConfig.StateDirectory</span> <span class="hljs-operator">=</span> StateDirectory;
+}</code></pre>
+      </div><p>See <a href="https://github.com/DNSCrypt/dnscrypt-proxy/blob/master/dnscrypt-proxy/example-dnscrypt-proxy.toml">the upstream example configuration file</a> for more configuration options.</p>
+<h3 id="blocklist">Blocklist</h3><p>Fetch a blocklist file (e.g. oisd) as a flake input:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># flake.nix</span>
+
+{
+  <span class="hljs-attr">inputs</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">oisd</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://big.oisd.nl/domainswild&quot;</span>;
+      <span class="hljs-attr">flake</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+    };
+
+    <span class="hljs-comment"># Your configuration</span>
+  };
+
+  <span class="hljs-attr">outputs</span> <span class="hljs-operator">=</span>
+    { self, nixpkgs, oisd, ... }@<span class="hljs-params">inputs:</span>
+    {
+      <span class="hljs-comment"># Your configuration</span>
+    };
+}</code></pre>
+      </div><div class="code-container">
+        
+        <pre><code class="language-nixos hljs">{ config, lib, pkgs, inputs, ... }:
+<span class="hljs-keyword">let</span>
+  <span class="hljs-attr">blocklist_base</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">builtins.readFile</span> inputs.oisd;
+  <span class="hljs-attr">extraBlocklist</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;&#x27;&#x27;</span>;
+  <span class="hljs-attr">blocklist_txt</span> <span class="hljs-operator">=</span> pkgs.writeText <span class="hljs-string">&quot;blocklist.txt&quot;</span> <span class="hljs-string">&#x27;&#x27;
+    <span class="hljs-subst">${extraBlocklist}</span>
+    <span class="hljs-subst">${blocklist_base}</span>
+  &#x27;&#x27;</span>;
+<span class="hljs-keyword">in</span>
+{
+  <span class="hljs-attr">services.dnscrypt-proxy.settings.blocked_names.blocked_names_file</span> <span class="hljs-operator">=</span> blocklist_txt;
+}</code></pre>
+      </div><h3 id="local-network---forwarding-rules">Local network - Forwarding rules</h3><p>Maybe you&#39;d like queries for your local domain to go to your router, and not to an upstream DNS resolver. By doing so, names of your local online devices can be found. For this you have to create a file with <a href="https://github.com/DNSCrypt/dnscrypt-proxy/blob/master/dnscrypt-proxy/example-forwarding-rules.txt">forwarding rules</a> which you then include in your config:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">services.dnscrypt-proxy</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+      ...
+      <span class="hljs-attr">forwarding_rules</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/etc/nixos/services/networking/forwarding-rules.txt&quot;</span>;
+      ...
+    };
+  };
+
+  ....
+}</code></pre>
+      </div><h3 id="using-alongside-another-dns-server">Using alongside another DNS server</h3><p>DNS authoritative nameservers are tied to port 53, and the Linux <code>/etc/resolv.conf</code> doesn&#39;t allow specifying a different port for resolvers either. This leads to conflicts if you have another DNS server you need to expose externally on port 53 (e.g. an authoritative DNS server for your domains, or <a href="https://mirror.nixoscn.org/wiki/Encrypted%20DNS/acme-dns" class="wikilink" title="acme-dns">acme-dns</a>), and can&#39;t easily run it on a separate IP to dnscrypt-proxy2 (e.g. your authoritative DNS server listens on <code>::</code>/<code>0.0.0.0</code>). You can resolve this by running the proxy on a different port and forwarding loopback traffic on port 53 to it:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">networking.nameservers</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;::1&quot;</span> ];
+
+  <span class="hljs-attr">services.dnscrypt-proxy</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">listen_addresses</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;[::1]:51&quot;</span> ];
+      <span class="hljs-comment"># ...</span>
+    };
+  };
+
+  <span class="hljs-comment"># Forward loopback traffic on port 53 to dnscrypt-proxy2.</span>
+  <span class="hljs-attr">networking.firewall.extraCommands</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    ip6tables --table nat --flush OUTPUT
+    <span class="hljs-subst">${lib.flip (lib.concatMapStringsSep <span class="hljs-string">&quot;<span class="hljs-char escape_">\n</span>&quot;</span>) [ <span class="hljs-string">&quot;udp&quot;</span> <span class="hljs-string">&quot;tcp&quot;</span> ] (<span class="hljs-params">proto:</span> <span class="hljs-string">&#x27;&#x27;
+      ip6tables --table nat --append OUTPUT \
+        --protocol <span class="hljs-subst">${proto}</span> --destination ::1 --destination-port 53 \
+        --jump REDIRECT --to-ports 51
+    &#x27;&#x27;</span>)}</span>
+  &#x27;&#x27;</span>;
+}</code></pre>
+      </div><p>Note that you can still access the other DNS server locally through the non-loopback interface (e.g. by using your server&#39;s external IP).</p>
+<h2 id="dnsproxy">dnsproxy</h2><p>dnsproxy is a simple DNS proxy server with the widest protocol support.</p>
+<h3 id="example-configuration">Example configuration</h3><div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">services.dnsproxy</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-comment"># Plain DNS upstream</span>
+      <span class="hljs-attr">upstream</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;1.1.1.1:53&quot;</span> ];
+      <span class="hljs-comment"># DNS over TLS upstream</span>
+      <span class="hljs-attr">upstream</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;tls://dns.adguard.com&quot;</span> ];
+      <span class="hljs-comment"># DNS over HTTPS upstream</span>
+      <span class="hljs-attr">upstream</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;https://dns.adguard.com/dns-query&quot;</span> ];
+
+      <span class="hljs-attr">listen-addrs</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;0.0.0.0&quot;</span> ];
+      <span class="hljs-comment"># Plain DNS server</span>
+      <span class="hljs-attr">listen-ports</span> <span class="hljs-operator">=</span> [ <span class="hljs-number">53</span> ];
+      <span class="hljs-comment"># DNS over TLS server</span>
+      <span class="hljs-attr">tls-port</span> <span class="hljs-operator">=</span> [ <span class="hljs-number">853</span> ];
+      <span class="hljs-comment"># DNS over HTTPS server</span>
+      <span class="hljs-attr">https-port</span> <span class="hljs-operator">=</span> [ <span class="hljs-number">443</span> ];
+      <span class="hljs-comment"># Certificate for encrypted DNS server</span>
+      <span class="hljs-attr">tls-crt</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/var/lib/acme/example.org/fullchain.pem&quot;</span>;
+      <span class="hljs-attr">tls-key</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/var/lib/acme/example.org/key.pem&quot;</span>;
+    };
+    <span class="hljs-comment"># Additional launch flags</span>
+    <span class="hljs-attr">flags</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;--verbose&quot;</span> ];
+  };
+}</code></pre>
+      </div><h2 id="stubby">Stubby</h2><p>Stubby is a very lightweight resolver (40kb binary) that performs DNS-over-TLS, and nothing else. While stubby can be used as a system resolver on its own, it is typically combined with another resolver (such as unbound) to add caching and forwarding rules for local domains. See the <a href="https://search.nixos.org/options/?query=services.stubby">options documentation for <code>services.stubby.*</code></a> for configuration.</p>
+<p>Example configuration for Cloudflare. Note that digests change and need to be updated:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+    <span class="hljs-attr">services.stubby</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> pkgs.stubby.passthru.settingsExample <span class="hljs-operator">//</span> {
+        <span class="hljs-attr">upstream_recursive_servers</span> <span class="hljs-operator">=</span> [{
+          <span class="hljs-attr">address_data</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;1.1.1.1&quot;</span>;
+          <span class="hljs-attr">tls_auth_name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;cloudflare-dns.com&quot;</span>;
+          <span class="hljs-attr">tls_pubkey_pinset</span> <span class="hljs-operator">=</span> [{
+            <span class="hljs-attr">digest</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sha256&quot;</span>;
+            <span class="hljs-attr">value</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;GP8Knf7qBae+aIfythytMbYnL+yowaWVeD6MoLHkVRg=&quot;</span>;
+          }];
+        } {
+          <span class="hljs-attr">address_data</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;1.0.0.1&quot;</span>;
+          <span class="hljs-attr">tls_auth_name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;cloudflare-dns.com&quot;</span>;
+          <span class="hljs-attr">tls_pubkey_pinset</span> <span class="hljs-operator">=</span> [{
+            <span class="hljs-attr">digest</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sha256&quot;</span>;
+            <span class="hljs-attr">value</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;GP8Knf7qBae+aIfythytMbYnL+yowaWVeD6MoLHkVRg=&quot;</span>;
+          }];
+        }];
+      };
+    };
+}</code></pre>
+      </div><p>To update digests get the TLS certificate that signs the responses and calculate the digest:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">echo</span> | openssl s_client -connect <span class="hljs-string">&#x27;1.1.1.1:853&#x27;</span> 2&gt;/dev/null | openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | openssl enc -<span class="hljs-built_in">base64</span></code></pre>
+      </div><p>Or using <code>kdig</code> from <code>knot-dns</code></p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">kdig -d @1.1.1.1 +tls-ca +tls-host=one.one.one.one example.com</code></pre>
+      </div><p><a href="category:Networking" class="wikilink" title="Category:Networking">Category:Networking</a> <a href="category:DNS" class="wikilink" title="Category:DNS">Category:DNS</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

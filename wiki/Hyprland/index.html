@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hyprland</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Hyprland</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Hyprland -->
+
+<translate>
+
+<p><a href="https://hypr.land/">Hyprland</a> is an independent, extensible, bleeding-edge <a href="https://mirror.nixoscn.org/wiki/Hyprland/Wayland" class="wikilink" title="Wayland">Wayland</a> compositor written in modern C++ with an emphasis on looks. In addition, Hyprland also offers a number of first-party tools as well as a custom plugin system. The most up-to-date and complete documentation may be found on the project&#39;s own <a href="https://wiki.hypr.land/">wiki</a>.</p>
+<p>Some of the most notable features of Hyprland are:</p>
+<ul>
+<li><strong>Independent Wayland implementation</strong>: Does not rely on wlroots or other external libraries, and provides an in-house alternatives to common components (screen locking, idle daemon, etc).</li>
+<li><strong>Easy to configure</strong>: Uses a live reloading config file in plain-text with useful defaults.</li>
+<li><strong>Dynamic tiling support</strong>: Supports both automatic tiling and floating mode with multiple layouts.</li>
+<li><strong>Socket-based IPC</strong>: Allows controlling the compositor at runtime via UNIX socket.</li>
+<li><strong>Global shortcuts</strong>: Permits setting global keybinds for any application (for apps such as <a href="https://mirror.nixoscn.org/wiki/Hyprland/OBS_Studio" class="wikilink" title="OBS Studio">OBS Studio</a>).</li>
+<li><strong>Window/Workspace Rules</strong>: Set special behaviors for certain windows and workspaces.</li>
+</ul>
+<h2 id="installation">Installation</h2><p>NixOS 24.11 added support for launching Hyprland with <a href="https://github.com/Vladimir-csp/uwsm">Universal Wayland Session Manager</a> (UWSM) and is the recommended way to launch Hyprland as it neatly integrates with <a href="https://mirror.nixoscn.org/wiki/Hyprland/Systemd" class="wikilink" title="Systemd">Systemd</a>. <a href="https://mirror.nixoscn.org/wiki/Hyprland/UWSM" class="wikilink" title="Options for configuring UWSM may be found here">Options for configuring UWSM may be found here</a>. Also see the Hyprland wiki <a href="https://wiki.hypr.land/Useful-Utilities/Systemd-start/#uwsm">page for UWSM here</a>.</p>
+<h3 id="nix-on-non-nixos-systems">Nix on Non-NixOS Systems</h3><p>If you use the Nix package manager on-top of a non-NixOS distribution then Hyprland can still be installed (albeit with less support than the NixOS module).</p>
+<p>Firstly, enable <a href="https://wiki.nixos.org/wiki/Flakes#Other_Distros,_without_Home-Manager">flakes</a> in your Nix installation. Then install Hyprland through <code>nix profile</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-text hljs">nix profile install nixpkgs#hyprland</code></pre>
+      </div><p>In order for Hyprland to find graphics drivers on a non-NixOS system, you will need to install <a href="https://mirror.nixoscn.org/wiki/Hyprland/nixGL" class="wikilink" title="nixGL">nixGL</a>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-text hljs">nix profile install github:nix-community/nixGL --impure</code></pre>
+      </div><p>Now you can run Hyprland by invoking it with NixGL:</p>
+<div class="code-container">
+        
+        <pre><code class="language-text hljs">nixGL Hyprland</code></pre>
+      </div><h4 id="hypr-ecosystem">Hypr Ecosystem</h4><p>You may also be interested in the Hypr project&#39;s collection of tools:</p>
+<ul>
+<li><strong>hyprlock</strong>: Hyprland&#39;s GPU-accelerated screen locking utility.</li>
+<li><strong>hypridle</strong>: Hyprland&#39;s idle daemon.</li>
+<li><a href="https://mirror.nixoscn.org/wiki/Hyprland/hyprpaper" class="wikilink" title="hyprpaper">hyprpaper</a>: Hyprland&#39;s wallpaper utility.</li>
+<li><strong>hyprsunset</strong>: Application to enable a blue-light filter on Hyprland.</li>
+<li><strong>hyprpicker</strong>: Wayland color picker that does not suck.</li>
+<li><strong>hyprpolkitagent</strong>: Polkit authentication agent written in QT/QML.</li>
+</ul>
+<p>All official Hypr* programs are listed in the project&#39;s <a href="https://wiki.hypr.land/Hypr-Ecosystem/">wiki page</a> along with documentation.</p>
+<h3 id="hyprland-flake">Hyprland Flake</h3><p>If you wish to run a development version of Hyprland, you can easily do so by adding its flake to your flake inputs as demonstrated below:</p>
+<p>If you experience performance drops in video games or graphics tools like Blender on stable NixOS, then it&#39;s likely a <a href="https://mirror.nixoscn.org/wiki/Hyprland/Mesa" class="wikilink" title="Mesa">Mesa</a> version mismatch with Hyprland and the rest of your system. This can be fixed by substituting the system&#39;s mesa package with Hyprland&#39;s own.</p>
+<h4 id="cachix">Cachix</h4><p>If you use the Hyprland flake, you&#39;ll have to rebuild Hyprland as well as any of its dependencies (mesa, ffmpeg, etc). To avoid this, use the <a href="https://app.cachix.org/cache/hyprland">Cachix cache</a> provided by Hyprland to supplement any dependency not supplied by Hydra. Note that the setting has to be enabled <strong>before</strong> using the Hyprland flake package (meaning you should rebuild at least once before adding the flake input).</p>
+<h3 id="screensharing">Screensharing</h3><h3 id="display-manager-support">Display Manager Support</h3><p>By default, Hyprland does not come with a <a href="https://wiki.nixos.org/wiki/Wayland#Display_Managers">display manager</a> and does not advertise support for one. Though one can start hyprland directly from tty with <code>Hyprland</code> or with <code>uwsm start select</code>, some display managers packaged in NixOS are compatible including but may not be limited to:</p>
+<ul>
+<li><a href="https://mirror.nixoscn.org/wiki/Hyprland/SDDM" class="wikilink" title="SDDM">SDDM</a></li>
+<li><a href="https://mirror.nixoscn.org/wiki/Hyprland/GDM" class="wikilink" title="GDM">GDM</a></li>
+<li><a href="https://mirror.nixoscn.org/wiki/Hyprland/Greetd" class="wikilink" title="Greetd">Greetd</a> (especially with ReGreet)</li>
+<li><a href="https://codeberg.org/fairyglade/ly">Ly</a> (not recommended, but works)</li>
+</ul>
+<h2 id="configuration">Configuration</h2><p>On first run, Hyprland will create a configuration file with autogenerated defauts in <code>$XDG_CONFIG_HOME/hypr/hyprland.conf</code> if it does not exist. An example configuration can be found in the <a href="https://github.com/hyprwm/Hyprland/blob/v0.54.3-b/example/hyprland.conf">project&#39;s git repository</a>.</p>
+<h3 id="using-home-manager">Using <a href="https://mirror.nixoscn.org/wiki/Hyprland/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a></h3><p>Home Manager allows for declarative configuration of Hyprland using Nix syntax. Entries with the same key should be written as lists. Variables’ and colors’ names should be quoted.</p>
+<p>Find additional options under <a href="https://nix-community.github.io/home-manager/options.xhtml#opt-wayland.windowManager.hyprland.enable">Home Manager - wayland.windowManager.hyprland</a>. Also, see the <a href="https://wiki.hypr.land/Nix/Hyprland-on-Home-Manager/">Hyprland Page for Home Manager</a> for more examples.</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">{{!}}
+``` rofi -show drun&quot;
+
+`     &quot;$mod, F, exec, librewolf&quot;`
+
+`     &quot;CONTROL ALT, T, exec, wezterm&quot;`  
+`   ];`
+
+`   # Startup Apps`  
+`   exec-once = [`  
+`     &quot;hyprpanel&quot;`  
+`   ];`
+
+`   bindm = [`  
+`     # mouse movements`  
+`     &quot;$mod, mouse:272, movewindow&quot;`  
+`     &quot;$mod, mouse:273, resizewindow&quot;`  
+`     &quot;$mod ALT, mouse:272, resizewindow&quot;`  
+`   ];`  
+` };`
+
+};\|name=/etc/nixos/home.nix\|lang=nix}}
+
+## Plugin Support
+
+Hyprland boasts a growing plugin ecosystem that extends the functionality of the compositor such as adding support for window decorations or a GNOME-like workspaces design. However, hyprpm is unsupported on NixOS due to the way Hyprland is built.
+
+The &lt;a href=&quot;Home_Manager&quot; class=&quot;wikilink&quot; title=&quot;Home Manager&quot;&gt;Home Manager&lt;/a&gt; module for Hyprland should be used instead:
+
+[hyprland-plugins](https://github.com/hyprwm/hyprland-plugins) is a repository of first-party plugins. If you wish to use these plugins it is recommended to use the Hyprland flake instead of the Nixpkgs version, and to use the &lt;a href=&quot;Home_Manager&quot; class=&quot;wikilink&quot; title=&quot;Home Manager&quot;&gt;Home Manager&lt;/a&gt; module for configuration.
+
+Add the flake into your flake inputs:
+
+Then, add the plugin using the hyprland-plugins input:
+
+[List of plugins](https://github.com/hyprland-community/awesome-hyprland#plugins)
+
+## Troubleshooting
+
+### Swaylock/Waylock
+
+If swaylock/waylock cannot be unlocked with the correct password:
+
+`security.pam.services.swaylock = {};`(or `waylock` repsectively)
+
+### Electron applications defaulting to X11 rather than Wayland
+
+Set the environment variable `NIXOS_OZONE_WL` to &quot;1&quot; in your NixOS configuration:
+
+### Theme Support
+
+To make themes consistent in Hyprland, you can either use Home Manager like this:
+
+or set themes using dconf in your Hyprland configuration file: You may also install graphical tools such as gnome tweaks or nwg-look to set the themes manually.
+
+## See also
+
+- [Hyprland Website](https://hypr.land/)
+- [The official documentation](https://wiki.hypr.land/)
+- [Hyprland Github Page](https://github.com/hyprwm/Hyprland/)
+- [Community-maintained list of tools, plugins and extensions](https://github.com/hyprland-community/awesome-hyprland)
+
+&lt;/translate&gt;
+
+&lt;a href=&quot;Category:Window_managers&quot; class=&quot;wikilink&quot; title=&quot;Category:Window managers&quot;&gt;Category:Window managers&lt;/a&gt; &lt;a href=&quot;Category:Applications&quot; class=&quot;wikilink&quot; title=&quot;Category:Applications&quot;&gt;Category:Applications&lt;/a&gt; &lt;a href=&quot;Category:Hyprland&quot; class=&quot;wikilink&quot; title=&quot;Category:Hyprland&quot;&gt;Category:Hyprland&lt;/a&gt;</code></pre>
+      </div>
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

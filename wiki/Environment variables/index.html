@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Environment variables</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Environment variables</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Environment variables -->
+
+<h2 id="configuration-of-shell-environment-on-nixos">Configuration of shell environment on NixOS</h2><p>Environment variables can be set with <a href="https://search.nixos.org/options?channel=unstable&amp;show=environment.variables&amp;from=0&amp;size=50&amp;sort=relevance&amp;type=packages&amp;query=environment.variables">environment.variables</a>, <a href="https://search.nixos.org/options?channel=unstable&amp;show=environment.sessionVariables&amp;from=0&amp;size=50&amp;sort=relevance&amp;type=packages&amp;query=environment.sessionVariables">environment.sessionVariables</a>, and <a href="https://search.nixos.org/options?channel=unstable&amp;show=environment.profileRelativeSessionVariables&amp;from=0&amp;size=50&amp;sort=relevance&amp;type=packages&amp;query=environment.profileRelativeSessionVariables">environment.profileRelativeSessionVariables</a> . <code>environment.variables</code> are global variables set on shell initialization, whereas <code>environment.sessionVariables</code> and <code>environment.profileRelativeSessionVariables</code> are initialized through PAM (Pluggable Authentication Module).</p>
+<p>Session variable sets are merged into their environment variable set counterparts. For example, <code>environment.sessionVariables</code> is merged to <code>environment.variables</code> so you can just reload your shell to reload changed variables <a href="https://github.com/NixOS/nixpkgs/blob/5e4fbfb6b3de1aa2872b76d49fafc942626e2add/nixos/modules/config/shells-environment.nix#L166-L170">1</a>.</p>
+<p>For example, for the <a href="https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html#variables">XDG Base Directory Specification</a>, the following could be set to <code>/etc/nixos/configuration.nix</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-comment"># ...</span>
+  
+  <span class="hljs-comment"># This is using a rec (recursive) expression to set and access XDG_BIN_HOME within the expression</span>
+  <span class="hljs-comment"># For more on rec expressions see https://nix.dev/tutorials/first-steps/nix-language#recursive-attribute-set-rec</span>
+  <span class="hljs-attr">environment.sessionVariables</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">rec</span> {
+    <span class="hljs-attr">XDG_CACHE_HOME</span>  <span class="hljs-operator">=</span> <span class="hljs-string">&quot;$HOME/.cache&quot;</span>;
+    <span class="hljs-attr">XDG_CONFIG_HOME</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;$HOME/.config&quot;</span>;
+    <span class="hljs-attr">XDG_DATA_HOME</span>   <span class="hljs-operator">=</span> <span class="hljs-string">&quot;$HOME/.local/share&quot;</span>;
+    <span class="hljs-attr">XDG_STATE_HOME</span>  <span class="hljs-operator">=</span> <span class="hljs-string">&quot;$HOME/.local/state&quot;</span>;
+
+    <span class="hljs-comment"># Not officially in the specification</span>
+    <span class="hljs-attr">XDG_BIN_HOME</span>    <span class="hljs-operator">=</span> <span class="hljs-string">&quot;$HOME/.local/bin&quot;</span>;
+    <span class="hljs-attr">PATH</span> <span class="hljs-operator">=</span> [ 
+      <span class="hljs-string">&quot;<span class="hljs-subst">${XDG_BIN_HOME}</span>&quot;</span>
+    ];
+  };
+
+ <span class="hljs-comment"># ...</span>
+}</code></pre>
+      </div><h2 id="troubleshooting">Troubleshooting</h2><h3 id="pam_env-sudo-session-expandable-variables-must-be-wrapped-in-lt-variable-path-to-gt">pam_env(sudo:session): Expandable variables must be wrapped in {} &lt;$VARIABLE/path/to&gt;</h3><p>Error logs may be found with <code>journalctl -xb -p3</code> regarding the no presence of curly braces <code>{}</code> for variable expansion.</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs">sudo[3424]: pam_env(sudo:session): Expandable variables must be wrapped in {} &lt;$VARIABLE/path/to&gt; - ignoring</code></pre>
+      </div><p>While checking the configuration values, for instance with <code>nixos-option environment.sessionVariables</code>, it might be found that Nix is correctly parsing the curly braces.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-params">Value:</span>
+{
+  ...
+  <span class="hljs-attr">VARIABLE</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${VARIABLE}</span>/path/to&quot;</span>;
+  ...
+}</code></pre>
+      </div><p>This indicates that the curly braces are getting removed at a later stage.</p>
+<h4 id="solution-or-workaround">Solution or workaround</h4><p>Using Nix string literals can fix the problem by keeping the curly brackets after the nix evaluation.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-params">Value:</span>
+{
+  ...
+  <span class="hljs-attr">VARIABLE</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;<span class="hljs-char escape_">&#x27;&#x27;$</span>{VARIABLE}/path/to&#x27;&#x27;</span>;
+  ...
+}</code></pre>
+      </div><p>This will result in VARIABLE having the value <code>${VARIABLE}/path/to</code></p>
+<p>For example:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">environment.sessionVariables</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">rec</span> {
+    <span class="hljs-attr">XDG_CACHE_HOME</span>  <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;<span class="hljs-char escape_">&#x27;&#x27;$</span>{HOME}/.cache&#x27;&#x27;</span>;
+    <span class="hljs-comment"># ...</span>
+  };
+ <span class="hljs-comment"># ...</span>
+}</code></pre>
+      </div><h2 id="using-variables-from-a-nix-expression">Using variables from a Nix expression</h2><p>The <code>builtins.getEnv</code> function allows for reading the environment of the Nix command which triggered the expression to be evaluated, typically <code>nix-build</code>.</p>
+<h2 id="variables-exposed-in-nix-build-sandbox">Variables exposed in nix-build sandbox</h2><p>Compared to a normal shell environment, in a nix-build sandbox, Nix will set some environment variables, for example:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">NIX_BINTOOLS=/nix/store/lvg99f3zni6zw4cvlci6wpmzlls0nsn4-binutils-wrapper-2.38
+NIX_BINTOOLS_WRAPPER_TARGET_HOST_x86_64_unknown_linux_gnu=1
+NIX_BUILD_CORES=3
+NIX_BUILD_TOP=/build
+NIX_CC=/nix/store/61zfi5pmhb0d91422f186x26v7b52y5k-gcc-wrapper-11.3.0
+NIX_CC_WRAPPER_TARGET_HOST_x86_64_unknown_linux_gnu=1
+NIX_CFLAGS_COMPILE= -frandom-seed=8cnrgjjflj
+NIX_ENFORCE_NO_NATIVE=1
+NIX_ENFORCE_PURITY=1
+NIX_HARDENING_ENABLE=fortify stackprotector pic strictoverflow format relro bindnow
+NIX_INDENT_MAKE=1
+NIX_LDFLAGS=-rpath /nix/store/8cnrgjjflj3dyppz299w50l9yydgnqkp-x/lib64 -rpath /nix/store/8cnrgjjflj3dyppz299w50l9yydgnqkp-x/lib 
+NIX_LOG_FD=2
+NIX_SSL_CERT_FILE=/no-cert-file.crt
+NIX_STORE=/nix/store</code></pre>
+      </div><p><a href="category:NixOS" class="wikilink" title="Category:NixOS">Category:NixOS</a> <a href="category:Configuration" class="wikilink" title="Category:Configuration">Category:Configuration</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

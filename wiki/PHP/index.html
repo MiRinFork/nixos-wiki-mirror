@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PHP</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / PHP</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: PHP -->
+
+<p>__TOC__</p>
+<p>See also:</p>
+<ul>
+<li><a href="https://nixos.org/manual/nixpkgs/stable/#ssec-php-user-guide">PHP User Guide in the nixpkgs manual</a>.</li>
+<li><a href="https://mirror.nixoscn.org/wiki/PHP/phpfpm" class="wikilink" title="phpfpm">phpfpm</a> on this wiki</li>
+</ul>
+<h2 id="install">Install</h2><div class="code-container">
+        
+        <pre><code class="language-nix> hljs">  environment.systemPackages = with pkgs; [ php ];
+&lt;/syntaxhighlight&gt;
+
+See &lt;code&gt;nix search php&lt;/code&gt; (&lt;code&gt;nix search nixpkgs php&lt;/code&gt; with [[Flakes]]) for additional versions like &lt;code&gt;php74&lt;/code&gt;, etc.
+
+
+== Configuration ==
+
+=== Setting custom php.ini configurations ===
+
+The `buildEnv` attribute on php can add extra configuration options. For instance, to set a memory_limit in the NixOS configuration.nix:
+
+&lt;syntaxhighlight lang=</code></pre>
+      </div><p>environment.systemPackages =</p>
+<p><code> let</code><br><code>   php = pkgs.php.buildEnv { extraConfig = &quot;memory_limit = 2G&quot;; };</code><br><code> in [</code><br><code>   php</code><br><code> ];</code></p>
+</syntaxhighlight>
+
+<p>In case of using php-fpm, the following example enables error reporting. Use this only in development environments</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix> hljs">services.phpfpm.phpOptions = ''
+  display_errors = on;
+'';
+&lt;/syntaxhighlight&gt;
+
+=== Setting custom plugins and php.ini configurations ===
+
+In this example we install the [[xdebug]] extension, and add a php.ini directive to enable it.
+
+&lt;syntaxhighlight lang=</code></pre>
+      </div><p>environment.systemPackages = [</p>
+<p><code> (pkgs.php.buildEnv {</code><br><code>   extensions = ({ enabled, all }: enabled ++ (with all; [</code><br><code>     xdebug</code><br><code>   ]));</code><br><code>   extraConfig = &#39;&#39;</code><br><code>     xdebug.mode=debug</code><br><code>   &#39;&#39;;</code><br><code> })</code></p>
+<p>];</p>
+</syntaxhighlight>
+
+<p>You can see the full list of extensions e.g. with:</p>
+<p><code>$ nix repl</code>  </p>
+<p><code>nix-repl&gt; pkgs = import </code><nixpkgs><code> {}            </code>  </p>
+<p><code>nix-repl&gt; builtins.attrNames pkgs.phpExtensions</code></p>
+<h2 id="apache-plugins-settings">Apache, plugins, settings</h2><p>Here&#39;s how to configure Apache to use a particular PHP configuration/version/etc</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix> hljs"># in /etc/nixos/configuration.nix (not inside systemPackages)
+services.httpd.phpPackage = pkgs.php.buildEnv {
+    extensions = ({ enabled, all }: enabled ++ (with all; [
+        xdebug
+    ]));
+    extraConfig = ''
+        xdebug.mode=debug
+    '';
+};
+&lt;/syntaxhighlight&gt;
+
+== OCI image ==
+
+Here's an example on how to build an OCI image running a PHP application:
+
+Using nginx:
+
+&lt;syntaxhighlight lang=</code></pre>
+      </div><p>packages = let</p>
+<p><code> src = ./.;</code><br><code> php = pkgs.php81;</code></p>
+<p>in {</p>
+<p><code> app = php.buildComposerProject {</code><br><code>   inherit src;</code></p>
+<p><code>   pname = &quot;app-demo&quot;;</code><br><code>   version = &quot;1.0.0&quot;;</code></p>
+<p><code>   vendorHash = &quot;sha256-SrE51k3nC5idaDHNxiNM7NIbIERIf8abrCzFEdxOQWA=&quot;;</code><br><code> };</code></p>
+<p><code> oci-image = let</code><br><code>   nginxPort = &quot;8000&quot;;</code><br><code>   nginxWebRoot = &quot;${self&#39;.packages.app}/share/php/app-demo/public&quot;;</code></p>
+<p><code>   nginxConf = pkgs.writeText &quot;nginx.conf&quot; &#39;&#39;</code><br><code>     user nobody nobody;</code><br><code>     daemon off;</code><br><code>     error_log /dev/stdout info;</code><br><code>     pid /dev/null;</code><br><code>     events {}</code><br><code>     http {</code><br><code>       access_log /dev/stdout;</code><br><code>       server {</code><br><code>         listen ${nginxPort};</code><br><code>         index index.php index.html;</code><br><code>         charset utf-8;</code></p>
+<p><code>         add_header X-Frame-Options &quot;SAMEORIGIN&quot;;</code><br><code>         add_header X-Content-Type-Options &quot;nosniff&quot;;</code><br><code>         location / {</code><br><code>           root ${nginxWebRoot};</code><br><code>           try_files $uri $uri/ /index.php?$query_string;</code><br><code>         }</code><br><code>         location ~ \.php$ {</code><br><code>           root ${nginxWebRoot};</code><br><code>           fastcgi_pass 127.0.0.1:9000;</code><br><code>           fastcgi_split_path_info ^(.+\.php)(/.+)$;</code><br><code>           include ${pkgs.nginx}/conf/fastcgi_params;</code><br><code>           include ${pkgs.nginx}/conf/fastcgi.conf;</code><br><code>         }</code><br><code>       }</code><br><code>     }</code><br><code>   &#39;&#39;;</code><br><code> in</code><br><code> pkgs.dockerTools.buildLayeredImage {</code><br><code>   name = self&#39;.packages.app.pname;</code><br><code>   tag = &quot;latest&quot;;</code></p>
+<p><code>   contents = [</code><br><code>     php</code><br><code>     pkgs.nginx</code><br><code>     pkgs.fakeNss</code><br><code>     (pkgs.writeScriptBin &quot;start-server&quot; &#39;&#39;</code><br><code>       #!${pkgs.runtimeShell}</code><br><code>       php-fpm -y /etc/php-fpm.d/www.conf.default &amp; nginx -c ${nginxConf};</code><br><code>     &#39;&#39;)</code><br><code>   ];</code></p>
+<p><code>   extraCommands = &#39;&#39;</code><br><code>     mkdir -p var/log/nginx</code><br><code>     mkdir -p var/cache/nginx</code><br><code>     mkdir -p tmp</code><br><code>     chmod 1777 tmp</code><br><code>   &#39;&#39;;</code></p>
+<p><code>   config = {</code><br><code>     Cmd = [ &quot;start-server&quot; ];</code><br><code>     ExposedPorts = {</code><br><code>       &quot;${nginxPort}/tcp&quot; = {};</code><br><code>     };</code><br><code>   };</code><br><code> };</code></p>
+<p>};</p>
+</syntaxhighlight>
+
+<p>Using Caddy:</p>
+<p>&lt;syntaxhighlight lang=&quot;nix&gt; packages = let</p>
+<p><code>         src = ./.;</code><br><code>         php = pkgs.php1;</code></p>
+<p>in {</p>
+<p><code> app = php.buildComposerProject {</code><br><code>   inherit src;</code></p>
+<p><code>   pname = &quot;app-demo&quot;;</code><br><code>   version = &quot;1.0.0&quot;;</code></p>
+<p><code>   vendorHash = &quot;sha256-SrE51k3nC5idaDHNxiNM7NIbIERIf8abrCzFEdxOQWA=&quot;;</code><br><code> };</code></p>
+<p><code> oci-image = let</code><br><code>   webport = &quot;8000&quot;;</code><br><code>   webroot = &quot;${self&#39;.packages.app}/share/php/app-demo/public&quot;;</code></p>
+<p><code>   caddyFile = pkgs.writeText &quot;Caddyfile&quot; &#39;&#39;</code><br><code>   :${webport}</code><br><code>   root * ${webroot}</code><br><code>   log</code><br><code>   encode gzip</code><br><code>   php_fastcgi 127.0.0.1:9000</code><br><code>   file_server</code><br><code>   &#39;&#39;;</code><br><code> in</code><br><code> pkgs.dockerTools.buildLayeredImage {</code><br><code>   name = self&#39;.packages.app.pname;</code><br><code>   tag = &quot;latest&quot;;</code></p>
+<p><code>   contents = [</code><br><code>     php</code><br><code>     pkgs.caddy</code><br><code>     pkgs.fakeNss</code><br><code>     (pkgs.writeScriptBin &quot;start-server&quot; &#39;&#39;</code><br><code>       #!${pkgs.runtimeShell}</code><br><code>       php-fpm -D -y /etc/php-fpm.d/www.conf.default</code><br><code>       caddy run --adapter caddyfile --config ${caddyFile}</code><br><code>     &#39;&#39;)</code><br><code>   ];</code></p>
+<p><code>   extraCommands = &#39;&#39;</code><br><code>     mkdir -p tmp</code><br><code>     chmod 1777 tmp</code><br><code>   &#39;&#39;;</code></p>
+<p><code>   config = {</code><br><code>     Cmd = [ &quot;start-server&quot; ];</code><br><code>     ExposedPorts = {</code><br><code>       &quot;${webport}/tcp&quot; = {};</code><br><code>     };</code><br><code>   };</code><br><code> };</code></p>
+<p>};</p>
+</syntaxhighlight>
+
+<h2 id="use-php-packages-with-extensions-in-a-nix-shell">Use php Packages with Extensions in a nix-shell</h2><p>To use php packages with some extensions enabled, create a <code>shell.nix</code> similar to the following:</p>
+<p>&lt;syntaxhighlight lang=&quot;nix&gt; { pkgs ? import <nixpkgs> { } }: let</p>
+<p><code> phpEnv = pkgs.php.buildEnv {</code><br><code>   extensions = { enabled, all }: enabled ++ (with all; [ xsl ]);</code><br><code>   extraConfig = &quot;memory_limit=-1&quot;;</code><br><code> };</code></p>
+<p>in pkgs.mkShell {</p>
+<p><code> buildInputs = with pkgs; [</code><br><code>   phpEnv</code><br><code>   phpEnv.packages.composer</code><br><code>   symfony-cli</code><br><code> ];</code></p>
+<p>}</p>
+</syntaxhighlight>
+
+<h2 id="troubleshooting">Troubleshooting</h2><h3 id="memcached-extension-isn-39-t-enabled">Memcached Extension Isn&#39;t Enabled</h3><p>Using <code>phpExtensions.memcached</code> inside of <code>environment.systemPackages</code> will lead to the memcached php extension not being enabled in the <code>php.ini</code> file. Here&#39;s how to fix it:</p>
+<p>&lt;syntaxhighlight lang=&quot;nix&gt; let</p>
+<p><code> # Replace pkgs.php with the php version you want; ex pkgs.php83</code><br><code> php = pkgs.php.buildEnv {</code><br><code>   extensions = { enabled, all }: enabled ++ (with all; [ memcached ]); </code><br><code> };</code></p>
+<p>in {</p>
+<p><code> environment.systemPackages = with pkgs; [ php ];</code></p>
+<p>}</p>
+</syntaxhighlight>
+
+<p><a href="category:Languages" class="wikilink" title="Category:Languages">Category:Languages</a> <a href="category:PHP" class="wikilink" title="Category:PHP">Category:PHP</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Libvirt</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Libvirt</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Libvirt -->
+
+<p><a href="https://libvirt.org/">libvirt</a> is a toolkit to interact with the virtualization capabilities of recent versions of Linux (and other OSes). It does so by providing a common API to different virtualization backends.</p>
+<h2 id="setup">Setup</h2><p>Enable libvirt daemon</p>
+<p>To enable local user access to libvirt, for example by using <code>virt-manager</code> or <code>gnome-boxes</code>, add yourself to the <code>libvirtd</code> group</p>
+<h2 id="configuration">Configuration</h2><h3 id="uefi-with-ovmf">UEFI with OVMF</h3><p>See <a href="https://ostechnix.com/enable-uefi-support-for-kvm-virtual-machines-in-linux/">this tutorial</a> on how to run a guest machine in UEFI mode using <code>virt-manager</code>.</p>
+<h3 id="nested-virtualization">Nested virtualization</h3><p>If you would like to enable nested virtualization for your guests to run KVM hypervisors inside them, you should enable it as follows: , for example:</p>
+<h3 id="networking">Networking</h3><h4 id="default-networking">Default networking</h4><p>Enable and start the default network using the following commands:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">virsh net-autostart default</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">virsh net-start default</span></code></pre>
+      </div><p>This will configure the default network to start automatically on boot and immediately activate it. You may need to whitelist the interface for the firewall like so:</p>
+<h4 id="bridge-networking">Bridge networking</h4><p>Create a XML file called <code>virbr0.xml</code> with the definition of the bridge interface.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">&lt;network&gt;
+  &lt;name&gt;virbr0&lt;/name&gt;
+  &lt;forward mode=<span class="hljs-string">&#x27;bridge&#x27;</span>/&gt;
+  &lt;bridge name=<span class="hljs-string">&#x27;virbr0&#x27;</span>/&gt;
+&lt;/network&gt;</code></pre>
+      </div><p>Add and enable bridge interface.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">virsh net-define virbr0.xml
+virsh net-start virbr0
+ip <span class="hljs-built_in">link</span> add virbr0 <span class="hljs-built_in">type</span> bridge
+ip address ad dev virbr0 10.25.0.1/24
+ip <span class="hljs-built_in">link</span> <span class="hljs-built_in">set</span> dev virbr0 up</code></pre>
+      </div><p>Edit the libvirt guest <code>my_guest</code> XML file and add the bridge interface to it.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">virsh edit my_guest</code></pre>
+      </div><p>Add:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">  &lt;devices&gt;
+    [...]
+    &lt;interface <span class="hljs-built_in">type</span>=<span class="hljs-string">&#x27;bridge&#x27;</span>&gt;
+      &lt;mac address=<span class="hljs-string">&#x27;52:54:00:12:34:56&#x27;</span>/&gt;
+      &lt;<span class="hljs-built_in">source</span> bridge=<span class="hljs-string">&#x27;virbr0&#x27;</span>/&gt;
+      &lt;model <span class="hljs-built_in">type</span>=<span class="hljs-string">&#x27;virtio&#x27;</span>/&gt;
+      &lt;address <span class="hljs-built_in">type</span>=<span class="hljs-string">&#x27;pci&#x27;</span> domain=<span class="hljs-string">&#x27;0x0000&#x27;</span> bus=<span class="hljs-string">&#x27;0x01&#x27;</span> slot=<span class="hljs-string">&#x27;0x00&#x27;</span> <span class="hljs-keyword">function</span>=<span class="hljs-string">&#x27;0x0&#x27;</span>/&gt;
+    &lt;/interface&gt;
+    [...]
+  &lt;/devices&gt;</code></pre>
+      </div><p>Inside the guest configure networking for the interface <code>enp1s0</code> (name may differ).</p>
+<p>The host should now be able to reach the guest via the bridge interface and vice versa.</p>
+<h3 id="file-sharing-via-virtiofs-mount">File sharing via virtiofs mount</h3><p>One of the best ways to share a host directory with the guest OS is with <a href="https://virtio-fs.gitlab.io/">virtiofs</a>. On the host system, install the <code>virtiofsd</code> package:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+  guestfs-tools
+  virtiofsd
+];</code></pre>
+      </div><p>Next, a few sections of the XML must be edited, which can be done manually or via virt-manager in the guest configuration GUI. If using virt-manager, first navigate on the toolbar to Edit &gt; Preferences &gt; General, and click &quot;Enable XML Editing&quot;. Next, open the virtual machine and under the hardware configuration, navigate to Memory and check the box &quot;Enable shared memory&quot;. This will add an &quot;access&quot; block to the XML for you, similar to this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-xml hljs"><span class="hljs-tag">&lt;<span class="hljs-name">memory</span> <span class="hljs-attr">unit</span>=<span class="hljs-string">&quot;KiB&quot;</span>&gt;</span>1638400<span class="hljs-tag">&lt;/<span class="hljs-name">memory</span>&gt;</span>
+<span class="hljs-tag">&lt;<span class="hljs-name">currentMemory</span> <span class="hljs-attr">unit</span>=<span class="hljs-string">&quot;KiB&quot;</span>&gt;</span>1638400<span class="hljs-tag">&lt;/<span class="hljs-name">currentMemory</span>&gt;</span>
+<span class="hljs-tag">&lt;<span class="hljs-name">memoryBacking</span>&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">source</span> <span class="hljs-attr">type</span>=<span class="hljs-string">&quot;memfd&quot;</span>/&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">access</span> <span class="hljs-attr">mode</span>=<span class="hljs-string">&quot;shared&quot;</span>/&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">memoryBacking</span>&gt;</span></code></pre>
+      </div><p>While still in the hardware configuration, click &quot;Add Hardware&quot; and select &quot;Filesystem&quot;. For driver, select &quot;virtiofs&quot;. For source path, input the folder on the host machine you wish to share, no trailing slash. For target path, don&#39;t put a path but instead a tag/label that is easily identifiable. It will be used in the mount options in the guest OS setup shortly. Once done, you should have a new Filesystem device configuration similar to this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-xml hljs"><span class="hljs-tag">&lt;<span class="hljs-name">filesystem</span> <span class="hljs-attr">type</span>=<span class="hljs-string">&quot;mount&quot;</span> <span class="hljs-attr">accessmode</span>=<span class="hljs-string">&quot;passthrough&quot;</span>&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">driver</span> <span class="hljs-attr">type</span>=<span class="hljs-string">&quot;virtiofs&quot;</span>/&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">binary</span> <span class="hljs-attr">path</span>=<span class="hljs-string">&quot;/run/current-system/sw/bin/virtiofsd&quot;</span>/&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">source</span> <span class="hljs-attr">dir</span>=<span class="hljs-string">&quot;/media&quot;</span>/&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">target</span> <span class="hljs-attr">dir</span>=<span class="hljs-string">&quot;my_host_media_share&quot;</span>/&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">alias</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;fs0&quot;</span>/&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">address</span> <span class="hljs-attr">type</span>=<span class="hljs-string">&quot;pci&quot;</span> <span class="hljs-attr">domain</span>=<span class="hljs-string">&quot;0x0000&quot;</span> <span class="hljs-attr">bus</span>=<span class="hljs-string">&quot;0x07&quot;</span> <span class="hljs-attr">slot</span>=<span class="hljs-string">&quot;0x00&quot;</span> <span class="hljs-attr">function</span>=<span class="hljs-string">&quot;0x0&quot;</span>/&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">filesystem</span>&gt;</span></code></pre>
+      </div><p>If your guest system is using NixOS, you can boot the system and add the new filesystem entry to auto-mount on boot and you&#39;re done:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">fileSystems.<span class="hljs-string">&quot;/media&quot;</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">device</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;my_host_media_share&quot;</span>;
+  <span class="hljs-attr">fsType</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;virtiofs&quot;</span>;
+};</code></pre>
+      </div><p>If the system fails to fully reboot after applying the changes, ensure the filesystem device matches the &quot;Target path&quot; in your XML exactly.</p>
+<h4 id="error-starting-domain-internal-error-child-process-run-current-system-sw-bin-virtiofsd---print-capabilities-unexpected-exit-status-127-libvirt-error-cannot-execute-binary-run-current-system-sw-bin-virtiofsd-no-such-file-or-directory">Error starting domain: internal error: Child process (/run/current-system/sw/bin/virtiofsd --print-capabilities) unexpected exit status 127: libvirt:  error : cannot execute binary /run/current-system/sw/bin/virtiofsd: No such file or directory</h4><p>This error means virtiofsd was not installed on the host system. Ensure the system package was installed before making changes in virt-manager.</p>
+<h4 id="error-starting-domain-operation-failed-unable-to-find-a-satisfying-virtiofsd">Error starting domain: operation failed: Unable to find a satisfying virtiofsd</h4><p>The virtiofsd binary path needs to be specified in the filesystem configuration. virt-manager doesn&#39;t add this by default and instead assumes a default path that doesn&#39;t exist under NixOS. Open the guest machine&#39;s hardware details page, click on the passthrough filesystem created earlier, open the XML tab and inside the `<filesystem>...</filesystem>` add the following element to tell virtio where to find the virtiofsd binary:</p>
+<div class="code-container">
+        
+        <pre><code class="language-xml hljs"><span class="hljs-tag">&lt;<span class="hljs-name">binary</span> <span class="hljs-attr">path</span>=<span class="hljs-string">&quot;/run/current-system/sw/bin/virtiofsd&quot;</span>/&gt;</span></code></pre>
+      </div><h3 id="file-sharing-via-webdav">File sharing via WebDAV</h3><p>Another recommended way to share files between host and guest is to use <code>spice-webdavd</code>.</p>
+<p>Shutdown the client, in this example named <code>my_guest</code>, and edit the libvirt XML file.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">virsh edit my_guest</code></pre>
+      </div><p>Add the following snippet after <channel type='unix'><code>[...]</code></channel> part inside the devices subsection:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">    &lt;channel <span class="hljs-built_in">type</span>=<span class="hljs-string">&#x27;spiceport&#x27;</span>&gt;
+      &lt;<span class="hljs-built_in">source</span> channel=<span class="hljs-string">&#x27;org.spice-space.webdav.0&#x27;</span>/&gt;
+      &lt;target <span class="hljs-built_in">type</span>=<span class="hljs-string">&#x27;virtio&#x27;</span> name=<span class="hljs-string">&#x27;org.spice-space.webdav.0&#x27;</span>/&gt;
+      &lt;address <span class="hljs-built_in">type</span>=<span class="hljs-string">&#x27;virtio-serial&#x27;</span> controller=<span class="hljs-string">&#x27;0&#x27;</span> bus=<span class="hljs-string">&#x27;0&#x27;</span> port=<span class="hljs-string">&#x27;3&#x27;</span>/&gt;
+    &lt;/channel&gt;</code></pre>
+      </div><p>Start the guest machine. Inside the guest, add following part to your system configuration and apply it.</p>
+<p>List available shares for the guest.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">curl localhost:9843</code></pre>
+      </div><p>Mount an example share called <code>myshare</code> to the mountpoint <code>myshare.</code></p>
+<h3 id="hooks">Hooks</h3><p>Libvirt allows the use of hooks to run custom scripts during specific events, such as daemon lifecycle events, domain lifecycle events, and network events. On NixOS, you can configure hooks via the NixOS module to automate the placement of hook scripts in the appropriate directories.</p>
+<p>The following directories are used for placing hook scripts:</p>
+<ul>
+<li><strong><code>/var/lib/libvirt/hooks/daemon.d/</code></strong> Scripts here are triggered by daemon events like start, shutdown, and SIGHUP.</li>
+<li><strong><code>/var/lib/libvirt/hooks/qemu.d/</code></strong> Scripts for handling QEMU domain events such as begin, end, and migration.</li>
+<li><strong><code>/var/lib/libvirt/hooks/lxc.d/</code></strong> Scripts for LXC container events like begin and end.</li>
+<li><strong><code>/var/lib/libvirt/hooks/libxl.d/</code></strong> Scripts for Xen domains managed by <code>libxl</code> (begin/end events).</li>
+<li><strong><code>/var/lib/libvirt/hooks/network.d/</code></strong> Scripts triggered by network events such as begin and end.</li>
+</ul>
+<p>See the <a href="https://libvirt.org/hooks.html">libvirt documentation</a> for more information.</p>
+<p>An example config would be:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">virtualisation.libvirtd.hooks</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">daemon</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-string">&quot;example&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-symbol">./scripts/daemon-example.sh</span>;
+    };
+    <span class="hljs-attr">qemu</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-string">&quot;example&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-symbol">./scripts/qemu-example.sh</span>;
+    };
+    <span class="hljs-attr">network</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-string">&quot;example&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-symbol">./scripts/network-example.sh</span>;
+    };
+  };
+}</code></pre>
+      </div><p>Note that after you added the configuration and switch, you&#39;ll have the following command to setup the hooks.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">systemctl start libvirtd-config.service</code></pre>
+      </div><h3 id="pci-passthrough">PCI Passthrough</h3><p>For detailed instructions on configuring PCI passthrough with libvirt, refer to the <a href="https://mirror.nixoscn.org/wiki/Libvirt/PCI_passthrough" class="wikilink" title="PCI passthrough">PCI passthrough</a> page.</p>
+<h2 id="clients">Clients</h2><p>NixOS provides some packages that can make use of libvirt or are useful with libvirt.</p>
+<h3 id="libguestfs">libguestfs</h3><p><a href="http://libguestfs.org/">libguestfs</a> is a set of tools for accessing and modifying virtual machines disk images.</p>
+<p>Following are notes regarding the use of some of those tools</p>
+<h4 id="error-cannot-find-any-suitable-libguestfs-supermin">error: cannot find any suitable libguestfs supermin</h4><p>Use use the package libguestfs-with-appliance. See <a href="https://github.com/NixOS/nixpkgs/issues/37540">https://github.com/NixOS/nixpkgs/issues/37540</a></p>
+<h3 id="guestfs-tools">guestfs-tools</h3><p>Includes virt-sysprep, used to prepare a VM image for use. Review the manpage of virt-sysprep, virt-clone, and virt-builder.</p>
+<h4 id="virt-builder"><code>virt-builder</code></h4><p>virt-builder is installed with <code>guestfs-tools</code>, but has some issues from its packaging.</p>
+<p>It is possible to work around those issues without modifying the package (when a pristine nixpkgs is needed).</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell-session hljs">$ mkdir -p ~/.config/virt-builder
+$ cd ~/.config/virt-builder
+$ ln -s /run/current-system/sw/etc/xdg/virt-builder/repos.d
+$ cd ~/.config
+$ ln -s virt-builder/ .virt-builder-wrapped</code></pre>
+      </div><p>This will make your user use the shipped repo configurations, and works around the fact that virt-builder reads its executable name to build its configuration path. The executable being wrapped, it is named differently.</p>
+<h3 id="nixvirt">NixVirt</h3><p><a href="https://github.com/AshleyYakeley/NixVirt">NixVirt</a> is a flake that provides NixOS and Home Manager modules for setting up libvirt domains, networks and pools declaratively.</p>
+<h3 id="accessing-qemu-vms-through-webbrowser">Accessing QEMU VMs through Webbrowser</h3><p>I have a need that I can access some created VMs through a web browser. There&#39;s several SPICE html5 clients out there one from EyeOS works the best in my opinon.</p>
+<p>In order to access the VM in a browser, we need to do several things.</p>
+<h4 id="make-vm-spice-accessible">Make VM SPICE accessible</h4><p>In virt-manager (or whatever tool you use) you can add the Spice server as display. In virt-manager it&#39;s the <code>Graphics</code> new hardware. However - at least in virt-manager - you can&#39;t set everything as it needs to be. So after adding the Spice server through virt-manager, fire up your console and edit the xml file using <code>virsh edit {vmname}</code>.</p>
+<p>Go to the graphics section and edit your you entry to something like this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-xml hljs"><span class="hljs-tag">&lt;<span class="hljs-name">graphics</span> <span class="hljs-attr">type</span>=<span class="hljs-string">&#x27;spice&#x27;</span> <span class="hljs-attr">port</span>=<span class="hljs-string">&#x27;5900&#x27;</span> <span class="hljs-attr">autoport</span>=<span class="hljs-string">&#x27;no&#x27;</span> <span class="hljs-attr">listen</span>=<span class="hljs-string">&#x27;0.0.0.0&#x27;</span> <span class="hljs-attr">keymap</span>=<span class="hljs-string">&#x27;de-ch&#x27;</span> <span class="hljs-attr">defaultMode</span>=<span class="hljs-string">&#x27;insecure&#x27;</span>&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">listen</span> <span class="hljs-attr">type</span>=<span class="hljs-string">&#x27;address&#x27;</span> <span class="hljs-attr">address</span>=<span class="hljs-string">&#x27;0.0.0.0&#x27;</span>/&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">image</span> <span class="hljs-attr">compression</span>=<span class="hljs-string">&#x27;auto_lz&#x27;</span>/&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">graphics</span>&gt;</span></code></pre>
+      </div><h4 id="add-websockify">Add Websockify</h4><p>Since libvirt doesn&#39;t support websockets on its own, we&#39;ll need to add <code>websockify</code> to your configuration.nix</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.networking.websockify</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">sslCert</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/https-cert.pem&quot;</span>;
+  <span class="hljs-attr">sslKey</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/https-key.pem&quot;</span>;
+  <span class="hljs-attr">portMap</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-string">&quot;5959&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-number">5900</span>;
+  };
+};</code></pre>
+      </div><p>The port mapping 5959 -&gt; 5900 is the websocket forward from nginx 5959 to the spice server. If you used another port for the spice server, then adjust accordingly.</p>
+<p>Also, I use letsencrypt dns mode to get https cert and key. Nginx i nixos can get the certs on its own. Since I use the same certs also for other things, I just put them in the root (/) folder. Use what is best for you.</p>
+<h4 id="get-eyeos-spice-web-client">Get EyeOS Spice Web Client</h4><p>As said, the experience with the EyeOS Spice Web Client has been the best so far. Another client would be the <a href="https://gitlab.freedesktop.org/spice/spice-html5/">spice-html5</a> from freedesktop.org.</p>
+<p>1. Download the <a href="https://github.com/eyeos/spice-web-client/">EyeOS Spice Web Client</a> and unpack it (if necessary) or , as example, just <code>git clone </code><a href="https://github.com/eyeos/spice-web-client/"><code>https://github.com/eyeos/spice-web-client/</code></a><code> /var/www/spice</code></p>
+<p>2. Once downloaded (and unpacked), edit the run.js file and search for <code>&#39;ws&#39;</code> (around line 213) and change it to <code>&#39;wss&#39;</code></p>
+<h4 id="setup-nginx-for-access">Setup nginx for access</h4><p>As last part, you&#39;ll need to setup nginx so serve files from the EyeOS Spice Web Client and use websockify to communicate with the VM.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.nginx</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  virtualHosts.<span class="hljs-string">&quot;mydomain.tld&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">forceSSL</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">root</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/var/www/&quot;</span>;
+    locations.<span class="hljs-string">&quot;/spice/&quot;</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">index</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;index.html index.htm&quot;</span>;
+    };
+    locations.<span class="hljs-string">&quot;/websockify/&quot;</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">proxyWebsockets</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">proxyPass</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://127.0.0.1:5959&quot;</span>;
+      <span class="hljs-attr">extraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        proxy_read_timeout 61s;
+        proxy_buffering off;
+      &#x27;&#x27;</span>;
+    };
+    <span class="hljs-attr">sslCertificate</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/https-cert.pem&quot;</span>;
+    <span class="hljs-attr">sslCertificateKey</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/https-key.pem&quot;</span>;
+    <span class="hljs-attr">listen</span> <span class="hljs-operator">=</span> [ { <span class="hljs-attr">addr</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;*&quot;</span>; <span class="hljs-attr">port</span> <span class="hljs-operator">=</span> <span class="hljs-number">45000</span>; <span class="hljs-attr">ssl</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; } ];
+  };
+};</code></pre>
+      </div><p>So, in the above example we access the nginx installation on port 45000 (use whatever you want, you could also just use normal ports like 80/445). We tell it to use port 5959 for websockify which is mapped to port 5900. And we tell it to access the mydomain.tld/spice folder as <code>/var/www/spice</code> (where we did download the EyeOS Spice Web Client to).</p>
+<h4 id="access-the-vm-through-the-browser">Access the VM through the browser</h4><p>In order to access the VM through the browser, you&#39;ll also need to open ports in your firewall (port for nginx, websockify and spice; 4500, 5959, 5900 in the example).</p>
+<p>Then you&#39;ll need to start the vm, you can do it by sshing into the computer and run <code>virsh start {vmname}</code>.</p>
+<p>And finally you can access the VMs GUI through <a href="https://mydomain.tld:4500/spice/index.html?host=mydomain.tld&amp;port=5959"><code>https://mydomain.tld:4500/spice/index.html?host=mydomain.tld&amp;port=5959</code></a></p>
+<p><a href="category:Virtualization" class="wikilink" title="Category:Virtualization">Category:Virtualization</a> <a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

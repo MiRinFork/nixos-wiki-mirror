@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>User Environment</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / User Environment</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: User Environment -->
+
+<p><em><strong>User Environments</strong></em> are Nix’s mechanism for implementing the ability to allow different users to have different configurations, and to do atomic upgrades and rollbacks. Different users can have their own separate environments, and individual users can create multiple environments they can switch between.</p>
+<p>In Nix and NixOS, a user environment is a core concept in understanding how the system operates. This page serves as a quick reference. More documentation is present in parts of the and in the , interspersed with <a href="https://mirror.nixoscn.org/wiki/User%20Environment/Python" class="wikilink" title="Python">Python</a> install instructions.</p>
+<h2 id="nix-manual-references">Nix manual references</h2><h3 id="installation-section">Installation section</h3><h4 id="environment-variables">Environment variables</h4><p>In the opening of the :</p>
+<blockquote>
+<p>The first directory contains the Nix tools themselves, while <em>~/.nix-profile</em> is a symbolic link to the current user environment (an automatically generated package consisting of symlinks to installed packages).&#39;&#39;</p>
+</blockquote>
+<p>This would look like:</p>
+<p><code> ❯ ls -l ~/.nix-profile</code><br><code> lrwxrwxrwx ... /home/username/.nix-profile -&gt; /nix/var/nix/profiles/per-user/username/profile</code></p>
+<h3 id="package-management-section">Package management section</h3><h4 id="basic-package-management">Basic package management</h4><p>In the opening of the :</p>
+<blockquote>
+<p>The main command for package management is . You can use it to install, upgrade, and erase packages, and to query what packages are installed or are available for installation.</p>
+<p>In Nix, different users can have different “views” on the set of installed applications. That is, there might be lots of applications present on the system (possibly in many different versions), but users can have a specific selection of those active — where “active” just means that it appears in a directory in the user’s PATH. Such a view on the set of installed applications is called a <em><strong>user environment</strong></em>, which is just a directory tree consisting of symlinks to the files of the active applications.</p>
+</blockquote>
+<h4 id="profiles">Profiles</h4><p>In the opening of the :</p>
+<blockquote>
+<p>Profiles and <em><strong>user environments</strong></em> are Nix’s mechanism for implementing the ability to allow different users to have different configurations, and to do atomic upgrades and rollbacks. To understand how they work, it’s useful to know a bit about how Nix works. In Nix, packages are stored in unique locations in the Nix store (typically, <em>/nix/store</em>). For instance, a particular version of the Subversion package might be stored in a directory <em>/nix/store/dpmvp969yhdqs7lm2r1a3gng7pyq6vy4-subversion-1.1.3/</em>, while another version might be stored in <em>/nix/store/5mq2jcn36ldlmh93yj1n8s9c95pj7c5s-subversion-1.1.2</em>. The long strings prefixed to the directory names are cryptographic hashes[1] of all inputs involved in building the package — sources, dependencies, compiler flags, and so on. So if two packages differ in any way, they end up in different locations in the file system, so they don’t interfere with each other. Figure 10.1, “<em>User environments</em>” shows a part of a typical Nix store.</p>
+<p><strong>Figure 10.1. User environments</strong></p>
+<figure>
+<img src="https://mirror.nixoscn.org/wiki/User%20Environment/NixManual-User-environments.png" title="NixManual-User-environments.png" />
+<figcaption>NixManual-User-environments.png</figcaption>
+</figure>
+
+<p>Of course, you wouldn’t want to type</p>
+<p><code> ``$ /nix/store/dpmvp969yhdq...-subversion-1.1.3/bin/svn</code></p>
+<p>every time you want to run Subversion. Of course we could set up the PATH environment variable to include the bin directory of every package we want to use, but this is not very convenient since changing PATH doesn’t take effect for already existing processes. The solution Nix uses is to create directory trees of symlinks to <em>activated</em> packages. These are called <em><strong>user environments</strong></em> and they are packages themselves (though automatically generated by <em><strong>nix-env</strong></em>), so they too reside in the Nix store. For instance, in Figure 10.1, “User environments” the user environment <em>/nix/store/0c1p5z4kda11...-user-env</em> contains a symlink to just Subversion 1.1.2 (arrows in the figure indicate symlinks). This would be what we would obtain if we had done</p>
+<p><code> ``$ nix-env -i subversion</code></p>
+<p>on a set of Nix expressions that contained Subversion 1.1.2.</p>
+<p>This doesn’t in itself solve the problem, of course; you wouldn’t want to type <em>/nix/store/0c1p5z4kda11...-user-env/bin/svn</em> either. That’s why there are symlinks outside of the store that point to the user environments in the store; for instance, the symlinks <em>default-42-link</em> and <em>default-43-link</em> in the example. These are called <em>generations</em> since every time you perform a <em>nix-env</em> operation, a new <em><strong>user environment</strong></em> is generated based on the current one. For instance, generation 43 was created from generation 42 when we did</p>
+<p><code> ``$ nix-env -i subversion firefox</code></p>
+<p>on a set of Nix expressions that contained Firefox and a new version of Subversion.</p>
+<p>Generations are grouped together into <em>profiles</em> so that different users don’t interfere with each other if they don’t want to. For example:</p>
+<p><code> ``$ ls -l /nix/var/nix/profiles/</code><br><code>...</code><br><code>lrwxrwxrwx 1 eelco ... default-42-link -&gt; /nix/store/0c1p5z4kda11...-user-env</code><br><code>lrwxrwxrwx 1 eelco ... default-43-link -&gt; /nix/store/3aw2pdyx2jfc...-user-env</code><br><code>lrwxrwxrwx 1 eelco ... default -&gt; default-43-link</code></p>
+<p>This shows a profile called <em>default</em>. The file <em>default</em> itself is actually a symlink that points to the current generation. When we do a <strong>nix-env</strong> operation, a new <em><strong>user environment</strong></em> and generation link are created based on the current one, and finally the default symlink is made to point at the new generation. This last step is atomic on Unix, which explains how we can do atomic upgrades. (Note that the building/installing of new packages doesn’t interfere in any way with old packages, since they are stored in different locations in the Nix store.)</p>
+</blockquote>
+<h4 id="garbage-collection">Garbage collection</h4><p>In the opening of the :</p>
+<blockquote>
+<p><strong>nix-env</strong> operations such as upgrades (<strong>-u</strong>) and uninstall (<strong>-e</strong>) never actually delete packages from the system. All they do (as shown above) is to create a new <em><strong>user environment</strong></em> that no longer contains symlinks to the “deleted” packages.</p>
+<p>Of course, since disk space is not infinite, unused packages should be removed at some point. You can do this by running the Nix garbage collector. It will remove from the Nix store any package not used (directly or indirectly) by any generation of any profile.</p>
+<p>Note however that as long as old generations reference a package, it will not be deleted. After all, we wouldn’t be able to do a rollback otherwise. So in order for garbage collection to be effective, you should also delete (some) old generations. Of course, this should only be done if you are certain that you will not need to roll back.</p>
+</blockquote>
+<h3 id="command-reference-section">Command reference section</h3><h4 id="main-commands">Main commands</h4><h5 id="nix-env">nix-env</h5><p>In the :</p>
+<blockquote>
+<p><strong>nix-env</strong> — manipulate or query Nix <em><strong>user environments</strong></em></p>
+<p>...</p>
+<p><strong>Description</strong></p>
+<p>The command <strong>nix-env</strong> is used to manipulate Nix <em><strong>user environments</strong></em>. <em><strong>User environments</strong>&#39;&#39; are sets of software packages available to a user at some point in time. In other words, they are a synthesised view of the programs available in the Nix store. There may be many</em><strong>user environments</strong>&#39;&#39;: different users can have different environments, and individual users can switch between different environments.</p>
+<p>...</p>
+<p><strong>Common options</strong></p>
+<p>...</p>
+<p><code> ``--profile / -p path</code></p>
+<p>Specifies the profile to be used by those operations that operate on a profile (designated below as the <em>active profile</em>). A profile is a sequence of <em><strong>user environments</strong></em> called <em>generations</em>, one of which is the <em>current generation</em>.</p>
+<p>...</p>
+<p><strong>Files</strong></p>
+<p>...</p>
+<p><code> ``~/.nix-profile</code></p>
+<p>A symbolic link to the user&#39;s current profile. By default, this symlink points to <em>prefix/var/nix/profiles/default</em>. The PATH environment variable should include <em>~/.nix-profile/bin</em> for the <em><strong>user environment</strong></em> to be visible to the user.</p>
+<p><strong>Operation --install</strong></p>
+<p><strong>Synopsis</strong></p>
+<p><code> ``nix-env { --install | -i } [ { --prebuilt-only | -b } ] [ { --attr | -A } ] [--from-expression] [-E] [--from-profile path] [ --preserve-installed | -P ] [ --remove-all | -r ] args...</code></p>
+<p><strong>Description</strong></p>
+<p>The install operation creates a new <em><strong>user environment</strong></em>, based on the current generation of the active profile, to which a set of store paths described by <em>args</em> is added. The arguments <em>args</em> map to store paths in a number of possible ways...</p>
+<p>...</p>
+<p>You can force the installation of multiple derivations with the same name by being specific about the versions. For instance, nix-env -i gcc-3.3.6 gcc-4.1.1 will install both version of GCC (and will probably cause a <em><strong>user environment</strong></em> conflict!).</p>
+<p>...</p>
+<p>If <em>--from-profile path</em> is given, <em>args</em> is a set of names denoting installed store paths in the profile <em>path</em>. This is an easy way to copy <em><strong>user environment</strong></em> elements from one profile to another.</p>
+<p>...</p>
+<p><strong>Operation --upgrade</strong></p>
+<p><strong>Synopsis</strong></p>
+<p><code> ``nix-env { --upgrade | -u } [ { --prebuilt-only | -b } ] [ { --attr | -A } ] [--from-expression] [-E] [--from-profile path] [ --lt | --leq | --eq | --always ] args...</code></p>
+<p><strong>Description</strong></p>
+<p>The upgrade operation creates a new <em><strong>user environment</strong></em>, based on the current generation of the active profile, in which all store paths are replaced for which there are newer versions in the set of paths described by <em>args</em>. Paths for which there are no newer versions are left untouched; this is not an error. It is also not an error if an element of <em>args</em> matches no installed derivations.</p>
+<p>...</p>
+<p><strong>Operation --uninstall</strong></p>
+<p><strong>Synopsis</strong></p>
+<p><code> ``nix-env { --uninstall | -e } drvnames...</code></p>
+<p><strong>Description</strong></p>
+<p>The uninstall operation creates a new <em><strong>user environment</strong></em>, based on the current generation of the active profile, from which the store paths designated by the symbolic names <em>names</em> are removed.</p>
+<p>...</p>
+<p><strong>Operation --set-flag</strong></p>
+<p><strong>Synopsis</strong></p>
+<p><code> ``nix-env --set-flag name value drvnames...</code></p>
+<p><strong>Description</strong></p>
+<p>The <em>--set-flag</em> operation allows meta attributes of installed packages to be modified. There are several attributes that can be usefully modified, because they affect the behaviour of <strong>nix-env</strong> or the <em><strong>user environment</strong></em> build script:</p>
+<ul>
+<li><strong>priority</strong> can be changed to resolve filename clashes. The <em><strong>user environment</strong></em>build script uses the<em>meta.priority</em>attribute of derivations to resolve filename collisions between packages. Lower priority values denote a higher priority. For instance, the GCC wrapper package and the Binutils package in Nixpkgs both have a file<em>bin/ld</em>, so previously if you tried to install both you would get a collision. Now, on the other hand, the GCC wrapper declares a higher priority than Binutils, so the former’s<em>bin/ld&#39;&#39; is symlinked in the</em><strong>user environment</strong>&#39;&#39;.</li>
+</ul>
+<p>...</p>
+<p><strong>Operation --switch-generation</strong></p>
+<p><strong>Synopsis</strong></p>
+<p><code> ``nix-env { --switch-generation | -G } {generation}</code></p>
+<p><strong>Description</strong></p>
+<p>This operation makes generation number <em>generation</em> the current generation of the active profile. That is, if the <em>profile</em> is the path to the active profile, then the symlink <em>profile</em> is made to point to <em>profile-generation-link</em>, which is in turn a symlink to the actual <em><strong>user environment</strong></em> in the Nix store.</p>
+<p>...</p>
+<p><strong>Operation --query</strong></p>
+<p><strong>Synopsis</strong></p>
+<p><code> ``nix-store { --query | -q } { --outputs | --requisites | -R | --references | --referrers | --referrers-closure | --deriver | -d | --graph | --tree | --binding name | -b name | --hash | --size | --roots } [--use-output] [-u] [--force-realise] [-f] paths...</code></p>
+<p>...</p>
+<p><strong>Examples</strong></p>
+<p>Print the closure (runtime dependencies) of the svn program in the current <em><strong>user environment</strong></em>:</p>
+<p><code>$ nix-store -qR $(which svn)</code><br><code>/nix/store/5mbglq5ldqld8sj57273aljwkfvj22mc-subversion-1.1.4</code><br><code>/nix/store/9lz9yc6zgmc0vlqmn2ipcpkjlmbi51vv-glibc-2.3.4</code>  </p>
+<p>...</p>
+<p>Make a picture of the runtime dependency graph of the current <em><strong>user environment</strong></em>:</p>
+<p><code>$ nix-store -q --graph ~/.nix-profile | dot -Tps &gt; graph.ps</code><br><code>$ gv graph.ps</code>  </p>
+</blockquote>
+<h5 id="nix-copy-closure">nix-copy-closure</h5><p>In the :</p>
+<blockquote>
+<p><strong>Name</strong></p>
+<p><strong>nix-copy-closure</strong> - copy a closure to or from a remote machine via SSH</p>
+<p><strong>Synopsis</strong></p>
+<p><code> ``nix-copy-closure [ --to | --from ] [--gzip] [--include-outputs] [ --use-substitutes | -s ] [-v] user@machine paths</code></p>
+<p>...</p>
+<p>Examples</p>
+<p>...</p>
+<p>Copy Subversion from a remote machine and then install it into a <em><strong>user environment</strong></em>:</p>
+<p><code>$ nix-copy-closure --from alice@itchy.labs \</code><br><code>/nix/store/0dj0503hjxy5mbwlafv1rsbdiyx1gkdy-subversion-1.4.4</code><br><code>$ nix-env -i /nix/store/0dj0503hjxy5mbwlafv1rsbdiyx1gkdy-subversion-1.4.4</code></p>
+</blockquote>
+<h4 id="files">Files</h4><h5 id="nix-conf">nix.conf</h5><p>In the :</p>
+<blockquote>
+<p><strong>Name</strong></p>
+<p><em>nix.conf</em> - Nix configuration file</p>
+<p><strong>Description</strong></p>
+<p>Nix reads settings from two configuration files:</p>
+<ul>
+<li>The system-wide configuration file <em>sysconfdir/nix/nix.conf</em> (i.e. <em>/etc/nix/nix.conf</em> on most systems), or <em>$NIX_CONF_DIR/nix.conf</em> if <em>NIX_CONF_DIR</em> is set.</li>
+</ul>
+<!-- -->
+
+<ul>
+<li>The user configuration file <em>$XDG_CONFIG_HOME/nix/nix.conf</em>, or <em>~/.config/nix/nix.conf</em> if <em>XDG_CONFIG_HOME</em> is not set.</li>
+</ul>
+<p>The configuration files consist of <em>name = value</em> pairs, one per line. Other files can be included with a line like <em>include path</em>, where <em>path</em> is interpreted relative to the current conf file and a missing file is an error unless <em>!include</em> is used instead. Comments start with a <strong>#</strong> character. Here is an example configuration file:</p>
+<p><code>keep-outputs = true # Nice for developers</code><br><code>keep-derivations = true # Idem</code><br><code>You can override settings on the command line using the --option flag, e.g. --option keep-outputs false.</code></p>
+<p>The following settings are currently available:</p>
+<p>...</p>
+<p><code>keep-env-derivations</code> If <em>false</em> (default), derivations are not stored in Nix <em><strong>user environments</strong></em>. That is, the derivations of any build-time-only dependencies may be garbage-collected.</p>
+<p>If true, when you add a Nix derivation to a <em><strong>user environment</strong></em>, the path of the derivation is stored in the <em><strong>user environment</strong>&#39;&#39;. Thus, the derivation will not be garbage-collected until the</em><strong>user environment</strong>&#39;&#39; generation is deleted (nix-env --delete-generations). To prevent build-time-only dependencies from being collected, you should also turn on keep-outputs.</p>
+<p>The difference between this option and keep-derivations is that this one is “sticky”: it applies to any <em><strong>user environment</strong></em> created while this option was enabled, while keep-derivations only applies at the moment the garbage collector is run.</p>
+</blockquote>
+<h3 id="appendix-a-glossary">Appendix A. Glossary</h3><p>In the :</p>
+<blockquote>
+<p><code>user environment</code> An automatically generated store object that consists of a set of symlinks to “active” applications, i.e., other store paths. These are generated automatically by <strong>nix-env</strong>. See Chapter 10, Profiles.</p>
+<p><code>profile</code> A symlink to the current <em><strong>user environment</strong></em> of a user, e.g., <em>/nix/var/nix/profiles/default</em>.</p>
+</blockquote>
+<p><a href="category:Nix" class="wikilink" title="Category:Nix">Category:Nix</a> <a href="category:Guide" class="wikilink" title="Category:Guide">Category:Guide</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

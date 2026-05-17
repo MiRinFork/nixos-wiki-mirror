@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bcachefs</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Bcachefs</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Bcachefs -->
+
+<p><a href="https://bcachefs.org/">Bcachefs</a> is a next-generation CoW filesystem that aims to provide features from <a href="https://mirror.nixoscn.org/wiki/Bcachefs/Btrfs" class="wikilink" title="Btrfs">Btrfs</a> and <a href="https://mirror.nixoscn.org/wiki/Bcachefs/ZFS" class="wikilink" title="ZFS">ZFS</a> with a cleaner codebase<sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Bcachefs#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup>, more stability<sup><a id="footnote-ref-2" href="https://mirror.nixoscn.org/wiki/Bcachefs#footnote-2" data-footnote-ref aria-describedby="footnote-label">2</a></sup>, greater speed<sup><a id="footnote-ref-3" href="https://mirror.nixoscn.org/wiki/Bcachefs#footnote-3" data-footnote-ref aria-describedby="footnote-label">3</a></sup> and a GPL-compatible license. It is built upon Bcache and is mainly developed by Kent Overstreet.</p>
+<h2 id="installation">Installation</h2><p>To enable filesystem support and availability of user-space utils, add following line to the system configuration</p>
+<h2 id="usage">Usage</h2><p>Format and mount a single device</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">bcachefs format /dev/sda</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">mount -t bcachefs /dev/sda /mnt</span></code></pre>
+      </div><p>Or, format and mount multiple devices</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">bcachefs format /dev/sda:/dev/sdb:/dev/sdc</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">mount -t bcachefs /dev/sda:/dev/sdb:/dev/sdc</span></code></pre>
+      </div><p>The same works with partitions, which is probably better for future proofing depending on your specific needs</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">bcachefs format /dev/sda1:/dev/sdb2:/dev/sdc3</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">mount -t bcachefs /dev/sda1:/dev/sdb2:/dev/sdc3</span></code></pre>
+      </div><p>Format drive with encryption enabled, unlock and mount it afterwards. Following bcachefs commands will ask for a password:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">bcachefs format --encrypt /dev/sda</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">bcachefs unlock /dev/sda</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">mount -t bcachefs /dev/sda /mnt</span></code></pre>
+      </div><p>Format a drive with compression on by default, foreground and background (Available Compression options are <code>gzip</code>, <code>lz4</code>, and <code>zstd</code>)</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">bcachefs format --compression=lz4 --background_compression=zstd /dev/sda</span> 
+<span class="hljs-meta prompt_"># </span><span class="language-bash">mount -t bcachefs /dev/sda</span></code></pre>
+      </div><p>Format a multiple devices with storage tiers, so that reads and writes happen on the fastest disks, with data being stored on slower, bigger drives based on usage patterns</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">bcachefs format \
+    --label=hdd.hdd1 /dev/sdc \
+    --label=hdd.hdd2 /dev/sdd \
+    --label=hdd.hdd3 /dev/sde \
+    --label=ssd.ssd1 /dev/sdf \
+    --label=ssd.ssd2 /dev/sdg \
+    --foreground_target=ssd \
+    --promote_target=ssd \
+    --background_target=hdd \
+<span class="hljs-comment"># mount -t bcachefs /dev/sdc:/dev/sdd:/dev/sde:/dev/sdf:/dev/sdg</span></span></code></pre>
+      </div><p>For a better mounting experience in the previous example, use the external UUID that was printed.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">bcachefs format \
+    --label=hdd.hdd1 /dev/sdc \
+    --label=hdd.hdd2 /dev/sdd \
+    --label=hdd.hdd3 /dev/sde \
+    --label=ssd.ssd1 /dev/sdf \
+    --label=ssd.ssd2 /dev/sdg \
+    --foreground_target=ssd \
+    --promote_target=ssd \
+    --background_target=hdd \
+<span class="hljs-comment"># mount -t bcachefs UUID=&lt;UUID&gt;</span></span></code></pre>
+      </div><p>Create a subvolume of a mounted bcachefs filesystem. The snapshot of the filesystem state is accessible in the directory <code>/mnt/snap1</code>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">bcachefs subvolume snapshot /mnt /mnt/snap1</span></code></pre>
+      </div><p>Filesystem check, fix errors and corruptions where a Bcachefs filesystem is on <code>/dev/sda</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">bcachefs fsck /dev/sda</span></code></pre>
+      </div><p>Change partition encryption password for <code>/dev/sda1</code></p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">bcachefs set-passphrase /dev/sda1</span></code></pre>
+      </div><h2 id="configuration">Configuration</h2><p>Every option for the filesystem can be set by editing <code>/sys/fs/bcachefs/</code><uuid><code>/options</code>, for example the file <code>background_compression</code> will change the background compression scheme for background compression. These are persisted with the filesystems, so a bcachefs storage device being mounted on a different computer won&#39;t need to know what mount options to use to maintain the same compression levels.</p>
+<p>Change encryption password for Bcachefs formatted device <code>/dev/sda1</code></p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">bcachefs set-passphrase /dev/sda1</span></code></pre>
+      </div><p>Enable zstd compression for device <code>/dev/sda1</code> at mount time</p>
+<h2 id="tips-and-tricks">Tips and tricks</h2><h3 id="generate-bcachefs-enabled-installation-media">Generate bcachefs enabled installation media</h3><p>Use following Nix <a href="https://mirror.nixoscn.org/wiki/Bcachefs/Flakes" class="wikilink" title="Flake-expression">Flake-expression</a> to generate a ISO installation image with a bcachefs enabled kernel</p>
+<p>The following commands will generate the iso-image which will be available in the directory <code>./result/iso</code></p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">nix build .#nixosConfigurations.exampleIso.config.system.build.isoImage</span></code></pre>
+      </div><h3 id="nixos-installation-on-bcachefs">NixOS installation on bcachefs</h3><p>Using the installation media generated above, continue the installation as usual following the <a href="https://nixos.org/manual/nixos/stable/index.html#ch-installation">instructions of the NixOS manual</a>.</p>
+<p>For a UEFI installation, the partitioning needs to be adjusted as following</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">parted /dev/sda -- mklabel gpt</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">parted /dev/sda -- mkpart ESP fat32 1MB 512MB</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">parted /dev/sda -- <span class="hljs-built_in">set</span> 1 esp on</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">parted /dev/sda -- mkpart primary 512MB 100%</span></code></pre>
+      </div><p>Formatting the boot partition <code>/dev/sda1</code> and the root filesystem <code>/dev/sda2</code></p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">mkfs.fat -F 32 -n boot /dev/sda1</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">mkfs.bcachefs -L nixos /dev/sda2</span></code></pre>
+      </div><p>Formatting and unlocking the encrypted partition would look like this</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">keyctl <span class="hljs-built_in">link</span> @u @s</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">bcachefs format --label=nixos --encrypted /dev/sda2</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">bcachefs unlock /dev/sda2</span></code></pre>
+      </div><p>Mount filesystems. Use <code>lsblk -o +uuid,fsType | grep bcachefs</code> to get bcachefs partition uuid.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">mount /dev/disk/by-uuid/&lt;...&gt; /mnt</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-built_in">mkdir</span> /mnt/boot</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">mount /dev/disk/by-label/boot /mnt/boot</span></code></pre>
+      </div><p>Continue installation as recommended by the <a href="https://nixos.org/manual/nixos/stable/index.html#ch-installation">NixOS manual</a>.</p>
+<h3 id="remote-encrypted-disk-unlocking">Remote encrypted disk unlocking</h3><p>See article on <a href="https://mirror.nixoscn.org/wiki/Bcachefs/Remote_disk_unlocking#Bcachefs_unlocking" class="wikilink" title="remote disk unlocking">remote disk unlocking</a> for a guide on how to enable SSH decryption of Bcachefs enabled systems.</p>
+<h3 id="automatically-mount-encrypted-device-on-boot">Automatically mount encrypted device on boot</h3><p>Since the Bcachefs mount options do <a href="https://github.com/koverstreet/bcachefs-tools/pull/266">not support supplying a key file yet</a>, we could use the <code>bcachefs</code> command and run it on boot using a <a href="https://mirror.nixoscn.org/wiki/Bcachefs/Systemd" class="wikilink" title="Systemd">Systemd</a> unit:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">systemd.services.<span class="hljs-string">&quot;bcachefs-mount&quot;</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">after</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;local-fs.target&quot;</span> ];
+  <span class="hljs-attr">wantedBy</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;multi-user.target&quot;</span> ];
+  <span class="hljs-attr">environment</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">DEVICE_PATH</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/dev/sda1&quot;</span>;
+    <span class="hljs-attr">MOUNT_POINT</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/mnt&quot;</span>;
+  };
+  <span class="hljs-attr">script</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    #!<span class="hljs-subst">${pkgs.runtimeShell}</span> -e
+
+    <span class="hljs-subst">${pkgs.keyutils}</span>/bin/keyctl link @u @s
+
+    # Check if the device path exists
+    if [ ! -b &quot;$DEVICE_PATH&quot; ]; then
+      echo &quot;Error: Device path $DEVICE_PATH does not exist.&quot;
+      exit 1
+    fi
+
+    # Check if the drive is already mounted
+    if <span class="hljs-subst">${pkgs.util-linux}</span>/bin/mountpoint -q &quot;$MOUNT_POINT&quot;; then
+      echo &quot;Drive already mounted at $MOUNT_POINT. Skipping...&quot;
+      exit 0
+    fi
+
+    # Wait for the device to become available
+    while [ ! -b &quot;$DEVICE_PATH&quot; ]; do
+      echo &quot;Waiting for $DEVICE_PATH to become available...&quot;
+      sleep 5
+    done
+
+    # Mount the device
+    <span class="hljs-subst">${pkgs.bcachefs-tools}</span>/bin/bcachefs mount -f /etc/keyfile_test &quot;$DEVICE_PATH&quot; &quot;$MOUNT_POINT&quot;
+  &#x27;&#x27;</span>;
+  <span class="hljs-attr">serviceConfig</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">Type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;oneshot&quot;</span>;
+    <span class="hljs-attr">User</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;root&quot;</span>;
+  };
+};</code></pre>
+      </div><p>This example unit mounts the Bcachefs encrypted partition <code>/dev/sda1</code> to the target <code>/mnt</code> by using the key file <code>/etc/keyfile_test</code>.</p>
+<p><a href="category:Filesystem" class="wikilink" title="Category:Filesystem">Category:Filesystem</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p>citation needed <a href="https://mirror.nixoscn.org/wiki/Bcachefs#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+<li id="footnote-2">
+ <a href="https://mirror.nixoscn.org/wiki/Bcachefs#footnote-ref-2" data-footnote-backref aria-label="Back to reference 2">↩</a>
+</li>
+<li id="footnote-3">
+ <a href="https://mirror.nixoscn.org/wiki/Bcachefs#footnote-ref-3" data-footnote-backref aria-label="Back to reference 3">↩</a>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

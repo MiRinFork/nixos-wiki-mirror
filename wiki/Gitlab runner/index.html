@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gitlab runner</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Gitlab runner</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Gitlab runner -->
+
+<h2 id="introduction">Introduction</h2><p>This is the partner page to <a href="https://mirror.nixoscn.org/wiki/Gitlab%20runner/Gitlab" class="wikilink" title="Gitlab">Gitlab</a>. A Gitlab pipeline runs operations on a Gitlab Runner. These operations can include building an executable, running a test suite, pushing a docker image, etc.</p>
+<p>Once you have Gitlab installed and running you can install a Gitlab Runner. The Runner does not need to run on the same machine as Gitlab and you will need to register the Runner with Gitlab, to do this you will generate a token in Gitlab.</p>
+<h2 id="the-state-of-gitlab-runner-in-nixpkgs">The state of gitlab-runner in nixpkgs</h2><p>As of 20.09 NixOS comes with a revamped gitlab-runner module which provides the capabilities to set up custom to meet your needs. The documents a number of typical setups and this article gives an overview of some of the more complex setups.</p>
+<p>The NixOS manual <a href="https://nixos.org/manual/nixos/unstable/#module-services-gitlab-runner">gives an extensive runner example (the VM test)</a> which demonstrates the following features:</p>
+<ul>
+<li>a <code>docker</code>-executor using <code>podman</code> and serving a containerized Nix Store daemon among all jobs.</li>
+<li>Multiple Gitlab job container images which work with <code>nix</code>.</li>
+</ul>
+<p>The following examples give some motivations for the above.</p>
+<h2 id="configuring-a-caching-dockerized-gitlab-build-runner">Configuring a caching dockerized gitlab build runner</h2><p>With the configuration defined below a gitlab runner will be created which provides a caching docker container to run nix-build.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  boot.kernel.sysctl.<span class="hljs-string">&quot;net.ipv4.ip_forward&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; <span class="hljs-comment"># 1</span>
+  <span class="hljs-attr">virtualisation.docker.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">services.gitlab-runner</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">services</span><span class="hljs-operator">=</span> {
+      <span class="hljs-comment"># runner for building in docker via host&#x27;s nix-daemon</span>
+      <span class="hljs-comment"># nix store will be readable in runner, might be insecure</span>
+      <span class="hljs-attr">nix</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> lib;{
+        <span class="hljs-comment"># File should contain at least these two variables:</span>
+        <span class="hljs-comment"># `CI_SERVER_URL`</span>
+        <span class="hljs-comment"># `REGISTRATION_TOKEN`</span>
+        <span class="hljs-attr">registrationConfigFile</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">toString</span> <span class="hljs-symbol">./path/to/ci-env</span>; <span class="hljs-comment"># 2</span>
+        <span class="hljs-attr">dockerImage</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;alpine&quot;</span>;
+        <span class="hljs-attr">dockerVolumes</span> <span class="hljs-operator">=</span> [
+          <span class="hljs-string">&quot;/nix/store:/nix/store:ro&quot;</span>
+          <span class="hljs-string">&quot;/nix/var/nix/db:/nix/var/nix/db:ro&quot;</span>
+          <span class="hljs-string">&quot;/nix/var/nix/daemon-socket:/nix/var/nix/daemon-socket:ro&quot;</span>
+        ];
+        <span class="hljs-attr">dockerDisableCache</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+        <span class="hljs-attr">preBuildScript</span> <span class="hljs-operator">=</span> pkgs.writeScript <span class="hljs-string">&quot;setup-container&quot;</span> <span class="hljs-string">&#x27;&#x27;
+          mkdir -p -m 0755 /nix/var/log/nix/drvs
+          mkdir -p -m 0755 /nix/var/nix/gcroots
+          mkdir -p -m 0755 /nix/var/nix/profiles
+          mkdir -p -m 0755 /nix/var/nix/temproots
+          mkdir -p -m 0755 /nix/var/nix/userpool
+          mkdir -p -m 1777 /nix/var/nix/gcroots/per-user
+          mkdir -p -m 1777 /nix/var/nix/profiles/per-user
+          mkdir -p -m 0755 /nix/var/nix/profiles/per-user/root
+          mkdir -p -m 0700 &quot;$HOME/.nix-defexpr&quot;
+          . <span class="hljs-subst">${pkgs.nix}</span>/etc/profile.d/nix-daemon.sh
+          <span class="hljs-subst">${pkgs.nix}</span>/bin/nix-channel --add https://nixos.org/channels/nixos-20.09 nixpkgs # 3
+          <span class="hljs-subst">${pkgs.nix}</span>/bin/nix-channel --update nixpkgs
+          <span class="hljs-subst">${pkgs.nix}</span>/bin/nix-env -i <span class="hljs-subst">${concatStringsSep <span class="hljs-string">&quot; &quot;</span> (<span class="hljs-keyword">with</span> pkgs; [ nix cacert git openssh ])}</span>
+        &#x27;&#x27;</span>;
+        <span class="hljs-attr">environmentVariables</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">ENV</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/etc/profile&quot;</span>;
+          <span class="hljs-attr">USER</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;root&quot;</span>;
+          <span class="hljs-attr">NIX_REMOTE</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;daemon&quot;</span>;
+          <span class="hljs-attr">PATH</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/nix/var/nix/profiles/default/bin:/nix/var/nix/profiles/default/sbin:/bin:/sbin:/usr/bin:/usr/sbin&quot;</span>;
+          <span class="hljs-attr">NIX_SSL_CERT_FILE</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/nix/var/nix/profiles/default/etc/ssl/certs/ca-bundle.crt&quot;</span>;
+        };
+        <span class="hljs-attr">tagList</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;nix&quot;</span> ];
+      };
+    };
+  };
+}</code></pre>
+      </div><ol>
+<li>enabling <code>ip_forward</code> on the host machine is important for the docker container to be able to perform networking tasks (such as cloning the gitlab repo)</li>
+<li>the <code>registrationConfigFile</code> must contain the gitlab token for registering a gitlab-runner</li>
+<li>this line defines the default nixpkgs channel to be used inside the container</li>
+</ol>
+<h3 id="alternative-approach-with-nix-daemon-in-dedicated-docker-container">Alternative approach with nix-daemon in dedicated Docker container</h3><p>The alternative to the upper approach is to use a dedicated docker container with nix-daemon. The advantage is that you are not sharing the host&#39;s store and, thus not disclosing its configuration. It is also possible to spawn multiple daemons and, for example, have one runner for protected runs to build release binaries and one for the rest.</p>
+<p>The implementation here uses flakes to pull in Nix repository, and it also hacks the service configure script to load the docker image. The issue here is that we can&#39;t get to the configuration file generated by the module this way and thus we just provide our own. You have to register the runner manually to get a token in this case! This should be improved in the future to load the docker images as part of gitlab-runner module.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-params">nix:</span> { config, lib, pkgs, ... }:
+<span class="hljs-keyword">with</span> <span class="hljs-built_in">builtins</span>;
+<span class="hljs-keyword">with</span> lib;
+<span class="hljs-keyword">let</span>
+    <span class="hljs-attr">localNix</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> (nix.outPath <span class="hljs-operator">+</span> <span class="hljs-string">&quot;/docker.nix&quot;</span>) {
+      <span class="hljs-attr">pkgs</span> <span class="hljs-operator">=</span> pkgs;
+      <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;local/nix&quot;</span>;
+      <span class="hljs-attr">tag</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;latest&quot;</span>;
+      <span class="hljs-attr">bundleNixpkgs</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+      <span class="hljs-attr">extraPkgs</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [ cachix ];
+      <span class="hljs-attr">nixConf</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">cores</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;0&quot;</span>;
+        <span class="hljs-attr">experimental-features</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;nix-command&quot;</span> <span class="hljs-string">&quot;flakes&quot;</span> ];
+      };
+    };
+    <span class="hljs-attr">localNixDaemon</span> <span class="hljs-operator">=</span> pkgs.dockerTools.buildLayeredImage {
+      <span class="hljs-attr">fromImage</span> <span class="hljs-operator">=</span> localNix;
+      <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;local/nix-daemon&quot;</span>;
+      <span class="hljs-attr">tag</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;latest&quot;</span>;
+      <span class="hljs-attr">config</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">Volumes</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-string">&quot;/nix/store&quot;</span> <span class="hljs-operator">=</span> { };
+          <span class="hljs-string">&quot;/nix/var/nix/db&quot;</span> <span class="hljs-operator">=</span> { };
+          <span class="hljs-string">&quot;/nix/var/nix/daemon-socket&quot;</span> <span class="hljs-operator">=</span> { };
+        };
+      };
+      <span class="hljs-attr">maxLayers</span> <span class="hljs-operator">=</span> <span class="hljs-number">125</span>;
+    };
+
+<span class="hljs-keyword">in</span> {
+    <span class="hljs-comment"># Docker for the gitlab runner</span>
+    <span class="hljs-attr">virtualisation.docker</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">autoPrune</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+        <span class="hljs-attr">dates</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;daily&quot;</span>;
+      };
+    };
+
+    <span class="hljs-comment"># Common container for the Gitlab Nix runner</span>
+    <span class="hljs-attr">virtualisation.oci-containers</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">backend</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;docker&quot;</span>;
+      <span class="hljs-attr">containers.gitlabnix</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">imageFile</span> <span class="hljs-operator">=</span> localNixDaemon;
+        <span class="hljs-attr">image</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;local/nix-daemon:latest&quot;</span>;
+        <span class="hljs-attr">cmd</span> <span class="hljs-operator">=</span> [<span class="hljs-string">&quot;nix&quot;</span> <span class="hljs-string">&quot;daemon&quot;</span>];
+      };
+    };
+
+    <span class="hljs-comment"># Gitlab runner</span>
+    <span class="hljs-attr">systemd.services.gitlab-runner.serviceConfig</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">let</span>
+      <span class="hljs-attr">config</span> <span class="hljs-operator">=</span> (pkgs.formats.toml{}).generate <span class="hljs-string">&quot;gitlab-runner.toml&quot;</span> {
+        <span class="hljs-attr">concurrent</span> <span class="hljs-operator">=</span> <span class="hljs-number">1</span>;
+        <span class="hljs-attr">runners</span> <span class="hljs-operator">=</span> [
+          {
+            <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Nix caching runner&quot;</span>;
+            <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://gitlab.com&quot;</span>;
+            <span class="hljs-attr">id</span> <span class="hljs-operator">=</span> <span class="hljs-number">12354</span>;
+            <span class="hljs-attr">token</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;@TOKEN_NIX@&quot;</span>;
+            <span class="hljs-attr">executor</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;docker&quot;</span>;
+            <span class="hljs-attr">docker</span> <span class="hljs-operator">=</span> {
+              <span class="hljs-attr">image</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;local/nix:latest&quot;</span>;
+              <span class="hljs-attr">allowed_images</span> <span class="hljs-operator">=</span> [<span class="hljs-string">&quot;local/nix:latest&quot;</span>];
+              <span class="hljs-attr">pull_policy</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;if-not-present&quot;</span>;
+              <span class="hljs-attr">allowed_pull_policies</span> <span class="hljs-operator">=</span> [<span class="hljs-string">&quot;if-not-present&quot;</span>];
+              <span class="hljs-attr">volumes_from</span> <span class="hljs-operator">=</span> [<span class="hljs-string">&quot;gitlabnix:ro&quot;</span>];
+            };
+            <span class="hljs-attr">environment</span> <span class="hljs-operator">=</span> [
+              <span class="hljs-string">&quot;NIX_REMOTE=daemon&quot;</span>
+              <span class="hljs-string">&quot;ENV=/etc/profile.d/nix-daemon.sh&quot;</span>
+              <span class="hljs-string">&quot;BASH_ENV=/etc/profile.d/nix-daemon.sh&quot;</span>
+            ];
+            <span class="hljs-attr">pre_build_script</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+              # TODO for some reason the /tmp seems to be missing
+              mkdir -p /tmp
+              # We need to allow modification of nix config for cachix as
+              # otherwise it is link to the read only file in the store.
+              cp --remove-destination \
+                $(readlink -f /etc/nix/nix.conf) /etc/nix/nix.conf
+            &#x27;&#x27;</span>;
+          }
+        ];
+      };
+      <span class="hljs-attr">configPath</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;$HOME/.gitlab-runner/config.toml&quot;</span>;
+      <span class="hljs-attr">configureScript</span> <span class="hljs-operator">=</span> pkgs.writeShellScript <span class="hljs-string">&quot;gitlab-runner-configure&quot;</span> <span class="hljs-string">&#x27;&#x27;
+        docker load &lt; <span class="hljs-subst">${localNix}</span>
+        mkdir -p $(dirname <span class="hljs-subst">${configPath}</span>)
+        <span class="hljs-subst">${pkgs.gawk}</span>/bin/awk &#x27;{
+          for(varname in ENVIRON)
+            gsub(&quot;@&quot;varname&quot;@&quot;, ENVIRON[varname])
+          print
+        }&#x27; &quot;<span class="hljs-subst">${config}</span>&quot; &gt; &quot;<span class="hljs-subst">${configPath}</span>&quot;
+        chown -R --reference=$HOME $(dirname <span class="hljs-subst">${configPath}</span>)
+      &#x27;&#x27;</span>;
+    <span class="hljs-keyword">in</span> {
+      <span class="hljs-attr">EnvironmentFile</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/run/secrets/gitlab-runner.env&quot;</span>;
+      <span class="hljs-attr">ExecStartPre</span> <span class="hljs-operator">=</span> mkForce <span class="hljs-string">&quot;!<span class="hljs-subst">${configureScript}</span>&quot;</span>;
+      <span class="hljs-attr">ExecReload</span> <span class="hljs-operator">=</span> mkForce <span class="hljs-string">&quot;!<span class="hljs-subst">${configureScript}</span>&quot;</span>;
+    };
+    <span class="hljs-attr">services.gitlab-runner.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+}</code></pre>
+      </div><p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="category:Container" class="wikilink" title="Category:Container">Category:Container</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Msmtp</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Msmtp</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Msmtp -->
+
+<p><a href="https://marlam.de/msmtp/">msmtp</a> is an easy to configure basic email sender client with fairly complete sendmail compatibility.</p>
+<h2 id="installation">Installation</h2><p>A minimal configuration to relay mails through an external mail server coud look like this</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">p<span class="hljs-attr">rograms.msmtp</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">accounts.default</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">host</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;example.org&quot;</span>;
+    <span class="hljs-attr">from</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;hello@example.org&quot;</span>;
+    <span class="hljs-attr">user</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;hello@example.org&quot;</span>;
+    <span class="hljs-attr">password</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;mypassword123&quot;</span>;
+  };
+};</code></pre>
+      </div><p>In this case <em>msmtp</em> will try to deliver mails through the smtp server <code>example.org</code> on port <code>25</code>. <code>user</code> and <code>password</code> are used for normal plaintext authentication.</p>
+<p>This configuration will automatically set <em>msmtp</em> as the default mail delivery client on your system by overwriting the <code>sendmail</code> binary. To test mail delivery issue following command:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-built_in">echo</span> -e <span class="hljs-string">&quot;Content-Type: text/plain\r\nSubject: Test\r\n\r\nHello World&quot;</span> | sendmail john.doe@mail.com</span></code></pre>
+      </div><p>A mail with the subject <em>Test</em> will be sent to the recipient <em><a href="mailto:john.doe@mail.com">john.doe@mail.com</a></em> including the body text <em>Hello World</em>. A Mime-Header is added to the mail content for better compatibility.</p>
+<h2 id="configuration">Configuration</h2><p>Further configuration options for <em>msmtp</em> can be found <a href="https://marlam.de/msmtp/msmtp.html">here</a>.</p>
+<h3 id="tls-connections">TLS connections</h3><div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">age.secrets.msmtp</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">file</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${inputs.self.outPath}</span>/secrets/msmtp.age&quot;</span>;
+  };
+
+  <span class="hljs-comment"># for zed enableMail, enable sendmailSetuidWrapper</span>
+  <span class="hljs-attr">services.mail.sendmailSetuidWrapper.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+  <span class="hljs-attr">programs.msmtp</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">setSendmail</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">defaults</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">aliases</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/etc/aliases&quot;</span>;
+      <span class="hljs-attr">port</span> <span class="hljs-operator">=</span> <span class="hljs-number">587</span>;
+      <span class="hljs-attr">auth</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;plain&quot;</span>;
+      <span class="hljs-attr">tls</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;on&quot;</span>;
+      <span class="hljs-attr">tls_starttls</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;on&quot;</span>;
+    };
+    <span class="hljs-attr">accounts</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">default</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">host</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;smtp.mail.example.com&quot;</span>;
+        <span class="hljs-attr">passwordeval</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;cat <span class="hljs-subst">${config.age.secrets.msmtp.path}</span>&quot;</span>;
+        <span class="hljs-attr">user</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;myname@example.com&quot;</span>;
+        <span class="hljs-attr">from</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;myname@example.com&quot;</span>;
+      };
+    };
+  };
+}</code></pre>
+      </div><p>Note that msmtp has no daemon and runs as the invoking user. If using <code>passwordeval</code>, the file must be readable by any user that wishes to send mail.</p>
+<h3 id="aliases">Aliases</h3><p>Then, configure an alias for root account. With this alias configured, all mails sent to root, such as cron job results and failed sudo login events, will be redirected to the configured email account.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">environment.etc.aliases.text</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    root: admin@example.com
+  &#x27;&#x27;</span>;
+}</code></pre>
+      </div><h2 id="see-also">See also</h2><ul>
+<li><a href="https://search.nixos.org/options?query=programs.msmtp">msmtp options list</a></li>
+</ul>
+<p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

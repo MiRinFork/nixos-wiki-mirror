@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Enterprise</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Enterprise</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Enterprise -->
+
+<p>When trying to use Nix and NixOS in corporations there are a number of issues one will run into normally because of networking restrictions. This page tries to provide a solution to each of these issues.</p>
+<h2 id="private-resources">Private resources</h2><p>Building internal projects will require fetching of internal (private) source code and other resources. These resources usually are protected by some form of credentials.</p>
+<h3 id="fetchurl">fetchurl</h3><p><code>fetchurl</code> is used to retrieve HTTP resources, but is also used by <code>fetchFromGitHub</code>. For private resources this will usually result in an error like the following:</p>
+<p><code>curl: (22) The requested URL returned error: 401 Unauthorized</code></p>
+<p>Nix will not know about your credentials in your home directory, as the builders have no access to those files. However, Nix has a few options borrowed from <code>curl</code> that will help in this situation. A netrc file can be used that holds the credentials for all domains that require authorisation. More information on netrc can be found in the <a href="https://www.gnu.org/software/inetutils/manual/html_node/The-_002enetrc-file.html">GNU manual</a>. For our example, we will create the file in <code>/etc/nix/netrc</code>. The contents will look similar to the following:</p>
+<p><code>machine DOMAINNAME</code><br><code>    login USERNAME</code><br><code>    password SECRET</code></p>
+<p>Next the netrc file needs to be accessible in the builds. We will configure Nix to allow access to this file directly from the build sandboxes. Edit your <code>/etc/nix/nix.conf</code> file so that it includes the following lines:</p>
+<p><code>netrc-file = /etc/nix/netrc</code></p>
+<p>Lastly, the default way of fetching urls is using <code>curl</code> inside a build sandbox. This is a powerful command, but it will not use (and cannot use) a netrc file that is outside of the build sandbox. <code>netrc-file</code> is thus only applicable to fetches being done by Nix itself. In addition, we do not want to place the netrc file inside the sandbox, because that could potentially leak private credentials into builds. <code>fetchurlBoot</code> uses this builtin function and makes sure the call-sign is mostly compatible with the regular <code>fetchurl</code>. This function is used most often to bootstrap some of the more basic packages like <code>curl</code> itself, but it can also be very useful for fetching files outside of the sandbox.</p>
+<p>Since <strong>fetchurlBoot</strong> is mostly compatible with <strong>fetchurl</strong> we can override <strong>fetchurl</strong> where needed:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">m<span class="hljs-attr">ypackage</span> <span class="hljs-operator">=</span> callPackage <span class="hljs-operator">&lt;</span>mypackage.nix<span class="hljs-operator">&gt;</span> {
+  <span class="hljs-attr">fetchurl</span> <span class="hljs-operator">=</span> stdenv.fetchurlBoot;
+};</code></pre>
+      </div><p>Now the package is built exactly the same way as before, but resources will be fetched using <strong>fetchurlBoot</strong>. <strong>fetchurlBoot</strong> will in turn download the resources within Nix itself, which will use the netrc-file and use the right credentials for the domain names that you have defined.</p>
+<h2 id="tls-intercepting-proxy">TLS Intercepting Proxy</h2><p>TLS-Intercepting proxies will intercept each and every TLS connection and replace the original certificate with it&#39;s own to be able to introspect the traffic. This of course creates validation issues with the &quot;official&quot; ca-certificate project. Since <a href="https://github.com/NixOS/nix/issues/1896">nix pr #2181</a> you are able to set your intercepting Proxy certificate via <code>NIX_SSL_CERT_FILE</code> to a file on your system which contains the root and intermediate certificates of your proxy. See also <a href="https://nixos.org/nix/manual/#sec-nix-ssl-cert-file">the appropriate section in the nix manual</a></p>
+<p>The proxy itself can be set via the environment variables <code>HTTP_PROXY</code> and <code>HTTPS_PROXY</code>.</p>
+<h2 id="dynamic-generation-of-netrc-files">Dynamic generation of netrc files</h2><p>Sometimes you have to deal with dynamically short-lived tokens that must be generated on the fly. The above options do not cover this, so the best way forward is to use `fetchurl`&#39;s `netrcPhase` option:</p>
+<p><code>newPkgs = pkgs.extend (</code><br><code>   final: prev: {</code><br><code>     fetchurl =</code><br><code>       args:</code><br><code>       (prev.fetchurl.override {</code><br><code>         inherit (pkgs) cacert; # required to avoid infrec</code><br><code>       })</code><br><code>         (</code><br><code>           args</code><br><code>           // {</code><br><code>             netrcPhase = </code><br><code>               # do stuff here to get credentials</code><br><code>               BAR=\&#39;\&#39;$(dynamic-shell-script)</code><br><code>               cat &gt; netrc &lt;&lt;EOF</code><br><code>               machine foobar</code><br><code>                       login FOO</code><br><code>                       password \&#39;\&#39;$BAR</code><br><code>               EOF</code><br><code>             </code><em><code>;</code></em><br><code>           }</code><br><code>         );</code><br><code>   }</code><br><code> );</code></p>
+<p>now any fetch in newPkgs will dynamically generate tokens with `fetchurl`.</p>
+<p><a href="category:Networking" class="wikilink" title="Category:Networking">Category:Networking</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

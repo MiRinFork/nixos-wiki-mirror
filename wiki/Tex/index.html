@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tex</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Tex</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Tex -->
+
+<p>According to <a href="wikipedia:TeX" class="wikilink" title="Wikipedia">Wikipedia</a>:</p>
+<p><strong>TeX</strong> [...]is a typesetting system which was designed and mostly written by Donald Knuth and released in 1978. TeX is a popular means of typesetting complex mathematical formulae; it has been noted as one of the most sophisticated digital typographical systems.</p>
+<p>Nixpkgs provides a variety of different (and partially complementing) packages to allow the compilation of TeX-documents. Most prominently, the <a href="https://mirror.nixoscn.org/wiki/Tex/TexLive" class="wikilink" title="TexLive">TexLive</a> distribution (In Oct 2020 version 2019) is included that contains many of the packages that are hosted as part of the <a href="https://www.ctan.org/">Comprehensive TeX Archive Network (CTAN)</a>.</p>
+<h2 id="getting-started">Getting started</h2><p>TeX-documents are not What-you-see-is-what-you-get, but written in plain text, containing tags, commands and functions that instruct the TeX-engine how to lay out the text (or figures or anything else) on the page.</p>
+<p>A minimal TeX-document can be created on the commandline using this shell-snippet:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">cat &gt; minimal.tex &lt;&lt;'EOF'
+\documentclass{article}
+\begin{document}
+Hello, Nix.
+\end{document}
+EOF</code></pre>
+      </div><p>The Nixpkgs-repository contains several TeX-compilers that have different advantages and disadvantages, support various output formats, encodings and have varying degrees of extensibility.</p>
+<p>For the sake of this text we will assume that you you want to create a PDF from your TeX-source.</p>
+<p>A good starting point is to install the TeX-Live basic setup:</p>
+<p><code>nix-env -iA nixpkgs.texlive.combined.scheme-basic</code></p>
+<p>After installation, the command <code>pdflatex</code> should be available. Save the minimal example above in a file called minimal.tex and compile it with <code>pdflatex minimal.tex</code></p>
+<p>The (pretty verbose) output will look similar to:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">pdflatex minimal.tex</span>
+This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2019/NixOS.org)
+entering extended mode
+(minimal.tex
+LaTeX2e &lt;2020-02-02&gt; patch level 5
+L3 programming layer &lt;2020-05-14&gt; (.../tex/latex/base\article.cls
+Document Class: article 2019/12/20 v1.4l Standard LaTeX document class
+(.../tex/latex/base\size10.clo))
+(.../tex/latex/l3backend\l3backend-pdfmode.def)
+No file minimal.aux.
+[1{.../pdftex/config/pdftex.map}]
+(minimal.aux) )&lt;.../fonts/type1/public/amsfonts/cm/cmr10.pfb&gt;
+Output written on minimal.pdf (1 page, 12502 bytes).
+Transcript written on minimal.log.</code></pre>
+      </div><p>Well done, you created your first PDF document on Nixos using TeX.</p>
+<h2 id="next-steps">Next steps</h2><p>From here on, we will assume that the &quot;Full&quot; scheme is installed.</p>
+<p>Let&#39;s fetch an a little more complex example:</p>
+<p><code>curl -O </code><a href="https://raw.githubusercontent.com/latex3/latex2e/master/base/sample2e.tex"><code>https://raw.githubusercontent.com/latex3/latex2e/master/base/sample2e.tex</code></a></p>
+<p>and process it</p>
+<p><code>pdflatex sample2e</code></p>
+<p>You can then use any PDF viewer to display it, e.g. <code>evince</code> in GNOME, <code>okular</code> in KDE, <code>xpdf</code> or <code>zathura</code> lightweight X11-viewer.</p>
+<h3 id="using-texlive-packages">Using Texlive packages</h3><p>If you need many different packages or find that you are missing packages, consider to install the package <strong>nixpkgs.texlive.combined.scheme-full</strong>, but be aware that it is pretty huge (about 5 GB).</p>
+<p>If you don&#39;t want to install the Full scheme, but still need a collection of specific packages, follow the instructions on the <a href="https://mirror.nixoscn.org/wiki/Tex/TexLive" class="wikilink" title="TexLive">TexLive</a> page.</p>
+<h3 id="using-ctan-packages">Using CTAN packages</h3><p>If you want to use a CTAN-package that is not in TeXLive, you will have to adapt any of the derivations that you can find in these issues, e.g. <a href="https://github.com/NixOS/nixpkgs/issues/21334">1</a> (eqexam) or or <a href="https://github.com/NixOS/nixpkgs/issues/21577">2</a> (classico) or <a href="https://github.com/NixOS/nixpkgs/issues/54451">3</a> (res). Please note that the most common reason why packages are not in TeXLive is that they might be released under a non-free license.</p>
+<h3 id="using-home-made-packages">Using home-made packages</h3><p>You might want to review <a href="https://github.com/NixOS/nixpkgs/issues/17748">4</a></p>
+<h3 id="removing-packages-from-a-collection">Removing packages from a collection</h3><p>If you want to package and install a fresher version of some TeXLive package, you might experience a collision with a package from a scheme or a collection you have installed as a whole. To resolve this issue, remove the package by pname from pkgs.</p>
+<p>Example code:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">    pkgs.texlive.combine {
+      <span class="hljs-attr">scheme-medium</span> <span class="hljs-operator">=</span> pkgs.texlive.scheme-medium <span class="hljs-operator">//</span> {
+        <span class="hljs-attr">pkgs</span> <span class="hljs-operator">=</span> pkgs.lib.filter
+          (<span class="hljs-params">x:</span> (x.pname <span class="hljs-operator">!=</span> <span class="hljs-string">&quot;apxproof&quot;</span>))
+          pkgs.texlive.scheme-medium.pkgs;
+      };
+    
+      <span class="hljs-attr">apxproof</span> <span class="hljs-operator">=</span> { <span class="hljs-attr">pkgs</span> <span class="hljs-operator">=</span> [(pkgs.runCommand <span class="hljs-string">&quot;apxproof&quot;</span> {
+        <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> pkgs.fetchurl {
+          <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://raw.githubusercontent.com/PierreSenellart/apxproof/1ac14c47b8351b693ca05eec73dca1332a517ac9/apxproof.sty&quot;</span>;
+          <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sha256-XSgtXsOwhMu2Wo4hVp8ZfaPWgjEEg3EBn5/BhD3xkMA=&quot;</span>;
+        };
+        <span class="hljs-attr">passthru</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">pname</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;apxproof&quot;</span>;
+          <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;1.2.3&quot;</span>;
+          <span class="hljs-attr">tlType</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;run&quot;</span>;
+        };
+      }
+      <span class="hljs-string">&quot;
+        mkdir -p $out/tex/latex/apxproof/
+        cp $src $out/tex/latex/apxproof/apxproof.sty
+      &quot;</span>)]; };
+    }</code></pre>
+      </div><h2 id="frequently-asked-questions-faq">Frequently asked questions FAQ</h2><p><em>How do I figure out which Texlive-schema to install?</em></p>
+<p>As noted on <a href="https://mirror.nixoscn.org/wiki/Tex/TexLive" class="wikilink" title="TexLive">TexLive</a> there are several schemas available. If you know exactly which packages you are going to need you can follow the recipe on the <a href="https://mirror.nixoscn.org/wiki/Tex/TexLive" class="wikilink" title="TexLive">TexLive</a> page. Installing the Full-schema is always an option to be sure that you have everything you need, like so:</p>
+<p><code>nix-env -iA nixpkgs.texlive.combined.scheme-full</code></p>
+<p>If you are looking for a smaller package, you need to go the <a href="https://raw.githubusercontent.com/NixOS/nixpkgs/refs/heads/master/pkgs/tools/typesetting/tex/texlive/tlpdb.nix">Nixpkg&#39;s package specification</a> and search for the scheme-name. For each scheme the list of packages is listed there. Since the inclusion of packages is organized hierarchically, this will require some digging. (TODO: Is there a nix-command to find out?)</p>
+<p><a href="category:Languages" class="wikilink" title="Category:Languages">Category:Languages</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

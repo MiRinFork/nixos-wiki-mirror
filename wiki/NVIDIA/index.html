@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NVIDIA</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / NVIDIA</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: NVIDIA -->
+
+<p>This page attempts to cover everything related to the use of NVIDIA GPUs on NixOS.</p>
+<h2 id="enabling">Enabling</h2><h3 id="kernel-modules-from-nvidia">Kernel modules from NVIDIA</h3><p>Kernel modules from NVIDIA offer better performance than other alternatives, but make the system unfree by requiring proprietary userspace libraries that can interface with the kernel modules. Users that want to have a fully free and open-source system should use <a href="https://mirror.nixoscn.org/wiki/NVIDIA/NVIDIA#Nouveau" class="wikilink" title="Nouveau">Nouveau</a> instead.</p>
+<p>To enable them, add <code>&quot;nvidia&quot;</code> to the list of enabled video drivers defined by the <code>services.xserver.videoDrivers</code> option.</p>
+<h4 id="legacy-branches">Legacy branches</h4><p>GPUs of the Kepler architecture or older (most GeForce 600/700/800M cards and older) are no longer supported by latest proprietary modules. Instead, users of these GPUs must use legacy branches that may still receive updates, as long as the GPUs themselves remain supported by NVIDIA. You can find which legacy branch you need to use by searching for your GPU model on <a href="https://www.nvidia.com/en-us/drivers/unix/legacy-gpu/">NVIDIA&#39;s official legacy driver support list</a>.</p>
+<p>To use legacy branches, you need to set the <code>hardware.nvidia.package</code> option to a package set named <code>config.boot.kernelPackages.nvidiaPackages.legacy_</code><branch>.Nixpkgs does not endeavor to support all legacy branches since older, unmaintained legacy branches can become incompatible with newer kernel and X server versions, and at some point it becomes infeasible to patch them to cooperate with modern software. You can find the list of supported legacy branches under <a href="https://github.com/NixOS/nixpkgs/blob/master/pkgs/os-specific/linux/nvidia-x11/default.nix">in the Nixpkgs repository</a>.</p>
+<h4 id="beta-production-branches">Beta/production branches</h4><p>By default, modules from the stable branch are used, which come from latest release available for the current architecture — while x86-64 and aarch64 systems follow the &quot;New Feature Branch&quot; releases as they remain actively developed, 32-bit x86 and ARM systems remain on the 390.xx branch as that is the last branch with 32-bit support.</p>
+<p>Instead of the stable branch, users can also switch to the beta branch, which has more new features and experimental changes at the risk of containing more bugs, or the production branch, a more conservative, well-tested stable version that is suitable for production use with minimum breakage, at the cost of being behind in terms of new features.</p>
+<p>Using the beta and production branches are similar to how one would use legacy branches:</p>
+<h3 id="nouveau">Nouveau</h3><p>Nouveau is a set of free and open-source drivers for NVIDIA GPUs that provide 2D/3D acceleration for all NVIDIA GPUs. Its use is in general not recommended due to its considerably worse performance compared to NVIDIA&#39;s kernel modules, as it does not support reclocking (changing the GPU clock frequency on-demand) for many NVIDIA GPUs<sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/NVIDIA#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup>. Nevertheless it remains a viable option for users who want a fully free and open-source operating system as it does not contain any proprietary components, unlike NVIDIA&#39;s kernel modules and userspace libraries.</p>
+<p>Nouveau is enabled by default whenever graphics are enabled, and does not need any extra configuration.</p>
+<h2 id="configuring">Configuring</h2><h3 id="power-management">Power management</h3><h3 id="hybrid-graphics-with-prime">Hybrid graphics with PRIME</h3><p>Laptops often feature both an integrated GPU (iGPU) and a dedicated GPU (dGPU) in order to strive a balance between performance and power consumption ­— while the dGPU is used for performance-intensive tasks such as gaming, video editing, 3D rendering, compute jobs, etc., the iGPU can be used to render common 2D elements like application windows and the desktop environment.</p>
+<p>PRIME, therefore, is a technology developed to facilitate the cooperation between the two GPUs and is critical for the laptop&#39;s graphical performance. Depending on your needs, you can configure PRIME in one of three modes, which have different tradeoffs in terms of performance and battery life.</p>
+<h4 id="common-setup">Common setup</h4><p>All PRIME configurations require setting the PCI bus IDs of the two GPUs. One easy way to do find their IDs is by running <code>lspci</code> from the <code>pciutils</code> package, and then finding devices that are classified as VGA controllers. After double checking that the listed devices are indeed your integrated and dedicated GPUs, you can then find the PCI IDs at the beginning of each line. Exact results may vary, but an example output might look like:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix shell nixpkgs#pciutils -c lspci -D -d ::03xx</span>
+0000:00:02.0 VGA compatible controller: Intel Corporation TigerLake-H GT1 [UHD Graphics] (rev 01)
+0000:01:00.0 VGA compatible controller: NVIDIA Corporation GA106M [GeForce RTX 3060 Mobile / Max-Q] (rev a1)</code></pre>
+      </div><p>Before putting them into your configuration, however, <strong>they must first be reformatted</strong> — assuming the bus address is <domain><code>:</code><bus><code>:</code><device><code>.</code><func>, convert all numbers from hexadecimal to decimal, then the formatted string is <code>PCI:</code><bus><code>@</code><domain><code>:</code><device><code>:</code><func>. They can be set under <code>intelBusId</code>, <code>nvidiaBusId</code>, or <code>amdgpuBusId</code> in <code>hardware.nvidia.prime</code>, depending on the manufacturer of the GPU:</p>
+<h4 id="offload-mode">Offload mode</h4><p>Offload mode puts your dGPU to sleep and lets the iGPU handle all tasks, except if you call the dGPU specifically by &quot;offloading&quot; an application to it. For example, you can run your laptop normally and it will use the energy-efficient iGPU all day, and then you can offload a game from Steam onto the dGPU to make the dGPU run that game only. For many, this is the most desirable option.</p>
+<p>To enable offload mode, set the <code>hardware.nvidia.prime.offload.enable</code> option to <code>true</code>:</p>
+<p>When you want to run a program on the dGPU, you only need to set a few environment variables for the driver to recognize that offload mode should be used. If <code>hardware.nvidia.prime.offload.enableOffloadCmd</code> is set to true, NixOS will generate a wrapper script named <code>nvidia-offload</code> that sets the right variables for you:If everything is configured correctly, then running a program like <code>glxgears</code> should use the iGPU, while running <code>nvidia-offload glxgears</code> should only use the dGPU.</p>
+<h4 id="sync-mode">Sync mode</h4><p>In sync mode, rendering is completely delegated to the dGPU, while the iGPU only displays the rendered framebuffers copied from the dGPU. Sync mode offers better performance and greatly reduces screen tearing, at the expense of higher power consumption since the dGPU will not go to sleep when not needed, as is the case in offload mode. Sync mode may also solve some issues with connecting a display in clamshell mode directly to the GPU.</p>
+<p>To enable sync mode, set the <code>hardware.nvidia.prime.sync.enable</code> option to <code>true</code>:</p>
+<h4 id="reverse-sync-mode">Reverse sync mode</h4><p>The difference between regular sync mode and reverse sync mode is that the <strong>dGPU</strong> is configured as the primary output device, allowing displaying to external displays wired to it and not the iGPU (more common).</p>
+<p>To enable reverse sync mode, set the <code>hardware.nvidia.prime.reverseSync.enable</code> option to <code>true</code>:</p>
+<h3 id="wayland">Wayland</h3><h4 id="requirements">Requirements</h4><p>Wayland requires kernel mode setting (KMS) to be enabled (Highly Recommended):</p>
+<h4 id="supported-compositors">Supported Compositors</h4><ul>
+<li><strong>GNOME (Wayland)</strong></li>
+</ul>
+<p>Fully supported on recent drivers (≥ 535 recommended, ≥ 555 strongly recommended).</p>
+<ul>
+<li><strong>KDE Plasma (Wayland)</strong></li>
+</ul>
+<p>Usable since Plasma 6 with recent NVIDIA drivers, though some issues may remain.</p>
+<ul>
+<li><strong>Hyprland</strong></li>
+</ul>
+<p>Generally works with recent NVIDIA drivers, but support is not officially guaranteed. Regressions may occur after driver or compositor updates.</p>
+<h4 id="prime-and-wayland">PRIME and Wayland</h4><ul>
+<li>PRIME <strong>sync</strong> and <strong>reverse sync</strong> modes are <strong>X11-only</strong> and do not work under Wayland.</li>
+<li>PRIME <strong>offload</strong> works under Wayland, but application offloading may behave differently depending on the compositor.</li>
+</ul>
+<h4 id="explict-sync">Explict Sync</h4><p>Drivers ≥ 555 introduce explicit sync support, which greatly improves frame pacing and reduces flickering and stuttering under Wayland. For the best Wayland experience, recent NVIDIA drivers are strongly recommended.</p>
+<h2 id="tips-and-tricks">Tips and tricks</h2><h3 id="check-nixos-hardware">Check nixos-hardware</h3><p>The <a href="https://github.com/NixOS/nixos-hardware">nixos-hardware</a> project attempts to provide configurations that address specific hardware quirks for different devices. It is possible that someone already wrote a hardware configuration for your device and that usually takes care of drivers. If so, follow the upstream documentation to enable the required modules.</p>
+<h3 id="multiple-boot-configurations">Multiple boot configurations</h3><p>Imagine you have a laptop that you mostly use in clamshell mode (docked, connected to an external display and plugged into a charger) but that you sometimes use on the go.</p>
+<p>In clamshell mode, using PRIME Sync is likely to lead to better performance, external display support, etc., at the cost of potentially (but not always) lower battery life. However, when using the laptop on the go, you may prefer to use offload mode.</p>
+<p>NixOS supports &quot;specialisations&quot;, which allow you to automatically generate different boot profiles when rebuilding your system. We can, for example, enable PRIME sync by default, but also create a &quot;on-the-go&quot; specialization that disables PRIME sync and instead enables offload mode:</p>
+<p>(You can also add other settings here totally unrelated to NVIDIA, such as power profiles, etc.)</p>
+<p>After rebuilding and rebooting, you&#39;ll see in your boot menu under each Generation an &quot;on-the-go&quot; option, which will let you boot into the on-to-go specialisation for that generation.</p>
+<p>See also the <a href="https://github.com/NixOS/nixos-hardware/blob/master/common/gpu/nvidia/prime.nix">nixos-hardware</a> implementation of a similar idea.</p>
+<h3 id="using-gpus-on-non-nixos">Using GPUs on non-NixOS</h3><p>If you&#39;re using Nix-packaged software on a non-NixOS system, you&#39;ll need a workaround to get everything up-and-running. The <a href="https://github.com/guibou/nixGL">nixGL project</a> provides wrapper to use GL drivers on non-NixOS systems. You need to have GPU drivers installed on your distro (for kernel modules). With nixGL installed, you&#39;ll run <code>nixGL foobar</code> instead of <code>foobar</code>.</p>
+<p>Note that nixGL is not specific to NVIDIA GPUs, and should work with just about any GPU.</p>
+<h3 id="cuda-and-using-your-gpu-for-compute">CUDA and using your GPU for compute</h3><p>See the <a href="https://mirror.nixoscn.org/wiki/NVIDIA/CUDA" class="wikilink" title="CUDA">CUDA</a> wiki page.</p>
+<h3 id="multi-process-service-mps">Multi-Process Service (MPS)</h3><p><a href="https://docs.nvidia.com/deploy/mps/index.html">NVIDIA Multi-Process Service (MPS)</a> allows multiple CUDA processes to share a single GPU context. NixOS does not provide a dedicated module for MPS, so a custom systemd service is required:</p>
+<p>To use MPS from <a href="https://mirror.nixoscn.org/wiki/NVIDIA/Docker" class="wikilink" title="Docker">Docker</a> containers, the MPS pipe directory must be mounted and the host IPC namespace must be shared:</p>
+<div class="code-container">
+        
+        <pre><code class="language-yaml hljs"><span class="hljs-attr">services:</span>
+  <span class="hljs-attr">gpu-worker:</span>
+    <span class="hljs-attr">ipc:</span> <span class="hljs-string">host</span>
+    <span class="hljs-attr">volumes:</span>
+      <span class="hljs-bullet">-</span> <span class="hljs-string">/tmp/nvidia-mps:/tmp/nvidia-mps</span>
+    <span class="hljs-attr">environment:</span>
+      <span class="hljs-attr">CUDA_MPS_PIPE_DIRECTORY:</span> <span class="hljs-string">/tmp/nvidia-mps</span></code></pre>
+      </div><h3 id="running-specific-nvidia-driver-versions">Running Specific NVIDIA Driver Versions</h3><p>To run a specific version of the NVIDIA driver in NixOS, you can customize your configuration by specifying the desired version along with the corresponding SHA256 hashes. Below is an example configuration for using NVIDIA driver version <code>555.58.02</code>:</p>
+<p>In this configuration:</p>
+<ul>
+<li>Replace <code>version</code> with the desired driver version.</li>
+<li>Update the SHA256 hashes to match the new version you want to use.</li>
+<li>After updating the configuration, run <code>sudo nixos-rebuild switch</code> to apply the changes and load the specified NVIDIA driver version.</li>
+</ul>
+<p>This allows you to pin the specific driver version being used in your NixOS installation. You might want to do this if you are running the newest kernel, as the packaged drivers may fail to build otherwise<sup><a id="footnote-ref-2" href="https://mirror.nixoscn.org/wiki/NVIDIA#footnote-2" data-footnote-ref aria-describedby="footnote-label">2</a></sup>.</p>
+<h2 id="troubleshooting">Troubleshooting</h2><h3 id="booting-to-text-mode">Booting to text mode</h3><p>If you encounter the problem of booting to text mode you might try adding the NVIDIA kernel module manually with:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">b<span class="hljs-attr">oot.initrd.kernelModules</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;nvidia&quot;</span> ];
+<span class="hljs-attr">boot.extraModulePackages</span> <span class="hljs-operator">=</span> [ config.boot.kernelPackages.nvidia_x11 ];</code></pre>
+      </div><h3 id="screen-tearing-issues">Screen tearing issues</h3><p>First, try to switch to PRIME sync mode, as described above. If that doesn&#39;t work, try forcing a composition pipeline.</p>
+<h3 id="flickering-with-picom">Flickering with Picom</h3><h3 id="graphical-corruption-and-system-crashes-on-suspend-resume">Graphical corruption and system crashes on suspend/resume</h3><p><code>powerManagement.enable = true</code> can sometimes fix this, but is itself unstable and is known to cause suspend issues.</p>
+<p><code>hardware.nvidia.powerManagement.enable = true</code> can also sometimes fix this issue; it is <code>false</code> by default.</p>
+<p>If you have a modern NVIDIA GPU (Turing <a href="https://en.wikipedia.org/wiki/Turing_(microarchitecture)#Products_using_Turing">1</a> or later), you may also want to investigate the <code>hardware.nvidia.powerManagement.finegrained</code> option: <a href="https://download.nvidia.com/XFree86/Linux-x86_64/460.73.01/README/dynamicpowermanagement.html">2</a></p>
+<p><a href="https://discourse.nixos.org/t/suspend-resume-cycling-on-system-resume/32322/12">A potential fix</a> that Interrupts the gnome-shell in time so it’s not trying to access the graphics hardware. <sup><a id="footnote-ref-3" href="https://mirror.nixoscn.org/wiki/NVIDIA#footnote-3" data-footnote-ref aria-describedby="footnote-label">3</a></sup> The entire purpose is to manually &quot;pause&quot; the GNOME Shell process just before the system sleeps and &quot;un-pause&quot; it just after the system wakes up.</p>
+<hr>
+
+<p>If you have graphical corruption upon waking from suspend, and the above causes the system to go back to sleep ~20-30 seconds after wakeup, the following may solve both issues:</p>
+<h3 id="black-screen-or-39-nothing-works-39-on-laptops">Black screen or &#39;nothing works&#39; on laptops</h3><p>The kernel module<code>i915</code>for Intel or<code>amdgpu</code>for AMD may interfere with the NVIDIA driver. This may result in a black screen when switching to the virtual terminal, or when exiting the X session. A possible workaround is to disable the integrated GPU by blacklisting the module, using the following configuration option (see also <a href="https://discourse.nixos.org/t/nvidia-gpu-and-i915-kernel-module/21307/3">3</a>):</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># intel</span>
+b<span class="hljs-attr">oot.kernelParams</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;module_blacklist=i915&quot;</span> ];
+<span class="hljs-comment"># AMD</span>
+b<span class="hljs-attr">oot.kernelParams</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;module_blacklist=amdgpu&quot;</span> ];</code></pre>
+      </div><h3 id="nvidia-docker-containers">NVIDIA Docker Containers</h3><p>See: <a href="https://mirror.nixoscn.org/wiki/NVIDIA/Docker#NVIDIA_Docker_Containers" class="wikilink" title="Docker#NVIDIA Docker Containers">Docker#NVIDIA Docker Containers</a></p>
+<h2 id="disabling">Disabling</h2><h3 id="kernel-modules-from-nvidia">Kernel modules from NVIDIA</h3><p>Normally, NVIDIA&#39;s kernel modules should be completely disabled by removing <code>&quot;nvidia&quot;</code> from <code>services.xserver.videoDrivers</code>. If that fails to work, you can also manually blacklist the corresponding kernel modules:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ 
+  <span class="hljs-attr">boot.blacklistedKernelModules</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-string">&quot;nvidia&quot;</span>
+    <span class="hljs-string">&quot;nvidiafb&quot;</span>
+    <span class="hljs-string">&quot;nvidia-drm&quot;</span>
+    <span class="hljs-string">&quot;nvidia-uvm&quot;</span>
+    <span class="hljs-string">&quot;nvidia-modeset&quot;</span>
+  ];
+}</code></pre>
+      </div><h3 id="nouveau">Nouveau</h3><p>Nouveau can be disabled by blacklisting the <code>nouveau</code> kernel module:</p>
+<p>Note: This is done by default when using proprietary drivers</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ 
+  <span class="hljs-attr">boot.blacklistedKernelModules</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;nouveau&quot;</span> ];
+}</code></pre>
+      </div><p>Note that disabling both NVIDIA kernel modules and Nouveau effectively disables the GPU entirely.</p>
+<h2 id="footnotes">Footnotes</h2><references />
+
+<p>4. <a href="https://discourse.nixos.org/t/nvidia-open-breaks-hardware-acceleration/58770/1">https://discourse.nixos.org/t/nvidia-open-breaks-hardware-acceleration/58770/1</a></p>
+<p><a href="category:Video" class="wikilink" title="Category:Video">Category:Video</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p><a href="https://www.phoronix.com/forums/forum/linux-graphics-x-org-drivers/open-source-nvidia-linux-nouveau/998310-nouveau-persevered-in-2017-for-open-source-nvidia-but-2018-could-be-much-better#post998316">https://www.phoronix.com/forums/forum/linux-graphics-x-org-drivers/open-source-nvidia-linux-nouveau/998310-nouveau-persevered-in-2017-for-open-source-nvidia-but-2018-could-be-much-better#post998316</a> <a href="https://mirror.nixoscn.org/wiki/NVIDIA#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+<li id="footnote-2">
+<p><a href="https://github.com/NixOS/nixpkgs/issues/429624#issuecomment-3189861599">https://github.com/NixOS/nixpkgs/issues/429624#issuecomment-3189861599</a> <a href="https://mirror.nixoscn.org/wiki/NVIDIA#footnote-ref-2" data-footnote-backref aria-label="Back to reference 2">↩</a></p>
+</li>
+<li id="footnote-3">
+<p><a href="https://discourse.nixos.org/t/suspend-resume-cycling-on-system-resume/32322/12">https://discourse.nixos.org/t/suspend-resume-cycling-on-system-resume/32322/12</a> <a href="https://mirror.nixoscn.org/wiki/NVIDIA#footnote-ref-3" data-footnote-backref aria-label="Back to reference 3">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

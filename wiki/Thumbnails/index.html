@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Thumbnails</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Thumbnails</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Thumbnails -->
+
+<h2 id="enabling-thumbnailers"><strong>Enabling Thumbnailers</strong></h2><p>On minimal / custom desktop environments thumbnails in file explorers may not work by default. For example:</p>
+<ul>
+<li><a href="https://mirror.nixoscn.org/wiki/Thumbnails/GNOME" class="wikilink" title="GNOME">GNOME</a> environments with the option <code>services.gnome.core-utilities.enable = false;</code></li>
+<li>Custom environments built from ground-up using window managers like <a href="https://mirror.nixoscn.org/wiki/Thumbnails/Sway" class="wikilink" title="Sway">Sway</a> or <a href="https://mirror.nixoscn.org/wiki/Thumbnails/Hyprland" class="wikilink" title="Hyprland">Hyprland</a></li>
+</ul>
+<h3 id="save-yourself-hours-of-troubleshooting">Save yourself hours of troubleshooting!!</h3><p>Thumbnailers may already be installed in your system as dependencies of image/video applications but are not activated.</p>
+<p>Run <code>cd /run/current-system/sw/share/thumbnailers &amp;&amp; ls</code> to list installed thumbnailers. If relevant .thumbnailer files are present and we still don&#39;t have thumbnails in our file explorer then we may need to activate them by updating symlinks to <code>share/thumbnailers</code></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># configuration.nix</span>
+{
+
+  <span class="hljs-attr">environment.pathsToLink</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-string">&quot;share/thumbnailers&quot;</span>
+  ];
+
+}</code></pre>
+      </div><h3 id="enable-video-thumbnails">Enable Video Thumbnails</h3><p>To enable thumbnails for video files use <code>ffmpeg-headless</code> to decode videos and <code>fmpegthumbnailer</code> to generate thumbnails.</p>
+<p>Thumbnails for the following MimeTypes are enabled: <em>video/jpeg; video/mp4; video/mpeg; video/quicktime; video/x-ms-asf; video/x-ms-wm; video/x-ms-wmv; video/x-ms-asx; video/x-ms-wmx; video/x-ms-wvx; video/x-msvideo; video/x-flv; video/x-matroska; application/x-matroska; application/mxf; video/3gp; video/3gpp; video/dv; video/divx; video/fli; video/flv; video/mp2t; video/mp4v-es; video/msvideo; video/ogg; video/vivo; video/vnd.avi; video/vnd.divx; video/vnd.mpegurl; video/vnd.rn-realvideo; application/vnd.rn-realmedia; video/vnd.vivo; video/webm; video/x-anim; video/x-avi; video/x-flc; video/x-fli; video/x-flic; video/x-m4v; video/x-mpeg; video/x-mpeg2; video/x-nsv; video/x-ogm+ogg; video/x-theora+ogg.</em></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># configuration.nix</span>
+{ pkgs, ... }:
+
+{
+  <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> [
+    pkgs.ffmpeg-headless
+    pkgs.ffmpegthumbnailer
+  ];
+
+  <span class="hljs-comment"># &#x27;ffmpegthumbnailer.thumbnailer&#x27; is created in &#x27;/run/current-system/sw/share/thumbnailers&#x27;</span>
+}</code></pre>
+      </div><h3 id="enable-image-thumbnails">Enable Image Thumbnails</h3><p>To enable thumbnails for image files use <code>gdk-pixbuf</code> to decode images and generate thumbnails.</p>
+<p>Thumbnails for the following MimeTypes are enabled: <em>image/png; image/jpeg; image/bmp; image/x-bmp; image/x-MS-bmp; image/gif; image/x-icon; image/x-ico; image/x-win-bitmap; image/vnd.microsoft.icon; application/ico; image/ico; image/icon; text/ico; image/x-portable-anymap; image/x-portable-bitmap; image/x-portable-graymap; image/x-portable-pixmap; image/tiff; image/x-xpixmap; image/x-xbitmap; image/x-tga; image/x-icns; image/x-quicktime; image/qtif.</em></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># configuration.nix</span>
+{ pkgs, ... }:
+
+{
+  <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> [ 
+    pkgs.gdk-pixbuf
+  ];
+
+  <span class="hljs-comment"># &#x27;gdk-pixbuf-thumbnailer.thumbnailer&#x27; is created in &#x27;/run/current-system/sw/share/thumbnailers&#x27;</span>
+}</code></pre>
+      </div><h4 id="thumbnails-for-newer-image-formats-such-as-avif-and-jpeg-xl">Thumbnails for newer image formats such as AVIF and JPEG XL</h4><p>For newer image formats not included in <code>gdk-pixbuf</code> you can enable thumbnails by adding their specific image libraries into the system packages as seen below</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># configuration.nix</span>
+{ pkgs, ... }:
+
+{
+  <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> [ 
+    <span class="hljs-comment"># For general HEIF container support (this includes the AVIF file format) </span>
+    pkgs.libheif.bin <span class="hljs-comment"># provides heif-thumbnailer (the program that generates HEIF thumbnails)</span>
+    pkgs.libheif.out <span class="hljs-comment"># provides heif.thumbnailer (allows for the viewing of HEIF thumbnails)</span>
+
+    <span class="hljs-comment"># For more newer AVIF specific support usually not needed if libheif is installed</span>
+    pkgs.libavif
+    
+    <span class="hljs-comment"># For JXL(JPEG XL) support</span>
+    pkgs.libjxl
+    
+    <span class="hljs-comment"># For WebP support</span>
+    pkgs.webp-pixbuf-loader
+  ];
+  <span class="hljs-comment"># All of the thumbnailers are created in &#x27;/run/current-system/sw/share/thumbnailers&#x27;</span>
+}</code></pre>
+      </div><h3 id="enable-3d-model-thumbnails">Enable 3D Model Thumbnails</h3><p>Thumbnails for various 3D model files can be enabled by installing f3d:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># configuration.nix</span>
+{ pkgs, ... }:
+
+{
+  <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> [ 
+    pkgs.f3d
+  ];
+}</code></pre>
+      </div><h3 id="enable-raw-camera-image-thumbnails">Enable RAW (Camera) Image Thumbnails</h3><h4 id="gdk-pixbuf-thumbnailer">gdk-pixbuf thumbnailer</h4><p>gdk-pixbuf can be used to generate thumbnails for RAW camera image formats by reading the embedded jpeg. This embedded jpeg is typically generated in the camera or overwritten by your RAW editing software, and may not match what the photo looks like when opened in a viewer or editor.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># configuration.nix</span>
+{ pkgs, ... }:
+
+{
+  <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> [
+    pkgs.gdk-pixbuf
+    <span class="hljs-comment"># Allow gdk-pixbuf to thumbnail RAW photos by extracting the embedded jpeg</span>
+    (pkgs.writeTextFile {
+      <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;raw-embedded-jpeg-thumbnailer&quot;</span>;
+      <span class="hljs-attr">destination</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/share/thumbnailers/raw-embedded-jpeg.thumbnailer&quot;</span>;
+      <span class="hljs-attr">text</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        [Thumbnailer Entry]
+        TryExec=gdk-pixbuf-thumbnailer
+        Exec=gdk-pixbuf-thumbnailer -s %s %u %o
+        MimeType=image/x-canon-crw;image/x-canon-cr2;image/x-canon-cr3;image/x-adobe-dng;image/x-dng;
+      &#x27;&#x27;</span>;
+    })
+    <span class="hljs-comment"># Other MimeTypes that include embedded jpeg may work as well (e.g. Nikon .nef, Sony .arf, etc)</span>
+    <span class="hljs-comment"># Test other formats by adding them above</span>
+  ];
+}</code></pre>
+      </div><p><strong>exiv2-thumbnailer</strong></p>
+<p>exiv2 can as well generate thumbnails for RAW camera formats by extracting their embedded JPEG or TIFF previews, making thumbnail creation fast without full RAW decoding. It may also support a wider range of RAW formats than gdk‑pixbuf, since it works directly with metadata rather than relying on codec‑level image loaders.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># configuration.nix</span>
+{ pkgs, ... }:
+
+{
+  <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-comment"># exiv2-based RAW thumbnailer (extracts embedded JPEG/TIFF)</span>
+    (pkgs.writeShellApplication {
+      <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;exiv2-thumbnailer&quot;</span>;
+      <span class="hljs-attr">runtimeInputs</span> <span class="hljs-operator">=</span> [ pkgs.exiv2 pkgs.imagemagick ];
+      <span class="hljs-attr">text</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        #!<span class="hljs-subst">${pkgs.bash}</span>/bin/bash
+        set -euo pipefail
+
+        tmpdir=&quot;$(mktemp -d)&quot;
+        trap &#x27;rm -rf &quot;$tmpdir&quot;&#x27; EXIT
+
+        exiv2 -l &quot;$tmpdir&quot; --extract p1 &quot;$1&quot;
+
+        base=&quot;$(basename &quot;$1&quot;)&quot;
+        preview=&quot;$tmpdir/\<span class="hljs-subst">${base%.<span class="hljs-operator">*</span>}</span>-preview1.jpg&quot;
+        [ ! -f &quot;$preview&quot; ] &amp;&amp; preview=&quot;<span class="hljs-subst">${preview%.<span class="hljs-operator">*</span>}</span>.tif&quot;
+
+        magick &quot;$preview&quot; -thumbnail &quot;\<span class="hljs-subst">${<span class="hljs-number">3</span>}</span>x\<span class="hljs-subst">${<span class="hljs-number">3</span>}</span>&gt;&quot; -strip &quot;png:$2&quot;
+      &#x27;&#x27;</span>;
+    })
+
+    (pkgs.writeTextFile {
+      <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;exiv2-thumbnailer.thumbnailer&quot;</span>;
+      <span class="hljs-attr">destination</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/share/thumbnailers/exiv2-thumbnailer.thumbnailer&quot;</span>;
+      <span class="hljs-attr">text</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        [Thumbnailer Entry]
+        TryExec=exiv2-thumbnailer
+        Exec=exiv2-thumbnailer %i %o
+        MimeType=image/x-canon-crw;image/x-canon-cr2;image/x-canon-cr3;image/x-adobe-dng;image/x-dng;
+      &#x27;&#x27;</span>;
+    })
+  ];
+}</code></pre>
+      </div><p>For a more complete solution, see the NixOS port of <a href="https://github.com/stackcoder/nixos-nautilus-raw-thumbnails">nautilus‑raw‑thumbnails</a>.</p>
+<h4 id="nufraw-thumbnailer">nufraw-thumbnailer</h4><p>To enable thumbnails for camera RAW format use <code>nufraw</code> to decode RAW images and <code>nufraw-thumbnailer</code> to generate thumbnails.</p>
+<p>Thumbnails for the following MimeTypes are enabled: <em>image/x-canon-cr2;image/x-canon-crw;image/x-minolta-mrw;image/x-nikon-nef;image/x-pentax-pef;image/x-panasonic-rw2;image/x-panasonic-raw2;image/x-samsung-srw;image/x-olympus-orf;image/x-sony-arw.</em></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># configuration.nix</span>
+{ pkgs, ... }:
+
+{
+  <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> [ 
+    pkgs.nufraw
+    pkgs.nufraw-thumbnailer
+  ];
+
+  <span class="hljs-comment"># &#x27;nufraw.thumbnailer&#x27; is created in &#x27;/run/current-system/sw/share/thumbnailers&#x27; </span>
+}</code></pre>
+      </div><p>nufraw-thumbnailer</p>
+<ul>
+<li>creates thumbnails using the embedded &#39;jpeg&#39; in the camera raw files. ( <code>--noexif</code> )</li>
+<li>does not respect the EXIF metadata. ( <code>--embedded-image</code> )</li>
+</ul>
+<p>Output of <code>cat /run/current-system/sw/share/thumbnailers/nufraw.thumbnailer</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-desktop hljs">[Thumbnailer Entry]
+TryExec=/nix/store/piss9dl8i5xnfm5yagdffgxycm8lsqpl-nufraw-0.43-3/bin/nufraw-batch
+Exec=/nix/store/piss9dl8i5xnfm5yagdffgxycm8lsqpl-nufraw-0.43-3/bin/nufraw-batch --silent --size %s --out-type=png --noexif --output=%o --embedded-image %i
+MimeType=image/x-canon-cr2;image/x-canon-crw;image/x-minolta-mrw;image/x-nikon-nef;image/x-pentax-pef;image/x-panasonic-rw2;image/x-panasonic-raw2;image/x-samsung-srw;image/x-olympus-orf;image/x-sony-arw</code></pre>
+      </div><p>Additional cameras<sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Thumbnails#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup> beyond those listed in the stock <code>nufraw.thumbnailer</code> file are also supported. The following additional MimeTypes are supported: <em>image/x-adobe-dng; image/x-dcraw; image/x-fuji-raf; image/x-kodak-dcr; image/x-kodak-k25; image/x-kodak-kdc; image/x-nikon-nrw; image/x-panasonic-raw; image/x-sigma-x3f; image/x-sony-srf; image/x-sony-sr2</em></p>
+<p>Eg: Generate thumbnails from &#39;raw&#39; data (not &#39;embedded jpeg&#39;) + respect EXIF (eg: rotation) metadata + add support for additional camera formats</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># configuration.nix</span>
+{ pkgs, ... }:
+
+{
+  <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> [
+    pkgs.nufraw
+    pkgs.nufraw-thumbnailer
+    <span class="hljs-comment"># Thumbnails from &#x27;raw&#x27; data and include EXIF tags for Adobe-DNG images</span>
+    (pkgs.writeTextFile {
+      <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;my-custom-nufraw-thumbnailer&quot;</span>;
+      <span class="hljs-attr">destination</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/share/thumbnailers/my-custom-nufraw.thumbnailer&quot;</span>;
+      <span class="hljs-attr">text</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        [Thumbnailer Entry]
+        TryExec=nufraw-batch
+        Exec=nufraw-batch --silent --size %s --out-type=png --output=%o %i
+        MimeType=image/x-adobe-dng;image/x-dng;
+      &#x27;&#x27;</span>;
+    })
+    <span class="hljs-comment"># MimeTypes not listed here but listed in the default nufraw.thumbnailer will continue displaying</span>
+    <span class="hljs-comment"># thumbnails generated from the &#x27;embedded jpeg&#x27; without the EXIF metadata</span>
+  ];
+}</code></pre>
+      </div><h2 id="creating-custom-thumbnailers"><strong>Creating Custom Thumbnailers</strong></h2><p>Most package mangers accept the <a href="https://specifications.freedesktop.org/thumbnail-spec/latest/index.html">Thumbnail Managing Standard</a>, by using it you can create your own thumbnailer for any file format, this can be done by:</p>
+<ol>
+<li>First you need to figure out how to create a <code>.png</code> image from a file in the desired format.</li>
+<li>Create a <code>.thumbnailer</code> file in <code>$XDG_DATA_DIRS/thumbnailers</code>.</li>
+<li>Restart your thumbnailer service (This is specific to each file manager) and test if it&#39;s working.</li>
+</ol>
+<h3 id="example">Example</h3><p>You could create a thumbnailer for <a href="https://mirror.nixoscn.org/wiki/Thumbnails/Krita" class="wikilink" title="Krita">Krita</a>&#39;s <code>.kra</code> file format like so:</p>
+<p><code>.kra</code> are zip files, with a preview stored at <code>/preview.png</code>, we can use unzip to extract the preview:</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs">unzip -p robot-squirrel.kra preview.png &gt; robot-squirrel.png</code></pre>
+      </div><p>Create a <code>.thumbnailer</code> file in any <code>$XDG_DATA_DIRS/thumbnailers</code> directory.</p>
+<div class="code-container">
+        
+        <pre><code class="language-desktop hljs"># $HOME/.local/share/thumbnailers/kra.thumbnailer
+[Thumbnailer Entry]
+Exec=sh -c &quot;unzip -p %i preview.png &gt; %o&quot;
+MimeType=application/x-krita;</code></pre>
+      </div><p>Restart your thumbnailer service (This is specific to each file manager) and test if it&#39;s working.</p>
+<p>After you have a working definition, you can make it reproducible like so:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># configuration.nix</span>
+{ pkgs, ... }:
+
+{
+  <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> [
+    (pkgs.writeTextFile {
+      <span class="hljs-comment"># This can be anything, it&#x27;s just the name of the derivation in the nix store</span>
+      <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;krita-thumbnailer&quot;</span>;
+      <span class="hljs-comment"># This is the important part, the path under which this will be installed</span>
+      <span class="hljs-attr">destination</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/share/thumbnailers/kra.thumbnailer&quot;</span>;
+      <span class="hljs-comment"># The contents of your thumbnailer, don&#x27;t forget to specify the full path to executables</span>
+      <span class="hljs-attr">text</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        [Thumbnailer Entry]
+        Exec=sh -c &quot;<span class="hljs-subst">${pkgs.unzip}</span>/bin/unzip -p %i preview.png &gt; %o&quot;
+        MimeType=application/x-krita;
+      &#x27;&#x27;</span>;
+    })
+  ];
+}</code></pre>
+      </div><section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p><a href="https://github.com/killhellokitty/nufraw-thumbnailer">https://github.com/killhellokitty/nufraw-thumbnailer</a> <a href="https://mirror.nixoscn.org/wiki/Thumbnails#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

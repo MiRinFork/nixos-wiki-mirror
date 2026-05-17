@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Neovim</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Neovim</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Neovim -->
+
+<languages/>
+
+<translate>
+
+  
+<p><em>See also: <tvar name=vim><a href="special:MyLanguage/Vim" class="wikilink" title="Vim">Vim</a></tvar></em></p>
+<p><a href="https://neovim.io/">Neovim</a><sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Neovim#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup> is a highly extensible and open source text editor that aims to improve upon and modernize the popular <tvar name=vim><a href="special:MyLanguage/Vim" class="wikilink" title="Vim">Vim</a></tvar><sup><a id="footnote-ref-2" href="https://mirror.nixoscn.org/wiki/Neovim#footnote-2" data-footnote-ref aria-describedby="footnote-label">2</a></sup> editor. It&#39;s designed to be a drop-in replacement for Vim, maintaining compatibility with most Vim plugins and configurations while offering additional features and improvements. Neovim focuses on extensibility, usability, and performance.</p>
+<p>It introduces a powerful plugin architecture that allows for asynchronous plugin execution, which can significantly improve performance for certain operations. It also includes a built-in terminal emulator, allowing users to run shell commands directly within the editor. The project emphasizes code quality and maintainability, with a clean, well-documented codebase that makes it easier for developers to contribute.</p>
+<h2 id="installation">Installation</h2><h4 id="shell">Shell</h4><p>To temporarily use Neovim in a shell environment without modifying your system configuration, you can run: </translate></p>
+<p><translate> This makes the Neovim editor available in your current shell. You can then launch Neovim by typing <code>nvim</code>.</p>
+<h4 id="system-setup">System setup</h4><p>To install Neovim system-wide, making it available to all users, add the following to your configuration: </translate></p>
+<p><translate> After rebuilding your system with <code>nixos-rebuild switch</code> or <code>home-manager switch</code>, Neovim will be installed and accessible.</p>
+<h2 id="configuration">Configuration</h2><h4 id="basic">Basic</h4></translate>
+
+<translate>
+
+<h4 id="advanced">Advanced</h4></translate>
+
+<translate>
+
+<h2 id="tips-and-tricks">Tips and Tricks</h2><h4 id="package-variations">Package Variations</h4><p>Have a look at the <a href="https://github.com/nix-community/neovim-nightly-overlay">Neovim Nightly Overlay</a><sup><a id="footnote-ref-3" href="https://mirror.nixoscn.org/wiki/Neovim#footnote-3" data-footnote-ref aria-describedby="footnote-label">3</a></sup> to install the most recent current nightly version of Neovim.</p>
+<p>You can run the master version via the following command: </translate></p>
+<translate>
+
+<h4 id="plugin-management">Plugin Management</h4></translate>
+
+<translate>
+
+<h4 id="frameworks">Frameworks</h4><p>If you prefer not to configure your system manually, NixOS offers several predefined configurations and community-supported options. Here are a few of them:</p>
+<ul>
+<li><a href="https://www.lazyvim.org/">LazyVim</a><sup><a id="footnote-ref-4" href="https://mirror.nixoscn.org/wiki/Neovim#footnote-4" data-footnote-ref aria-describedby="footnote-label">4</a></sup></li>
+<li><a href="https://astronvim.com/">AstroNvim</a><sup><a id="footnote-ref-5" href="https://mirror.nixoscn.org/wiki/Neovim#footnote-5" data-footnote-ref aria-describedby="footnote-label">5</a></sup></li>
+<li><a href="https://nvchad.com/">NVChad</a><sup><a id="footnote-ref-6" href="https://mirror.nixoscn.org/wiki/Neovim#footnote-6" data-footnote-ref aria-describedby="footnote-label">6</a></sup></li>
+</ul>
+<p>LazyVim, by default, will prevent loading plugins that are not managed by LazyVim. This includes all plugins installed via Nix. If you want to install plugins with both Nix and LazyVim, add the following to your LazyVim setup: </translate></p>
+<p><translate> <a href="https://github.com/folke/lazy.nvim/issues/402#issuecomment-2084997594">Source</a></p>
+<h4 id="fhs-wrapper">FHS wrapper</h4><p>You can create a custom neovim FHS wrapper </translate></p>
+<p><translate> This FHS wrapper example is based on a contribution to nixpkgs<sup><a id="footnote-ref-7" href="https://mirror.nixoscn.org/wiki/Neovim#footnote-7" data-footnote-ref aria-describedby="footnote-label">7</a></sup>. For an extended configuration that includes setting up <code>mason.nvim</code> with a similar FHS environment, see this <a href="https://github.com/NixOS/nixpkgs/issues/281219#issuecomment-2284713258">NixOS/nixpkgs issue comment</a>.</p>
+<h2 id="troubleshooting">Troubleshooting</h2><h4 id="lua-language-server-dynamically-linked-executable-error">lua-language-server: Dynamically linked executable error</h4><p>In your <code>~/.local/state/nvim/lsp.log</code>, you have the following error: </translate></p>
+<p><translate> A solution for this issue can be found on Stack Overflow<sup><a id="footnote-ref-8" href="https://mirror.nixoscn.org/wiki/Neovim#footnote-8" data-footnote-ref aria-describedby="footnote-label">8</a></sup>.</p>
+<h2 id="see-also">See also</h2><ul>
+<li><a href="https://mirror.nixoscn.org/wiki/Neovim/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> – For declarative Neovim configuration at the user level: <a href="https://nix-community.github.io/home-manager/options.html#opt-programs.neovim.enable">Neovim module in Home Manager</a></li>
+<li><a href="https://neovim.io/doc/">Official Documentation</a> – Official Neovim documentation.</li>
+<li><a href="https://search.nixos.org/options?channel=unstable&amp;query=programs.neovim">NixOS options for Neovim</a> – System-level Neovim configuration.</li>
+<li><a href="https://discourse.nixos.org/search?q=neovim">Neovim discussions on NixOS Discourse</a> – Community tips, troubleshooting, and use cases.</li>
+<li><a href="https://github.com/nix-community/neovim-overlay">Neovim Overlay on Nixpkgs</a> – For nightly builds and additional Neovim packages.</li>
+</ul>
+<h2 id="references">References</h2></translate>
+
+<p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="category:CLI_Applications" class="wikilink" title="Category:CLI Applications">Category:CLI Applications</a> <a href="category:Text_Editor" class="wikilink" title="Category:Text Editor">Category:Text Editor</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p>Neovim Team, &quot;Home - Neovim&quot;, Neovim Official Website, Last updated March 2025, Accessed June 2025. <a href="https://neovim.io/">https://neovim.io/</a> <a href="https://mirror.nixoscn.org/wiki/Neovim#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+<li id="footnote-2">
+<p>NixOS Wiki Community, &quot;Vim&quot;, NixOS Wiki, Last edited 24 February 2025, Accessed June 2025. <a href="https://wiki.nixos.org/wiki/Vim">https://wiki.nixos.org/wiki/Vim</a> <a href="https://mirror.nixoscn.org/wiki/Neovim#footnote-ref-2" data-footnote-backref aria-label="Back to reference 2">↩</a></p>
+</li>
+<li id="footnote-3">
+<p>Nix Community, &quot;neovim-nightly-overlay&quot;, GitHub, Last updated June 2025, Accessed June 2025. <a href="https://github.com/nix-community/neovim-nightly-overlay">https://github.com/nix-community/neovim-nightly-overlay</a> <a href="https://mirror.nixoscn.org/wiki/Neovim#footnote-ref-3" data-footnote-backref aria-label="Back to reference 3">↩</a></p>
+</li>
+<li id="footnote-4">
+<p>LazyVim Team, &quot;Getting Started&quot;, LazyVim Official Website, © 2025, Accessed June 2025. <a href="https://www.lazyvim.org/">https://www.lazyvim.org/</a> <a href="https://mirror.nixoscn.org/wiki/Neovim#footnote-ref-4" data-footnote-backref aria-label="Back to reference 4">↩</a></p>
+</li>
+<li id="footnote-5">
+<p>AstroNvim Team, &quot;AstroNvim&quot;, AstroNvim Official Website, N/A, Accessed June 2025. <a href="https://astronvim.com/">https://astronvim.com/</a> <a href="https://mirror.nixoscn.org/wiki/Neovim#footnote-ref-5" data-footnote-backref aria-label="Back to reference 5">↩</a></p>
+</li>
+<li id="footnote-6">
+<p>Siduck, &quot;NvChad&quot;, NvChad Official Website, © 2025, Accessed June 2025. <a href="https://nvchad.com/">https://nvchad.com/</a> <a href="https://mirror.nixoscn.org/wiki/Neovim#footnote-ref-6" data-footnote-backref aria-label="Back to reference 6">↩</a></p>
+</li>
+<li id="footnote-7">
+<p>NixOS, &quot;Feature: Custom Neovim FHS Wrapper&quot; (Pull Request #334032), GitHub, 2025, Accessed June 2025. <a href="https://github.com/NixOS/nixpkgs/pull/334032">https://github.com/NixOS/nixpkgs/pull/334032</a> <a href="https://mirror.nixoscn.org/wiki/Neovim#footnote-ref-7" data-footnote-backref aria-label="Back to reference 7">↩</a></p>
+</li>
+<li id="footnote-8">
+<p>Stack Overflow Contributor, &quot;Answer to &#39;Could not start dynamically linked executable... on NixOS&#39;&quot;, Stack Overflow, 2025, Accessed June 2025. <a href="https://stackoverflow.com/a/78215911/27134695">https://stackoverflow.com/a/78215911/27134695</a> <a href="https://mirror.nixoscn.org/wiki/Neovim#footnote-ref-8" data-footnote-backref aria-label="Back to reference 8">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

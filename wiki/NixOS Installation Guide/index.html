@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NixOS Installation Guide</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / NixOS Installation Guide</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: NixOS Installation Guide -->
+
+<p><languages/> <translate> This guide serves as a companion guide for the <a href="https://nixos.org/nixos/manual/index.html#ch-installation">official manual</a>. It describes installation of <a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/NixOS" class="wikilink" title="NixOS">NixOS</a> as a complete operating system. For instructions on installing <a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/Nix" class="wikilink" title="Nix">Nix</a> within an existing operating system, refer to the <a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/Nix_Installation_Guide" class="wikilink" title="Nix Installation Guide">Nix Installation Guide</a>.</p>
+<p>In addition to covering the steps from the official manual, it provides known good instructions for common use cases. When there is a discrepancy between the manual and this guide, the supported case is the one described in the manual.</p>
+<h2 id="installation-target">Installation target</h2><p>NixOS can be installed on an increasing variety of hardware:</p>
+<ul>
+<li>regular (Intel or AMD) desktop computers, laptops or physically accessible servers, covered on this page</li>
+<li>SBCs (like the Raspberry Pis) and other ARM boards, see <a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/NixOS_on_ARM" class="wikilink" title="NixOS on ARM">NixOS on ARM</a></li>
+<li>cloud and remote servers, see <a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/NixOS_friendly_hosters" class="wikilink" title="NixOS friendly hosters">NixOS friendly hosters</a></li>
+</ul>
+<h2 id="installation-method">Installation method</h2><p>NixOS, as with most Linux-based operating systems, can be installed in different ways.</p>
+<ol>
+<li>The classic way, booting from the installation media. (Described below.)</li>
+<li><a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/Installing_from_Linux" class="wikilink" title="Booting the media from an existing Linux installation">Booting the media from an existing Linux installation</a></li>
+</ol>
+<h2 id="making-the-installation-media">Making the installation media</h2><p>Since NixOS 14.11 the installer ISO is hybrid. This means it is bootable on both CD and USB drives. It also boots on EFI systems, like most modern motherboards and apple systems. The following instructions will assume the standard way of copying the image to a USB drive. When using a CD or DVD, the usual methods to burn to disk should work with the iso.</p>
+<h3 id="quot-burning-quot-to-usb-drive">&quot;Burning&quot; to USB drive</h3><p>First, download a <a href="https://nixos.org/download.html#nixos-iso">NixOS ISO image</a> or <a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/Creating_a_NixOS_live_CD" class="wikilink" title="create a custom ISO">create a custom ISO</a>. Then plug in a USB stick large enough to accommodate the image. Then follow the platform instructions:</p>
+<h4 id="from-linux">From Linux</h4><ol>
+<li>Find the right device with <code>lsblk</code> or <code>fdisk -l</code>. Replace <i><code>/dev/sdX</code></i> with the proper device in the following steps.</li>
+<li>Copy to device: <code>cp nixos-xxx.iso </code><em><code>/dev/sdX</code></em></li>
+</ol>
+<p>Writing the disk image with <code>dd if=nixos.iso of=/dev/sdX bs=4M status=progress conv=fdatasync</code> also works.</p>
+<h4 id="from-macos">From macOS</h4><ol>
+<li>Find the right device with <code>diskutil list</code>, let&#39;s say <i><code>diskX</code></i>.</li>
+<li>Unmount with <code>diskutil unmountDisk </code><i><code>diskX</code></i>.</li>
+<li>Burn with: <code>sudo dd if=</code><b><code>path_to_nixos.iso</code></b><code> of=/dev/</code><i><code>diskX</code></i></li>
+</ol>
+<h4 id="from-windows">From Windows</h4><ol>
+<li>Download <a href="http://sourceforge.net/projects/usbwriter/">USBwriter</a>.</li>
+<li>Start USBwriter.</li>
+<li>Choose the downloaded ISO as &#39;Source&#39;</li>
+<li>Choose the USB drive as &#39;Target&#39;</li>
+<li>Click &#39;Write&#39;</li>
+<li>When USBwriter has finished writing, safely unplug the USB drive.</li>
+</ol>
+<h3 id="alternative-installation-media-instructions">Alternative installation media instructions</h3><p>The previous methods are the supported methods of making the USB installation media.</p>
+<p>Those methods are also documented, they can allow using the USB drive to boot multiple distributions. This is not supported, your mileage may vary.</p>
+<ul>
+<li><a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/NixOS_Installation_Guide/Unetbootin" class="wikilink" title="Using Unetbootin">Using Unetbootin</a></li>
+<li><a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/NixOS_Installation_Guide/Manual_USB_Creation" class="wikilink" title="Manual USB Creation">Manual USB Creation</a></li>
+<li><a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/NixOS_Installation_Guide/multibootusb" class="wikilink" title="multibootusb">multibootusb</a></li>
+</ul>
+<h2 id="booting-the-installation-media">Booting the installation media</h2><p>The installation media is hybrid and is capable of booting in both legacy BIOS mode and <a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/UEFI" class="wikilink" title="UEFI">UEFI</a> mode.</p>
+<p>Whatever mode is used to boot the installation media, your motherboard or computer&#39;s configuration may need to be changed to allow booting from a Optical Disk Drive (for CD/DVD) or an external USB drive.</p>
+<h3 id="legacy-bios-boot">Legacy bios boot</h3><p>This is the only boot possible on machines lacking EFI/UEFI.</p>
+<h3 id="uefi-boot">UEFI boot</h3><p>The EFI bootloader of the installation media is not signed and is not using a signed shim to boot. This means that Secure Boot will need to be disabled to boot.</p>
+<h2 id="connecting-to-the-internet">Connecting to the internet</h2><p>The installation will <strong>definitely</strong> need a working internet connection. It is possible to install without one, but the available set of packages is limited.</p>
+<h3 id="wired">Wired</h3><p>For network interfaces supported by the kernel, DHCP resolution should already have happened once the shell is available.</p>
+<h2 id="tethered-internet-sharing">Tethered (Internet Sharing)</h2><p>If you can not connect to the internet via cable or wifi, you may use smartphone&#39;s tethering capability to share internet. Depending on your smartphones capabilities, only stock kernel drivers may be required which can help providing a working network connection.</p>
+<h3 id="wireless">Wireless</h3><p><a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/NetworkManager" class="wikilink" title="NetworkManager">NetworkManager</a> is installed on the graphical ISO, meaning that it is possible to use <code>nmtui</code> on the command line to connect to a network.</p>
+<p>Using the &quot;Applications&quot; tab at top left or the launcher bar at bottom, choose a terminal application and from there launch <code>nmtui</code>. This will allow you to &#39;activate&#39; a (wireless) connection - your local SSIDs should be visible in the list, else you can add a new connection. When the wireless connection is active and you have tested it, it is likely the install app which launched on startup has not detected the new connection. Close down the install app, and reopen it from the launcher bar at the bottom of the screen. This should then find the new connection and proceed.</p>
+<p>On the minimal ISO, or if you are more familiar with <a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/wpa_supplicant" class="wikilink" title="wpa_supplicant">wpa_supplicant</a> then you can also run <code>wpa_passphrase ESSID | sudo tee /etc/wpa_supplicant.conf</code>, then enter your password and <code>systemctl restart wpa_supplicant</code>.</p>
+<p>The minimal OS wifi may also be set up using <code>nmcli</code>: <code>nmcli device wifi connect ESSID password PASSWORD</code></p>
+<h2 id="partitioning">Partitioning</h2><p>To partition the persistent storage run <code>sudo fdisk /dev/diskX</code> and follow instructions for MBR or (U)EFI. To determine which mode you are booted into, run: </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">[ -d /sys/firmware/efi/efivars ] &amp;&amp; <span class="hljs-built_in">echo</span> <span class="hljs-string">&quot;UEFI&quot;</span> || <span class="hljs-built_in">echo</span> <span class="hljs-string">&quot;Legacy&quot;</span></span></code></pre>
+      </div><p><translate> A very simple example setup is given here.</p>
+<h3 id="legacy-boot-mbr">Legacy Boot (MBR)</h3><ul>
+<li>o (dos disk label)</li>
+<li>n new</li>
+<li>p primary (4 primary in total)</li>
+<li>1 (partition number [1/4])</li>
+<li>2048 first sector (alignment for performance)</li>
+<li>+500M last sector (boot sector size)</li>
+<li>rm signature (Y), if ex. =&gt; warning of overwriting existing system, could use wipefs</li>
+<li>n</li>
+<li>p</li>
+<li>2</li>
+<li>default (fill up partition)</li>
+<li>default (fill up partition)</li>
+<li>w (write)</li>
+</ul>
+<h3 id="uefi">UEFI</h3><ul>
+<li>g (gpt disk label)</li>
+<li>n</li>
+<li>1 (partition number [1/128])</li>
+<li>2048 first sector</li>
+<li>+500M last sector (boot sector size)</li>
+<li>t</li>
+<li>1 (EFI System)</li>
+<li>n</li>
+<li>2</li>
+<li>default (fill up partition)</li>
+<li>default (fill up partition)</li>
+<li>w (write)</li>
+</ul>
+<h3 id="format-partitions">Format partitions</h3><p>The example below uses the <a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/ext4" class="wikilink" title="ext4">ext4</a> filesystem format. If you wish to use other filesystem formats such as <a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/Btrfs" class="wikilink" title="Btrfs">Btrfs</a> or <a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/ZFS" class="wikilink" title="ZFS">ZFS</a>:</p>
+<ul>
+<li><a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/Bcachefs#NixOS_installation_on_bcachefs" class="wikilink" title="Bcachefs#NixOS installation on bcachefs">Bcachefs#NixOS installation on bcachefs</a></li>
+<li><a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/Btrfs#Installation_of_NixOS_on_btrfs" class="wikilink" title="Btrfs#Installation of NixOS on btrfs">Btrfs#Installation of NixOS on btrfs</a></li>
+<li><a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/LVM#Basic_Setup" class="wikilink" title="LVM#Basic Setup">LVM#Basic Setup</a></li>
+<li><a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/ZFS#Simple_NixOS_ZFS_on_root_installation" class="wikilink" title="ZFS#Simple NixOS ZFS on root installation">ZFS#Simple NixOS ZFS on root installation</a></li>
+</ul>
+<p>This is useful for having multiple setups and makes partitions easier to handle </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">lsblk <span class="hljs-comment"># lists current system block devices</span></span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">mkfs.fat -F 32 -n boot /dev/sdX1</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">mkfs.ext4 /dev/sdX2 -L nixos</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">mount /dev/disk/by-label/nixos /mnt</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-built_in">mkdir</span> -p /mnt/boot</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">mount /dev/disk/by-label/boot /mnt/boot</span></code></pre>
+      </div><translate>
+
+<h2 id="nixos-configuration">NixOS configuration</h2><p>NixOS is configured through a <a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/Overview_of_the_NixOS_Linux_distribution#Declarative_Configuration" class="wikilink" title="declarative configuration">declarative configuration</a> file. To generate a default config file, run <a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/nixos-generate-config" class="wikilink" title="nixos-generate-config">nixos-generate-config</a>: </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">nixos-generate-config --root /mnt</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">nano /mnt/etc/nixos/configuration.nix</span></code></pre>
+      </div><p><translate> For information on working with a system configuration, see <a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/NixOS_system_configuration" class="wikilink" title="NixOS system configuration">NixOS system configuration</a>. For desktop-specific configurations, see <a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/NixOS_as_a_desktop" class="wikilink" title="NixOS as a desktop">NixOS as a desktop</a>.</p>
+<p>Most essential changes:</p>
+<ul>
+<li>keyboard layout, ie <a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/Keyboard_Layout_Customization" class="wikilink" title="services.xserver.xkb.layout"><code>services.xserver.xkb.layout</code></a></li>
+<li><a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/networking" class="wikilink" title="networking">networking</a> (wifi), see below for fix if it breaks</li>
+<li>install <a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/:Category:Text_Editor" class="wikilink" title="editor">editor</a> to edit the configuration</li>
+</ul>
+<p>The self-documenting NixOS options can be searched with <a href="https://search.nixos.org/options">NixOS options search</a>.</p>
+<h3 id="swap-file">Swap file</h3><p>For additional methods of configuring swap, see <a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/Swap" class="wikilink" title="Swap">Swap</a>. The following example demonstrates how to create and enable a <a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/Swap#Swap_file" class="wikilink" title="swap file">swap file</a>: </translate></p>
+<translate>
+
+<h3 id="bootloader">Bootloader</h3><p>NixOS supports multiple <a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/Bootloader" class="wikilink" title="bootloaders">bootloaders</a> such as <a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/GNU_GRUB" class="wikilink" title="GNU GRUB">GNU GRUB</a> and <a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/Systemd/boot" class="wikilink" title="Systemd/boot">Systemd/boot</a>.</p>
+<p>Systemd-boot is the recommended bootloader. The following example demonstrates how to enable systemd-boot in your configuration: </translate></p>
+<p><translate> You may also wish to configure <a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/Secure_Boot" class="wikilink" title="Secure Boot">Secure Boot</a>.</p>
+<h3 id="users">Users</h3><p>For information on creating and managing users, see <a href="https://mirror.nixoscn.org/wiki/NixOS%20Installation%20Guide/User_management" class="wikilink" title="User management">User management</a> and the . See an example below: </translate></p>
+<translate>
+
+<h2 id="nixos-installation">NixOS installation</h2></translate>
+
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-built_in">cd</span> /mnt</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">nixos-install</span></code></pre>
+      </div><p><translate> after installation: Run <code>passwd</code> to change user password.</p>
+<p>if internet broke/breaks, try one of the following: </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">nixos-rebuild switch --option substitute <span class="hljs-literal">false</span> <span class="hljs-comment"># no downloads</span></span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">nixos-rebuild switch --option binary-caches <span class="hljs-string">&quot;&quot;</span> <span class="hljs-comment"># no downloads</span></span></code></pre>
+      </div><translate>
+
+<ul>
+<li>wpa_supplicant flags to connect to wifi</li>
+</ul>
+</translate>
+
+<hr />
+
+<translate>
+
+<h2 id="additional-notes-for-specific-hardware">Additional notes for specific hardware</h2><p>These are collected notes or links for specific hardware issues.</p>
+<ul>
+<li>Blog post how to install NixOS on a <a href="http://grahamc.com/blog/nixos-on-dell-9560">Dell 9560</a></li>
+<li>Brand servers may require extra kernel modules be included into initrd (<code>boot.initrd.extraKernelModules</code> in configuration.nix) For example HP Proliant needs &quot;hpsa&quot; module to see the disk drive.</li>
+</ul>
+</translate>
+
+<p><a href="category:Guide" class="wikilink" title="Category:Guide">Category:Guide</a> <a href="category:Deployment" class="wikilink" title="Category:Deployment">Category:Deployment</a> <a href="category:NixOS" class="wikilink" title="Category:NixOS">Category:NixOS</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

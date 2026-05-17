@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NixOS on ARM/NanoPC-T4</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM">NixOS on ARM</a><span aria-hidden="true"> / </span>NanoPC-T4</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: NixOS on ARM/NanoPC-T4 -->
+
+<div class="infobox">
+
+<table>
+<thead>
+<tr>
+<th colspan="2" class="title"><p>NanoPC-T4</p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td colspan="2"><figure>
+<img src="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NanoPC-T4/NanoPC-T4.png" title="NanoPC-T4 SBC" width="256" />
+<figcaption>NanoPC-T4 SBC</figcaption>
+</figure></td>
+</tr>
+<tr>
+<td><p>Manufacturer</p></td>
+<td><p>FriendlyElec</p></td>
+</tr>
+<tr>
+<td><p>Architecture</p></td>
+<td><p>AArch64</p></td>
+</tr>
+<tr>
+<td><p>Bootloader</p></td>
+<td><p>u-boot with ARM trusted boot and Rockchip Miniloader</p></td>
+</tr>
+<tr>
+<td><p>Boot order</p></td>
+<td><p>official: eMMC</p></td>
+</tr>
+<tr>
+<td><p>Maintainer</p></td>
+<td><p><a href="user:tmountain" class="wikilink" title="tmountain">tmountain</a></p></td>
+</tr>
+</tbody>
+</table>
+
+</div>
+
+<p>The NanoPC-T4 is a single board computer built around the Rockchip RK3399 SoC.</p>
+<h2 id="status">Status</h2><p>The board <strong>boots NixOS from eMMC</strong> and will also load NixOS via its integrated microSD reader.</p>
+<p>The official documentation, which is comprehensive, can be found on <a href="https://wiki.friendlyelec.com/wiki/index.php/NanoPC-T4">the FriendlyElec wiki</a>.</p>
+<p>U-Boot for this board is not entirely open, incorporating a binary blob for the tertiary program loader (TPL). Compilation instructions are featured in section 15.7 of <a href="http://wiki.friendlyelec.com/wiki/index.php/NanoPC-T4">the FriendlyElec wiki</a>, and a build target is also provided in upstream u-boot (<strong>nanopc-t4-rk3399_defconfig</strong>).</p>
+<p>Pre-built u-boot images are available <a href="https://github.com/tmountain/arch-nanopct4/tree/main/images/">here</a>.</p>
+<h2 id="board-specific-installation-notes">Board Specific Installation Notes</h2><h3 id="installation-onto-emmc">Installation onto eMMC</h3><p>These instructions assume that you have booted the NanoPC-T4 via an OS loaded via its microSD card. A recent Armbian boot image should flash and boot cleanly (follow their docs).</p>
+<p>The NanoPC-T4 reserves space for u-boot at the beginning of its eMMC and/or microSD. As a result, successful image installation relies upon a custom partitioning scheme.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-comment"># dd if=/dev/zero of=/dev/mmcblk2 bs=1M count=32</span>
+
+<span class="hljs-comment"># fdisk /dev/mmcblk2</span>
+Command (m <span class="hljs-keyword">for</span> <span class="hljs-built_in">help</span>): g
+Created a new GPT disklabel (GUID: 2E750097-829F-614C-AD9E-271DA3413E3E).
+Command (m <span class="hljs-keyword">for</span> <span class="hljs-built_in">help</span>): n
+Partition number (1-128, default 1):
+First sector (2048-30535646, default 2048): 32768
+Last sector, +/-sectors or +/-size{K,M,G,T,P} (32768-30535646, default 30535646):
+Created a new partition 1 of <span class="hljs-built_in">type</span> <span class="hljs-string">&#x27;Linux filesystem&#x27;</span> and of size 14.6 GiB.
+Command (m <span class="hljs-keyword">for</span> <span class="hljs-built_in">help</span>): w
+
+<span class="hljs-comment"># Make the filesystem</span>
+<span class="hljs-comment"># mkfs.ext4 /dev/mmcblk2p1</span>
+<span class="hljs-comment"># set the disk label (crucially important)</span>
+<span class="hljs-comment"># tune2fs -L NIXOS_SD /dev/mmcblk2p1</span></code></pre>
+      </div><p>After partitioning, you can write the u-boot images as follows.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-comment"># dd if=idbloader.bin of=/dev/mmcblk2 seek=64 conv=notrunc</span>
+<span class="hljs-comment"># dd if=uboot.img of=/dev/mmcblk2 seek=16384 conv=notrunc</span>
+<span class="hljs-comment"># dd if=trust.bin of=/dev/mmcblk2 seek=24576 conv=notrunc</span></code></pre>
+      </div><h4 id="boot-and-rootfs">Boot and RootFS</h4><p>The latest linux kernel is working with this board. Instead of building the image yourself you can fetch the latest sd-image from hydra and dd the created images onto the separate partitions. You can find recent successful builds <a href="https://hydra.nixos.org/job/nixos/release-20.09/nixos.sd_image.aarch64-linux">here</a>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-comment"># get the latest link directly from hydra</span>
+<span class="hljs-comment"># wget https://hydra.nixos.org/build/135139819/download/1/nixos-sd-image-20.09.2623.97a13fb97fc-aarch64-linux.img.zst -O sd.img.zst</span>
+<span class="hljs-comment"># unzstd sd.img.zst</span>
+<span class="hljs-comment"># udisksctl loop-setup -f sd.img -r</span>
+
+<span class="hljs-comment"># copy the root filesystem to the partition you created earlier</span>
+<span class="hljs-comment"># mkdir eemc imgroot</span>
+<span class="hljs-comment"># mount /dev/mmcblk2p1 eemc</span>
+<span class="hljs-comment"># mount /dev/loop0p2 imgroot</span>
+<span class="hljs-comment"># cd imgroot</span>
+<span class="hljs-comment"># tar cf - . | (cd ../eemc &amp;&amp; tar xvf -)</span>
+<span class="hljs-comment"># sync</span>
+<span class="hljs-comment"># cd .. &amp;&amp; umount eemc imgroot</span></code></pre>
+      </div><p>After writing the filesystem, shutdown the system completely (power off state), remove the SD card, power it back up, and if everything went well, it should boot into Nix via eMMC.</p>
+<h4 id="bypassing-emmc-to-boot-sd">Bypassing eMMC to boot SD</h4><p>From a fully powered off state, hold the Boot button and then long-press the power button to power up the board. Continue holding the Boot button for ~5 seconds, and the board will be forced to enter the MASKROM mode which bypasses the eMMC MBR.</p>
+<h4 id="uart">UART</h4><p>The base images are configured to boot up with a serial TTY ( RX/TX UART ) @ 115200 Baud. I had to replace <code>console=ttyS0,115200n8</code> with <code>console=ttyS2,115200n8</code> in /boot/extlinux/extlinux.conf to make the serial console work.</p>
+<p>Note: the NanoPC-T4 UART defaults to the Debug UART Pin Spec which is adjacent to the USB-C port and is not part of the 40 Pin GPIO Pin Spec (see the aforementioned wiki).</p>
+<h3 id="networking">Networking</h3><p>The NanoPC-T4 integrated wifi does not work out of the box. Getting it to work requires the following steps:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-comment"># mkdir -p /lib/firmware/brcm</span>
+<span class="hljs-comment"># cp brcmfmac4356-sdio.txt /lib/firmware/brcm/</span>
+<span class="hljs-comment"># rmmod brcmfmac</span>
+<span class="hljs-comment"># modprobe brcmfmac</span>
+<span class="hljs-comment"># wpa_supplicant -B -i wlan0 -c &lt;(wpa_passphrase $YOUR_SSID $YOUR_PASSWORD)</span></code></pre>
+      </div><p>You can get a copy of brcmfmac4356-sdio.txt <a href="https://gist.githubusercontent.com/tmountain/e6c9e5da504b46db029f5cc5ccf47492/raw/d5086b8028c5eb5c760137b12a84c517cccb9734/brcmfmac4356-sdio.txt">here</a>.</p>
+<h3 id="bluetooth-messages-during-install">Bluetooth Messages During Install</h3><p>Depending on your hardware, the default boot image can be extremely noisy regarding messages related to bluetooth. If you would like to turn these off (temporarily), you can do the following.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-comment"># echo &quot;install bluetooth /bin/false&quot; &gt; /etc/modprobe.d/blacklist.conf</span>
+<span class="hljs-comment"># reboot</span></code></pre>
+      </div><p><a href="category:NixOS_on_ARM" class="wikilink" title="Category:NixOS on ARM">Category:NixOS on ARM</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

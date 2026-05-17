@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CCache</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / CCache</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: CCache -->
+
+<p>CCache is useful for <a href="https://mirror.nixoscn.org/wiki/CCache/Packaging" class="wikilink" title="Packaging">Packaging</a> large packages with <a href="https://mirror.nixoscn.org/wiki/CCache/Incremental_builds" class="wikilink" title="Incremental builds">Incremental builds</a>.</p>
+<p>With CCache, recompile time can be reduced from many hours to a few minutes.</p>
+<h2 id="nixos">NixOS</h2><p>On NixOS, the <code>programs.ccache</code> module can be used to partially enable CCache.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">p<span class="hljs-attr">rograms.ccache.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><p>However, without specifying <code>programs.ccache.packageNames</code> the CCache wrapper is not configured. The wrapper configuration can be added to your Nix overlays.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">ixpkgs.overlays</span> <span class="hljs-operator">=</span> [
+  (<span class="hljs-params">self:</span> <span class="hljs-params">super:</span> {
+    <span class="hljs-attr">ccacheWrapper</span> <span class="hljs-operator">=</span> super.ccacheWrapper.override {
+      <span class="hljs-attr">extraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        export CCACHE_COMPRESS=1
+        export CCACHE_DIR=&quot;<span class="hljs-subst">${config.programs.ccache.cacheDir}</span>&quot;
+        export CCACHE_UMASK=007
+        if [ ! -d &quot;$CCACHE_DIR&quot; ]; then
+          echo &quot;=====&quot;
+          echo &quot;Directory &#x27;$CCACHE_DIR&#x27; does not exist&quot;
+          echo &quot;Please create it with:&quot;
+          echo &quot;  sudo mkdir -m0770 &#x27;$CCACHE_DIR&#x27;&quot;
+          echo &quot;  sudo chown root:nixbld &#x27;$CCACHE_DIR&#x27;&quot;
+          echo &quot;=====&quot;
+          exit 1
+        fi
+        if [ ! -w &quot;$CCACHE_DIR&quot; ]; then
+          echo &quot;=====&quot;
+          echo &quot;Directory &#x27;$CCACHE_DIR&#x27; is not accessible for user $(whoami)&quot;
+          echo &quot;Please verify its access permissions&quot;
+          echo &quot;=====&quot;
+          exit 1
+        fi
+      &#x27;&#x27;</span>;
+    };
+  })
+];</code></pre>
+      </div><p>The CCache directory also needs to be added to the builder sandboxes.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">ix.settings.extra-sandbox-paths</span> <span class="hljs-operator">=</span> [ config.programs.ccache.cacheDir ];</code></pre>
+      </div><p>Run <code>sudo nixos-rebuild switch</code> to enable these options before attempting to use CCache for a derivation.</p>
+<h3 id="derivation-ccache">Derivation CCache</h3><p>Packages can built with CCache by overriding <code>stdenv</code> in the derivation.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">ixpkgs.overlays</span> <span class="hljs-operator">=</span> [
+  (<span class="hljs-params">self:</span> <span class="hljs-params">super:</span> {
+    <span class="hljs-attr">ffmpeg</span> <span class="hljs-operator">=</span> super.ffmpeg.override { <span class="hljs-attr">stdenv</span> <span class="hljs-operator">=</span> super.ccacheStdenv; };
+  })
+];</code></pre>
+      </div><p>Some packages do not use <code>stdenv</code> directly. You may need to plumb it through other dependencies first.</p>
+<p>Note, that if the package is a top-level package, you may instead add it to the <code>programs.ccache.packageNames</code> list.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">p<span class="hljs-attr">rograms.ccache.packageNames</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;ffmpeg&quot;</span> ];</code></pre>
+      </div><h3 id="system-ccache">System CCache</h3><p>todo</p>
+<h3 id="monitor-ccache">Monitor CCache</h3><p>The NixOS module creates a script that can be used to monitor the CCache directory without sudo.</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">nix-ccache --show-stats</code></pre>
+      </div><h2 id="non-nixos">Non-NixOS</h2><p>Create the cache folder:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">sudo mkdir -m0770 -p /nix/var/cache/ccache
+
+# Linux
+sudo chown --reference=/nix/store /nix/var/cache/ccache
+
+# macOS workaround for chown --reference
+nix-shell -p coreutils --run 'sudo chown --reference=/nix/store /nix/var/cache/ccache'</code></pre>
+      </div><p>Add the path to the derivation sandbox by adding <code>extra-sandbox-paths</code> to <code>nix.conf</code></p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">extra-sandbox-paths = /nix/var/cache/ccache</code></pre>
+      </div><p>Then configure the CCache wrapper script.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">ixpkgs.overlays</span> <span class="hljs-operator">=</span> [
+  (<span class="hljs-params">self:</span> <span class="hljs-params">super:</span> {
+    <span class="hljs-attr">ccacheWrapper</span> <span class="hljs-operator">=</span> super.ccacheWrapper.override {
+      <span class="hljs-attr">extraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        export CCACHE_COMPRESS=1
+        export CCACHE_DIR=&quot;/nix/var/cache/ccache&quot;
+        export CCACHE_UMASK=007
+        if [ ! -d &quot;$CCACHE_DIR&quot; ]; then
+          echo &quot;=====&quot;
+          echo &quot;Directory &#x27;$CCACHE_DIR&#x27; does not exist&quot;
+          echo &quot;Please create it with:&quot;
+          echo &quot;  sudo mkdir -m0770 &#x27;$CCACHE_DIR&#x27;&quot;
+          echo &quot;  sudo chown root:nixbld &#x27;$CCACHE_DIR&#x27;&quot;
+          echo &quot;=====&quot;
+          exit 1
+        fi
+        if [ ! -w &quot;$CCACHE_DIR&quot; ]; then
+          echo &quot;=====&quot;
+          echo &quot;Directory &#x27;$CCACHE_DIR&#x27; is not accessible for user $(whoami)&quot;
+          echo &quot;Please verify its access permissions&quot;
+          echo &quot;=====&quot;
+          exit 1
+        fi
+      &#x27;&#x27;</span>;
+    };
+  })
+];</code></pre>
+      </div><h3 id="derivation-ccache">Derivation CCache</h3><p>Packages can built with CCache by overriding <code>stdenv</code> in the derivation.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">ixpkgs.overlays</span> <span class="hljs-operator">=</span> [
+  (<span class="hljs-params">self:</span> <span class="hljs-params">super:</span> {
+    <span class="hljs-attr">ffmpeg</span> <span class="hljs-operator">=</span> super.ffmpeg.override { <span class="hljs-attr">stdenv</span> <span class="hljs-operator">=</span> super.ccacheStdenv; };
+  })
+];</code></pre>
+      </div><p>Some packages do not use <code>stdenv</code> directly. You may need to plumb it through other dependencies first.</p>
+<h3 id="monitor-ccache-status">Monitor CCache status</h3><div class="code-container">
+        
+        <pre><code class="language- hljs"># watch ccache size
+sudo watch du -sh /nix/var/cache/ccache
+
+# watch ccache stats
+sudo watch ccache --dir /nix/var/cache/ccache --show-stats</code></pre>
+      </div><h2 id="sloppiness">Sloppiness</h2><p>By default, <code>stdenv</code> inserts <code>-frandom-seed</code> C compiler flag with a value that changes whenever the derivation hash has changed. Consequently, this behavior completely defeats any usage of <code>ccacheWrapper</code> To counterpart this behavior, add the following line to the ccache config (typically <code>/var/cache/ccache/ccache.conf</code>):</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">sloppiness = random_seed</code></pre>
+      </div><p>Be warned that this configuration option might affect reproducibility of builds, and could lead to cache poisoning. See <a href="https://github.com/NixOS/nixpkgs/issues/109033">issue 109033</a> for more details.</p>
+<h2 id="see-also">See also</h2><ul>
+<li><a href="https://leanprover.github.io/lean4/doc/make/nix.html">https://leanprover.github.io/lean4/doc/make/nix.html</a></li>
+<li><a href="https://nixos.org/manual/nix/stable/command-ref/conf-file.html">sandbox-paths in nix.conf</a></li>
+</ul>
+<p><a href="category:_Development" class="wikilink" title="Category: Development">Category: Development</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

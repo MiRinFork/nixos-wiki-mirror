@@ -1,0 +1,474 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vim/zh</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/Vim">Vim</a><span aria-hidden="true"> / </span>zh</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Vim/zh -->
+
+<p><languages/> <a href="https://www.vim.org/">Vim</a>（vi 增强版）是一个高度可配置的终端模态文本编辑器。</p>
+<p><span id="Installation"></span></p>
+<h2 id="安装">安装</h2><p><span id="Basic_Install"></span></p>
+<h3 id="基础安装">基础安装</h3><p>&lt;syntaxhighlight lang=&quot;nix&gt;</p>
+<p><code> programs.vim.enable = true;</code></p>
+</syntaxhighlight>
+
+<p>或者</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">programs.vim</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">package</span> <span class="hljs-operator">=</span> pkgs.vim-full;
+  };</code></pre>
+      </div><p>或者</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [ vim-full ];</code></pre>
+      </div><p><span id="Using_Home_Manager"></span></p>
+<h3 id="使用-home-manager">使用 Home Manager</h3><p>使用 <a href="special:MyLanguage/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> 可以轻松设置 Vim。这是一个简单的例子：</p>
+<p>&lt;syntaxhighlight lang=&quot;nix&gt;</p>
+<p><code> programs.vim = {</code><br><code>   enable = true;</code><br><code>   plugins = with pkgs.vimPlugins; [ vim-airline ];</code><br><code>   settings = { ignorecase = true; };</code><br><code>   extraConfig = &#39;&#39;</code><br><code>     set mouse=a</code><br><code>   &#39;&#39;;</code><br><code> };</code></p>
+</syntaxhighlight>
+
+<p>有关所有选项，请参阅 <a href="https://github.com/rycee/home-manager/blob/master/modules/programs/vim.nix">1</a>。</p>
+<p><span id="Vim_Spell_Files"></span></p>
+<h3 id="vim-拼写文件">Vim 拼写文件</h3><p>你可以配置 home-manager，通过打包单个拼写文件的方式将拼写文件安装到你的用户目录中。以下是 <a href="https://mirror.nixoscn.org/wiki/Vim/zh/neovim" class="wikilink" title="neovim">neovim</a> 检查法语的示例：</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-keyword">let</span>
+n<span class="hljs-attr">vim-spell-fr-utf8-dictionary</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">builtins.fetchurl</span> {
+  <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;http://ftp.vim.org/vim/runtime/spell/fr.utf-8.spl&quot;</span>;
+  <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;abfb9702b98d887c175ace58f1ab39733dc08d03b674d914f56344ef86e63b61&quot;</span>;
+};
+
+<span class="hljs-attr">nvim-spell-fr-utf8-suggestions</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">builtins.fetchurl</span> {
+  <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;http://ftp.vim.org/vim/runtime/spell/fr.utf-8.sug&quot;</span>;
+  <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;0294bc32b42c90bbb286a89e23ca3773b7ef50eff1ab523b1513d6a25c6b3f58&quot;</span>;
+};
+
+<span class="hljs-attr">nvim-spell-fr-latin1-dictionary</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">builtins.fetchurl</span> {
+  <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;http://ftp.vim.org/vim/runtime/spell/fr.latin1.spl&quot;</span>;
+  <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;086ccda0891594c93eab143aa83ffbbd25d013c1b82866bbb48bb1cb788cc2ff&quot;</span>;
+};
+
+<span class="hljs-attr">nvim-spell-fr-latin1-suggestions</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">builtins.fetchurl</span> {
+  <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;http://ftp.vim.org/vim/runtime/spell/fr.latin1.sug&quot;</span>;
+  <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;5cb2c97901b9ca81bf765532099c0329e2223c139baa764058822debd2e0d22a&quot;</span>;
+};
+<span class="hljs-keyword">in</span>
+{
+  xdg.configFile.<span class="hljs-string">&quot;nvim/spell/fr.utf-8.spl&quot;</span>.source <span class="hljs-operator">=</span> nvim-spell-fr-utf8-dictionary;
+  xdg.configFile.<span class="hljs-string">&quot;nvim/spell/fr.utf-8.sug&quot;</span>.source <span class="hljs-operator">=</span> nvim-spell-fr-utf8-suggestions;
+  xdg.configFile.<span class="hljs-string">&quot;nvim/spell/fr.latin1.spl&quot;</span>.source <span class="hljs-operator">=</span> nvim-spell-fr-latin1-dictionary;
+  xdg.configFile.<span class="hljs-string">&quot;nvim/spell/fr.latin1.sug&quot;</span>.source <span class="hljs-operator">=</span> nvim-spell-fr-latin1-suggestions;
+}</code></pre>
+      </div><p><span id="NeoVim_with_Coc_for_Python"></span></p>
+<h4 id="neovim-配置带有-python-支持的-coc">NeoVim 配置带有 Python 支持的 Coc</h4><p>对于 NeoVim，请使用以下 home-manager 配置： <a href="https://github.com/NixOS/nixpkgs/issues/98166#issuecomment-725319238">https://github.com/NixOS/nixpkgs/issues/98166#issuecomment-725319238</a></p>
+<p><span id="System_wide_vim/nvim_configuration"></span></p>
+<h2 id="系统范围的-vim-nvim-配置">系统范围的 vim/nvim 配置</h2><p>如果您想要一个 vim/nvim 的系统范围“基本”配置，这里有两个示例：</p>
+<p>unstable 分支：</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs, ... }:
+{
+  <span class="hljs-attr">programs.vim</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">defaultEditor</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">package</span> <span class="hljs-operator">=</span> (pkgs.vim-full.override {  }).customize{
+      <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;vim&quot;</span>;
+      <span class="hljs-comment"># 安装插件，例如用于 nix 文件的语法高亮</span>
+      <span class="hljs-attr">vimrcConfig.packages.myplugins</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs.vimPlugins; {
+        <span class="hljs-attr">start</span> <span class="hljs-operator">=</span> [ vim-nix vim-lastplace ];
+        <span class="hljs-attr">opt</span> <span class="hljs-operator">=</span> [];
+      };
+      <span class="hljs-attr">vimrcConfig.customRC</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        &quot; 你的自定义 vimrc
+        set nocompatible
+        set backspace=indent,eol,start
+        &quot; 默认打开语法高亮
+        syntax on
+        &quot; ...
+      &#x27;&#x27;</span>;
+    };
+  };
+}</code></pre>
+      </div><div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs, ... }:
+{
+  <span class="hljs-attr">programs.neovim</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">defaultEditor</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">vimAlias</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">configure</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">customRC</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        &quot; 你的自定义 vimrc
+        set nocompatible
+        set backspace=indent,eol,start
+        &quot; ...
+      &#x27;&#x27;</span>;
+      <span class="hljs-attr">packages.myPlugins</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs.vimPlugins; {
+        <span class="hljs-attr">start</span> <span class="hljs-operator">=</span> [ vim-lastplace vim-nix ]; 
+        <span class="hljs-attr">opt</span> <span class="hljs-operator">=</span> [];
+      };
+    };
+  };
+}</code></pre>
+      </div><p>将这些导入到您的 <code>configuration.nix</code> 中并使用</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{    
+  <span class="hljs-attr">imports</span> <span class="hljs-operator">=</span>    
+    [
+      <span class="hljs-symbol">./vim.nix</span>
+    ];
+  <span class="hljs-comment"># ...</span>
+}</code></pre>
+      </div><p><span id="Custom_setup_without_using_Home_Manager"></span></p>
+<h2 id="不使用-home-manager-的自定义设置">不使用 Home Manager 的自定义设置</h2><p>Vim 插件可以通过 nix 安装。您可以不使用 vim 插件管理器，直接在 <code>.nixpkgs/config</code> 中完成所有操作。</p>
+<p>在 nix 中对 vim 进行包管理和配置的大部分文档存储在 nixpkgs 的 <a href="https://github.com/NixOS/nixpkgs/blob/master/doc/languages-frameworks/vim.section.md">2</a> 中。</p>
+<p><span id="Customizations"></span></p>
+<h3 id="自定义">自定义</h3><p>vim 和 neovim 都可以进一步配置，以包含您喜欢的插件和其他库。要列出所有可用的 vim 插件，请运行 <code>nix search nixpkgs#vimPlugins</code>。</p>
+<p>将以下代码添加到您的<code>~/.nixpkgs/config.nix</code>：</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">packageOverrides</span> <span class="hljs-operator">=</span> <span class="hljs-params">pkgs:</span> <span class="hljs-keyword">with</span> pkgs; {
+    <span class="hljs-attr">myVim</span> <span class="hljs-operator">=</span> vim-full.customize {
+      <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;vim-with-plugins&quot;</span>;
+      <span class="hljs-comment"># 在此处添加示例部分的代码</span>
+    };
+    <span class="hljs-attr">myNeovim</span> <span class="hljs-operator">=</span> neovim.override {
+      <span class="hljs-attr">configure</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">customRC</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+          # 您的自定义配置就在这里！
+        &#x27;&#x27;</span>;
+        <span class="hljs-attr">packages.myVimPackage</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs.vimPlugins; {
+          <span class="hljs-comment"># 请参阅以下示例了解如何使用自定义包</span>
+          <span class="hljs-attr">start</span> <span class="hljs-operator">=</span> [ ];
+          <span class="hljs-attr">opt</span> <span class="hljs-operator">=</span> [ ];
+        }; 
+      };     
+    };
+  };
+}</code></pre>
+      </div><p>之后，您可以安装特殊移植的 `myVim` 或 `myNeovim` 包。</p>
+<p><span id="Examples"></span></p>
+<h3 id="示例">示例</h3><p><span id="Apply_custom_vimrc_configuration"></span></p>
+<h4 id="应用自定义-vimrc-配置">应用自定义 vimrc 配置</h4><p>注意：您必须使用 <code>vimrcConfig.customRC</code> 而不是手动安装 <code>~/.vimrc</code>，因为自定义 Vim 会默认忽略您主目录中的任何 vimrc 文件。</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">vim-full.customize {
+  <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;vim-with-plugins&quot;</span>;
+  <span class="hljs-comment"># 添加自定义的 .vimrc 行，例如：</span>
+  <span class="hljs-attr">vimrcConfig.customRC</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    set hidden
+    set colorcolumn=80 
+  &#x27;&#x27;</span>;
+}</code></pre>
+      </div><p>如果您需要在添加插件之前运行代码，可以使用 <code>vimrcConfig.beforePlugins</code>（如果您要覆盖 <a href="https://github.com/NixOS/nixpkgs/blob/c3df8057dad986bf7f3928de1b5233fadb52bb15/pkgs/misc/vim-plugins/vim-utils.nix#L264-L267">默认值</a>，请务必包含 <code>set nocompatible</code>）。</p>
+<p><span id="Using_vim&#039;s_builtin_packaging_capability"></span></p>
+<h3 id="使用-vim-的内置打包功能">使用 vim 的内置打包功能</h3><div class="code-container">
+        
+        <pre><code class="language-nix hljs">vim-full.customize {
+  <span class="hljs-attr">vimrcConfig.packages.myVimPackage</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs.vimPlugins; {
+    <span class="hljs-comment"># 启动时加载</span>
+    <span class="hljs-attr">start</span> <span class="hljs-operator">=</span> [ YouCompleteMe fugitive ];
+    <span class="hljs-comment"># 可通过调用 `:packadd $plugin-name` 手动加载</span>
+    <span class="hljs-attr">opt</span> <span class="hljs-operator">=</span> [ phpCompletion elm-vim ];
+    <span class="hljs-comment"># 要在打开文件类型时自动加载插件，请添加如下 vimrc 行：</span>
+    <span class="hljs-comment"># autocmd FileType php :packadd phpCompletion</span>
+  }
+};</code></pre>
+      </div><p>请注意，使用 opt 动态加载可能存在错误，解决方法是改用 <a href="https://vi.stackexchange.com/a/20818/30821">start</a>。</p>
+<p><span id="Using_Pathogen_as_manager"></span></p>
+<h3 id="使用-pathogen-作为管理器">使用 Pathogen 作为管理器</h3><p>这 pathogen 的另一实现，原有插件启动速度较慢，而 [VAM] 具有更多功能。</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">v<span class="hljs-attr">imrcConfig.pathogen.knownPlugins</span> <span class="hljs-operator">=</span> vimPlugins; <span class="hljs-comment"># optional</span>
+v<span class="hljs-attr">imrcConfig.pathogen.pluginNames</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;vim-addon-nix&quot;</span> <span class="hljs-string">&quot;youcompleteme&quot;</span> ];</code></pre>
+      </div><p><span id="Using_Vim-Plug_as_manager"></span></p>
+<h3 id="使用-vim-plug-作为管理器">使用 Vim-Plug 作为管理器</h3><div class="code-container">
+        
+        <pre><code class="language-nix hljs">v<span class="hljs-attr">imrcConfig.plug.plugins</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs.vimPlugins; [vim-addon-nix youcompleteme];</code></pre>
+      </div><p><span id="Adding_new_plugins"></span></p>
+<h3 id="添加新插件">添加新插件</h3><p>请参阅 <a href="https://github.com/NixOS/nixpkgs/blob/master/doc/languages-frameworks/vim.section.md">https://github.com/NixOS/nixpkgs/blob/master/doc/languages-frameworks/vim.section.md</a>。</p>
+<p><span id="Notes_Regarding_Plugins"></span></p>
+<h4 id="关于插件的说明">关于插件的说明</h4><p>如需更多信息，您可以查看 <a href="https://github.com/NixOS/nixpkgs/blob/master/doc/languages-frameworks/vim.section.md">nixpkgs 存储库上的文档</a>。</p>
+<p><span id="Add_a_new_custom_plugin_to_the_users_packages"></span></p>
+<h3 id="向用户包添加一个新的自定义插件">向用户包添加一个新的自定义插件</h3><p>有时您不想修改上游插件，为此您可以使用 <code>vimUtils.buildVimPlugin</code> 创建自己的插件：</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-keyword">let</span>
+  <span class="hljs-attr">vim-better-whitespace</span> <span class="hljs-operator">=</span> pkgs.vimUtils.buildVimPlugin {
+    <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;vim-better-whitespace&quot;</span>;
+    <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> pkgs.fetchFromGitHub {
+      <span class="hljs-attr">owner</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ntpeters&quot;</span>;
+      <span class="hljs-attr">repo</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;vim-better-whitespace&quot;</span>;
+      <span class="hljs-attr">rev</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;984c8da518799a6bfb8214e1acdcfd10f5f1eed7&quot;</span>;
+      <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;10l01a8xaivz6n01x6hzfx7gd0igd0wcf9ril0sllqzbq7yx2bbk&quot;</span>;
+    };
+  };
+<span class="hljs-keyword">in</span> {
+  users.users.<span class="hljs-symbol">&lt;yourNickname&gt;</span>.packages <span class="hljs-operator">=</span> [
+    (pkgs.vim-full.customize {
+      <span class="hljs-attr">vimrcConfig.packages.myVimPackage</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs.vimPlugins; {
+        <span class="hljs-attr">start</span> <span class="hljs-operator">=</span> [ vim-better-whitespace ];
+      };
+    })
+  ];
+};</code></pre>
+      </div><p><span id="Using_flake"></span></p>
+<h4 id="使用-flakes">使用 Flakes</h4><p><code>configuration.nix</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ inputs, ... }:
+{
+  <span class="hljs-attr">nixpkgs</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">overlays</span> <span class="hljs-operator">=</span> [
+      (<span class="hljs-params">self:</span> <span class="hljs-params">super:</span>
+        <span class="hljs-keyword">let</span>
+          <span class="hljs-attr">winresizer-vim</span> <span class="hljs-operator">=</span> super.vimUtils.buildVimPlugin {
+            <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;winresizer-vim&quot;</span>;
+            <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> inputs.winresizer-vim;
+          };
+        <span class="hljs-keyword">in</span>
+        {
+          <span class="hljs-attr">vimPlugins</span> <span class="hljs-operator">=</span>
+            super.vimPlugins <span class="hljs-operator">//</span> {
+              <span class="hljs-keyword">inherit</span> winresizer-vim;
+            };
+        }
+      )
+    ];
+  };</code></pre>
+      </div><p><code>flake.nix</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">inputs</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">nixpkgs.url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:nixos/nixpkgs/nixos-22.05&quot;</span>;
+    <span class="hljs-attr">winresizer-vim</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:simeji/winresizer&quot;</span>;
+      <span class="hljs-attr">flake</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+    };
+  };
+
+  <span class="hljs-attr">outputs</span> <span class="hljs-operator">=</span> inputs@{ nixpkgs, ... }: {
+    <span class="hljs-attr">nixosConfigurations.nixos</span> <span class="hljs-operator">=</span> nixpkgs.lib.nixosSystem {
+      <span class="hljs-attr">system</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;x86_64-linux&quot;</span>;
+      <span class="hljs-attr">specialArgs</span> <span class="hljs-operator">=</span> { <span class="hljs-keyword">inherit</span> inputs; };
+      <span class="hljs-attr">modules</span> <span class="hljs-operator">=</span> [
+        <span class="hljs-symbol">./configuration.nix</span>
+        <span class="hljs-symbol">./hardware-configuration.nix</span>
+        { <span class="hljs-attr">nix.registry.nixpkgs.flake</span> <span class="hljs-operator">=</span> nixpkgs; }
+      ];
+    };
+  };
+}</code></pre>
+      </div><p>然后我们可以使用 <code>nix flake lock --update-input winresizer-vim</code> 更新软件包，或者使用 <code>nix flake update</code> 更新 flake.nix 中的所有输入。</p>
+<p><span id="Vim_as_a_Python_IDE"></span></p>
+<h3 id="将-vim-用作-python-ide">将 Vim 用作 Python IDE</h3><p>以下代码片段将创建一个功能齐全的 <a href="https://mirror.nixoscn.org/wiki/Vim/zh/python" class="wikilink" title="python">python</a> IDE。</p>
+<p><span id="Using_language_client"></span></p>
+<h4 id="使用语言客户端">使用语言客户端</h4><div class="code-container">
+        
+        <pre><code class="language-nix hljs">vim-full.customize {
+  <span class="hljs-attr">vimrcConfig</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">customRC</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+      let g:LanguageClient_serverCommands = {
+        <span class="hljs-char escape_">\ </span>&#x27;python&#x27;: [&#x27;pyls&#x27;]
+        <span class="hljs-char escape_">\ </span>}
+       nnoremap &lt;F5&gt; :call LanguageClient_contextMenu()&lt;CR&gt;
+       nnoremap &lt;silent&gt; gh :call LanguageClient_textDocument_hover()&lt;CR&gt;
+       nnoremap &lt;silent&gt; gd :call LanguageClient_textDocument_definition()&lt;CR&gt;
+       nnoremap &lt;silent&gt; gr :call LanguageClient_textDocument_references()&lt;CR&gt;
+       nnoremap &lt;silent&gt; gs :call LanguageClient_textDocument_documentSymbol()&lt;CR&gt;
+       nnoremap &lt;silent&gt; &lt;F2&gt; :call LanguageClient_textDocument_rename()&lt;CR&gt;
+       nnoremap &lt;silent&gt; gf :call LanguageClient_textDocument_formatting()&lt;CR&gt;
+    &#x27;&#x27;</span>;
+    <span class="hljs-attr">packages.myVimPackage</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs.vimPlugins; {
+      <span class="hljs-attr">start</span> <span class="hljs-operator">=</span> [ LanguageClient-neovim ];
+    }
+};</code></pre>
+      </div><p>然后将以下表达式添加到 `<code>environment.systemPackages</code>` 或 home-manager 包列表中，以安装 python-language-server：</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">(python3.withPackages(<span class="hljs-params">ps:</span> [
+  ps.python-language-server
+  <span class="hljs-comment"># 以下插件为可选插件，它们提供类型检查、导入排序和代码格式化功能。</span>
+  ps.pyls-mypy ps.pyls-isort ps.pyls-black
+]))</code></pre>
+      </div><p><span id="Real_life_examples"></span></p>
+<h3 id="真实示例">真实示例</h3><ul>
+<li><a href="https://github.com/jagajaga/my_configs/blob/master/.nispkgs/common.nix">Jagajaga 的配置</a></li>
+</ul>
+<!-- -->
+
+<ul>
+<li><a href="https://github.com/andrewrk/dotfiles/blob/master/.nixpkgs/config.nix">andrewrk 的配置</a></li>
+</ul>
+<!-- -->
+
+<ul>
+<li><a href="https://github.com/wagnerf42/nixos-config/blob/master/config/my_vim.nix">wagnerf42 的配置（适用于 Rust 语言）</a></li>
+</ul>
+<h3 id="youcompleteme">YouCompleteMe</h3><p>目前 youcompleteme 插件在 Linux 上使用 <a href="https://github.com/NixOS/nixpkgs/blob/8e7b1f2ac2e261d5a644fef860a0d050ea227c06/pkgs/misc/vim-plugins/default.nix#L695">unwrapped clang</a>。这导致它找不到 <code>stdlib.h</code>。您可以在您的 <code>.ycm_extra_conf.py</code> 文件中添加 <a href="https://github.com/andrewrk/genesis/blob/5f49cd9a8c2b61b9859a22102bc3f732add9461a/.ycm_extra_conf.py">使其正常运行的示例</a>，其工作原理是执行 C/C++ 编译器并使其输出搜索路径列表，其中包括查找 <code>stdlib.h</code> 的搜索路径。</p>
+<p>对于 C/C++ 来说，比 youcompleteme 更好的替代方案是使用 <a href="https://github.com/cquery-project/cquery/">cquery</a> 并结合 <a href="https://github.com/autozimu/LanguageClient-neovim">LanguageClient-neovim</a>。如果您从 nixpkgs 安装 cquery，它在 nix-shell 中使用时也能找到 C 头文件，因为它使用了一个自定义的 <a href="https://github.com/NixOS/nixpkgs/commit/04f3b76dcec21f2fcba6b1b0afbb3ed224165050#diff-11cdfc0385b9e017089c1ac09c5b838e">shell 包装器</a>。</p>
+<p><span id="gvim_and_gview"></span></p>
+<h2 id="gvim-和-gview">gvim 和 gview</h2><p>您可以启用 <code>guiSupport</code> 来使 <code>gvim</code> 可用，但这不会让您获得 <code>gview</code>：</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">(pkgs.vim-full.customize {
+  <span class="hljs-attr">guiSupport</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+})</code></pre>
+      </div><p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="category:CLI_Applications" class="wikilink" title="Category:CLI Applications">Category:CLI Applications</a> <a href="category:Text_Editor```{{#translation:}}%60%60%60" class="wikilink" title="Category:Text Editor```
+{{#translation:}}
+```">Category:Text Editor```
+{{#translation:}}</p>
+<div class="code-container">
+        
+        <pre><code class="language-</a> hljs"></code></pre>
+      </div>
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

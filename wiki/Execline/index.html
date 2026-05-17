@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Execline</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Execline</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Execline -->
+
+<p><a href="https://skarnet.org/software/execline/index.html">execline</a> is an interpreter and a collection of utilities for composing Unix commands into scripts. The syntax of execline makes it better suited for code generation from Nix than interactive shell languages like <a href="https://mirror.nixoscn.org/wiki/Execline/Bash" class="wikilink" title="Bash">Bash</a>.</p>
+<h2 id="execlineb">execlineb</h2><p><a href="https://skarnet.org/software/execline/execlineb.html">execlineb</a> is the interpreter for execline scripts. It reads a file, produces a command-line, and executes into that command line. <code>execlineb</code> manages the environment of the command that it executes and optionally substitutes the arguments a script receives into the command-line. <code>execlineb</code> also handles the quoting of strings using <code>&quot;&quot;</code> and blocks using <code>{}</code>. Blocks are described later in this article.</p>
+<h2 id="wrappers">Wrappers</h2><p>Consider the scenario of wrapping a program to override or set a default value for the <code>EDITOR</code> enviroment variable.</p>
+<p>The following example is a script that uses the <a href="https://skarnet.org/software/execline/export.html">export</a> program to set <code>EDITOR</code>. Here the <code>-s0</code> option is used to replace <code>$1</code> and <code>$@</code> within the command-line with the first and remaining arguments received by the script.</p>
+<p>If the script is executed as <code>wrap-editor.el nano mutt</code> then the command-line executed by execlineb would be <code>export nano mutt</code>.</p>
+<p>To create a wrapper that would provide a default <code>EDITOR</code> the <a href="https://skarnet.org/software/execline/importas.html">importas</a> program would be used. In the following example the <code>EDITOR</code> value is imported from the calling enviroment, with a default value specified by <code>-D</code>, and any instance of <code>$editor</code> is replaced by that value. The <code>export</code> program exports the value of <code>$editor</code> after substitution.</p>
+<h3 id="generating-a-wapper-from-nix">Generating a wapper from Nix</h3><p>To generate a wrapper with a fixed default for <code>EDITOR</code> the Nix function at <code>execline.passthru.writeScript</code> can be used:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs <span class="hljs-operator">?</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> { } }:
+
+pkgs.execline.passthru.writeScript <span class="hljs-string">&quot;wrap-nano&quot;</span> <span class="hljs-string">&quot;-s0&quot;</span> <span class="hljs-string">&#x27;&#x27;
+  importas -D <span class="hljs-subst">${pkgs.nano}</span>/bin/nano EDITOR E
+  export EDITOR $E
+  $@
+&#x27;&#x27;</span></code></pre>
+      </div><h2 id="blocks">Blocks</h2><p>Some execline programs take code blocks as their arguments. Blocks are delimited by <code>{}</code> in execlineb scripts. In the following example the <code>pipeline</code> program executes a block of commands in the background with a pipe connecting the stdin of that block to the stdout of the command-line following the block.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs <span class="hljs-operator">?</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> { } }:
+
+pkgs.execline.passthru.writeScript <span class="hljs-string">&quot;wrap-cowsay&quot;</span> <span class="hljs-string">&quot;-s0&quot;</span> <span class="hljs-string">&#x27;&#x27;
+  pipeline -w { <span class="hljs-subst">${pkgs.lib.getExe pkgs.cowsay}</span> &quot;-r&quot; }
+  $@
+&#x27;&#x27;</span></code></pre>
+      </div><h3 id="block-quoting">Block quoting</h3><p>execlineb parses <code>{}</code> blocks and constructs a command-line where each block item is prepended with a whitespace (\x20) and terminated with an empty string. This quoting can be done in pure Nix.</p>
+<p>Given the function <code>quoteExecline</code> as</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-built_in">builtins.foldl&#x27;</span> (<span class="hljs-params">acc:</span> <span class="hljs-params">arg:</span> acc <span class="hljs-operator">++</span> (
+  <span class="hljs-keyword">if</span> <span class="hljs-built_in">builtins.isList</span> arg
+    <span class="hljs-keyword">then</span> <span class="hljs-built_in">map</span> (<span class="hljs-params">_:</span> <span class="hljs-string">&quot; <span class="hljs-subst">${_}</span>&quot;</span>) (quoteExecline arg) <span class="hljs-operator">++</span> [ <span class="hljs-string">&quot;&quot;</span> ]
+    <span class="hljs-keyword">else</span> [ arg ]
+  )) [ ];</code></pre>
+      </div><p>then the expression</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-params">args:</span> lib.escapeShellArgs (quoteExecline [ <span class="hljs-string">&quot;pipeline&quot;</span> <span class="hljs-string">&quot;-w&quot;</span> [ (lib.getExe pkgs.cowsay) <span class="hljs-string">&quot;-r&quot;</span> ] ] <span class="hljs-operator">++</span> args)</code></pre>
+      </div><p>would produce the command-line executed by <code>execlineb</code> in the previous &quot;wrap-cowsay&quot; example when given the same arguments.</p>
+<h2 id="see-also">See also</h2><p>execline scripts can be found in the following repositories:</p>
+<ul>
+<li><a href="https://spectrum-os.org/git/spectrum/">Spectrum</a></li>
+<li><a href="https://github.com/search?q=repo%3Aaanderse%2Ffinix%20execline&amp;type=code">Finix</a></li>
+</ul>
+<p><a href="category:Cookbook" class="wikilink" title="Category:Cookbook">Category:Cookbook</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

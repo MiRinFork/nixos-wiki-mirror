@@ -1,0 +1,581 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Linux kernel</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Linux kernel</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Linux kernel -->
+
+<p>By default, the latest LTS linux kernel is installed (<a href="https://en.wikipedia.org/wiki/Linux_kernel_version_history">Linux Kernel Version History</a>).</p>
+<h2 id="configuration">Configuration</h2><p>You can change the installed kernel using . To use the latest release:</p>
+<p>Then rebuild your system and reboot to use your new kernel:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">sudo</span> nixos-rebuild boot</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">sudo</span> reboot</span></code></pre>
+      </div><h3 id="list-available-kernels">List available kernels</h3><p>You can list available kernels using <code>nix repl</code> (previously <code>nix-repl</code>) by typing the package name and using the tab completion:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix repl</span></code></pre>
+      </div><div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-meta prompt_">nix-repl&gt;</span> pkgs <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> {}
+Added <span class="hljs-number">12607</span> variables.
+
+<span class="hljs-meta prompt_">nix-repl&gt;</span> pkgs.linuxKernel.packages
+pkgs.linuxPackages                           pkgs.linuxPackages_custom
+pkgs.linuxPackages-libre                     pkgs.linuxPackages_custom_tinyconfig_kernel
+pkgs.linuxPackages-rt                        pkgs.linuxPackages_hardened
+pkgs.linuxPackages-rt_latest                 pkgs.linuxPackages_latest
+pkgs.linuxPackagesFor                        pkgs.linuxPackages_latest-libre
+pkgs.linuxPackages_4_14                      pkgs.linuxPackages_latest_hardened
+pkgs.linuxPackages_4_19                      pkgs.linuxPackages_latest_xen_dom0
+pkgs.linuxPackages_4_19_hardened             pkgs.linuxPackages_latest_xen_dom0_hardened
+pkgs.linuxPackages_4_9                       pkgs.linuxPackages_lqx
+pkgs.linuxPackages_5_10                      pkgs.linuxPackages_rpi0
+pkgs.linuxPackages_5_10_hardened             pkgs.linuxPackages_rpi02w
+pkgs.linuxPackages_5_15                      pkgs.linuxPackages_rpi1
+pkgs.linuxPackages_5_15_hardened             pkgs.linuxPackages_rpi2
+pkgs.linuxPackages_5_18                      pkgs.linuxPackages_rpi3
+pkgs.linuxPackages_5_19                      pkgs.linuxPackages_rpi4
+pkgs.linuxPackages_5_4                       pkgs.linuxPackages_rt_5_10
+pkgs.linuxPackages_5_4_hardened              pkgs.linuxPackages_rt_5_15
+pkgs.linuxPackages_6_0                       pkgs.linuxPackages_rt_5_4
+pkgs.linuxPackages_6_1                       pkgs.linuxPackages_rt_6_1
+pkgs.linuxPackages_6_1_hardened              pkgs.linuxPackages_testing
+pkgs.linuxPackages_6_2                       pkgs.linuxPackages_testing_bcachefs
+pkgs.linuxPackages_6_3                       pkgs.linuxPackages_xanmod
+pkgs.linuxPackages_6_4                       pkgs.linuxPackages_xanmod_latest
+pkgs.linuxPackages_6_5                       pkgs.linuxPackages_xanmod_stable
+pkgs.linuxPackages_6_6                       pkgs.linuxPackages_xen_dom0
+pkgs.linuxPackages_6_6_hardened              pkgs.linuxPackages_xen_dom0_hardened
+pkgs.linuxPackages_6_7                       pkgs.linuxPackages_zen
+pkgs.linuxPackages_6_8</code></pre>
+      </div><h3 id="custom-kernel-modules">Custom kernel modules</h3><p>Note that if you deviate from the default kernel version, you should also take extra care that extra kernel modules must match the same version. The safest way to do this is to use <code>config.boot.kernelPackages</code> to select the correct module set:</p>
+<h3 id="customizing-kernel-module-parameters">Customizing kernel module parameters</h3><p>You can use , which is analogous to creating modprobe.conf files in /etc/modprobe.d/ in regular Linux distributions. This can be used for both built-in and loadable kernel modules.</p>
+<p>can be used to set additional kernel command line arguments at boot time. It can only be used for built-in modules. For example:</p>
+<h3 id="enable-sysrq">Enable SysRq</h3><p>The Linux kernel is known<sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Linux%20kernel#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup> to not handle out-of-memory situation properly and can freeze for a long time, often leaving no option but doing a hard reboot. The <a href="https://en.wikipedia.org/wiki/Magic_SysRq_key">SysRq shortcuts</a> can be used to trigger a more graceful reboot. However, most keys are disabled by default on NixOS. To enable:</p>
+<p>Useful shortcuts, triggered using :</p>
+<ul>
+<li><p>Print help to the system log.</p>
+</li>
+<li><p>Trigger the kernel oom killer.</p>
+</li>
+<li><p>Sync data to disk before triggering the reset options below.</p>
+</li>
+<li><p>SIGTERM all processes except PID 0.</p>
+</li>
+<li><p>SIGKILL all processes except PID 0.</p>
+</li>
+<li><p>Reboot the system.</p>
+</li>
+</ul>
+<p>Check <code>journalctl</code> to see if you are triggering the shortcuts correctly, which might be different for your keyboard, as noted in the Wikipedia page.</p>
+<p>Also see and .</p>
+<h3 id="custom-configuration">Custom configuration</h3><p>It is sometimes desirable to change the configuration of your kernel, while keeping the kernel version itself managed through Nixpkgs.</p>
+<p>One way is to use <sup><a id="footnote-ref-2" href="https://mirror.nixoscn.org/wiki/Linux%20kernel#footnote-2" data-footnote-ref aria-describedby="footnote-label">2</a></sup><sup><a id="footnote-ref-3" href="https://mirror.nixoscn.org/wiki/Linux%20kernel#footnote-3" data-footnote-ref aria-describedby="footnote-label">3</a></sup>. For example, is configured as shown below. Note that the prefix is not used in the configuration names.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">boot.kernelPatches</span> <span class="hljs-operator">=</span> [ {
+    <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;crashdump-config&quot;</span>;
+    <span class="hljs-attr">patch</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;
+    <span class="hljs-attr">structuredExtraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> lib.kernel; {
+      <span class="hljs-attr">CRASH_DUMP</span> <span class="hljs-operator">=</span> yes;
+      <span class="hljs-attr">DEBUG_INFO</span> <span class="hljs-operator">=</span> yes;
+      <span class="hljs-attr">PROC_VMCORE</span> <span class="hljs-operator">=</span> yes;
+      <span class="hljs-attr">LOCKUP_DETECTOR</span> <span class="hljs-operator">=</span> yes;
+      <span class="hljs-attr">HARDLOCKUP_DETECTOR</span> <span class="hljs-operator">=</span> yes;
+    };
+  } ];
+}</code></pre>
+      </div><p>Another way is to create an overlay to configure . This allows for more flexibility, since you can basically override any available kernel option<sup><a id="footnote-ref-4" href="https://mirror.nixoscn.org/wiki/Linux%20kernel#footnote-4" data-footnote-ref aria-describedby="footnote-label">4</a></sup>.</p>
+<p>If the kernel config fails to build with messages like <code>error: unused option: DRM_I915_GVT</code>, try setting e.g. <code>DRM_I915_GVT = lib.kernel.unset</code>. Setting will also silence these errors, at the cost of ignoring potential problems. (<a href="https://github.com/NixOS/nixpkgs/blob/3ab9a9d12ba76f6a544c207e1364da5b3087b77c/pkgs/os-specific/linux/kernel/generate-config.pl">generate-config.pl</a> is responsible for these; they are often produced when <a href="https://github.com/NixOS/nixpkgs/blob/3ab9a9d12ba76f6a544c207e1364da5b3087b77c/pkgs/os-specific/linux/kernel/common-config.nix">the default config</a> doesn&#39;t use <code>lib.kernel.option</code> for an option that is implicitly disabled by whatever change you made.)</p>
+<h3 id="pinning-a-kernel-version">Pinning a kernel version</h3><p>Note that pinning the kernel version will likely require manual recompilation, which may be slow on older hardware. See <a href="https://discourse.nixos.org/t/pin-kernel-version/50630/3">this thread</a> for a related discussion.</p>
+<h3 id="debugging-a-failed-configuration">Debugging a failed configuration</h3><p>As dependencies between kernel configurations need to be addressed manually, use <a href="https://nixos.org/manual/nix/stable/command-ref/nix-build#opt-keep-failed">--keep-failed</a> to inspect the intermediate nix config file after any build failures:</p>
+<h2 id="embedded-linux-cross-compile">Embedded Linux Cross-compile</h2><p>To configure and cross-compile Linux kernels for embedded development, often distributed separately instead of using the stock kernel, you can setup a development environment as shown below:</p>
+<p>Clone the kernel sources, enter the environment using , and then do development normally.</p>
+<h2 id="make-menuconfig">make menuconfig</h2><p>It is not possible to run <code>make menuconfig</code> in the standard kernel shell. This is because <code>ncurses</code> is not part of your working environment when you start it with <code>nix-shell &#39;</code><nixpkgs><code>&#39; -A linuxPackages.kernel</code>.</p>
+<p>Use <code>linuxPackages.kernel.configEnv</code> instead, which adds ncurses as a build dependency to the kernel:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-shell <span class="hljs-string">&#x27;&lt;nixpkgs&gt;&#x27;</span> -A linuxPackages.kernel.configEnv</span>
+[nix-shell] $ unpackPhase &amp;&amp; cd linux-*
+[nix-shell] $ patchPhase
+[nix-shell] $ make menuconfig</code></pre>
+      </div><p>(thanks to sphalerite)</p>
+<h2 id="make-xconfig">make xconfig</h2><p>Similarly to make menuconfig, you need to import qt in the environment:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-shell -E <span class="hljs-string">&#x27;with import &lt;nixpkgs&gt; {}; linux.overrideAttrs (o: {nativeBuildInputs=o.nativeBuildInputs ++ [ pkg-config qt5.qtbase ];})&#x27;</span></span></code></pre>
+      </div><p>If the source was unpacked and an initial config exists, you can run <code>make xconfig KCONFIG_CONFIG=build/.config</code></p>
+<h2 id="requesting-a-change-in-the-default-nixos-kernel-configuration">Requesting a change in the default nixos kernel configuration</h2><p>Please provide a comparison with other distributions&#39; kernel:</p>
+<ul>
+<li>Arch: <a href="https://gitlab.archlinux.org/archlinux/packaging/packages/linux/-/blob/main/config">https://gitlab.archlinux.org/archlinux/packaging/packages/linux/-/blob/main/config</a></li>
+<li>Debian: <a href="https://salsa.debian.org/kernel-team/linux/blob/master/debian/config/config">https://salsa.debian.org/kernel-team/linux/blob/master/debian/config/config</a> and the ARCH specific ones</li>
+</ul>
+<h2 id="booting-a-kernel-from-a-custom-source">Booting a kernel from a custom source</h2><p>The following example shows how to configure NixOS to compile and boot a kernel from a custom source, and with custom configuration options.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs, ... }:
+
+{
+  <span class="hljs-attr">boot.kernelPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">let</span>
+      <span class="hljs-attr">linux_sgx_pkg</span> <span class="hljs-operator">=</span> { fetchurl, buildLinux, ... } @ <span class="hljs-params">args:</span>
+
+        buildLinux (args <span class="hljs-operator">//</span> <span class="hljs-keyword">rec</span> {
+          <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;5.4.0-rc3&quot;</span>;
+          <span class="hljs-attr">modDirVersion</span> <span class="hljs-operator">=</span> version;
+
+          <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> fetchurl {
+            <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://github.com/jsakkine-intel/linux-sgx/archive/v23.tar.gz&quot;</span>;
+            <span class="hljs-comment"># After the first build attempt, look for &quot;hash mismatch&quot; and then 2 lines below at the &quot;got:&quot; line.</span>
+            <span class="hljs-comment"># Use &quot;sha256-.....&quot; value here.</span>
+            <span class="hljs-attr">hash</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;</span>;
+          };
+          <span class="hljs-attr">kernelPatches</span> <span class="hljs-operator">=</span> [];
+
+          <span class="hljs-attr">structuredExtraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> lib.kernel; {
+            <span class="hljs-attr">INTEL_SGX</span> <span class="hljs-operator">=</span> yes;
+          };
+
+          <span class="hljs-attr">extraMeta.branch</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;5.4&quot;</span>;
+        } <span class="hljs-operator">//</span> (args.argsOverride <span class="hljs-keyword">or</span> {}));
+      <span class="hljs-attr">linux_sgx</span> <span class="hljs-operator">=</span> pkgs.callPackage linux_sgx_pkg{};
+    <span class="hljs-keyword">in</span> 
+      pkgs.recurseIntoAttrs (pkgs.linuxPackagesFor linux_sgx);
+}</code></pre>
+      </div><h2 id="out-of-tree-kernel-modules">Out-of-tree kernel modules</h2><h3 id="packaging-out-of-tree-kernel-modules">Packaging out-of-tree kernel modules</h3><p>There are a couple of steps that you will most likely need to do a couple of things. Here is an annotated example:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ stdenv, lib, fetchFromGitHub, kernel, kernelModuleMakeFlags, kmod }:
+
+stdenv.mkDerivation <span class="hljs-keyword">rec</span> {
+  <span class="hljs-attr">pname</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;v4l2loopback-dc&quot;</span>;
+  <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;1.6&quot;</span>;
+
+  <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> fetchFromGitHub {
+    <span class="hljs-attr">owner</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;aramg&quot;</span>;
+    <span class="hljs-attr">repo</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;droidcam&quot;</span>;
+    <span class="hljs-attr">tag</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;v<span class="hljs-subst">${version}</span>&quot;</span>;
+    <span class="hljs-attr">hash</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;1d9qpnmqa3pfwsrpjnxdz76ipk4w37bbxyrazchh4vslnfc886fx&quot;</span>;
+  };
+
+  <span class="hljs-attr">sourceRoot</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;source/linux/v4l2loopback&quot;</span>;
+  <span class="hljs-attr">hardeningDisable</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;pic&quot;</span> <span class="hljs-string">&quot;format&quot;</span> ];                                             <span class="hljs-comment"># 1</span>
+  <span class="hljs-attr">nativeBuildInputs</span> <span class="hljs-operator">=</span> kernel.moduleBuildDependencies;                       <span class="hljs-comment"># 2</span>
+
+  <span class="hljs-attr">makeFlags</span> <span class="hljs-operator">=</span> kernelModuleMakeFlags <span class="hljs-operator">++</span> [
+    <span class="hljs-string">&quot;KERNELRELEASE=<span class="hljs-subst">${kernel.modDirVersion}</span>&quot;</span>                                 <span class="hljs-comment"># 3</span>
+    <span class="hljs-string">&quot;KERNEL_DIR=<span class="hljs-subst">${kernel.dev}</span>/lib/modules/<span class="hljs-subst">${kernel.modDirVersion}</span>/build&quot;</span>    <span class="hljs-comment"># 4</span>
+    <span class="hljs-string">&quot;INSTALL_MOD_PATH=$(out)&quot;</span>                                               <span class="hljs-comment"># 5</span>
+  ];
+
+  <span class="hljs-attr">meta</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;A kernel module to create V4L2 loopback devices&quot;</span>;
+    <span class="hljs-attr">homepage</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://github.com/aramg/droidcam&quot;</span>;
+    <span class="hljs-attr">license</span> <span class="hljs-operator">=</span> lib.licenses.gpl2;
+    <span class="hljs-attr">maintainers</span> <span class="hljs-operator">=</span> [ lib.maintainers.makefu ];
+    <span class="hljs-attr">platforms</span> <span class="hljs-operator">=</span> lib.platforms.linux;
+  };
+}</code></pre>
+      </div><p>1. For kernel modules it is necessary to disable <code>pic</code> in compiler hardenings as the kernel need different compiler flags.</p>
+<p>2. In addition to other dependencies in <code>nativeBuildInputs</code> you should include <code>kernel.moduleBuildDependencies</code> as this propagates additional libraries required during the build.</p>
+<p>3. Some kernel modules try guess the kernel version based on the running kernel via <code>uname</code>. Usually they save this information in a makefile variable like <code>KERNELRELEASE</code>. If this is the case you can override the kernel version via <code>makeFlags</code>. The right kernel version string can be found in <code>kernel.modDirVersion</code>.</p>
+<p>4. You need to find out how the build environment (Makefile in general) finds the kernel tree. This is sometimes <code>KDIR</code> and sometimes <code>KERNEL_DIR</code>.</p>
+<p>5. Lastly it is required to give the kernel build system the right location where to install the kernel module. This is done by setting <code>INSTALL_MOD_PATH</code> to <code>$out</code> Otherwise an error like <code>mkdir: cannot create directory &#39;/lib&#39;: Permission denied</code> is generated.</p>
+<p>You can then call your program using something like <code>let yourprogram = config.boot.kernelPackages.callPackage ./your-derivation.nix {}; in …</code> (or if you want to compile it for the default kernel used by nix you can use <code>pkgs.linuxPackages.callPackage</code> but be aware that if you install it on a system running another kernel it will not work) and install the module in the kernel using <code>boot.extraModulePackages = [ yourprogram ];</code>.</p>
+<h3 id="developing-out-of-tree-kernel-modules">Developing out-of-tree kernel modules</h3><p>See also:</p>
+<p>If you work on an out-of-tree kernel module the workflow could look as follow:</p>
+<div class="code-container">
+        
+        <pre><code class="language-C hljs"><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;linux/module.h&gt;</span></span>
+<span class="hljs-meta">#<span class="hljs-keyword">define</span> MODULE_NAME <span class="hljs-string">&quot;hello&quot;</span></span>
+<span class="hljs-type">static</span> <span class="hljs-type">int</span> __init <span class="hljs-title function_">hello_init</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span>
+{
+    printk(KERN_INFO <span class="hljs-string">&quot;hello world!\n&quot;</span>);
+    <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;
+}
+<span class="hljs-type">static</span> <span class="hljs-type">void</span> __exit <span class="hljs-title function_">hello_cleanup</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span> {
+    printk(KERN_INFO <span class="hljs-string">&quot;bye world!\n&quot;</span>);
+}
+module_init(hello_init);
+module_exit(hello_cleanup);</code></pre>
+      </div><div class="code-container">
+        
+        <pre><code class="language-Make hljs">obj-m += hello.o</code></pre>
+      </div><div class="code-container">
+        
+        <pre><code class="language-console> hljs">$ nix-shell '&lt;nixpkgs&gt;' -A linux.dev
+$ make -C $(nix-build -E '(import &lt;nixpkgs&gt; {}).linux.dev' --no-out-link)/lib/modules/*/build M=$(pwd) modules
+$ insmod ./hello.ko
+$ dmesg | grep hello
+[   82.027229] hello world!
+&lt;/syntaxHighlight&gt;
+
+If wishing to develop out-of-tree kernel modules for kernels aside from the default variant shipped under &lt;code&gt;pkgs.linuxPackages&lt;/code&gt;, you can replace &lt;code&gt;linux.dev&lt;/code&gt; with (for instance) &lt;code&gt;linuxPackages_latest.kernel.dev&lt;/code&gt;.
+
+If you want a local development environment and are only interested in Module.symvers, then you can do instead:
+&lt;syntaxHighlight lang=</code></pre>
+      </div><p>$ cp $(nix-build -E &#39;(import <nixpkgs> {}).linux.dev&#39; --no-out-link)/lib/modules/*/build/Module.symvers .</p>
+</syntaxHighlight>
+
+<h3 id="loading-out-of-tree-kernel-modules">Loading out-of-tree kernel modules</h3><p>As far as I understand, if you developed a kernel module, you should end up with having some <code>.ko</code> files inside a subfolder inside <code>$out/lib/modules/${kernel.modDirVersion}</code>. Now, if you want to make your module loadable inside the kernel by <code>modprobe</code>, you should do:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">b<span class="hljs-attr">oot.extraModulePackages</span> <span class="hljs-operator">=</span> [ yourmodulename ];</code></pre>
+      </div><p>Then, the user can load it using:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">sudo</span> modprobe yourmodulename</span></code></pre>
+      </div><p>or unload it using</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">sudo</span> modprobe -r yourmodulename</span></code></pre>
+      </div><p>However, if you want to autoload your module at startup in stage 2, you need to do:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">b<span class="hljs-attr">oot.kernelModules</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;yourmodulename&quot;</span> ]; </code></pre>
+      </div><p>and the module will be automatically loaded after a reboot. If you want instead to load it at stage 1 (before the root is even mounted), you need to add it to <code>boot.initrd.availableKernelModules</code> and <code>boot.initrd.kernelModules</code>.</p>
+<p>Note that if you don&#39;t reboot, you can still load manually the module using <code>modprobe </code><yourmodulename>, and to automatically enable a module during configuration switch/reboot, you can put <code>modprobe yourmodulename || true</code> inside the script of a systemctl service (it is for example what does wireguard).</p>
+<p>Finally, if you want to define some options by default (used when you load manually a module using <code>modprobe</code>, or when the system boots), you can specify them in:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">b<span class="hljs-attr">oot.extraModprobeConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+  options yourmodulename optionA=valueA optionB=valueB
+&#x27;&#x27;</span>;</code></pre>
+      </div><p>If you have developed a Nix package for your module, and want to only add the module to your <code>configuration.nix</code> instead of complete rebuilding the system based on your local <code>nixpkgs</code>, you need to update <code>boot.kernelPackages</code> as well, so kernel and modules can match each other:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">boot</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">kernelPackages</span> <span class="hljs-operator">=</span> pkgs.wip.linuxPackages;
+    <span class="hljs-attr">extraModulePackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> config.boot.kernelPackages; [ yourmodulename ];
+  }
+  <span class="hljs-attr">nixpkgs.config</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-comment"># Allow unfree modules</span>
+    <span class="hljs-attr">allowUnfree</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">packageOverrides</span> <span class="hljs-operator">=</span> <span class="hljs-params">pkgs:</span> {
+      <span class="hljs-attr">wip</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> (<span class="hljs-built_in">fetchGit</span> { <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/home/user/nixpkgs&quot;</span>; <span class="hljs-attr">shallow</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;}) {
+        <span class="hljs-attr">config</span> <span class="hljs-operator">=</span> config.nixpkgs.config;
+      };
+    };
+  };
+};</code></pre>
+      </div><h3 id="cross-compiling-linux-from-source">Cross-compiling Linux from source</h3><p>Save the following as <code>shell.nix</code> for your nix-shell:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs <span class="hljs-operator">?</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> {} }:
+<span class="hljs-keyword">let</span>
+  <span class="hljs-comment"># more platforms are defined here: https://github.com/NixOS/nixpkgs/blob/master/lib/systems/examples.nix</span>
+  <span class="hljs-attr">aarch64</span> <span class="hljs-operator">=</span> pkgs.pkgsCross.aarch64-multiplatform;
+<span class="hljs-keyword">in</span>
+aarch64.linux.overrideAttrs (<span class="hljs-params">old:</span> {
+  <span class="hljs-comment"># the override is optional if you need for example more build dependencies</span>
+  <span class="hljs-attr">nativeBuildInputs</span> <span class="hljs-operator">=</span> old.nativeBuildInputs <span class="hljs-operator">++</span> [ pkgs.gllvm ];
+})</code></pre>
+      </div><p>Then you can run the following commands (in the nix-shell <code>$makeFlags</code> will contain the necessary cross-compiling arguments)</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-shell</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">to configure</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-shell&gt; make <span class="hljs-variable">$makeFlags</span> defconfig -j $(<span class="hljs-built_in">nproc</span>)</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">to build</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-shell&gt; make <span class="hljs-variable">$makeFlags</span> -j $(<span class="hljs-built_in">nproc</span>)</span></code></pre>
+      </div><h3 id="compiling-linux-with-clang">Compiling Linux with clang</h3><p>Save this as <code>shell.nix</code></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs <span class="hljs-operator">?</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> {} }:
+pkgs.linux.override {
+   <span class="hljs-comment"># needs to be clang11Stdenv or newer</span>
+   <span class="hljs-attr">stdenv</span> <span class="hljs-operator">=</span> clang11Stdenv;
+}</code></pre>
+      </div><p>Then you can use:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-shell</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">to configure</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-shell&gt; make <span class="hljs-variable">$makeFlags</span> defconfig -j $(<span class="hljs-built_in">nproc</span>)</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">to build</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-shell&gt; make <span class="hljs-variable">$makeFlags</span> -j $(<span class="hljs-built_in">nproc</span>)</span></code></pre>
+      </div><h3 id="overriding-kernel-packages">Overriding kernel packages</h3><p>In order to override <code>linuxPackages</code>, an alias of <code>linuxKernel.packages</code>, use the <code>extend</code> attribute. Example:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">linuxPackages.extend (<span class="hljs-params">self:</span> <span class="hljs-params">super:</span> {
+  <span class="hljs-attr">xpadneo</span> <span class="hljs-operator">=</span> super.xpadneo.overrideAttrs (<span class="hljs-params">o:</span> <span class="hljs-keyword">rec</span> {
+    <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> pkgs.fetchFromGitHub {
+      <span class="hljs-comment"># Custom override goes here.</span>
+    };
+  });
+});</code></pre>
+      </div><p>Here is a fully worked example to enable debugging for the <code>zfsUnstable</code> module:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"> <span class="hljs-attr">nixpkgs.overlays</span> <span class="hljs-operator">=</span> [
+    (<span class="hljs-params">self:</span> <span class="hljs-params">super:</span> {
+      <span class="hljs-attr">linuxPackages</span> <span class="hljs-operator">=</span> super.linuxPackages.extend (<span class="hljs-params">lpself:</span> <span class="hljs-params">lpsuper:</span> {
+        <span class="hljs-attr">zfsUnstable</span> <span class="hljs-operator">=</span> super.linuxPackages.zfsUnstable.overrideAttrs (<span class="hljs-params">oldAttrs:</span> {
+          <span class="hljs-attr">configureFlags</span> <span class="hljs-operator">=</span> oldAttrs.configureFlags <span class="hljs-operator">++</span> [ <span class="hljs-string">&quot;--enable-debug&quot;</span> ];
+        });
+      });
+    })
+  ];</code></pre>
+      </div><p>You can also use <code>kernelPackagesExtensions</code> in a similar fashion to override <code>linuxKernel.packages</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">ixpkgs.overlays</span> <span class="hljs-operator">=</span> [   
+  (<span class="hljs-params">_:</span> <span class="hljs-params">prev:</span> {
+    <span class="hljs-attr">kernelPackagesExtensions</span> <span class="hljs-operator">=</span> prev.kernelPackagesExtensions <span class="hljs-operator">++</span> [
+      (<span class="hljs-params">_:</span> <span class="hljs-params">linuxPrev:</span> {
+        <span class="hljs-attr">digimend</span> <span class="hljs-operator">=</span> linuxPrev.digimend.overrideAttrs (<span class="hljs-params">prevAttrs:</span> {
+          <span class="hljs-attr">postPatch</span> <span class="hljs-operator">=</span> prevAttrs.postPatch <span class="hljs-keyword">or</span> <span class="hljs-string">&quot;&quot;</span> <span class="hljs-operator">+</span> <span class="hljs-string">&#x27;&#x27;
+            substituteInPlace &quot;hid-uclogic-core.c&quot; \
+              --replace-fail &quot;del_timer_sync&quot; &quot;timer_shutdown_sync&quot;
+          &#x27;&#x27;</span>;
+        });
+      })
+    ];
+  })
+];</code></pre>
+      </div><h2 id="patching-a-single-in-tree-kernel-module">Patching a single In-tree kernel module</h2><p>If you wish to patch a single kernel module, you can avoid rebuilding the entire linux kernel by packaging that module applying patches to it.</p>
+<h3 id="packaging-a-single-kernel-module">Packaging a single kernel module</h3><p>Here is an example for how to package the <code>amdgpu</code> kernel module.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs
+, lib
+, kernel <span class="hljs-operator">?</span> pkgs.linuxPackages_latest.kernel
+}:
+
+pkgs.stdenv.mkDerivation {
+  <span class="hljs-attr">pname</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;amdgpu-kernel-module&quot;</span>;
+  <span class="hljs-keyword">inherit</span> (kernel) src version postPatch nativeBuildInputs;
+
+  <span class="hljs-attr">kernel_dev</span> <span class="hljs-operator">=</span> kernel.dev;
+  <span class="hljs-attr">kernelVersion</span> <span class="hljs-operator">=</span> kernel.modDirVersion;
+
+  <span class="hljs-attr">modulePath</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;drivers/gpu/drm/amd/amdgpu&quot;</span>;
+
+  <span class="hljs-attr">buildPhase</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    BUILT_KERNEL=$kernel_dev/lib/modules/$kernelVersion/build
+
+    cp $BUILT_KERNEL/Module.symvers .
+    cp $BUILT_KERNEL/.config        .
+    cp $kernel_dev/vmlinux          .
+
+    make &quot;-j$NIX_BUILD_CORES&quot; modules_prepare
+    make &quot;-j$NIX_BUILD_CORES&quot; M=$modulePath modules
+  &#x27;&#x27;</span>;
+
+  <span class="hljs-attr">installPhase</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    make \
+      INSTALL_MOD_PATH=&quot;$out&quot; \
+      XZ=&quot;xz -T$NIX_BUILD_CORES&quot; \
+      M=&quot;$modulePath&quot; \
+      modules_install
+  &#x27;&#x27;</span>;
+
+  <span class="hljs-attr">meta</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;AMD GPU kernel module&quot;</span>;
+    <span class="hljs-attr">license</span> <span class="hljs-operator">=</span> lib.licenses.gpl3;
+  };
+}</code></pre>
+      </div><h3 id="replacing-default-kernel-modules">Replacing default kernel modules</h3><p>After packaging the kernel module you can add it to your system just like an out-of-tree kernel module, it will replace the default module provided by the linux package because it has the same name:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{pkgs, config, ...}:
+<span class="hljs-keyword">let</span>
+  <span class="hljs-attr">amdgpu-kernel-module</span> <span class="hljs-operator">=</span> pkgs.callPackage <span class="hljs-symbol">./amdgpu-kernel-module.nix</span> {
+    <span class="hljs-comment"># Make sure the module targets the same kernel as your system is using.</span>
+    <span class="hljs-attr">kernel</span> <span class="hljs-operator">=</span> config.boot.kernelPackages.kernel;
+  };
+<span class="hljs-keyword">in</span>
+{
+  <span class="hljs-attr">boot.extraModulePackages</span> <span class="hljs-operator">=</span> [
+    (amdgpu-kernel-module.overrideAttrs (<span class="hljs-params">_:</span> {
+      <span class="hljs-attr">patches</span> <span class="hljs-operator">=</span> [ <span class="hljs-symbol">./patches/amdgpu-foo-bar.patch</span> ];
+    }))
+  ];
+}</code></pre>
+      </div><h2 id="sysctls">Sysctls</h2><p>Example of configuring kernel sysctls:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  boot.kernel.sysctl.<span class="hljs-string">&quot;net.ipv4.tcp_ecn&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-number">1</span>;
+}</code></pre>
+      </div><h2 id="sysfs">Sysfs</h2><p>Example of configuring kernel sysfs:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">boot.kernel.sysfs</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">kernel.mm.transparent_hugepage</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">enabled</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;always&quot;</span>;
+      <span class="hljs-attr">defrag</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;defer&quot;</span>;
+      <span class="hljs-attr">shmem_enabled</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;within_size&quot;</span>;
+    };
+  };
+}</code></pre>
+      </div><h2 id="see-also">See also</h2><p><a href="https://mirror.nixoscn.org/wiki/Linux%20kernel/Kernel_Debugging_with_QEMU" class="wikilink" title="Kernel Debugging with QEMU">Kernel Debugging with QEMU</a></p>
+<h2 id="references">References</h2><references />
+
+<p><a href="category:Software" class="wikilink" title="Category:Software">Category:Software</a> <a href="category:Cookbook" class="wikilink" title="Category:Cookbook">Category:Cookbook</a> <a href="category:NixOS" class="wikilink" title="Category:NixOS">Category:NixOS</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p><a href="https://github.com/hakavlad/nohang?tab=readme-ov-file#what-is-the-problem">https://github.com/hakavlad/nohang?tab=readme-ov-file#what-is-the-problem</a> <a href="https://mirror.nixoscn.org/wiki/Linux%20kernel#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+<li id="footnote-2">
+<p>[<a href="https://logs.nix.samueldr.com/nixos/2018-05-09#1525898458-1525898534">https://logs.nix.samueldr.com/nixos/2018-05-09#1525898458-1525898534</a>; #nixos 2018-05-09] <a href="https://mirror.nixoscn.org/wiki/Linux%20kernel#footnote-ref-2" data-footnote-backref aria-label="Back to reference 2">↩</a></p>
+</li>
+<li id="footnote-3">
+<p><a href="https://github.com/NixOS/nixpkgs/blob/03d4694e6110fa9c16e88ee74085ea2068c27494/nixos/modules/misc/crashdump.nix#L63-L73"><code>nixos/modules/misc/crashdump.nix#L63-L73</code></a> <a href="https://mirror.nixoscn.org/wiki/Linux%20kernel#footnote-ref-3" data-footnote-backref aria-label="Back to reference 3">↩</a></p>
+</li>
+<li id="footnote-4">
+<p>[<a href="https://github.com/NixOS/nixpkgs/blob/e6db435973160591fe7348876a5567c729495175/pkgs/os-specific/linux/kernel/generic.nix#L11-L56">https://github.com/NixOS/nixpkgs/blob/e6db435973160591fe7348876a5567c729495175/pkgs/os-specific/linux/kernel/generic.nix#L11-L56</a><code>pkgs/os-specific/linux/kernel/generic.nix#L11-L56</code>] <a href="https://mirror.nixoscn.org/wiki/Linux%20kernel#footnote-ref-4" data-footnote-backref aria-label="Back to reference 4">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

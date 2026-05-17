@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Firejail</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Firejail</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Firejail -->
+
+<p><a href="https://firejail.wordpress.com/">Firejail</a> is an easy to use SUID sandbox program that reduces the risk of security breaches by restricting the running environment of untrusted applications using Linux namespaces, seccomp-bpf and Linux capabilities.</p>
+<h2 id="installation">Installation</h2><p>Add the following line to your system configuration to install and enable Firejail globally</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">p<span class="hljs-attr">rograms.firejail.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><h2 id="usage">Usage</h2><p>To start an application in a sandboxed enviroment use Firejail like this</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">firejail bash</code></pre>
+      </div><p>For a graphical application like <a href="https://mirror.nixoscn.org/wiki/Firejail/Firefox" class="wikilink" title="Firefox">Firefox</a> web browser, it is recommended to also use a profile</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">firejail --profile=$(nix --extra-experimental-features nix-command --extra-experimental-features flakes <span class="hljs-built_in">eval</span> -f <span class="hljs-string">&#x27;&lt;nixpkgs&gt;&#x27;</span> --raw <span class="hljs-string">&#x27;firejail&#x27;</span>)/etc/firejail/firefox.profile firefox</code></pre>
+      </div><h2 id="configuration">Configuration</h2><p>You can also use the Firejail NixOS module for a persistent usage of specific applications which should always run in Firejail. The following example wraps the browser Librewolf and the messenger Signal in a Firejail environment. The usual program path to <code>librewolf</code> and <code>signal-desktop</code> will be overwritten by the Firejail-wrapper.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">p<span class="hljs-attr">rograms.firejail</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">wrappedBinaries</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">librewolf</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">executable</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.librewolf}</span>/bin/librewolf&quot;</span>;
+      <span class="hljs-attr">profile</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.firejail}</span>/etc/firejail/librewolf.profile&quot;</span>;
+      <span class="hljs-attr">extraArgs</span> <span class="hljs-operator">=</span> [
+        <span class="hljs-comment"># Required for U2F USB stick</span>
+        <span class="hljs-string">&quot;--ignore=private-dev&quot;</span>
+        <span class="hljs-comment"># Enforce dark mode</span>
+        <span class="hljs-string">&quot;--env=GTK_THEME=Adwaita:dark&quot;</span>
+        <span class="hljs-comment"># Enable system notifications</span>
+        <span class="hljs-string">&quot;--dbus-user.talk=org.freedesktop.Notifications&quot;</span>
+      ];
+    };
+    <span class="hljs-attr">signal-desktop</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-comment"># Enable tray icon otherwise Signal window might be hidden</span>
+      <span class="hljs-attr">executable</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.signal-desktop}</span>/bin/signal-desktop --use-tray-icon&quot;</span>;
+      <span class="hljs-attr">profile</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.firejail}</span>/etc/firejail/signal-desktop.profile&quot;</span>;
+      <span class="hljs-attr">extraArgs</span> <span class="hljs-operator">=</span> [
+        <span class="hljs-comment"># Enforce dark mode</span>
+        <span class="hljs-string">&quot;--env=GTK_THEME=Adwaita:dark&quot;</span>
+        <span class="hljs-comment"># Enable Wayland mode</span>
+        <span class="hljs-string">&quot;--env=NIXOS_OZONE_WL=1&quot;</span>
+        <span class="hljs-comment"># Allow tray icon (should be upstreamed into signal-desktop.profile)</span>
+        <span class="hljs-string">&quot;--dbus-user.talk=org.kde.StatusNotifierWatcher&quot;</span>
+      ];
+    };
+  };
+};</code></pre>
+      </div><h2 id="tips-amp-tricks">Tips &amp; tricks</h2><h3 id="torify-application-traffic">Torify application traffic</h3><p>The following example configuration creates a virtual network bridge which can be used in Firejail as an isolated network namespace. All traffic originating from this interface will be routed through a local <a href="https://mirror.nixoscn.org/wiki/Firejail/Tor" class="wikilink" title="Tor">Tor</a> service which will therefore anonymize your internet traffic.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.tor</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">openFirewall</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">TransPort</span> <span class="hljs-operator">=</span> [ <span class="hljs-number">9040</span> ];
+    <span class="hljs-attr">DNSPort</span> <span class="hljs-operator">=</span> <span class="hljs-number">5353</span>;
+    <span class="hljs-attr">VirtualAddrNetworkIPv4</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;172.30.0.0/16&quot;</span>;
+  };
+};
+
+<span class="hljs-attr">networking</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">useNetworkd</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  bridges.<span class="hljs-string">&quot;tornet&quot;</span>.interfaces <span class="hljs-operator">=</span> [];
+  <span class="hljs-attr">nftables</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">ruleset</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+      table ip nat {
+        chain PREROUTING {
+          type nat hook prerouting priority dstnat; policy accept;
+          iifname &quot;tornet&quot; meta l4proto tcp dnat to 127.0.0.1:9040
+          iifname &quot;tornet&quot; udp dport 53 dnat to 127.0.0.1:5353
+        }
+      }
+    &#x27;&#x27;</span>;
+  };
+  <span class="hljs-attr">nat</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">internalInterfaces</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;tornet &quot;</span> ];
+    <span class="hljs-attr">forwardPorts</span> <span class="hljs-operator">=</span> [
+      {
+        <span class="hljs-attr">destination</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;127.0.0.1:5353&quot;</span>;
+        <span class="hljs-attr">proto</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;udp&quot;</span>;
+        <span class="hljs-attr">sourcePort</span> <span class="hljs-operator">=</span> <span class="hljs-number">53</span>;
+      }
+    ];
+  };
+  <span class="hljs-attr">firewall</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">interfaces.tornet</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">allowedTCPPorts</span> <span class="hljs-operator">=</span> [ <span class="hljs-number">9040</span> ];
+      <span class="hljs-attr">allowedUDPPorts</span> <span class="hljs-operator">=</span> [ <span class="hljs-number">5353</span> ];
+    };
+  };
+};
+
+<span class="hljs-attr">systemd.network</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">networks.tornet</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">matchConfig.Name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;tornet&quot;</span>;
+    <span class="hljs-attr">DHCP</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;no&quot;</span>;
+    <span class="hljs-attr">networkConfig</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">ConfigureWithoutCarrier</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">Address</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;10.100.100.1/24&quot;</span>;
+    };
+    <span class="hljs-attr">linkConfig.ActivationPolicy</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;always-up&quot;</span>;
+  };
+};
+
+<span class="hljs-attr">boot.kernel.sysctl</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-string">&quot;net.ipv4.conf.tornet.route_localnet&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-number">1</span>;
+};</code></pre>
+      </div><p>Run your preferred application inside the isolated Tor network</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">firejail --net=tornet --dns=46.182.19.48 --profile=$(nix --extra-experimental-features nix-command --extra-experimental-features flakes <span class="hljs-built_in">eval</span> -f <span class="hljs-string">&#x27;&lt;nixpkgs&gt;&#x27;</span> --raw <span class="hljs-string">&#x27;firejail&#x27;</span>)/etc/firejail/firefox.profile firefox</code></pre>
+      </div><p>You can use a custom DNS server if you don&#39;t want to use the one of your system. In this example, it&#39;s a server by the German privacy NGO <a href="https://digitalcourage.de/support/zensurfreier-dns-server">Digitalcourage</a>.</p>
+<p>Using <a href="https://mirror.nixoscn.org/wiki/Firejail/Systemd/networkd/dispatcher" class="wikilink" title="Systemd/networkd/dispatcher">Systemd/networkd/dispatcher</a> it is possible to restart the Tor daemon every time network reconnect is performaed. This avoids having to wait for Tor network timeouts and reastablishes a new connection faster.</p>
+<p>For a detailed explanation on this setup refer the <a href="https://www.void.gr/kargig/blog/2016/12/12/firejail-with-tor-howto">original guide</a>. Please note that this is a experimental setup which doesn&#39;t guarantee anonymity or security in any circumstances.</p>
+<h3 id="add-desktop-icons-to-firejailed-apps">Add Desktop Icons to Firejailed Apps</h3><p>I wanted to use Firejail to lock down Google Chrome. It worked well, however, I wanted a pretty icon for the application.</p>
+<p>There are probably better ways to do this, but I accomplished it using Home Manager to symlink Chrome&#39;s actual icon set into your local icon directory.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment">## Firejail Config</span>
+p<span class="hljs-attr">rograms.firejail</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">wrappedBinaries</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">google-chrome-stable</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">executable</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.google-chrome}</span>/bin/google-chrome-stable&quot;</span>;
+      <span class="hljs-attr">profile</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.firejail}</span>/etc/firejail/google-chrome.profile&quot;</span>;
+      <span class="hljs-attr">desktop</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.google-chrome}</span>/share/applications/google-chrome.desktop&quot;</span>;
+    };
+  };
+};
+
+<span class="hljs-comment">## Home Manager Config</span>
+home.file.<span class="hljs-string">&quot;.local/share/icons/hicolor/16x16/apps/google-chrome.png&quot;</span>.source <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.google-chrome}</span>/share/icons/hicolor/16x16/apps/google-chrome.png&quot;</span>;
+home.file.<span class="hljs-string">&quot;.local/share/icons/hicolor/24x24/apps/google-chrome.png&quot;</span>.source <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.google-chrome}</span>/share/icons/hicolor/24x24/apps/google-chrome.png&quot;</span>;
+home.file.<span class="hljs-string">&quot;.local/share/icons/hicolor/32x32/apps/google-chrome.png&quot;</span>.source <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.google-chrome}</span>/share/icons/hicolor/32x32/apps/google-chrome.png&quot;</span>;
+home.file.<span class="hljs-string">&quot;.local/share/icons/hicolor/48x48/apps/google-chrome.png&quot;</span>.source <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.google-chrome}</span>/share/icons/hicolor/48x48/apps/google-chrome.png&quot;</span>;
+home.file.<span class="hljs-string">&quot;.local/share/icons/hicolor/64x64/apps/google-chrome.png&quot;</span>.source <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.google-chrome}</span>/share/icons/hicolor/64x64/apps/google-chrome.png&quot;</span>;
+home.file.<span class="hljs-string">&quot;.local/share/icons/hicolor/128x128/apps/google-chrome.png&quot;</span>.source <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.google-chrome}</span>/share/icons/hicolor/128x128/apps/google-chrome.png&quot;</span>;
+home.file.<span class="hljs-string">&quot;.local/share/icons/hicolor/256x256/apps/google-chrome.png&quot;</span>.source <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.google-chrome}</span>/share/icons/hicolor/256x256/apps/google-chrome.png&quot;</span>;</code></pre>
+      </div><p>Another way to do this is to create a package with the firejailed application icons. This way, it can be done without home manager, and thus have the icons for all users.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> [
+  (
+    <span class="hljs-keyword">let</span>
+      <span class="hljs-attr">packages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+        electrum
+        firefox
+        mpv
+        gajim
+        tor-browser
+        vlc
+      ];
+    <span class="hljs-keyword">in</span>
+    pkgs.runCommand <span class="hljs-string">&quot;firejail-icons&quot;</span>
+      {
+        <span class="hljs-attr">preferLocalBuild</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+        <span class="hljs-attr">allowSubstitutes</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+        <span class="hljs-attr">meta.priority</span> <span class="hljs-operator">=</span> <span class="hljs-operator">-</span><span class="hljs-number">1</span>;
+      }
+      <span class="hljs-string">&#x27;&#x27;
+        mkdir -p &quot;$out/share/icons&quot;
+        <span class="hljs-subst">${lib.concatLines (<span class="hljs-built_in">map</span> (<span class="hljs-params">pkg:</span> <span class="hljs-string">&#x27;&#x27;
+          tar -C &quot;<span class="hljs-subst">${pkg}</span>&quot; -c share/icons -h --mode 0755 -f - | tar -C &quot;$out&quot; -xf -
+        &#x27;&#x27;</span>) packages)}</span>
+        find &quot;$out/&quot; -type f -print0 | xargs -0 chmod 0444
+        find &quot;$out/&quot; -type d -print0 | xargs -0 chmod 0555
+      &#x27;&#x27;</span>
+  )
+];</code></pre>
+      </div><p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="category:Security" class="wikilink" title="Category:Security">Category:Security</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

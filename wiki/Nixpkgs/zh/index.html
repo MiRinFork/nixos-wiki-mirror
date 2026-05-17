@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nixpkgs/zh</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/Nixpkgs">Nixpkgs</a><span aria-hidden="true"> / </span>zh</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Nixpkgs/zh -->
+
+<p><languages/> <strong>Nixpkgs</strong> 是最大的 <a href="https://mirror.nixoscn.org/wiki/Nixpkgs/zh/Nix" class="wikilink" title="Nix">Nix</a> 軟體包儲存庫和 <a href="https://mirror.nixoscn.org/wiki/Nixpkgs/zh/NixOS" class="wikilink" title="NixOS">NixOS</a> 模組。儲存庫 <a href="https://github.com/nixos/nixpkgs">託管在 GitHub 上</a> 並且由社群維護，另外還有 <a href="https://mirror.nixoscn.org/wiki/Nixpkgs/zh/NixOS_Foundation" class="wikilink" title="NixOS Foundation">NixOS Foundation</a> 的官方支持。</p>
+<p>尋找可用的套件和選項，請看 <a href="https://mirror.nixoscn.org/wiki/Nixpkgs/zh/Searching_packages" class="wikilink" title="尋找套件">尋找套件</a>。</p>
+<p>如同在 NixOS 24.11 釋出<a href="https://nixos.org/blog/announcements/2024/nixos-2411/">發布會</a>所強調的，<em>「NixOS 已經被認為是 <a href="https://repology.org/repositories/statistics/newest">最即時更新的發行版</a> 和 <a href="https://repology.org/repositories/statistics/total">最多軟體包的發行版</a>。」</em> 這歸功於-{zh-hans:社区; zh-hant:社群}-的持續貢獻使 Nixpkgs 成為最重要且最強大的 Linux 軟體包儲存庫。</p>
+<p><span id="Subpages"></span></p>
+<h2 id="子頁面">子頁面</h2><p>這裡有一系列關於操作 <code>nixpkgs</code> 的文章：</p>
+<p><span id="Releases"></span></p>
+<h2 id="釋出版本">釋出版本</h2><p>軟體包和模組託管在 Nixpkgs 被分配成多種 <a href="https://mirror.nixoscn.org/wiki/Nixpkgs/zh/channel_branches" class="wikilink" title="頻道分支">頻道分支</a> 用於特定用途。在實務上，它們的不同在於更新必須在官方 <a href="https://nixos.org/hydra/manual/#idm140737315980672">nixos.org Hydra 伺服器</a> 上通過的測試，以及它們的更新頻率。</p>
+<p>對於 <a href="https://mirror.nixoscn.org/wiki/Nixpkgs/zh/NixOS" class="wikilink" title="NixOS">NixOS</a> 用戶而言，<code>nixos-unstable</code>（不穩定）頻道是滾動式更新，軟體包通過構建測試和 <a href="https://mirror.nixoscn.org/wiki/Nixpkgs/zh/NixOS_VM_tests" class="wikilink" title="虛擬機上的整合測試">虛擬機上的整合測試</a>，並經過作業系統方面的測試（意思是 <a href="https://mirror.nixoscn.org/wiki/Nixpkgs/zh/Xorg" class="wikilink" title="X server">X server</a>、<a href="https://mirror.nixoscn.org/wiki/Nixpkgs/zh/KDE" class="wikilink" title="KDE">KDE</a>、不同的視窗系統和低階的細節例如 <a href="https://mirror.nixoscn.org/wiki/Nixpkgs/zh/Bootloader" class="wikilink" title="啟動程式 (bootloader)">啟動程式 (bootloader)</a> 和運行 NixOS 系統安裝步驟也會經過測試）。</p>
+<p>對於獨立 <a href="https://mirror.nixoscn.org/wiki/Nixpkgs/zh/Nix" class="wikilink" title="Nix">Nix</a> 用戶，<code>nixpkgs-unstable</code> 頻道是滾動式更新，軟體包只經過基本構建測試，並且滾動升級。</p>
+<p><a href="https://mirror.nixoscn.org/wiki/Nixpkgs/zh/NixOS" class="wikilink" title="NixOS">NixOS</a> 和 <a href="https://mirror.nixoscn.org/wiki/Nixpkgs/zh/Nix" class="wikilink" title="Nix">Nix</a> 用戶都可以使用穩定頻道（参见 <a href="https://status.nixos.org/">https://status.nixos.org/</a> 获取当前频道）以仅接收修复关键漏洞和安全问题的保守更新。穩定頻道半年會释出一次，分别在五月底和十一月底。</p>
+<p>在 NixOS 上使用穩定頻道的體驗，可與其他 Linux 發行版的使用者體驗相媲美。</p>
+<p><span id="Alternatives"></span></p>
+<h2 id="替代品">替代品</h2><p>基於 Nixpkgs 「只是」Nix 表達式，你可以自行增加或替換邏輯在你自己的來源。 事實上，有一系列的擴充套件同時是 Nixpkgs 完全的替代品，請見 <a href="https://mirror.nixoscn.org/wiki/Nixpkgs/zh/Alternative_Package_Sets" class="wikilink" title="替代套件組">替代套件組</a> 文章。</p>
+<p><a href="category:Pedias" class="wikilink" title="Category:Pedias">Category:Pedias</a> <a href="category:Nixpkgs" class="wikilink" title="Category:Nixpkgs">Category:Nixpkgs</a> <a href="category:Nix" class="wikilink" title="Category:Nix">Category:Nix</a> <a href="category:Software" class="wikilink" title="Category:Software">Category:Software</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

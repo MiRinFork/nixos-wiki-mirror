@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Development environment with nix-shell</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Development environment with nix-shell</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Development environment with nix-shell -->
+
+<p>Nix can be used to provide some kind of <strong>virtual environment</strong> through the <code>nix-shell</code> command.</p>
+<p>If you already have a nix package definition of your project it&#39;s easy: Just use <code>nix-shell</code> instead of <code>nix-build</code> and you will end up in a bash shell that reproduce the build-environment of your package. You can also override<a href="https://nixos.org/nixpkgs/manual/#sec-pkg-override">1</a> your package in a <code>shell.nix</code> file to add test and coverage dependencies, that are not necessary for the actual build of the package, but that you want for your development environment.</p>
+<p>But, if you don&#39;t (or you don&#39;t want to) have a package definition you can still use a nix-shell to provide a reproducible development environment. To do so, you have to create a <code>shell.nix</code> file at the root of your repository. For example, if you want to have rustc with libraries and hello you can write:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  pkgs <span class="hljs-operator">?</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> { },
+}:
+pkgs.callPackage (
+  {
+    mkShell,
+    hello,
+    rustc,
+    pkg-config,
+    openssl,
+  }:
+  mkShell {
+    <span class="hljs-attr">strictDeps</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-comment"># host/target agnostic programs</span>
+    <span class="hljs-attr">depsBuildBuild</span> <span class="hljs-operator">=</span> [
+      hello
+    ];
+    <span class="hljs-comment"># compilers &amp; linkers &amp; dependency finding programs</span>
+    <span class="hljs-attr">nativeBuildInputs</span> <span class="hljs-operator">=</span> [
+      rustc
+      pkg-config
+    ];
+    <span class="hljs-comment"># libraries</span>
+    <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> [
+      openssl
+    ];
+  }
+) { }</code></pre>
+      </div><p>Then just run:</p>
+<p>Or, to be more explicit:</p>
+<p>Now you have rustc available in your shell:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">$ rustc --version
+rustc 1.80.1 (3f5fd8dd4 2024-08-06) (built from a <span class="hljs-built_in">source</span> tarball)</code></pre>
+      </div><p>To be sure that the tools installed on your system will not interfere with the dependencies that you&#39;ve defined in the shell you can use the <code>--pure</code> option.</p>
+<p>If you&#39;d like to load a local nix expression into a shell you can do it by modifying the earlier example a little bit, see comments in the earlier example for where to put your package:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  pkgs <span class="hljs-operator">?</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> {
+    <span class="hljs-attr">overlays</span> <span class="hljs-operator">=</span> [
+      (<span class="hljs-params">final:</span> <span class="hljs-params">prev:</span> {
+        <span class="hljs-attr">my-package</span> <span class="hljs-operator">=</span> prev.callPackage <span class="hljs-symbol">./my-package.nix</span> { };
+      })
+    ];
+  },
+}:
+pkgs.callPackage (
+  {
+    mkShell,
+    my-package
+  }:
+  mkShell {
+    <span class="hljs-attr">strictDeps</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> [
+      my-package
+    ];
+  }
+) { }</code></pre>
+      </div><p>If you want to see how to manually run the various phases of a given derivation from a nix-shell (useful to debug), see <a href="https://mirror.nixoscn.org/wiki/Development%20environment%20with%20nix-shell/Nixpkgs/Create_and_debug_packages#Using_nix-shell_for_package_development" class="wikilink" title="Nixpkgs/Create_and_debug_packages#Using_nix-shell_for_package_development">Nixpkgs/Create_and_debug_packages#Using_nix-shell_for_package_development</a>.</p>
+<h2 id="nix-develop">nix develop</h2><p>For <a href="https://mirror.nixoscn.org/wiki/Development%20environment%20with%20nix-shell/Flakes" class="wikilink" title="Flakes">Flakes</a>-based projects (<code>flake.nix</code> file in project root), we replace <code>nix-shell</code> with <code>nix develop</code></p>
+<p>Example: Building Nix in a development shell, to get <a href="https://mirror.nixoscn.org/wiki/Development%20environment%20with%20nix-shell/Incremental_builds" class="wikilink" title="Incremental builds">Incremental builds</a> = faster recompiles. This is because Nix evaluations are cached.</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">git clone https://github.com/NixOS/nix --depth 1
+cd nix
+nix develop</code></pre>
+      </div><p>Now what? Let&#39;s read the manual:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">less README.md
+less doc/manual/src/contributing/hacking.md</code></pre>
+      </div><p>The contributing guide for Nix says:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">To build all dependencies and start a shell in which all environment
+variables are set up so that those dependencies can be found:
+
+```console
+$ nix-shell
+```
+
+To build Nix itself in this shell:
+
+```console
+[nix-shell]$ ./bootstrap.sh
+[nix-shell]$ ./configure $configureFlags --prefix=$(pwd)/outputs/out
+[nix-shell]$ make -j $NIX_BUILD_CORES
+```</code></pre>
+      </div><p>So, in our <code>nix develop</code> shell, we run</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">./bootstrap.sh
+./configure $configureFlags --prefix=$(pwd)/outputs/out
+make -j $NIX_BUILD_CORES</code></pre>
+      </div><p>This will compile Nix to <code>./outputs/out/bin/nix</code></p>
+<p>Let&#39;s make some changes to the source code, and run <code>make</code> again.<br>Now the compilation should be much faster (see <a href="https://mirror.nixoscn.org/wiki/Development%20environment%20with%20nix-shell/Incremental_builds" class="wikilink" title="Incremental builds">Incremental builds</a>)</p>
+<h2 id="stdenv-mkderivation">stdenv.mkDerivation</h2><p>Let&#39;s assume you have a <code>default.nix</code> file</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ stdenv, python }:
+stdenv.mkDerivation {
+  <span class="hljs-attr">pname</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;some-package&quot;</span>;
+  <span class="hljs-attr">strictDeps</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">nativeBuildInputs</span> <span class="hljs-operator">=</span> [ python ];
+  <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;0.0.1&quot;</span>;
+  <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> <span class="hljs-symbol">/home/yourname/path/to/project</span>; <span class="hljs-comment"># can be a local path, or fetchFromGitHub, fetchgit, ...</span>
+}</code></pre>
+      </div><p>Then you can start a development shell with</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nix-shell -E <span class="hljs-string">&#x27;with import &lt;nixpkgs&gt; { }; callPackage ./default.nix { }&#x27;</span></code></pre>
+      </div><p>In this shell, you can run the phases of stdenv.mkDerivation:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-comment"># clean build: copy sources from /nix/store</span>
+<span class="hljs-built_in">echo</span> <span class="hljs-string">&quot;src = <span class="hljs-variable">$src</span>&quot;</span> &amp;&amp; <span class="hljs-built_in">cd</span> $(<span class="hljs-built_in">mktemp</span> -d) &amp;&amp; unpackPhase &amp;&amp; <span class="hljs-built_in">cd</span> *
+
+<span class="hljs-comment"># dirty build: keep cache files from last buildPhase, to compile faster</span>
+<span class="hljs-comment"># this is useful to make many small changes to a large project</span>
+<span class="hljs-comment"># after each change, just run `buildPhase`</span>
+<span class="hljs-comment">#cd $HOME/path/to/project</span>
+
+configurePhase
+
+buildPhase <span class="hljs-comment"># most time is spent here</span>
+
+checkPhase &amp;&amp; installPhase &amp;&amp; fixupPhase</code></pre>
+      </div><h2 id="cross-env">cross env</h2><p>The comments in the code snippets on <code>nativeBuildInputs</code> and <code>buildInputs</code> above might seem pedantic --- who cares about build-time vs run-time when we&#39;re just making a dev environment, not a real package! However, the distinction becomes of practical importance if one wants a cross compilation development environment. In that case one would begin file with something like:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs <span class="hljs-operator">?</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> { <span class="hljs-attr">crossSystem.config</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;exotic_arch-unknown-exotic_os&quot;</span>; } }:</code></pre>
+      </div><p>and <code>nativeBuildInputs</code> would be for the native platform, while <code>buildInputs</code> would be for the foreign platform. That&#39;s a much more practical distinction: any tool that&#39;s miscategorized one won&#39;t be able to run, and any library that&#39;s miscategorized one won&#39;t be able to link!</p>
+<h2 id="troubleshooting">Troubleshooting</h2><p>When compiling software which links against local files (e.g. when compiling with rust&#39;s cargo), you may encounter the following problem:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">= note: impure path `/[...]<span class="hljs-string">&#x27; used in link</span></code></pre>
+      </div><p>This happens due to a specialty in nix: <code>ld</code> is wrapped in a shell script which refuses to link against files not residing in the nix store, to ensure the purity of builds. Obviously this is not useful when building locally, for example in your home directory. To disable this behavior simply set</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">NIX_ENFORCE_PURITY=0</code></pre>
+      </div><p>in the nix-shell.</p>
+<h3 id="no-gsettings-schemas-are-installed-on-the-system">No GSettings schemas are installed on the system</h3><p>When working with gtk, the <code>XDG_DATA_DIRS</code> must contain a path to the gtk schemas, if not an application may crash with the error above.</p>
+<p>For packages we use <code>wrapGAppsHook</code> in <code>nativeBuildInputs</code>, however in nix-shell this is not working as expected. To get your application to work in nix-shell you will need to add the following to your <code>mkShell</code> expression:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">mkShell {
+  ...
+  <span class="hljs-attr">strictDeps</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> [ gtk3 ];
+  <span class="hljs-attr">shellHook</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+     export XDG_DATA_DIRS=$GSETTINGS_SCHEMAS_PATH
+  &#x27;&#x27;</span>;
+}</code></pre>
+      </div><p>This may also called: <code>$GSETTINGS_SCHEMA</code><strong><code>S</code></strong><code>_PATH</code>.</p>
+<h3 id="icons-not-working">Icons not working</h3><p>Similar to the Gsettings issue, icons can be added with XDG_DATA_DIRS:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs"> XDG_DATA_DIRS=...:${hicolor-icon-theme}/share:${gnome3.adwaita-icon-theme}/share</code></pre>
+      </div><h2 id="see-also">See Also</h2><ul>
+<li><a href="https://mirror.nixoscn.org/wiki/Development%20environment%20with%20nix-shell/Direnv" class="wikilink" title="Direnv">Direnv</a></li>
+<li><a href="https://mirror.nixoscn.org/wiki/Development%20environment%20with%20nix-shell/Command_Shell#Using_a_different_shell_in_nix-shell_and_nix_develop" class="wikilink" title="Command Shell#Using a different shell in nix-shell and nix develop">Command Shell#Using a different shell in nix-shell and nix develop</a></li>
+<li><a href="https://nixcademy.com/posts/cpp-with-nix-in-2023-part-1-shell/">C++ with Nix in 2023, Part 1: Developer Shells, Nixcademy</a></li>
+</ul>
+<p><a href="category:Development" class="wikilink" title="Category:Development">Category:Development</a> <a href="category:nix" class="wikilink" title="Category:nix">Category:nix</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

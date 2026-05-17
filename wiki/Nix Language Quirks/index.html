@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nix Language Quirks</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Nix Language Quirks</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Nix Language Quirks -->
+
+<h2 id="with-and-let"><code>with</code> and <code>let</code></h2><p><code>with</code> gets less priority than <code>let</code>. This can lead to confusions, especially if you like to write <code>with pkgs;</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-meta prompt_">nix-repl&gt;</span> pkgs <span class="hljs-operator">=</span> { <span class="hljs-attr">x</span> <span class="hljs-operator">=</span> <span class="hljs-number">1</span>; }
+
+<span class="hljs-meta prompt_">nix-repl&gt;</span> <span class="hljs-keyword">with</span> pkgs; x
+<span class="hljs-number">1</span>
+
+<span class="hljs-meta prompt_">nix-repl&gt;</span> <span class="hljs-keyword">with</span> pkgs; <span class="hljs-keyword">let</span> x <span class="hljs-operator">=</span> <span class="hljs-number">2</span>; <span class="hljs-keyword">in</span> x
+<span class="hljs-number">2</span></code></pre>
+      </div><p>So we see, that <code>let</code> binding overrides <code>with</code> binding. But what about this?</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-meta prompt_">nix-repl&gt;</span> <span class="hljs-keyword">let</span> x <span class="hljs-operator">=</span> <span class="hljs-number">2</span>; <span class="hljs-keyword">in</span> <span class="hljs-keyword">with</span> pkgs; x
+<span class="hljs-number">2</span> </code></pre>
+      </div><p>In this case, <code>with</code> and <code>let</code> have different priority when resolving names.</p>
+<p><a href="https://github.com/NixOS/nix/issues/1361">Good discussion on this topic</a></p>
+<p>Generally the use of <code>with</code> is discouraged. See the <a href="https://nix.dev/guides/best-practices#with-scopes">best practices guide</a> for how best to use <code>inherit</code> as an alternative.</p>
+<h2 id="old-let-syntax">Old <code>let</code> syntax</h2><p>This is an <a href="https://github.com/NixOS/nix/issues/1361#issuecomment-323050690">old</a> Nix syntax, that probably isn&#39;t used much</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-meta prompt_">nix-repl&gt;</span> <span class="hljs-keyword">let</span> { <span class="hljs-attr">x</span> <span class="hljs-operator">=</span> <span class="hljs-number">1</span>; <span class="hljs-attr">y</span> <span class="hljs-operator">=</span> x <span class="hljs-operator">+</span> <span class="hljs-number">1</span>; <span class="hljs-attr">body</span> <span class="hljs-operator">=</span> y; }
+<span class="hljs-number">2</span> </code></pre>
+      </div><p>It is equivalent to modern syntax expression <code>let x = 1; y = x + 1; in y</code>. Note, that it doesn&#39;t require <code>rec</code> keyword.</p>
+<p>Note, that it isn&#39;t equivalent to <code>with rec { x = 1; y = x + 1; body = y; }; body</code> because of mentioned <code>with</code> and <code>let</code> quirk, but is same as <code>rec { x = 1; y = x + 1; body = y; }.body</code></p>
+<h2 id="default-values-are-not-bound-in-syntax">Default values are not bound in <code>@</code> syntax</h2><p>Destructured arguments can have default values, but those default values are part of the full function argument.</p>
+<p>In the following example, calling the function that binds a default value <code>&quot;a&quot;</code> to the argument&#39;s attribute <code>a</code> with an empty attribute set as an argument will produce an empty attribute set <code>args</code> instead of <code>{ a = &quot;a&quot;; }</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">(args@{a <span class="hljs-operator">?</span> <span class="hljs-string">&quot;a&quot;</span>}: args) {}</code></pre>
+      </div><p><code>{ }</code></p>
+<p>Related: <a href="https://github.com/NixOS/nix/issues/1461">GitHub issue filed 2017</a></p>
+<h2 id="something-that-looks-like-both-record-attribute-and-let-binding">Something that looks like both record attribute and <code>let</code>-binding</h2><p>Destructuring function argument - is a great feature of Nix.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-meta prompt_">nix-repl&gt;</span> f <span class="hljs-operator">=</span> { x <span class="hljs-operator">?</span> <span class="hljs-number">1</span>, y <span class="hljs-operator">?</span> <span class="hljs-number">2</span> }: x <span class="hljs-operator">+</span> y
+
+<span class="hljs-meta prompt_">nix-repl&gt;</span> f { }
+<span class="hljs-number">3</span> </code></pre>
+      </div><p>The fact that we can add <code>@args</code> argument assignment is also cool</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-meta prompt_">nix-repl&gt;</span> f <span class="hljs-operator">=</span> { x <span class="hljs-operator">?</span> <span class="hljs-number">1</span>, y <span class="hljs-operator">?</span> <span class="hljs-number">2</span>, ... }@<span class="hljs-params">args:</span> <span class="hljs-keyword">with</span> args; x <span class="hljs-operator">+</span> y <span class="hljs-operator">+</span> z
+
+<span class="hljs-meta prompt_">nix-repl&gt;</span> f { <span class="hljs-attr">z</span> <span class="hljs-operator">=</span> <span class="hljs-number">3</span>; }
+<span class="hljs-number">6</span> </code></pre>
+      </div><p>But don&#39;t be fooled, <code>args</code> doesn&#39;t necessarily contain <code>x</code> and <code>y</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-meta prompt_">nix-repl&gt;</span> f <span class="hljs-operator">=</span> { x <span class="hljs-operator">?</span> <span class="hljs-number">1</span>, y <span class="hljs-operator">?</span> <span class="hljs-number">2</span>, ... }@<span class="hljs-params">args:</span> args.x <span class="hljs-operator">+</span> args.y <span class="hljs-operator">+</span> args.z
+
+<span class="hljs-meta prompt_">nix-repl&gt;</span> f { <span class="hljs-attr">z</span> <span class="hljs-operator">=</span> <span class="hljs-number">3</span>;}
+<span class="hljs-params">error:</span> attribute ‘x’ missing, at (string):<span class="hljs-number">1</span>:<span class="hljs-number">30</span> </code></pre>
+      </div><p>These <code>x</code> and <code>y</code> are in fact <code>let</code>-bindings, but overridable ones.</p>
+<h2 id="imports-and-namespaces">Imports and namespaces</h2><p>Nix includes a keyword <code>import</code>, but it&#39;s equivalent in other languages is <code>eval</code>.</p>
+<p>It is typically be used for namespacing:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-keyword">let</span>
+  <span class="hljs-attr">pkgs</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> {};
+  <span class="hljs-attr">lib</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs/lib&gt;</span>;
+<span class="hljs-keyword">in</span>
+  pkgs.runCommand (lib.strings.removePrefix <span class="hljs-string">&quot;.... </span></code></pre>
+      </div><p>consider the use of <code>import</code> here similar to using <code>qualified import ...</code> in Haskell or <code>import ...</code> in Python. Another (discouraged and increasingly uncommon) way of importing is <a href="https://nix.dev/manual/nix/2.24/language/syntax#with-expressions"><code>with import ...;</code></a>, which corresponds to Python <code>from ... import *</code>. This use of <code>with</code> imports everything from the target into scope, which has numerous potential gotchas and problems, and so using <a href="https://nix.dev/guides/best-practices#with-scopes"><code>inherit</code></a> instead is encouraged and preferred.</p>
+<h2 id="builtins-replacestrings-key-match-on-quot-quot"><code>builtins.replaceStrings</code> key match on &quot;&quot;</h2><p>Syntax:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-built_in">builtins.replaceStrings</span> [match] [replace] string</code></pre>
+      </div><p>The <a href="https://noogle.dev/f/builtins/replaceStrings"><code>builtins.replaceStrings</code></a> function allows matching <code>&quot;&quot;</code> in <code>string</code>. <code>[match]</code> gets checked sequentially, and when <code>&quot;&quot;</code> is checked - it <em>always</em> matches. And so - when <code>&quot;&quot;</code> is checked it <em>always</em> inserts the corresponding replacement from <code>[replace]</code>, then the next char in <code>string</code> gets inserted, and then the next char after that from <code>string</code> gets processed.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-meta prompt_">nix-repl&gt;</span> <span class="hljs-built_in">builtins.replaceStrings</span> [<span class="hljs-string">&quot;&quot;</span> <span class="hljs-string">&quot;e&quot;</span>] [<span class="hljs-string">&quot; &quot;</span> <span class="hljs-string">&quot;i&quot;</span>] <span class="hljs-string">&quot;Hello world&quot;</span>
+<span class="hljs-string">&quot; H e l l o   w o r l d &quot;</span>
+<span class="hljs-meta prompt_">nix-repl&gt;</span> <span class="hljs-built_in">builtins.replaceStrings</span> [<span class="hljs-string">&quot;ll&quot;</span> <span class="hljs-string">&quot;&quot;</span>] [<span class="hljs-string">&quot; &quot;</span> <span class="hljs-string">&quot;i&quot;</span>] <span class="hljs-string">&quot;Hello world&quot;</span>
+<span class="hljs-string">&quot;iHie ioi iwioirilidi&quot;</span></code></pre>
+      </div><h2 id="indented-strings-trim-leading-whitespace">Indented strings trim leading whitespace</h2><p>Leading spaces are removed from both single-line and multi-line <strong>indented strings</strong>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-string">&#x27;&#x27;  s  &#x27;&#x27;</span> <span class="hljs-operator">==</span> <span class="hljs-string">&quot;s  &quot;</span></code></pre>
+      </div><p>Usually, indented strings have multiple lines:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-string">&#x27;&#x27;
+  s
+&#x27;&#x27;</span> <span class="hljs-operator">==</span> <span class="hljs-string">&quot;s<span class="hljs-char escape_">\n</span>&quot;</span></code></pre>
+      </div><p>Though note that <a href="https://en.wikipedia.org/wiki/Tab_key#Tab_characters">tab characters</a> are <em>not</em> stripped:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-string">&#x27;&#x27;
+    s
+&#x27;&#x27;</span> <span class="hljs-operator">==</span>  <span class="hljs-string">&quot;    s<span class="hljs-char escape_">\n</span>&quot;</span></code></pre>
+      </div><p>This is documented in more detail in the <a href="https://nix.dev/manual/nix/2.24/language/syntax#string-literal">String section</a> of the Nix reference manual. Also see <a href="https://github.com/NixOS/nix/issues/7834">NixOS/nix#7834</a> and <a href="https://github.com/NixOS/nix/pull/9971">NixOS/nix#9971</a> for more information.</p>
+<h2 id="integer-precision">Integer precision</h2><p>Integer precision is limited to <a href="https://en.m.wikipedia.org/wiki/64-bit_computing">64-bit</a> in the original Nix interpreter.</p>
+<p>So the valid integer range is from -2**63 to 2**63-1 = from -9223372036854775808 to 9223372036854775807</p>
+<p>Integer overflow is not an error</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-meta prompt_">nix-repl&gt;</span> <span class="hljs-number">9223372036854775807</span> <span class="hljs-operator">+</span> <span class="hljs-number">1</span>
+<span class="hljs-operator">-</span><span class="hljs-number">9223372036854775808</span></code></pre>
+      </div><p>Invalid integer literals throw</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-meta prompt_">nix-repl&gt;</span> <span class="hljs-number">9223372036854775808</span>  
+<span class="hljs-params">error:</span> invalid integer &#x27;<span class="hljs-number">9223372036854775808</span>&#x27;</code></pre>
+      </div><h2 id="no-negative-number-literals">No negative number literals</h2><p>Negative numbers are parsed as &quot;zero minus positive&quot;</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">nix-instantiate --parse --expr '(-1)'
+(__sub 0 1)</code></pre>
+      </div><p>So this throws, because the positive number is out of range</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-meta prompt_">nix-repl&gt;</span> <span class="hljs-operator">-</span><span class="hljs-number">9223372036854775808</span>
+<span class="hljs-params">error:</span> invalid integer &#x27;<span class="hljs-number">9223372036854775808</span>&#x27;</code></pre>
+      </div><p>but this works</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-meta prompt_">nix-repl&gt;</span> <span class="hljs-operator">-</span><span class="hljs-number">9223372036854775807</span> <span class="hljs-operator">-</span> <span class="hljs-number">1</span>
+<span class="hljs-operator">-</span><span class="hljs-number">9223372036854775808</span></code></pre>
+      </div><h2 id="attribute-set-entries-with-a-name-that-evaluates-to-null-will-not-be-added-to-the-set">Attribute set entries with a name that evaluates to null will not be added to the set</h2><p>From <a href="https://nix.dev/manual/nix/2.24/language/syntax#attrs-literal">this</a> section of the Nix Reference Manual:</p>
+<blockquote>
+<p>In the special case where an attribute name inside of a set declaration evaluates to null (which is normally an error, as null cannot be coerced to a string), that attribute is simply not added to the set:</p>
+<p>{ ${if foo then &quot;bar&quot; else null} = true; }</p>
+<p>This will evaluate to {} if foo evaluates to false.</p>
+</blockquote>
+<p>The relevant source can be found <a href="https://github.com/NixOS/nix/blob/26c3fc11eada3fa7df0284190095868a947fefe2/src/libexpr/eval.cc#L1249-L1250">here</a>.</p>
+<p>This feature can be used to conditionally include or exclude attribute set entries, for example:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-meta prompt_">nix-repl&gt;</span> { ${<span class="hljs-keyword">if</span> <span class="hljs-literal">true</span> <span class="hljs-keyword">then</span> <span class="hljs-string">&quot;foo&quot;</span> <span class="hljs-keyword">else</span> <span class="hljs-literal">null</span>} <span class="hljs-operator">=</span> <span class="hljs-string">&quot;bar&quot;</span>; }      
+{ <span class="hljs-attr">foo</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;bar&quot;</span>; }
+
+<span class="hljs-meta prompt_">nix-repl&gt;</span> { ${<span class="hljs-keyword">if</span> <span class="hljs-literal">false</span> <span class="hljs-keyword">then</span> <span class="hljs-string">&quot;foo&quot;</span> <span class="hljs-keyword">else</span> <span class="hljs-literal">null</span>} <span class="hljs-operator">=</span> <span class="hljs-string">&quot;bar&quot;</span>; }
+{ }</code></pre>
+      </div><p>This might be used as an alternative to conditionally merging attribute sets using <code>//</code> like the following:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ <span class="hljs-attr">a</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;b&quot;</span>; } <span class="hljs-operator">//</span> (<span class="hljs-keyword">if</span> <span class="hljs-literal">true</span> <span class="hljs-keyword">then</span> { <span class="hljs-attr">foo</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;bar&quot;</span>; } <span class="hljs-keyword">else</span> { } )</code></pre>
+      </div><h2 id="hexadecimal-octal-and-binary">Hexadecimal, octal, and binary</h2><p>As of late 2024, Nix doesn&#39;t contain builtin support for parsing many number formats like hexadecimal, octal, and binary. It <em>does</em>, however, support the <a href="https://noogle.dev/f/builtins/fromTOML"><code>builtins.fromTOML</code></a> function, which <a href="https://github.com/NixOS/nix/issues/7578#issuecomment-1955985859">can be used</a> to parse these number formats.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-meta prompt_">nix-repl&gt;</span> (<span class="hljs-built_in">builtins.fromTOML</span> <span class="hljs-string">&quot;octal = 0o11&quot;</span>).octal
+<span class="hljs-number">9</span>
+
+<span class="hljs-meta prompt_">nix-repl&gt;</span> (<span class="hljs-built_in">builtins.fromTOML</span> <span class="hljs-string">&quot;binary = 0b1001&quot;</span>).binary
+<span class="hljs-number">9</span>
+
+<span class="hljs-meta prompt_">nix-repl&gt;</span> (<span class="hljs-built_in">builtins.fromTOML</span> <span class="hljs-string">&quot;hex = 0x09&quot;</span>).hex         
+<span class="hljs-number">9</span></code></pre>
+      </div><h2 id="mimicking-case-statements-with-attribute-sets">Mimicking case statements with attribute sets</h2><p>Nix doesn&#39;t include native support for case statements, however when dealing with string types it&#39;s possible to use some string interpolation behavior to achieve something similar to case statement behavior, as described in this <a href="https://discourse.nixos.org/t/case-statement-expr/27741/12">thread</a>.</p>
+<p>In the example from the thread, given some string argument <code>x</code>, the following code would place different values into a text file depending on it&#39;s value:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">environment.etc.<span class="hljs-string">&quot;just/for/test&quot;</span>.text <span class="hljs-operator">=</span> {
+  <span class="hljs-string">&quot;a&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;hello&quot;</span>;
+  <span class="hljs-string">&quot;b&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;hi&quot;</span>;
+  <span class="hljs-string">&quot;c&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ciao&quot;</span>;
+}.<span class="hljs-string">&quot;<span class="hljs-subst">${x}</span>&quot;</span>;</code></pre>
+      </div><p>So if <code>x</code> is set to the string <code>&quot;a&quot;</code> then the <code>just/for/test</code> file contents would be set to the string <code>&quot;hello&quot;</code>. The code above is the same in behavior to the following, more common, if-else-style construct:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">environment.etc.<span class="hljs-string">&quot;just/for/test&quot;</span>.text <span class="hljs-operator">=</span>
+  <span class="hljs-keyword">if</span> x <span class="hljs-operator">==</span> <span class="hljs-string">&quot;a&quot;</span> <span class="hljs-keyword">then</span>
+    <span class="hljs-string">&quot;hello&quot;</span>
+  <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> x <span class="hljs-operator">==</span> <span class="hljs-string">&quot;b&quot;</span> <span class="hljs-keyword">then</span>
+    <span class="hljs-string">&quot;hi&quot;</span>
+  <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> x <span class="hljs-operator">==</span> <span class="hljs-string">&quot;c&quot;</span> <span class="hljs-keyword">then</span>
+    <span class="hljs-string">&quot;ciao&quot;</span>
+  <span class="hljs-keyword">else</span>
+    <span class="hljs-built_in">abort</span> <span class="hljs-string">&quot;x is invalid&quot;</span>;</code></pre>
+      </div><p>There is an example in <code>coq</code> package code <a href="https://github.com/NixOS/nixpkgs/blob/5185539c51ba658e70b29e01c0c320a85f4e2098/pkgs/build-support/coq/extra-lib.nix#L98">here</a> where someone used this behavior to build a reusable function <code>switch</code>.</p>
+<h2 id="builtins-tostring-handling-of-true-and-false-is-inconsistent"><code>builtins.toString</code> handling of <code>true</code> and <code>false</code> is inconsistent</h2><div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-meta prompt_">nix-repl&gt;</span> <span class="hljs-built_in">builtins.toString</span> <span class="hljs-literal">true</span>
+<span class="hljs-string">&quot;1&quot;</span>
+
+<span class="hljs-meta prompt_">nix-repl&gt;</span> <span class="hljs-built_in">builtins.toString</span> <span class="hljs-literal">false</span>
+<span class="hljs-string">&quot;&quot;</span></code></pre>
+      </div><h2 id="nix-language-faq">Nix Language FAQ</h2><h3 id="q-what-is-the-shortest-id-function-definition">Q: What is the shortest <code>id</code> function definition?</h3><p>A: <code>x: x</code></p>
+<h3 id="q-why-not-x-x">Q: Why not <code>x:x</code>?</h3><p>A:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-meta prompt_">nix-repl&gt;</span> <span class="hljs-built_in">builtins.typeOf</span> (<span class="hljs-params">x:</span> x)
+<span class="hljs-string">&quot;lambda&quot;</span>
+<span class="hljs-meta prompt_">nix-repl&gt;</span> <span class="hljs-built_in">builtins.typeOf</span> (x:x)
+<span class="hljs-string">&quot;string&quot;</span> </code></pre>
+      </div><p>! <a href="https://github.com/NixOS/nix/issues/836">Can you figure out how can this happens before reading explanation?</a></p>
+<h3 id="q-can-nix-code-be-interpolated">Q: Can Nix code be interpolated?</h3><p>No, only attribute names can.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-meta prompt_">nix-repl&gt;</span> <span class="hljs-keyword">let</span> ${<span class="hljs-string">&quot;x&quot;</span>} <span class="hljs-operator">=</span> <span class="hljs-number">2</span>; <span class="hljs-keyword">in</span> x
+<span class="hljs-number">2</span>
+
+<span class="hljs-meta prompt_">nix-repl&gt;</span> <span class="hljs-keyword">with</span> { ${<span class="hljs-string">&quot;x&quot;</span>} <span class="hljs-operator">=</span> <span class="hljs-number">2</span>; }; x
+<span class="hljs-number">2</span>
+
+<span class="hljs-meta prompt_">nix-repl&gt;</span> <span class="hljs-keyword">let</span> x <span class="hljs-operator">=</span> <span class="hljs-number">1</span>; <span class="hljs-attr">y</span> <span class="hljs-operator">=</span> ${x}; <span class="hljs-keyword">in</span> y
+<span class="hljs-params">error:</span> syntax error, unexpected DOLLAR_CURLY, at (string):<span class="hljs-number">1</span>:<span class="hljs-number">16</span></code></pre>
+      </div><h3 id="q-can-it-be-eval-ed-from-string">Q: Can it be <code>eval</code>-ed from string?</h3><p>A: Yes, but it is not recommended as &quot;eval&quot; is generally regarded as an easy to abuse language feature. It is possible but only via the store (not as bad as &quot;import from derivation&quot;, but still not suitable for hot code paths):</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-meta prompt_">nix-repl&gt;</span> <span class="hljs-keyword">let</span> code <span class="hljs-operator">=</span> <span class="hljs-string">&quot;(x: x) &#x27;&#x27;id function was called&#x27;&#x27;&quot;</span>; <span class="hljs-keyword">in</span> <span class="hljs-built_in">import</span> (<span class="hljs-built_in">builtins.toFile</span> <span class="hljs-string">&quot;eval&quot;</span> code)
+<span class="hljs-string">&quot;id function was called&quot;</span></code></pre>
+      </div><h1 id="resources">Resources</h1><ul>
+<li><a href="https://md.darmstadt.ccc.de/xtNP7JuIQ5iNW1FjuhUccw#">A separately maintained list of Nix language quirks</a></li>
+</ul>
+<p><a href="category:Nix_Language" class="wikilink" title="Category:Nix Language">Category:Nix Language</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

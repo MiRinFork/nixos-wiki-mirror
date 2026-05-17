@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Security</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Security</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Security -->
+
+<h2 id="overview">Overview</h2><p>This page is a guide to securing NixOS. Topics like hardening, process isolation, virtualization, firewalls, SELinux, containers, sandboxes, encryption, VPNs, etc. are in scope.</p>
+<h2 id="core-nix-features">Core Nix features</h2><p>These are security elements that are core features of using Nix(OS).</p>
+<h3 id="effort-to-isolate-runtime-search-paths">Effort to isolate runtime search paths</h3><p>In general, there is an effort to avoid <a href="wikipedia:Rpath" class="wikilink" title="rpath">rpath</a> collisions across users <a href="https://github.com/NixOS/nix/commit/eba840c8a13b465ace90172ff76a0db2899ab11b">1</a>.</p>
+<h3 id="multi-user-installation">Multi-user installation</h3><p>NixOS is automatically installed in Multi-User mode. For standalone-Nix, the manual covers <a href="https://nixos.org/manual/nix/stable/#ssec-multi-user">multi-user installs</a>. This allows multiple users to have isolated store environments and to avoid them having access to root in order to install their personal applications (achieved by having build users which nix operations are delegated to).</p>
+<h3 id="data-integrity-and-authenticity">Data integrity and authenticity</h3><p>The core installation resources for Nix(OS) have <a href="wikipedia:SHA-2" class="wikilink" title="SHA256">SHA256</a> checksums which are <a href="wikipedia:GNU_Privacy_Guard" class="wikilink" title="GPG">GPG</a> signed by the <a href="https://nixos.org/download.html#nix-verify-installation">Nix team</a> for authenticity. Within the installation data are all the SHA256 checksums for packages that were available within Nixpkgs at build time.</p>
+<p>All packages which are pulled into your Nix system via Nixpkgs derivation builds are checked against SHA256 checksums which are already available on your local system (and should be traceable to the signed core Nix install materials).</p>
+<h3 id="obscurity-of-nix-store">Obscurity of Nix store</h3><p>In a vanilla NixOS system, the typical <a href="https://en.wikipedia.org/wiki/Filesystem_Hierarchy_Standard">Linux filesystem hierarchy</a> is, in large part, replaced with the Nix store&#39;s <a href="https://mirror.nixoscn.org/wiki/Security/User_Environment" class="wikilink" title="user environments">user environments</a>. This means that some malware which might rely on finding system tools in particular places might fail. This is a form of <a href="https://en.wikipedia.org/wiki/Security_through_obscurity">security through obscurity</a> and is only a minor layer of protection.</p>
+<h2 id="supported-by-nix">Supported by Nix</h2><p>These are features which are easily supported using Nix(OS).</p>
+<h3 id="encryption">Encryption</h3><p>These are features which can protect data on a system.</p>
+<h4 id="filesystem-encryption">Filesystem encryption</h4><p>NixOS has <a href="https://en.wikipedia.org/wiki/Linux_Unified_Key_Setup">LUKS</a> partition-level disk encryption support.</p>
+<ul>
+<li><a href="https://nixos.org/manual/nixos/unstable/index.html#sec-luks-file-systems">NixOS Manual - LUKS-Encrypted File Systems</a></li>
+<li><a href="https://0pointer.net/blog/authenticated-boot-and-disk-encryption-on-linux.html">Authenticated Boot and Disk Encryption on Linux</a></li>
+</ul>
+<h3 id="isolation">Isolation</h3><p>These are features which can limit a process or package&#39;s access to the host system.</p>
+<h4 id="flatpaks">Flatpaks</h4><p><a href="https://en.wikipedia.org/wiki/Flatpak">Flatpak</a>&#39;ed applications are <a href="https://docs.flatpak.org/en/latest/sandbox-permissions.html">sandboxed</a> and require explicit privilege declaration for most access outside their own path. NixOS includes <a href="https://nixos.org/manual/nixos/unstable/index.html#module-services-flatpak">support for Flatpak</a>. Note that, since Flatpak application dependencies are <a href="https://stackoverflow.com/questions/26217488/what-is-vendoring">bundled/vendored</a>, this introduces <a href="https://blogs.gentoo.org/mgorny/2021/02/19/the-modern-packagers-security-nightmare/">other security risks</a> for the application . Also, most application flatpaks <a href="https://flatkill.org/">do not make meaningful use of the sandbox</a>.</p>
+<h4 id="linux-containers">Linux Containers</h4><p>NixOS includes support for <a href="https://en.wikipedia.org/wiki/LXC">Linux Containers (LXC)</a>. Containers, by default, do not provide much security. They are, oversimplifying a lot, a <a href="https://en.wikipedia.org/wiki/Chroot">chroot</a> environment with some resource constraints (<a href="https://en.wikipedia.org/wiki/Cgroups">cgroups</a>). The root user in a container would also be root on the whole system though. To avoid this, you must use <em>unprivileged containers</em>. There are some complications to this. The end of <a href="https://blog.beardhatcode.be/2020/12/Declarative-Nixos-Containers.html">this post</a> covers them well in brief.</p>
+<h5 id="references">References</h5><ul>
+<li><a href="https://nixos.org/manual/nixos/unstable/index.html#ch-containers">NixOS Manual - Administration: Containers Chapter</a>.<ul>
+<li>The manual — notably — currently has no mention of using unprivileged containers.</li>
+</ul>
+</li>
+<li><a href="https://stgraber.org/2014/01/01/lxc-1-0-security-features/">LXC 1.0 Release, Security Features Coverage (user namespaces, unprivileged containers)</a></li>
+<li><a href="https://www.youtube.com/watch?v=J17rXQ5XkDE">Youtube - Red Hat: How containers use PID namespaces to provide process isolation</a></li>
+<li><a href="https://www.nginx.com/blog/what-are-namespaces-cgroups-how-do-they-work/">What Are Namespaces and cgroups, and How Do They Work?</a></li>
+<li><a href="https://www.toptal.com/linux/separation-anxiety-isolating-your-system-with-linux-namespaces">A Tutorial for Isolating Your System with Linux Namespaces (code-based fundamental examples)</a></li>
+</ul>
+<h4 id="docker-containers">Docker Containers</h4><p><a href="https://en.wikipedia.org/wiki/Docker_(software)">Docker</a> is a system for building and running platform-independent virtual containers. On Linux, it is implemented similarly to LXC. Nix integrates tools to create Docker images (the templates for making Docker containers), documented in the <a href="https://nixos.org/manual/nixpkgs/unstable/#sec-pkgs-dockerTools">Nixpkgs manual</a>. Docker containers work with <a href="https://docs.docker.com/engine/security/">namespacing controls</a> similar to unprivileged LXC containers by default.</p>
+<h4 id="virtual-machines">Virtual machines</h4><p><a href="https://en.wikipedia.org/wiki/Virtual_machine">Virtual machines</a> are generally one of the most robust tools available for process isolation. They come with <a href="https://www.brendangregg.com/blog/2017-11-29/aws-ec2-virtualization-2017.html">performance penalties</a> and resource overheads.</p>
+<p>NixOS includes support for hosting virtual machines. The Nix store of the host machine is shared read-only with guest machines, making them lighter-weight in terms of storage use than typical VMs. Guest VMs are easily built from Nix configurations.</p>
+<ul>
+<li><a href="https://github.com/NixOS/nixpkgs/blob/master/nixos/modules/virtualisation/qemu-vm.nix">qemu-vm.nix - Implementation of QEMU builds of NixOS machine configurations</a></li>
+<li><a href="https://github.com/firecracker-microvm/firecracker">Firecracker microVM</a> - packages <a href="https://search.nixos.org/packages?channel=unstable&amp;show=firecracker&amp;from=0&amp;size=30&amp;sort=relevance&amp;type=packages&amp;query=firecracker">available</a></li>
+<li><a href="https://github.com/astro/microvm.nix">microvm.nix</a> builds and runs NixOS on various hypervisors</li>
+</ul>
+<h5 id="test-machines">Test machines</h5><p>NixOS integrates support for building <a href="nixos:nixos-rebuild_build-vm" class="wikilink" title="test VMs">test VMs</a> to test configuration changes to your system.</p>
+<p>NixOS also uses VMs to continuously validate functionality of the system. <a href="https://nixos.org/manual/nixos/unstable/index.html#sec-writing-nixos-tests">NixOS Manual - Writing Tests Chapter</a> covers this.</p>
+<h5 id="references">References</h5><ul>
+<li><a href="http://blog.patapon.info/nixos-local-vm/">Updating NixOS local VMs</a> - Post demonstrating how to build and run a VM from a NixOS configuration and then update the configuration of the running VM on the fly.</li>
+<li><a href="https://archive.fosdem.org/2020/schedule/event/kernel_address_space_isolation/attachments/slides/3889/export/events/attachments/kernel_address_space_isolation/slides/3889/Address_Space_Isolation_in_the_Linux_Kernel.pdf">2020 IBM Presentation on Address Space Isolation in the Linux Kernel</a> - Containers within VMs are a norm for security in the cloud. Addressing ongoing work to improve isolation of containers and VMs.</li>
+<li><a href="https://googleprojectzero.blogspot.com/2021/06/an-epyc-escape-case-study-of-kvm.html">An EPYC escape: Case-study of a KVM breakout</a> - Detailing first known non-userspace vulnerability enabling guest-to-host breakout.</li>
+</ul>
+<h4 id="systemd-hardening">Systemd Hardening</h4><p>It is possible to increase the isolation of Systemd services by using hardening options. For example, adding <code>PrivateNetwork=yes</code> option in a Systemd unit removes access to the host network.</p>
+<p>For more information, please see <a href="https://mirror.nixoscn.org/wiki/Security/Systemd_Hardening" class="wikilink" title="Systemd_Hardening">Systemd_Hardening</a>.</p>
+<h3 id="networking">Networking</h3><p>These are features which improve system security in relation to the world outside of the system.</p>
+<h4 id="firewall">Firewall</h4><p>NixOS includes a simple stateful firewall. It blocks incoming connections and other unexpected packets and is enabled by default.</p>
+<ul>
+<li><a href="https://nixos.org/manual/nixos/unstable/index.html#sec-firewall">NixOS Manual - Networking Chapter: Firewall</a></li>
+<li><a href="https://nixos.org/manual/nixos/unstable/options.html#opt-networking.firewall.enable">NixOS Manual - Options: networking.firewall.enable</a></li>
+</ul>
+<h2 id="awaiting-nixos-support">Awaiting NixOS support</h2><p>This section covers important security technologies which still need full NixOS support.</p>
+<h3 id="secure-boot">Secure Boot</h3><p>Development of <a href="https://en.wikipedia.org/wiki/Unified_Extensible_Firmware_Interface#Secure_Boot">UEFI Secure Boot</a> support is <a href="https://github.com/NixOS/nixpkgs/issues/42127">in flight</a>. An experimental Secure Boot implementation is available in <a href="https://github.com/nix-community/lanzaboote">Lanzaboote</a>. <a href="https://mirror.nixoscn.org/wiki/Security/Limine" class="wikilink" title="Limine">Limine</a> bootloader also supports Secure Boot.</p>
+<h3 id="selinux">SELinux</h3><p>It is possible to use <a href="https://en.wikipedia.org/wiki/Security-Enhanced_Linux">Security-Enhanced Linux (SELinux)</a> in NixOS, but proper integration does not exist. This does not appear to have gotten much attention <a href="https://github.com/NixOS/rfcs/pull/41">since 2019</a>. However, there has been revived work in 2025 but there&#39;s no telling when things will land in NixOS.</p>
+<h3 id="apparmor">AppArmor</h3><p>As of April 2026, AppArmor is available for NixOS but also has <a href="https://discourse.nixos.org/t/apparmor-on-nixos-roadmap/57217">not yet been properly integrated</a>.</p>
+<h2 id="nix-official-references">Nix official references</h2><ul>
+<li><a href="https://nixos.org/manual/nix/stable/#ch-nix-security">Nix Manual - Security Chapter</a></li>
+</ul>
+<h2 id="see-also">See also</h2><h3 id="nixos">NixOS</h3><ul>
+<li><a href="https://mirror.nixoscn.org/wiki/Security/NixOS_Hardening" class="wikilink" title="NixOS Hardening">NixOS Hardening</a></li>
+<li><a href="https://christine.website/blog/paranoid-nixos-2021-07-18">Blog - Paranoid NixOS Setup</a></li>
+<li><a href="https://github.com/flyingcircusio/vulnix">vulnix</a> - Vulnerability (CVE) scanner for Nix/NixOS</li>
+</ul>
+<h3 id="projects-leveraging-nix-for-security">Projects leveraging Nix for security</h3><ul>
+<li><a href="https://spectrum-os.org/">Spectrum OS</a> - Nix based, Spectrum is a project that aims to create a computer operating system, based on the principle of security by compartmentalization, that has a lower barrier to entry and is easier to use and maintain than other such systems.</li>
+</ul>
+<h3 id="general-linux-hardening">General Linux hardening</h3><ul>
+<li><a href="https://github.com/trimstray/the-practical-linux-hardening-guide">The Practical Linux Hardening Guide</a></li>
+<li><a href="https://github.com/imthenachoman/How-To-Secure-A-Linux-Server">How To Secure A Linux Server</a> - An evolving how-to guide for securing a Linux server that, hopefully, also teaches you a little about security and why it matters.</li>
+<li><a href="https://github.com/CISOfy/lynis">lynis</a> - Security auditing tool for Linux, macOS, and UNIX-based systems. Assists with compliance testing (HIPAA/ISO27001/PCI DSS) and system hardening. Agentless, and installation optional.</li>
+<li><a href="https://github.com/dev-sec/linux-baseline">DevSec Linux Baseline</a> - InSpec profile to test Linux server security config</li>
+</ul>
+<h3 id="general-systems-hardening">General systems hardening</h3><ul>
+<li><a href="https://github.com/decalage2/awesome-security-hardening">awesome-security-hardening</a> - Collection of security hardening guides, tools and other resources.</li>
+</ul>
+<h3 id="supply-chain-security">Supply chain security</h3><ul>
+<li><a href="https://nixcademy.com/posts/secure-supply-chain-with-nix/">Demonstrably Secure Software Supply Chains with Nix</a>, Nixcademy</li>
+</ul>
+<p><a href="category:Guide" class="wikilink" title="Category:Guide">Category:Guide</a> <a href="category:NixOS" class="wikilink" title="Category:NixOS">Category:NixOS</a> <a href="category:Nix" class="wikilink" title="Category:Nix">Category:Nix</a> <a href="category:Security" class="wikilink" title="Category:Security">Category:Security</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

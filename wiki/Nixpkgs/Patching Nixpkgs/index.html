@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nixpkgs/Patching Nixpkgs</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/Nixpkgs">Nixpkgs</a><span aria-hidden="true"> / </span>Patching Nixpkgs</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Nixpkgs/Patching Nixpkgs -->
+
+<p>Sometimes it may be required to patch a copy of Nixpkgs directly, rather than use an overlay to patch an individual package. One scenario of where this might happen is if Nixpkgs doesn&#39;t contain a change you need, but you find some existing PR that has yet to be merged, and so want to leverage those changes prior to them being merged.</p>
+<p>There are many ways to patch Nixpkgs, each with its own advantages and disadvantages. We will go through the most popular ones:</p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Method</th>
+<th>IFD</th>
+<th>Requires Flakes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>applyPatch</td>
+<td>.patch files</td>
+<td>X</td>
+<td></td>
+</tr>
+<tr>
+<td>nixpkgs-patcher</td>
+<td>.patch files</td>
+<td>X</td>
+<td>X</td>
+</tr>
+<tr>
+<td>nix-patcher</td>
+<td>.patch files</td>
+<td></td>
+<td>X</td>
+</tr>
+<tr>
+<td>gh-cherry-pick</td>
+<td>git cherry-pick</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Nixtamal</td>
+<td>.patch files</td>
+<td>X</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>Most of the solutions work on the <code>.patch</code> files, but those have a huge disadvantage - they quickly go out of date and have to be constantly rebased. This is especially true for solutions that use Git to apply patches. Another disadvantage may be <a href="https://nixos.org/manual/nix/unstable/language/import-from-derivation">IFD</a>, which may result in <a href="https://nixcademy.com/posts/what-is-ifd-ups-and-downs/">performance and runtime issues</a>.</p>
+<h2 id="usage">Usage</h2><p>For the sake of example, let&#39;s say you are using the software package <a href="https://ghidra-sre.org/">Ghidra</a>, and the latest version available on Nixpkgs unstable is <a href="https://search.nixos.org/packages?channel=unstable&amp;from=0&amp;size=50&amp;sort=relevance&amp;type=packages&amp;query=ghidra">11.1.2</a>. You know that the Ghidra developers have recently released 11.2, and want to use it before it&#39;s in Nixpkgs. You could try to create an overlay and manually update the package, but maybe in the process, you realize it is not a trivial update. You may find there is already a pending PR to Nixpkgs with the updated version and changes you want, such as <a href="https://github.com/NixOS/nixpkgs/pull/344917">this PR</a>. If you didn&#39;t want to wait for that PR to be merged into Nixpkgs, you could apply the PR patch directly to your Nixpkgs instead. There are, of course, other reasons you may wish to use a patched Nixpkgs, and the method applies to any of those cases.</p>
+<p>To get your patch, you will usually need to find a list of commits from the desired PR and fetch them. Try to avoid fetching something like <a href="https://github.com/NixOS/nixpkgs/pull/344917.diff">https://github.com/NixOS/nixpkgs/pull/344917.diff</a>, as it can change if the PR is still open. If you are fetching from GitHub, don&#39;t forget to add <code>?full_index=1</code> at the end of the URL for better reproducibility.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># for https://github.com/NixOS/nixpkgs/pull/344917</span>
+pkgs.fetchpatch2 {
+  <span class="hljs-comment"># note the `.diff` at the end!</span>
+  <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://github.com/NixOS/nixpkgs/commit/55367b381af23045c93f7b85171db850e628ef7d.diff?full_index=1&quot;</span>;
+  <span class="hljs-attr">hash</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sha256-/XnEHRQahmHUNstgTVkQC+LGp7Z0wmf+qPVyKntgZG0=&quot;</span>;
+}</code></pre>
+      </div><p>Or you can also fetch a range, if you want to fetch multiple commits in one go</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">pkgs.fetchpatch2 {
+  <span class="hljs-comment"># 4c030cf is a parent of the first PR commit</span>
+  <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://github.com/NixOS/nixpkgs/compare/4c030cf309bffa9cd87336705e96ce941ce977d9...05071d58a87c832f6366fff6c8ec328cb28a2a66.diff?full_index=1&quot;</span>;
+  <span class="hljs-attr">hash</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sha256-gH8NHJ+i1snTN/ehFopQko8BfeO0PxQaFRCQCoLzVfg=&quot;</span>;
+}</code></pre>
+      </div><h3 id="using-applypatches-function">Using <a href="https://github.com/NixOS/nixpkgs/blob/f6e07eb0e1e42c38f8e0b6ffc221b7bf73bece4b/pkgs/build-support/trivial-builders/default.nix#L981"><code>applyPatches</code></a> function</h3><p><code>applyPatches</code> is a Nixpkgs function that applies a list of patches to a source directory. Internally, it just creates a new derivation via <code>stdenv.mkDerivation</code> and passes all of the patches to the usual <a href="https://github.com/NixOS/nixpkgs/blob/12c894cb74171bcec130756cc0f77720fca6587d/pkgs/stdenv/generic/setup.sh#L1371-L1404"><code>patchPhase</code></a>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-keyword">let</span>
+  <span class="hljs-comment"># to access the `applyPatches` function, you will need</span>
+  <span class="hljs-comment"># to import unpatched Nixpkgs first</span>
+  <span class="hljs-attr">pkgs</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> {
+    <span class="hljs-comment"># with flakes, you may also need to hardcode the system</span>
+    <span class="hljs-comment"># system = &quot;x86_64-linux&quot;;</span>
+  };
+  <span class="hljs-attr">nixpkgs-344917-drv</span> <span class="hljs-operator">=</span>
+    pkgs.applyPatches {
+      <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> pkgs.path;
+      <span class="hljs-attr">patches</span> <span class="hljs-operator">=</span> [
+        (pkgs.fetchpatch2 {
+          <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://github.com/NixOS/nixpkgs/compare/4c030cf309bffa9cd87336705e96ce941ce977d9...05071d58a87c832f6366fff6c8ec328cb28a2a66.diff?full_index=1&quot;</span>;
+          <span class="hljs-attr">hash</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sha256-gH8NHJ+i1snTN/ehFopQko8BfeO0PxQaFRCQCoLzVfg=&quot;</span>;
+        })
+      ];
+    };
+  <span class="hljs-attr">nixpkgs-344917</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> nixpkgs-<span class="hljs-number">34491</span>7-drv { <span class="hljs-keyword">inherit</span> (pkgs.stdenv) system; };
+<span class="hljs-keyword">in</span>
+nixpkgs-<span class="hljs-number">344917</span>.ghidra.version <span class="hljs-comment"># == 11.2 :tada:</span></code></pre>
+      </div><p>In the above example, we create a derivation with the patch applied, called <code>nixpkgs-344917-drv</code>. Pay attention, we take the <code>src</code> attribute to get back the original (unpatched) Nixpkgs. We then import that new derivation, which we assign to <code>nixpkgs-344917</code>. Now we can use <code>nixpkgs-344917</code> to access the Ghidra 11.2 package, as well as any other packages normally available in Nixpkgs.</p>
+<h3 id="using-nixpkgs-patcher">Using <a href="https://github.com/gepbird/nixpkgs-patcher">nixpkgs-patcher</a></h3><p>nixpkgs-patcher is a nice wrapper around <a href="https://wiki.nixos.org/wiki/Nixpkgs/Patching_Nixpkgs#Using_applyPatches_function"><code>applyPatches</code></a> which makes integration with NixOS flake&#39;s system definition very easy:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">inputs</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">nixpkgs.url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:NixOS/nixpkgs/nixos-unstable&quot;</span>;
+    <span class="hljs-attr">nixpkgs-patcher.url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:gepbird/nixpkgs-patcher&quot;</span>;
+
+    <span class="hljs-attr">nixpkgs-patch-ghidra-11-2</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://github.com/NixOS/nixpkgs/commit/55367b381af23045c93f7b85171db850e628ef7d.diff?full_index=1&quot;</span>;
+      <span class="hljs-attr">flake</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+    };
+    <span class="hljs-attr">nixpkgs-patch-ghidra-11-2-ret-sync</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://github.com/NixOS/nixpkgs/commit/05071d58a87c832f6366fff6c8ec328cb28a2a66.diff?full_index=1&quot;</span>;
+      <span class="hljs-attr">flake</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+    };
+  };
+
+  <span class="hljs-attr">outputs</span> <span class="hljs-operator">=</span>
+    { nixpkgs-patcher, ... }@<span class="hljs-params">inputs:</span>
+    {
+      <span class="hljs-attr">nixosConfigurations.yourHostname</span> <span class="hljs-operator">=</span> nixpkgs-patcher.lib.nixosSystem {
+        <span class="hljs-attr">modules</span> <span class="hljs-operator">=</span> [
+          <span class="hljs-symbol">./configuration.nix</span>
+          <span class="hljs-symbol">./hardware-configuration.nix</span>
+        ];
+        <span class="hljs-attr">specialArgs</span> <span class="hljs-operator">=</span> inputs;
+      };
+    };
+}</code></pre>
+      </div><h3 id="using-nix-patcher">Using <a href="https://github.com/katrinafyi/nix-patcher">nix-patcher</a></h3><p>nix-patcher is a script that automatically gets a list of patches from your <code>flake.nix</code> and applies them to your Nixpkgs fork sequentially.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># flake.nix</span>
+{
+  <span class="hljs-attr">inputs</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">nixpkgs</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:MyName/nixpkgs/patched-branch&quot;</span>;
+    <span class="hljs-attr">nixpkgs-upstream</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:NixOS/nixpkgs/nixos-unstable&quot;</span>;
+
+    <span class="hljs-attr">nixpkgs-patch-10</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://github.com/NixOS/nixpkgs/commit/55367b381af23045c93f7b85171db850e628ef7d.diff?full_index=1&quot;</span>;
+      <span class="hljs-attr">flake</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+    };
+    <span class="hljs-attr">nixpkgs-patch-20</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://github.com/NixOS/nixpkgs/commit/05071d58a87c832f6366fff6c8ec328cb28a2a66.diff?full_index=1&quot;</span>;
+      <span class="hljs-attr">flake</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+    };
+  };
+}</code></pre>
+      </div><p>nix-patcher will notice the special &quot;-upstream&quot; and &quot;-patch-&quot; suffixes and match these with &quot;nixpkgs-upstream&quot;. When run, the repo and branch to update will be taken from the &quot;nixpkgs&quot; inputs. The upstream, patches, and fork inputs are linked together by their common prefix (here, &quot;nixpkgs&quot;).</p>
+<h3 id="using-gh-cherry-pick">Using <a href="https://github.com/PerchunPak/gh-cherry-pick">gh-cherry-pick</a></h3><p>gh-cherry-pick interacts directly with the GitHub API to cherry-pick or merge branches. This tool is unique in that it doesn&#39;t depend on or use Nix; it is a generic script that fits perfectly for our use case.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-comment"># This tool requires a classic token with `repo` and `workflow` permissions</span>
+<span class="hljs-comment"># or a fine-grained token with `contents` and `workflows` permissions</span>
+GITHUB_TOKEN=ghp_... gh-cherry-pick \
+  --target MyOrg/nixpkgs@patched \
+  `: <span class="hljs-comment"># cherry-pick these commits` \</span>
+  NixOS/nixpkgs/3f5ba52cc4701bf341457dfe5f6cb58e0cbb7f83 \
+  NixOS/nixpkgs/49ba75edefc8dc4fee45482f77a280ddd7121797 \
+  `: <span class="hljs-comment"># or merge the entire branch!` \</span>
+  Someone/nixpkgs@pr-branch</code></pre>
+      </div><p>Very similar to <a href="https://wiki.nixos.org/wiki/Nixpkgs/Patching_Nixpkgs#Using_nix-patcher">nix-patcher</a>, it maintains a fork of Nixpkgs and applies the patches on it sequentially. The main difference is that it doesn&#39;t operate on patch files, but runs <a href="https://git-scm.com/docs/git-cherry-pick"><code>git cherry-pick</code></a> directly through GitHub API. This is a huge advantage, since Git can automatically rebase commits instead of forcing you to do that.</p>
+<h3 id="using-nixtamal">Using <a href="https://nixtamal.toast.al/">Nixtamal</a></h3><p>Nixtamal uses both <code>fetchpatch2</code> &amp; <code>applyPatches</code> under the hood, but lets users declare the remote or local patches in its <code>manifest.kdl</code> to be locked to any input — including Nixpkgs.</p>
+<div class="code-container">
+        
+        <pre><code class="language-kdl hljs">version &quot;1.0.0&quot;
+patches {
+    tzpfms-module &quot;../patch/tzpfms-module.patch&quot;
+    movim-0_33_1 &quot;https://patch-diff.githubusercontent.com/raw/NixOS/nixpkgs/pull/513278.patch&quot;
+}
+inputs {
+    nixpkgs {
+        archive {
+            url &quot;https://github.com/NixOS/nixpkgs/archive/{{fresh_value}}.tar.gz&quot;
+        }
+        hash algorithm=SHA256
+        fresh-cmd {
+            $ git ls-remote &quot;https://github.com/NixOS/nixpkgs.git&quot; --branches nixos-25.11
+            | cut -f1
+        }
+        patches tzpfms-module movim-0_33_1
+    }
+}</code></pre>
+      </div><p>After patches are added, the user must relock:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nixtamal lock nixpkgs</span>
+INPUTS
+✓ nixpkgs (Archive)                        Fresh
+
+PATCHES
+✓ movim-0_33_1                        Prefetched
+⌂ tzpfms-module                      Local patch</code></pre>
+      </div><p>Then the user can seemlessly access their patched Nixpkgs:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix repl --file nix/tamal</span>
+Nix 2.34.6
+Type :? for help.
+Loading installable &#x27;&#x27;...
+Added 1 variables.
+nixpkgs
+<span class="hljs-meta prompt_">nix-repl&gt; </span><span class="language-bash">pkgs = import nixpkgs { }</span>
+<span class="hljs-meta prompt_">
+nix-repl&gt; </span><span class="language-bash">:p pkgs.movim.version</span> 
+0.33.1</code></pre>
+      </div><h2 id="resources">Resources</h2><p>The following are resources that go into more depth on this topic.</p>
+<ul>
+<li><a href="https://ertt.ca/nix/patch-nixpkgs/">Patching <nixpkgs></a></li>
+<li><a href="https://discourse.nixos.org/t/patch-nixpkgs-using-cherry-picks-without-local-clone/76925">gh-cherry-pick announcement (and discussion about other tools)</a></li>
+</ul>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

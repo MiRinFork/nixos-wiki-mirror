@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PlayStation 2</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / PlayStation 2</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: PlayStation 2 -->
+
+<p>With 155 million sold, the PS2 was the best-selling gaming console ever. Home-brew development is still going on, and many games recover online gaming capability since developers are rewriting the game server. A list of PlayStation 2 Online Games is available <a href="https://docs.google.com/spreadsheets/d/1bbxOGm4dPxZ4Vbzyu3XxBnZmuPx3Ue-cPqBeTxtnvkQ">here</a>.</p>
+<h1 id="emulation">Emulation</h1><p>This section explains how to run Playstation 2 games on NixOS.</p>
+<h2 id="pcsx2">PCSX2</h2><p>You need a legal copy of your ps2 bios. There are many ways to do it, so I will just describe an easy but slow one using uLaunchELF:</p>
+<p><code>1/ get latest ps2ident from </code><a href="https://github.com/ps2homebrew/PS2Ident/releases/tag/stable"><code>https://github.com/ps2homebrew/PS2Ident/releases/tag/stable</code></a><code> </code><br><code>2/ extract somewhere on an USB mass storage</code><br><code>3/ launch it from uLaunchELF (mass:) , then select USB as save device</code><br><code>4/ waiiiiiiiiiiiit. ( slow USB 1, notice progress bars )</code><br><code>5/ copy files in the right pcsx2 directory ( by default /home/</code><username><code>/.config/PCSX2/bios )</code></p>
+<p>You can also explore the bios file using romdirfs.</p>
+<h1 id="development">Development</h1><p>If you want to develop for the PlayStation 2 on NixOS you&#39;ll probably want to use the Open Source PS2SDK . The section below explains how to bootstrap the toolchain in order to have a working development environment.</p>
+<h2 id="building-the-open-source-ps2sdk-on-nixos">Building the open source PS2SDK on NixOS</h2><p>You can use the following nix-shell script to build the open source PS2SDK through <a href="https://github.com/ps2dev/ps2dev">ps2dev</a>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs <span class="hljs-operator">?</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> {} }:
+<span class="hljs-keyword">let</span> fhs <span class="hljs-operator">=</span> pkgs.buildFHSUserEnv {
+  <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ps2dev&quot;</span>;
+  <span class="hljs-attr">targetPkgs</span> <span class="hljs-operator">=</span> <span class="hljs-params">pkgs:</span> (<span class="hljs-keyword">with</span> pkgs; [
+    autoconf
+    automake
+    libtool
+    gnumake
+    clang
+    clang-tools
+    gcc
+    wget
+    git
+    patch
+    texinfo
+    bash
+    file
+    bison
+    flex
+    gettext
+    gsl
+    gnum4
+    gmp.dev
+    gmp.out
+    mpfr.out
+    mpfr.dev
+    libmpc
+    cmake
+    zlib.dev
+    zlib.out
+  ]);
+  <span class="hljs-attr">runScript</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;bash&quot;</span>;
+};
+<span class="hljs-keyword">in</span> pkgs.stdenv.mkDerivation {
+  <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ps2dev-shell&quot;</span>;
+  <span class="hljs-attr">nativeBuildInputs</span> <span class="hljs-operator">=</span> [ fhs ];
+  <span class="hljs-attr">hardeningDisable</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;format&quot;</span> ];
+  <span class="hljs-attr">shellHook</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    # or whatever you want
+    export PS2DEV=$HOME/ps2
+    mkdir -p $PS2DEV
+    chown -R $USER: $PS2DEV
+
+    # setup login env
+    export PS2SDK=$PS2DEV/ps2sdk
+    export PATH=$PATH:$PS2DEV/bin:$PS2DEV/ee/bin:$PS2DEV/iop/bin:$PS2DEV/dvp/bin:$PS2SDK/bin
+    export CMAKE_INSTALL_PREFIX=$PS2DEV
+    exec ps2dev
+    &#x27;&#x27;</span>;
+}</code></pre>
+      </div><p>You will have to run this shell each time you want to enter in an environment with the SDK tools available or, alternatively, re-export those environment variables in the shell of your liking:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-comment"># or whatever you want</span>
+<span class="hljs-built_in">export</span> PS2DEV=<span class="hljs-variable">$HOME</span>/ps2
+<span class="hljs-built_in">export</span> PS2SDK=<span class="hljs-variable">$PS2DEV</span>/ps2sdk
+<span class="hljs-built_in">export</span> PATH=<span class="hljs-variable">$PATH</span>:<span class="hljs-variable">$PS2DEV</span>/bin:<span class="hljs-variable">$PS2DEV</span>/ee/bin:<span class="hljs-variable">$PS2DEV</span>/iop/bin:<span class="hljs-variable">$PS2DEV</span>/dvp/bin:<span class="hljs-variable">$PS2SDK</span>/bin</code></pre>
+      </div><h1 id="playstation-2-expansion-bay">PlayStation 2 Expansion Bay</h1><p>Read more about it: <a href="https://en.wikipedia.org/wiki/PlayStation_2_Expansion_Bay">https://en.wikipedia.org/wiki/PlayStation_2_Expansion_Bay</a> Only genuine Sony adapter offers network capability, you can upgrade them to sata thanks to a SATA mod kit from bitfunx or maxdiypower. On slim model, you can find kit too, but you will need to solder on the motherboard.</p>
+<h2 id="hdd-partitioning">HDD Partitioning</h2><p>Playstation 2 use PFS filesystem and APA partitions see <a href="https://master.dl.sourceforge.net/project/kernelloader/Sony%20Linux%20Toolkit/Package%20Update%20Files/apa/libhdd_ref.pdf?viasf=1">libHdd Reference Manual</a> for more information. You could use pfsshell on PC to create APA partition and format to PFS. pfsshell&#39;s author advises you to not use it as root.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-comment"># chown myuser /dev/sdb</span>
+
+$ pfsshell 
+pfsshell <span class="hljs-keyword">for</span> POSIX systems
+https://github.com/uyjulian/pfsshell
+
+This program uses pfs, apa, iomanX, 
+code from ps2sdk (https://github.com/ps2dev/ps2sdk)
+
+Type <span class="hljs-string">&quot;help&quot;</span> <span class="hljs-keyword">for</span> a list of commands.
+
+&gt; device /dev/sdb
+hdd: PS2 APA Driver v2.5 (c) 2003 Vector
+hdd: max open = 1, 3 buffers
+hdd: 07:13:40 02/03/2020
+hdd: disk0: 0x06fccf2f sectors, max 0x00200000
+hdd: checking <span class="hljs-built_in">log</span>...
+hdd: drive status 0, format version 00000002
+hdd: version 0000 driver start.
+pfs Playstation Filesystem Driver v2.2
+ps2fs: (c) 2003 Sjeep, Vector and Florin Sasu
+pfs Max mount: 1, Max open: 1, Number of buffers: 10
+pfs version 0000 driver start.
+<span class="hljs-comment"># initialize yes</span>
+<span class="hljs-comment"># ls</span>
+0x0001   128MB __mbr
+0x0100   128MB __net
+0x0100   256MB __system
+0x0100   512MB __sysconf
+0x0100  1024MB __common</code></pre>
+      </div><h3 id="install-wlauncher">install wLauncher</h3><p>In order to be able to launch unofficial software, you can:</p>
+<ul>
+<li>launch a dvd with <a href="https://cturt.github.io/freedvdboot.html">FreeDVDBoot</a></li>
+<li>have a modchip</li>
+<li>boot with a FMCB installed memory card</li>
+<li>boot on HDD with an elf launcher like wLauncher or <a href="https://github.com/parrado/SoftDev2">SoftDev2</a></li>
+</ul>
+<p>Extract <a href="https://web.archive.org/web/20221210004709/https://www.ps2-home.com/forum/download/file.php?id=15758&amp;sid=f956d2accefb993288a6791c7c85a5c0">this archive</a> (wLE_kHn_20200810.7z md5:430af5615895736d96b4f7156e92b2b0 <a href="https://www.ps2-home.com/forum/viewtopic.php?t=5128">dl source</a>) then call hdl_dump:</p>
+<p><code>$ hdl_dump initialize /dev/sdb MBR.KELF</code></p>
+<h3 id="install-fhdb-free-hdboot">install FHDB (Free HDBoot)</h3><p>Get FMCB installer from official website: <a href="https://sites.google.com/view/ysai187/home/projects/fmcbfhdb">https://sites.google.com/view/ysai187/home/projects/fmcbfhdb</a></p>
+<p>You should be able to launch it following the instruction there.</p>
+<h3 id="install-games">Install games</h3><p>Games doesn&#39;t use PFS but HDLoader partition so we can&#39;t rely on pfsshell to install them. Use hdl_dump (see hdl_dump help):</p>
+<p><code> $ hdl_dump install /dev/sdb Final\ Fantasy\ X\ </code>$<code>France</code>$<code>.iso</code></p>
+<h2 id="network">Network</h2><h3 id="samba">Samba</h3><p>Works fine - example soon.</p>
+<h3 id="ftp-transfer">FTP transfer</h3><p>A very slow solution ( ~ 500KB/s ).</p>
+<ul>
+<li>PC side (client):</li>
+</ul>
+<p>PS2 doesn&#39;t support TLS, use plain FTP. (tested with filezilla)</p>
+<ul>
+<li>PS2 side (server):</li>
+</ul>
+<p>Launch ps2net. You need to activate hdd (exploring it in uLaunchELF for example) before ps2net to share it.</p>
+<p><a href="category:Gaming" class="wikilink" title="Category:Gaming">Category:Gaming</a> <a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="category:Hardware" class="wikilink" title="Category:Hardware">Category:Hardware</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

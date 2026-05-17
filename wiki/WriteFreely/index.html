@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WriteFreely</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / WriteFreely</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: WriteFreely -->
+
+<p><a href="https://writefreely.org/">WriteFreely</a> is a blogging platform with support for ActivityPub and is available in NixOS starting with release 22.11.</p>
+<h2 id="setup">Setup</h2><p>To create your WriteFreely instance, enable the option .</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">services.writefreely</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-comment"># Create a WriteFreely instance.</span>
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+    <span class="hljs-comment"># Create a WriteFreely admin account.</span>
+    <span class="hljs-attr">admin.name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;my-username&quot;</span>;
+    
+    <span class="hljs-comment"># The public host name to serve.</span>
+    <span class="hljs-attr">host</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;blog.example.com&quot;</span>;
+  };
+}</code></pre>
+      </div><p>For more specific configuration, see the following sections.</p>
+<h3 id="admin-account">Admin Account</h3><p>WriteFreely requires an admin account be created to access the web UI. This can be set using the options under .</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">services.writefreely</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+    <span class="hljs-attr">admin</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;my-username&quot;</span>;
+      <span class="hljs-comment"># If not specified, a default password of &quot;nixos&quot; will be used. Your password can be</span>
+      <span class="hljs-comment"># updated using the web interface.</span>
+      <span class="hljs-attr">initialPasswordFile</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/path/to/password.txt&quot;</span>;
+    };
+  };
+}</code></pre>
+      </div><h3 id="database">Database</h3><p>WriteFreely supports multiple database engines. The NixOS module lets you select which you would like to use and enables easy provisioning of local databases. See the options under .</p>
+<h4 id="sqlite">SQLite</h4><p>The default database is SQLite. This can be configured with the following options.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">services.writefreely</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+    <span class="hljs-attr">database</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-comment"># This is the default database type.</span>
+      <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sqlite3&quot;</span>;
+
+      <span class="hljs-comment"># This is the file name of the SQLite database, relative to the</span>
+      <span class="hljs-comment"># stateDir (default: /var/lib/writefreely).</span>
+      <span class="hljs-attr">filename</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;writefreely.db&quot;</span>;
+
+      <span class="hljs-comment"># The name of the database to create in SQLite.</span>
+      <span class="hljs-attr">database</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;writefreely&quot;</span>;
+    };
+  };
+}</code></pre>
+      </div><h4 id="mysql">MySQL</h4><p>You can choose to use a <a href="https://mirror.nixoscn.org/wiki/WriteFreely/Mysql" class="wikilink" title="MySQL">MySQL</a> database instead of SQLite.</p>
+<h5 id="local-mysql">Local MySQL</h5><p>To create a local MySQL database, see the following example.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">services.writefreely</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+    <span class="hljs-attr">database</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-comment"># Use the MySQL database engine.</span>
+      <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;mysql&quot;</span>;
+
+      <span class="hljs-comment"># Run MySQL locally.</span>
+      <span class="hljs-attr">createLocally</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+      <span class="hljs-comment"># Set a password for the database so WriteFreely can access it.</span>
+      <span class="hljs-attr">passwordFile</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/path/to/password.txt&quot;</span>;
+    };
+  };
+}</code></pre>
+      </div><h5 id="remote-mysql">Remote MySQL</h5><p>To use a remote MySQL database, see the following example.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">services.writefreely</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+    <span class="hljs-attr">database</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-comment"># Use the MySQL database engine.</span>
+      <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;mysql&quot;</span>;
+
+      <span class="hljs-comment"># The name of the database to store data in.</span>
+      <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;writefreely&quot;</span>;
+      <span class="hljs-comment"># The database user to connect as.</span>
+      <span class="hljs-attr">user</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;writefreely&quot;</span>;
+      <span class="hljs-comment"># The database host to connect to.</span>
+      <span class="hljs-attr">host</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;10.0.0.1&quot;</span>;
+      <span class="hljs-comment"># The port to connect to the database on.</span>
+      <span class="hljs-attr">port</span> <span class="hljs-operator">=</span> <span class="hljs-number">3306</span>;
+
+      <span class="hljs-comment"># Set a password for the database so WriteFreely can access it.</span>
+      <span class="hljs-attr">passwordFile</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/path/to/password.txt&quot;</span>;
+    };
+  };
+}</code></pre>
+      </div><h3 id="nginx">Nginx</h3><p><a href="https://mirror.nixoscn.org/wiki/WriteFreely/Nginx" class="wikilink" title="Nginx">Nginx</a> can be used as a reverse proxy for your WriteFreely instance. This can be configured with the options under .</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">services.writefreely</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+    <span class="hljs-attr">nginx</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-comment"># Enable Nginx and configure it to serve WriteFreely.</span>
+      <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+      <span class="hljs-comment"># You can force users to connect with HTTPS.</span>
+      <span class="hljs-attr">forceSSL</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    };
+  };
+}</code></pre>
+      </div><h3 id="acme">ACME</h3><p>Automatic SSL certificates can be retrieved using <a href="https://mirror.nixoscn.org/wiki/WriteFreely/ACME" class="wikilink" title="ACME">ACME</a>. When used with Nginx, the certificates will be managed by NixOS&#39;s default ACME configuration. When <strong>not</strong> using Nginx, WriteFreely will manage certificates itself.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">services.writefreely</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+    <span class="hljs-attr">acme</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-comment"># Automatically fetch and configure SSL certs.</span>
+      <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    };
+  };
+}</code></pre>
+      </div><h3 id="settings">Settings</h3><p>Settings for WriteFreely&#39;s configuration file <code>config.ini</code> can be set using the option . See the <a href="https://writefreely.org/docs/latest/admin/config">WriteFreely documentation</a> for a list of settings.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">services.writefreely</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+    <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">server</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">port</span> <span class="hljs-operator">=</span> <span class="hljs-number">8080</span>;
+      };
+    };
+  };
+}</code></pre>
+      </div><p><a href="category:ActivityPub" class="wikilink" title="Category:ActivityPub">Category:ActivityPub</a> <a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="category:Web_Applications" class="wikilink" title="Category:Web Applications">Category:Web Applications</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

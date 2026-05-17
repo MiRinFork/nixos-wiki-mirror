@@ -1,0 +1,542 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Electric guitar interface setup</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Electric guitar interface setup</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Electric guitar interface setup -->
+
+<h1 id="electric-guitar-interface-setup">Electric guitar interface setup</h1><p>This guide covers setting up an <strong>electric guitar</strong> with NixOS to achieve professional, low-latency audio processing. It targets live playing with round-trip latency (RTL) under 6 ms using the modern PipeWire/JACK stack.</p>
+<p>The digital signal chain for a guitar consists of:</p>
+<ol>
+<li><strong>Instrument-level signal</strong> from Hi-Z pickups.</li>
+<li><strong>Analog-to-Digital conversion</strong> via an external audio interface.</li>
+<li><strong>Real-time processing</strong> on NixOS using a low-latency kernel and specialized software.</li>
+</ol>
+<h2 id="installation">Installation</h2><h3 id="system-configuration">System configuration</h3><p>Add the following to your <code>/etc/nixos/configuration.nix</code>. This configuration is optimized for high-performance CPUs like the AMD Ryzen 7 9700X (Zen 5 architecture).</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs, ... }:
+
+{
+  <span class="hljs-comment"># 1. Sound Server: PipeWire with JACK/PulseAudio support</span>
+  <span class="hljs-attr">services.pipewire</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">alsa.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">alsa.support32Bit</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; <span class="hljs-comment"># Required for yabridge/wine VST bridging</span>
+    <span class="hljs-attr">pulse.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">jack.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">wireplumber.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    
+    <span class="hljs-comment"># Global low-latency defaults for native JACK clients</span>
+    extraConfig.pipewire.<span class="hljs-string">&quot;92-low-latency&quot;</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-string">&quot;context.properties&quot;</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-string">&quot;default.clock.rate&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-number">48000</span>;  <span class="hljs-comment"># Fixed rate avoids resampling latency</span>
+        <span class="hljs-string">&quot;default.clock.quantum&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-number">128</span>;      <span class="hljs-comment"># ~5ms latency at 48kHz</span>
+        <span class="hljs-string">&quot;default.clock.min-quantum&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-number">64</span>;   <span class="hljs-comment"># ~2.5ms latency at 48kHz</span>
+        <span class="hljs-string">&quot;default.clock.max-quantum&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-number">512</span>;
+      };
+    };
+
+    <span class="hljs-comment"># Crucial: Match low-latency for PulseAudio clients (browsers, Steam/Rocksmith)</span>
+    extraConfig.pipewire-pulse.<span class="hljs-string">&quot;92-low-latency&quot;</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-string">&quot;pulse.properties&quot;</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-string">&quot;pulse.min.req&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;64/48000&quot;</span>;    <span class="hljs-comment"># Start with 64, not 32, for stability</span>
+        <span class="hljs-string">&quot;pulse.default.req&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;64/48000&quot;</span>;
+        <span class="hljs-string">&quot;pulse.max.req&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;128/48000&quot;</span>;
+      };
+    };
+  };
+
+  <span class="hljs-comment"># 2. Real-time Scheduling</span>
+  <span class="hljs-comment"># RTKit handles real-time privileges via D-Bus/Polkit.</span>
+  <span class="hljs-attr">security.rtkit.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  
+  <span class="hljs-comment"># Critical: Allow unlimited memlock for real-time audio buffers</span>
+  <span class="hljs-attr">security.pam.loginLimits</span> <span class="hljs-operator">=</span> [
+    { <span class="hljs-attr">domain</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;@audio&quot;</span>; <span class="hljs-attr">item</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;memlock&quot;</span>; <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;-&quot;</span>; <span class="hljs-attr">value</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;unlimited&quot;</span>; }
+    { <span class="hljs-attr">domain</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;@audio&quot;</span>; <span class="hljs-attr">item</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;rtprio&quot;</span>; <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;-&quot;</span>; <span class="hljs-attr">value</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;95&quot;</span>; }
+  ];
+  
+  <span class="hljs-attr">users.users.yourname.extraGroups</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;audio&quot;</span> ]; <span class="hljs-comment"># Replace &#x27;yourname&#x27; with your username</span>
+
+  <span class="hljs-comment"># 3. Kernel and Performance Tweaks</span>
+  <span class="hljs-attr">boot.kernelPackages</span> <span class="hljs-operator">=</span> pkgs.linuxPackages_zen; 
+  <span class="hljs-attr">boot.kernelParams</span> <span class="hljs-operator">=</span> [ 
+    <span class="hljs-string">&quot;threadirqs&quot;</span>
+    <span class="hljs-string">&quot;preempt=full&quot;</span>              <span class="hljs-comment"># Optional: add if experiencing Xruns</span>
+    <span class="hljs-string">&quot;amd_pstate=passive&quot;</span>        <span class="hljs-comment"># Zen 4/5: passive + performance governor = stable freq</span>
+    <span class="hljs-comment"># For Intel or older AMD: remove amd_pstate or use &quot;intel_pstate=active&quot;</span>
+    <span class="hljs-string">&quot;usbcore.autosuspend=-1&quot;</span>    <span class="hljs-comment"># Prevent USB audio interface sleep</span>
+  ];
+
+  <span class="hljs-attr">powerManagement.cpuFreqGovernor</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;performance&quot;</span>;
+  
+  <span class="hljs-comment"># GameMode can elevate priorities for real-time audio applications</span>
+  <span class="hljs-attr">programs.gamemode.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+  <span class="hljs-comment"># 4. Plugin Search Paths (Crucial for NixOS DAWs)</span>
+  <span class="hljs-comment"># Use sessionVariables for GUI apps launched from DE menu</span>
+  <span class="hljs-attr">environment.sessionVariables</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">let</span>
+    <span class="hljs-attr">makePluginPath</span> <span class="hljs-operator">=</span> <span class="hljs-params">format:</span>
+      (pkgs.lib.makeSearchPath format [
+        <span class="hljs-string">&quot;$HOME/.nix-profile/lib&quot;</span>
+        <span class="hljs-string">&quot;/run/current-system/sw/lib&quot;</span>
+        <span class="hljs-string">&quot;/etc/profiles/per-user/$USER/lib&quot;</span>
+      ]) <span class="hljs-operator">+</span> <span class="hljs-string">&quot;:$HOME/.<span class="hljs-subst">${format}</span>&quot;</span>;
+  <span class="hljs-keyword">in</span> {
+    <span class="hljs-attr">LV2_PATH</span> <span class="hljs-operator">=</span> makePluginPath <span class="hljs-string">&quot;lv2&quot;</span>;
+    <span class="hljs-attr">VST3_PATH</span> <span class="hljs-operator">=</span> makePluginPath <span class="hljs-string">&quot;vst3&quot;</span>;
+    <span class="hljs-attr">CLAP_PATH</span> <span class="hljs-operator">=</span> makePluginPath <span class="hljs-string">&quot;clap&quot;</span>;  <span class="hljs-comment"># Modern plugin format, supported by LSP/Chow</span>
+  };
+
+  <span class="hljs-comment"># 5. Essential Packages</span>
+  <span class="hljs-attr">nixpkgs.config.allowUnfree</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; <span class="hljs-comment"># Required for REAPER, Tonelib, etc.</span>
+  <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+    <span class="hljs-comment"># --- Utilities &amp; Routing ---</span>
+    qpwgraph            <span class="hljs-comment"># Visual patchbay for PipeWire</span>
+    pavucontrol         <span class="hljs-comment"># Profile selection (Pro Audio mode)</span>
+    pw-top              <span class="hljs-comment"># Real-time CPU usage per audio node</span>
+    pw-cli              <span class="hljs-comment"># Modern alternative to pw-metadata</span>
+    cpupower            <span class="hljs-comment"># CPU frequency scaling controls</span>
+    alsa-scarlett-gui   <span class="hljs-comment"># Hardware mixer for Focusrite Scarlett (may require firmware)</span>
+
+    <span class="hljs-comment"># --- DAWs ---</span>
+    ardour
+    reaper
+
+    <span class="hljs-comment"># --- Plugin Hosts ---</span>
+    carla               <span class="hljs-comment"># Modular plugin host / pedalboard, supports Windows VST via yabridge</span>
+
+    <span class="hljs-comment"># --- Standalone Guitar Processors ---</span>
+    guitarix
+
+    <span class="hljs-comment"># --- Plugins (LV2/CLAP) ---</span>
+    neural-amp-modeler-lv2  <span class="hljs-comment"># NAM: loads .nam files from https://tonehunt.org</span>
+    lsp-plugins             <span class="hljs-comment"># Includes latency meter, compressors, IR loader</span>
+    calf
+    dragonfly-reverb
+    gxplugins-lv2
+    kapitonov-plugins-pack  <span class="hljs-comment"># Profile-based amp models (KPP)</span>
+    chow-centaur            <span class="hljs-comment"># Klon Centaur emulation</span>
+    chow-phaser
+
+    <span class="hljs-comment"># --- Practice &amp; Learning ---</span>
+    tuxguitar
+    hydrogen
+
+    <span class="hljs-comment"># --- Windows VST Compatibility ---</span>
+    yabridge
+    yabridgectl
+    wineWow64Packages.stable  <span class="hljs-comment"># Use wineWow64Packages, as wineWowPackages is deprecated</span>
+  ];
+}</code></pre>
+      </div><h2 id="configuration">Configuration</h2><h3 id="applying-changes">Applying changes</h3><div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">sudo</span> nixos-rebuild switch
+
+<span class="hljs-comment"># Apply PipeWire configuration changes (required after rebuild):</span>
+systemctl --user restart pipewire pipewire-pulse wireplumber</code></pre>
+      </div><h3 id="pro-audio-profile">Pro audio profile</h3><p>To achieve minimal latency, you must bypass standard software mixing:</p>
+<ol>
+<li>Open <code>pavucontrol</code>.</li>
+<li>Go to the <strong>Configuration</strong> tab.</li>
+<li>Set your interface profile to <strong>Pro Audio</strong>.</li>
+</ol>
+<p>If the &quot;Pro Audio&quot; profile is missing, ensure <code>pipewire-alsa</code> is installed and restart PipeWire. This profile disables software mixing and enables hardware-exclusive mode, which is critical for achieving the lowest latency.</p>
+<h3 id="dynamic-buffer-control">Dynamic buffer control</h3><p>You can change latency without rebuilding the system. Note that these settings affect PipeWire clients only; ALSA-direct applications (like Ardour with ALSA backend) use their own buffer settings.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-comment"># Modern syntax (PipeWire 0.3.65+):</span>
+pw-cli set-param 0 clock.force-quantum 64/48000
+
+<span class="hljs-comment"># Verify current settings:</span>
+pw-cli dump settings | grep -E <span class="hljs-string">&quot;quantum|rate&quot;</span></code></pre>
+      </div><p>Use <code>pw-top</code> in a separate terminal to monitor which applications are consuming the most DSP processing time. Look for the <code>ERR</code> column — values greater than zero indicate Xruns.</p>
+<h2 id="hardware-and-connection">Hardware and connection</h2><p>Standard PC line-ins are unsuitable for guitar. Use a dedicated interface with a Hi-Z (Instrument) input.</p>
+<h3 id="verified-compatible-devices">Verified compatible devices</h3><table>
+<thead>
+<tr>
+<th>Device</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Focusrite Scarlett Solo (4th Gen)</strong></td>
+<td>Plug-and-play. Use <code>alsa-scarlett-gui</code> for hardware monitoring. May require firmware update.</td>
+</tr>
+<tr>
+<td><strong>MOTU M2 / M4</strong></td>
+<td>Native ALSA kernel support for direct hardware mixer control via <code>alsamixer</code>. Exceptionally stable USB-C latency.</td>
+</tr>
+<tr>
+<td><strong>Universal Audio Volt 276</strong></td>
+<td>Reliable USB-C class-compliant interface.</td>
+</tr>
+<tr>
+<td><strong>Arturia MiniFuse 1</strong></td>
+<td>Stable performance under PipeWire.</td>
+</tr>
+<tr>
+<td><strong>Audient iD4 (Gen 1)</strong></td>
+<td>Fully functional on NixOS. No special drivers needed.</td>
+</tr>
+</tbody></table>
+<h3 id="hardware-rules">Hardware rules</h3><ol>
+<li>Connect the interface <strong>directly to the motherboard</strong> (rear panel USB 3.0/3.2). Avoid USB hubs — they add latency and can cause Xruns.</li>
+<li>Use a high-quality, shielded USB cable. Audio dropouts are frequently caused by cheap cables acting as antennas for electrical interference.</li>
+<li><strong>Disable Bluetooth</strong> during live playing: <code>rfkill block bluetooth</code>. The BT audio stack can generate interrupt storms causing Xruns.</li>
+</ol>
+<h3 id="verification">Verification</h3><div class="code-container">
+        
+        <pre><code class="language-bash hljs">lsusb                    <span class="hljs-comment"># Confirm hardware connection</span>
+arecord -l               <span class="hljs-comment"># Verify ALSA sees the capture input</span>
+aplay -l                 <span class="hljs-comment"># Verify ALSA sees the playback output</span></code></pre>
+      </div><h2 id="software-guide">Software guide</h2><p>This section explains the available software for guitar processing on NixOS, organized by purpose.</p>
+<h3 id="digital-audio-workstations">Digital audio workstations</h3><table>
+<thead>
+<tr>
+<th>Software</th>
+<th>Purpose</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Ardour</strong></td>
+<td>Professional recording, mixing, editing</td>
+<td>For absolute minimum RTL, use <strong>ALSA backend</strong> (bypasses PipeWire). Warning: ALSA locks device exclusively — no other app can produce sound.</td>
+</tr>
+<tr>
+<td><strong>REAPER</strong></td>
+<td>Commercial DAW, lightweight, scriptable</td>
+<td>Uses PipeWire-JACK natively. Excellent Linux support. Unlimited trial.</td>
+</tr>
+</tbody></table>
+<h3 id="amp-simulators-and-neural-modelers">Amp simulators and neural modelers</h3><table>
+<thead>
+<tr>
+<th>Software</th>
+<th>Purpose</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Neural Amp Modeler (NAM)</strong></td>
+<td>Loads <code>.nam</code> files — AI captures of real tube amps</td>
+<td>No built-in GUI in LV2 version. In Carla/Ardour: look for <code>atom:Path</code> parameter and point to your <code>.nam</code> file. Models: <a href="https://tonehunt.org/">tonehunt.org</a></td>
+</tr>
+<tr>
+<td><strong>Kapitonov Plugins Pack (KPP)</strong></td>
+<td>Profile-based traditional amp modeling</td>
+<td>Excellent for classic rock/metal. Lower CPU than neural nets.</td>
+</tr>
+<tr>
+<td><strong>Guitarix</strong></td>
+<td>All-in-one virtual amp + pedals</td>
+<td>Standalone or LV2. Good for quick practice.</td>
+</tr>
+</tbody></table>
+<h3 id="effects-plugins">Effects plugins</h3><table>
+<thead>
+<tr>
+<th>Plugin Pack</th>
+<th>Key Features</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>LSP Plugins</strong></td>
+<td>Professional EQ, compression, gating. Includes LSP Latency Meter and LSP Impulse Response Loader (required for cabinet sims).</td>
+</tr>
+<tr>
+<td><strong>Dragonfly Reverb</strong></td>
+<td>High-quality algorithmic reverb (Hall, Room, Plate).</td>
+</tr>
+<tr>
+<td><strong>Chow Plugins</strong></td>
+<td>High-fidelity emulations of classic pedals using RNN/WDF.</td>
+</tr>
+<tr>
+<td><strong>Calf Studio Gear</strong></td>
+<td>Vintage-style effects with &quot;warm&quot; analog character.</td>
+</tr>
+<tr>
+<td><strong>GxPlugins.lv2</strong></td>
+<td>Guitarix project pedals (distortion, overdrive, fuzz) as standalone LV2.</td>
+</tr>
+</tbody></table>
+<h3 id="modular-hosts">Modular hosts</h3><table>
+<thead>
+<tr>
+<th>Software</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Carla</strong></td>
+<td>Modular plugin host. Chain plugins visually: Input → Tuner → NAM → IR Loader → Reverb → Output. Hosts Windows VSTs via yabridge.</td>
+</tr>
+<tr>
+<td><strong>qpwgraph</strong></td>
+<td>Visual patchbay for PipeWire/JACK. Manually connect hardware inputs to software hosts (PipeWire does not auto-connect).</td>
+</tr>
+</tbody></table>
+<h3 id="windows-vst-compatibility">Windows VST compatibility</h3><table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>yabridge + yabridgectl</strong></td>
+<td>Bridge for running Windows VST2/VST3 plugins on Linux via Wine. Essential for commercial plugins (Neural DSP, STL Tones, Amplitube).</td>
+</tr>
+</tbody></table>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-comment"># After installing Windows plugins via Wine:</span>
+yabridgectl <span class="hljs-built_in">sync</span>  <span class="hljs-comment"># Required to register plugins with Linux hosts</span></code></pre>
+      </div><h2 id="tips-and-tricks">Tips and tricks</h2><h3 id="rocksmith-2014">Rocksmith 2014</h3><p>Rocksmith 2014 runs on NixOS via Proton and PipeWire.</p>
+<ol>
+<li><strong>Install dependencies</strong>:</li>
+</ol>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">p<span class="hljs-attr">rograms.steam.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+<span class="hljs-attr">programs.gamemode.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><ol>
+<li><strong>Steam Launch Options</strong> (force low latency + real-time priority):</li>
+</ol>
+<!-- -->
+
+<div class="code-container">
+        
+        <pre><code class="language- hljs">PIPEWIRE_LATENCY=128/48000 gamemoderun %command%</code></pre>
+      </div><p>Start with <code>128/48000</code> (<del>5ms). If stable, try <code>64/48000</code> (</del>2.5ms). Values below 64 may cause crashes.</p>
+<ol>
+<li><strong>Sample Rate</strong>: Rocksmith strictly requires 48000 Hz. Do not force 96000 Hz while playing.</li>
+<li><strong>For interface users</strong> (no Real Tone Cable): Install the <a href="https://github.com/mdias/rs_asio">RS_ASIO</a> mod to enable direct interface support.</li>
+</ol>
+<h3 id="measuring-latency">Measuring latency</h3><p>Always perform a physical loopback test.</p>
+<ol>
+<li>Connect a cable from your interface <strong>Output</strong> back into the <strong>Input</strong> (use a TS/TRS patch cable).</li>
+<li>Launch LSP Latency Meter:</li>
+</ol>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-comment"># Option A: Via Carla (recommended for beginners)</span>
+carla  <span class="hljs-comment"># Add plugin &quot;LSP Latency Meter Stereo&quot;, connect wires</span>
+
+<span class="hljs-comment"># Option B: Via jalv (terminal)</span>
+jalv http://lsp-plug.in/plugins/lv2/latency_meter_stereo</code></pre>
+      </div><ol>
+<li>Play a sharp transient (string scratch) and read the <strong>Round-trip Latency (RTL)</strong> value.</li>
+</ol>
+<p><strong>Target values</strong>:</p>
+<ul>
+<li>&lt; 5 ms: Professional / Imperceptible</li>
+<li>5–10 ms: Acceptable for practice</li>
+<li>&gt; 12 ms: Noticeable &quot;lag&quot;, difficult to play in time</li>
+</ul>
+<h3 id="quick-start-checklist">Quick start checklist</h3><p>Before playing, verify:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-comment"># 1. CPU governor is performance</span>
+cpupower frequency-info | grep <span class="hljs-string">&quot;current policy&quot;</span>  <span class="hljs-comment"># Should show &quot;performance&quot;</span>
+
+<span class="hljs-comment"># 2. PipeWire buffer is set</span>
+pw-cli dump settings | grep quantum  <span class="hljs-comment"># Should show 64 or 128</span>
+
+<span class="hljs-comment"># 3. No Xruns reported</span>
+pw-top | grep -E <span class="hljs-string">&quot;ERR|XRUN&quot;</span>  <span class="hljs-comment"># Should show 0 or empty</span>
+
+<span class="hljs-comment"># 4. Pro Audio profile active</span>
+pavucontrol  <span class="hljs-comment"># Configuration tab → your interface → Pro Audio</span>
+
+<span class="hljs-comment"># 5. Plugin paths are set (for GUI apps)</span>
+<span class="hljs-built_in">echo</span> <span class="hljs-variable">$LV2_PATH</span>  <span class="hljs-comment"># Should include /run/current-system/sw/lib/lv2</span></code></pre>
+      </div><h2 id="troubleshooting">Troubleshooting</h2><table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Cause &amp; Solution</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Xruns (audio glitches)</strong></td>
+<td>Ensure <code>powerManagement.cpuFreqGovernor = &quot;performance&quot;</code> is active. Check <code>pw-top</code> for high-CPU nodes. Close browsers/heavy apps during playing. Disable Wi-Fi. As a last resort, add <code>processor.max_cstate=1</code> to <code>boot.kernelParams</code> (disables CPU sleep — high power draw).</td>
+</tr>
+<tr>
+<td><strong>No sound</strong></td>
+<td>Check <code>qpwgraph</code> — PipeWire does not auto-connect hardware. Verify Pro Audio profile in <code>pavucontrol</code>. Run <code>sudo lsof /dev/snd/*</code> to find conflicting processes.</td>
+</tr>
+<tr>
+<td><strong>DAW cannot find plugins</strong></td>
+<td>Ensure <code>environment.sessionVariables</code> block is applied. Log out/in after rebuild. Verify paths: <code>echo $LV2_PATH</code>.</td>
+</tr>
+<tr>
+<td><strong>GPU causing audio glitches</strong></td>
+<td>Disable GPU power management. Prefer X11 over Wayland for lowest latency.</td>
+</tr>
+<tr>
+<td><strong>Bluetooth causing Xruns</strong></td>
+<td>Disable Bluetooth stack: <code>rfkill block bluetooth</code> during live sessions.</td>
+</tr>
+<tr>
+<td><strong>PipeWire config not applying</strong></td>
+<td>Restart user services after rebuild: <code>systemctl --user restart pipewire wireplumber</code>. Check for WirePlumber overrides: <code>wpctl status</code>.</td>
+</tr>
+</tbody></table>
+<h2 id="see-also">See also</h2><ul>
+<li><a href="https://mirror.nixoscn.org/wiki/Electric%20guitar%20interface%20setup/PipeWire" class="wikilink" title="PipeWire">PipeWire</a> — Official NixOS PipeWire documentation</li>
+<li><a href="https://mirror.nixoscn.org/wiki/Electric%20guitar%20interface%20setup/Audio_production" class="wikilink" title="Audio production">Audio production</a> — General audio configuration and plugin paths</li>
+<li><a href="https://github.com/musnix/musnix">musnix</a> — Deep NixOS audio optimizations module</li>
+<li><a href="https://linuxmusicians.com/">LinuxMusicians Forum</a> — Community support</li>
+<li><a href="https://tonehunt.org/">ToneHunt</a> — Free NAM model library</li>
+<li><a href="https://github.com/mdias/rs_asio">RS_ASIO</a> — Rocksmith interface mod</li>
+</ul>
+<p><a href="category:Guides" class="wikilink" title="Category:Guides">Category:Guides</a> <a href="category:Hardware" class="wikilink" title="Category:Hardware">Category:Hardware</a> <a href="category:Sound" class="wikilink" title="Category:Sound">Category:Sound</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

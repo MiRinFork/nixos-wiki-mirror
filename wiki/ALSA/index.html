@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ALSA</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / ALSA</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: ALSA -->
+
+<p>ALSA is the kernel-level sound API for Linux. On modern systems, it is usually used via a sound server like <a href="https://mirror.nixoscn.org/wiki/ALSA/PulseAudio" class="wikilink" title="PulseAudio">PulseAudio</a>.</p>
+<h2 id="save-volume-state-on-shutdown">Save volume state on shutdown</h2><p>In order to save the sound card state on shutdown sound must be enabled in <code>configuration.nix</code></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">h<span class="hljs-attr">ardware.alsa.enablePersistence</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><h2 id="troubleshooting-alsa">Troubleshooting ALSA</h2><ul>
+<li>on a console launch <a href="wikipedia:Alsamixer" class="wikilink" title="alsamixer">alsamixer</a>.</li>
+</ul>
+<p><code> alsamixer</code></p>
+<ul>
+<li>If you see plenty of vertical bars:<ul>
+<li>You should be okay</li>
+</ul>
+</li>
+</ul>
+<!-- -->
+
+<ul>
+<li>If you see very few vertical bars and the sound card (top-left) is &quot;PC Speaker&quot; or similar:<ul>
+<li>Hit the &#39;S&#39; key, you should be able to switch to the &quot;real&quot; audio card (if not your audio card is likely to not being supported yet).</li>
+<li>When the real audio card is selected you should be viewing the &quot;plenty vertical bars&quot; thing.<ul>
+<li>First thing to do is to disable PC speaker (kernel module &quot;snd-pcsp&quot;, see below.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="make-your-audio-card-the-default-alsa-card">Make your audio card the default ALSA card</h3><p>Occasionally the PC-speaker is the default audio card for ALSA. You can make your real sound card default instead. For example, if your sound card is &quot;hda-intel&quot; then you would add the following to your configuration.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">b<span class="hljs-attr">oot.extraModprobeConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+  options snd slots=snd-hda-intel
+&#x27;&#x27;</span>;</code></pre>
+      </div><p>At times, you may wish to disable one of multiple Intel cards. Here is how to disable the first card, but enable a second one.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">b<span class="hljs-attr">oot.extraModprobeConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+  options snd_hda_intel enable=0,1
+&#x27;&#x27;</span>;</code></pre>
+      </div><h3 id="disable-pc-speaker-quot-audio-card-quot">Disable PC Speaker &quot;audio card&quot;</h3><p>Add &quot;snd_pcsp&quot; to the <code>boot.blacklistedKernelModules</code> option:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">b<span class="hljs-attr">oot.blacklistedKernelModules</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;snd_pcsp&quot;</span> ];</code></pre>
+      </div><p>Now reboot and retry from the beginning (i.e. check that your real card is shown by alsamixer without using the &#39;S&#39; key).</p>
+<h3 id="other-hardware-specific-problems">Other hardware specific problems</h3><p>Some hardware specific problems can be resolved by adjusting the options for the sound module. For example, the microphone may be stuck on a very low volume. First you should be sure that you have already checked the settings in alsamixer to make sure nothing is muted, and also any physical buttons on your computer.</p>
+<p>You should be able to look up the available options for model in <a href="https://www.kernel.org/doc/Documentation/sound/hd-audio/models.rst">models.rst</a>. You can try them out interactively as follows:</p>
+<ol>
+<li><p>Close any applications using the sound card</p>
+<ol>
+<li><p>See if any applications are using the sound card</p>
+</li>
+<li><p>Kill any processes</p>
+<p>for any process apart from pulseaudio you could just do:</p>
+<p>$ kill -9 14080</p>
+<p>but in the case of pulseaudio you have to prevent it from respawning itself automatically</p>
+<p>$ systemctl --user mask pulseaudio.socket &amp;&amp; systemctl --user stop pulseaudio</p>
+<p>you can then stop pulseaudio with:</p>
+<p>$ pulseaudio -k # or kill it by process id</p>
+</li>
+</ol>
+</li>
+<li><p>Unload the snd-hda-intel module</p>
+<p>rmmod snd-hda-intel</p>
+</li>
+<li><p>Find your model</p>
+<p>grep Codec /proc/asound/card0/codec*</p>
+</li>
+<li><p><a href="https://www.kernel.org/doc/Documentation/sound/hd-audio/models.rst">Look up the model options for your card</a></p>
+</li>
+<li><p>Try each one</p>
+<p>modprobe snd-hda-intel model=3stack-6ch</p>
+</li>
+<li><p>Test if this has fixed your problem (tip: aplay and arecord are alsa based command line tools you can use to quickly check)</p>
+</li>
+<li><p>Repeat until you have exhausted all the options or have fixed your problem</p>
+</li>
+<li><p>TIDY UP!</p>
+<p>Don&#39;t forget to re-enable pulse autospawning: systemctl --user unmask pulseaudio.socket</p>
+</li>
+</ol>
+<p>Once you have found a setting that works, you can add it to your configuration file:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">b<span class="hljs-attr">oot.extraModprobeConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+  options snd-hda-intel model=YOUR_MODEL 
+&#x27;&#x27;</span>;</code></pre>
+      </div><p><a href="category:Audio" class="wikilink" title="Category:Audio">Category:Audio</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

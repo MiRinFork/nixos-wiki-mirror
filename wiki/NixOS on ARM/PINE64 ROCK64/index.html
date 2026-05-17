@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NixOS on ARM/PINE64 ROCK64</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM">NixOS on ARM</a><span aria-hidden="true"> / </span>PINE64 ROCK64</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: NixOS on ARM/PINE64 ROCK64 -->
+
+<div class="infobox">
+
+<table>
+<thead>
+<tr>
+<th colspan="2" class="title"><p>PINE64 ROCK64</p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td colspan="2"><figure>
+<img src="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/PINE64%20ROCK64/ROCK64.jpg" title="A PINE64 Rock64." width="256" />
+<figcaption>A PINE64 Rock64.</figcaption>
+</figure></td>
+</tr>
+<tr>
+<td><p>Manufacturer</p></td>
+<td><p>PINE64 (Pine Microsystems Inc.)</p></td>
+</tr>
+<tr>
+<td><p>Architecture</p></td>
+<td><p>AArch64</p></td>
+</tr>
+<tr>
+<td><p>Bootloader</p></td>
+<td><p>Upstream U-Boot</p></td>
+</tr>
+<tr>
+<td><p>Boot options</p></td>
+<td><p>microSD, eMMC, SPI NOR Flash</p></td>
+</tr>
+</tbody>
+</table>
+
+</div>
+
+<p>The ROCK64 is a single board computer built around the Rockchip RK3328 SoC.</p>
+<p>There are three models of the board, with 1, 2 or 4 GB of RAM. It can boot from an microSD card or an eMMC. It also has a 128 Mbit SPI flash (not populated on recently manufactured boards) that can be used to store the bootloader.</p>
+<h2 id="status">Status</h2><p>This board has upstream U-Boot and kernel support, although the mainline kernel may still be missing some features. NixOS can be installed using manual partitioning and <code>nixos-install</code> or by modifying the aarch64 installation image as described in the next section.</p>
+<p>U-Boot for this board is packaged in nixpkgs, and Hydra builds can be found here:</p>
+<p><a href="https://hydra.nixos.org/job/nixpkgs/trunk/ubootRock64.aarch64-linux">https://hydra.nixos.org/job/nixpkgs/trunk/ubootRock64.aarch64-linux</a></p>
+<p>This bootloader is not entirely open, incorporating a binary blob for the tertiary program loader (TPL). If your have nix installed you can download the latest version with (This command also works on different architectures since it can be downloaded from the binary cache):</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-build <span class="hljs-string">&#x27;&lt;nixpkgs&gt;&#x27;</span> -A ubootRock64 --argstr system aarch64-linux</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">ls</span> -la result</span>
+-r--r--r-- 2 root root    107683 Jan  1  1970 idbloader.img
+dr-xr-xr-x 1 root root        40 Jan  1  1970 nix-support
+-r--r--r-- 2 root root    789504 Jan  1  1970 u-boot.itb</code></pre>
+      </div><h2 id="board-specific-installation-notes">Board-specific installation notes</h2><p>U-Boot needs to be copied to specific sectors on the microSD card, eMMC or image with <code>dd</code>. This can be done either by using a prebuilt image or by manually formatting the storage.</p>
+<h3 id="using-prebuilt-images">Using Prebuilt Images</h3><p>You can use <a href="https://github.com/Mic92/nixos-aarch64-images">nixos-aarch64-images</a> to get an ROCK64 compatible disk image.</p>
+<h3 id="manually-formatting">Manually Formatting</h3><p>To manually format your storage, first install the NIXOS ARM 64 image by following the instructions here. Download and flash the SD Card/SBC image to your SD Card</p>
+<p><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/PINE64%20ROCK64/NixOS_on_ARM#SD_card_images_(SBCs_and_similar_platforms)" class="wikilink" title="NixOS_on_ARM#SD card images (SBCs and similar platforms)">NixOS_on_ARM#SD card images (SBCs and similar platforms)</a></p>
+<p>Next, download/build U-Boot for the board, and write <code>idbloader.img</code> and <code>u-boot.itb</code> to the storage. As mentioned previously, Hydra builds can be found here:</p>
+<p><a href="https://hydra.nixos.org/job/nixpkgs/trunk/ubootRock64.aarch64-linux">https://hydra.nixos.org/job/nixpkgs/trunk/ubootRock64.aarch64-linux</a></p>
+<p>Replace in the command below <code>/dev/mmcblkX</code> with the correct device to the sdcard i.e. <code>/dev/mmcblk0</code>. You can use the <code>lsblk</code> command to get a list of all devices:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">dd</span> <span class="hljs-keyword">if</span>=idbloader.img of=/dev/mmcblkX conv=fsync,notrunc bs=512 seek=64
+<span class="hljs-built_in">dd</span> <span class="hljs-keyword">if</span>=u-boot.itb of=/dev/mmcblkX conv=fsync,notrunc bs=512 seek=16384</code></pre>
+      </div><p>This will make the first partition of the installation device unmountable and it can be deleted, but the space needs to be kept to not overwrite the bootloader with another filesystem.</p>
+<h3 id="uboot-memory-issues">uboot Memory Issues</h3><p>If you are facing memory issues, kernel panics, kernel oops or general system instability while using the uboot images above (especially with the Rock64 version 2), you can use the ubootRock64v2 image instead, which improves system stability by lowering the memory clock speed at the cost of memory bandwidth.</p>
+<p>Hydra builds can be found here (note the v2) <a href="https://hydra.nixos.org/job/nixpkgs/trunk/ubootRock64v2.aarch64-linux">https://hydra.nixos.org/job/nixpkgs/trunk/ubootRock64v2.aarch64-linux</a></p>
+<p>Simply follow the manual formatting instructions as above.</p>
+<h2 id="serial-console">Serial console</h2><p>The ROCK64 uses a GPIO pinout compatible with the Raspberry Pi 2 and newer. This means that the following pins can be used to connect a serial adapter:</p>
+<table>
+<thead>
+<tr>
+<th colspan="2" style="background: var(--color-inverted)"><p>Pi-2 Bus</p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><p>Pin</p></td>
+<td><p>Function</p></td>
+</tr>
+<tr>
+<td><p>6</p></td>
+<td><p>GND</p></td>
+</tr>
+<tr>
+<td><p>8</p></td>
+<td><p>UART0_TX</p></td>
+</tr>
+<tr>
+<td><p>10</p></td>
+<td><p>UART0_RX</p></td>
+</tr>
+</tbody>
+</table>
+
+<p>The serial console runs at 1500000 baud in the bootloader. When using the standard NixOS aarch64 sd image, set <code>console=tty1 console=ttyS2,1500000n8</code> as kernel option in <code>extlinux/extlinux.conf</code> on the boot partition of the sdimage to get a serial linux console (tty1 is for standard HDMI output and ttyS2 is for the serial, baud rate setting is optional, simple console=ttyS2 seems to be working fine too). For debugging, <code>console=uart8250,mmio32,0xff130000</code> should give you an early UART console, before the full serial console is up.</p>
+<p>From the host computer run (update /dev/ttyUSB0 with your USB-to-serial device)</p>
+<p><code>minicom -b 1500000 -8 -D /dev/ttyUSB0 --color=on</code></p>
+<h2 id="compatibility-notes">Compatibility notes</h2><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td></td>
+<td>Mainline kernel</td>
+<td>ayufan-rock64/linux-mainline-kernel</td>
+</tr>
+<tr>
+<td>Ethernet</td>
+<td>Works</td>
+<td>Works</td>
+</tr>
+<tr>
+<td>USB</td>
+<td>As of 5.4, USB 3.0 does not work</td>
+<td>Works</td>
+</tr>
+<tr>
+<td>HDMI</td>
+<td>Video works, Sound does not</td>
+<td>Works</td>
+</tr>
+</tbody></table>
+<h3 id="downstream-kernel">Downstream kernel</h3><p>To use all hardware functionality, it is currently necessary to use a downstream kernel:</p>
+<ul>
+<li><a href="https://github.com/ayufan-rock64/linux-kernel">ayufan-rock64/linux-kernel</a> 4.4 based on Rockchip BSP</li>
+<li><a href="https://github.com/ayufan-rock64/linux-mainline-kernel">ayufan-rock64/linux-mainline-kernel</a> mainline based, with potentially fewer hardware features supported. This kernel is not based on a kernel stable branch, so it may have more bugs (unrelated to the hardware).</li>
+</ul>
+<p>Mic92 has packaged the mainline kernel in his <a href="https://github.com/nix-community/NUR">NUR</a> packages repository:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"> <span class="hljs-attr">boot.kernelPackages</span> <span class="hljs-operator">=</span> pkgs.nur.repos.mic92.linuxPackages_ayufan;</code></pre>
+      </div><p>This provides sound over HDMI, which the default kernel does not.</p>
+<h3 id="initrd-fails-to-unpack-during-boot">Initrd fails to unpack during boot</h3><p>The old vendor U-Boot 2017.09 did not leave enough room between the kernel and initrd, causing recent kernels to overwrite the beginning of the initrd. This can be fixed by increasing <code>ramdisk_addr_r</code> in the U-Boot console, or using upstream U-Boot.</p>
+<p>Here is how to achieve in the uboot console (hit enter during boot to access it):</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">=&gt; print ramdisk_addr_r # this prints the old value
+ramdisk_addr_r=0x06000000
+=&gt; set ramdisk_addr_r 0x07000000 # this sets a new value
+=&gt; saveenv # this persist the the configuration
+=&gt; boot # than you can normally boot, if it still fails, you can try to increase the ramdisk_addr_r value further</code></pre>
+      </div><h2 id="video-decoding">Video decoding</h2><p>MPV has support for the rockchip hardware decoder, it is used by default when playing a file. Without this decoder videos will likely stutter during playing. To use his for example in <a href="https://kodi.tv/">kodi</a>, add the following configuration in <code>.kodi/userdata/playercorefactory.xml</code></p>
+<div class="code-container">
+        
+        <pre><code class="language-xml hljs"><span class="hljs-tag">&lt;<span class="hljs-name">playercorefactory</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">players</span>&gt;</span>
+                <span class="hljs-tag">&lt;<span class="hljs-name">player</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;MPV&quot;</span> <span class="hljs-attr">type</span>=<span class="hljs-string">&quot;ExternalPlayer&quot;</span> <span class="hljs-attr">audio</span>=<span class="hljs-string">&quot;false&quot;</span> <span class="hljs-attr">video</span>=<span class="hljs-string">&quot;true&quot;</span>&gt;</span>
+                        <span class="hljs-tag">&lt;<span class="hljs-name">filename</span>&gt;</span>mpv<span class="hljs-tag">&lt;/<span class="hljs-name">filename</span>&gt;</span>
+                        <span class="hljs-tag">&lt;<span class="hljs-name">args</span>&gt;</span>--fs=yes &quot;{1}&quot;<span class="hljs-tag">&lt;/<span class="hljs-name">args</span>&gt;</span>
+                        <span class="hljs-tag">&lt;<span class="hljs-name">hidexbmc</span>&gt;</span>true<span class="hljs-tag">&lt;/<span class="hljs-name">hidexbmc</span>&gt;</span>
+                <span class="hljs-tag">&lt;/<span class="hljs-name">player</span>&gt;</span>
+        <span class="hljs-tag">&lt;/<span class="hljs-name">players</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">rules</span> <span class="hljs-attr">action</span>=<span class="hljs-string">&quot;prepend&quot;</span>&gt;</span>
+                <span class="hljs-tag">&lt;<span class="hljs-name">rule</span> <span class="hljs-attr">video</span>=<span class="hljs-string">&quot;true&quot;</span> <span class="hljs-attr">player</span>=<span class="hljs-string">&quot;MPV&quot;</span>/&gt;</span>
+        <span class="hljs-tag">&lt;/<span class="hljs-name">rules</span>&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">playercorefactory</span>&gt;</span></code></pre>
+      </div><p>When using kodi it is also recommend to use kodi-wayland rather than the x11 variant to reduce the CPU usage. Mic92 has an <a href="https://github.com/Mic92/dotfiles/blob/d457b53a1c032b84147113b8cd1be1383facd68e/nixos/rock/modules/kodi.nix#L22">example configuration</a>.</p>
+<h2 id="resources">Resources</h2><ul>
+<li><a href="https://pine64.org/devices/rock64/">Official product page</a></li>
+</ul>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

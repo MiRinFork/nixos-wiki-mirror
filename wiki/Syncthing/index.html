@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Syncthing</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Syncthing</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Syncthing -->
+
+<p><languages/> <a href="https://syncthing.net/">Syncthing</a> is a free and open-source decentralized file synchronization application that allows for secure, continuous, and private syncing of files between computers. Unlike cloud-based services, Syncthing operates peer-to-peer, so your data remains on your devices unless you choose to share it. It is cross-platform, offering native support for Linux, macOS, Windows, BSD, and mobile devices.<sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Syncthing#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup></p>
+<h2 id="installation">Installation</h2><h4 id="shell">Shell</h4><p>To temporarily use Syncthing in a shell environment without modifying your system configuration, you can run:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nix-shell -p syncthing --run syncthing</code></pre>
+      </div><p>This provides Syncthing in your current shell without adding it to your system configuration. You can open the web interface at <a href="http://127.0.0.1:8384/">http://127.0.0.1:8384/</a> to configure and use it.</p>
+<h4 id="system-setup">System setup</h4><p>To install Syncthing as a system service that runs in the background and survives reboots, add the following to your <code>/etc/nixos/configuration.nix</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># Example for /etc/nixos/configuration.nix</span>
+s<span class="hljs-attr">ervices.syncthing</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">openDefaultPorts</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; <span class="hljs-comment"># Open ports in the firewall for Syncthing. (<span class="hljs-doctag">NOTE:</span> this will not open syncthing gui port)</span>
+};</code></pre>
+      </div><p>Once you&#39;ve rebuilt your system, Syncthing will be available as a system service. You can visit <a href="http://127.0.0.1:8384/">http://127.0.0.1:8384/</a> to configure it through the web interface.</p>
+<p>If accessing the web interface from other networked computers you will need to change the gui bind address and open a TCP port:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># Example for /etc/nixos/configuration.nix</span>
+s<span class="hljs-attr">ervices.syncthing</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">openDefaultPorts</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; <span class="hljs-comment"># Open ports in the firewall for Syncthing. (<span class="hljs-doctag">NOTE:</span> this will not open syncthing gui port)</span>
+
+  <span class="hljs-attr">guiAddress</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;0.0.0.0:8384&quot;</span>; <span class="hljs-comment"># By default syncthing only listens to localhost</span>
+};
+
+<span class="hljs-comment"># port 8384  is the default port to allow access from the network.</span>
+n<span class="hljs-attr">etworking.firewall.allowedTCPPorts</span> <span class="hljs-operator">=</span> [ <span class="hljs-number">8384</span> ];</code></pre>
+      </div><h2 id="configuration">Configuration</h2><h4 id="basic">Basic</h4><p>Basic Syncthing features can be configured directly within the <code>services.syncthing</code> attribute set:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.syncthing</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">openDefaultPorts</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-comment"># Optional: GUI credentials (can be set in the browser instead)</span>
+  <span class="hljs-attr">settings.gui</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">user</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;myuser&quot;</span>;
+    <span class="hljs-attr">password</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;mypassword&quot;</span>;
+  };
+};</code></pre>
+      </div><p>Note: If you want to use <a href="https://mirror.nixoscn.org/wiki/Syncthing/Agenix" class="wikilink" title="Agenix">Agenix</a> to set the GUI password use <a href="https://search.nixos.org/options?channel=unstable&amp;query=syncthing&amp;show=services.syncthing.guiPasswordFile">services.syncthing.guiPasswordFile</a> instead of setting.gui.password.</p>
+<h4 id="advanced">Advanced</h4><p>For more advanced configuration with multiple devices and folders, you can declaratively configure devices and shared folders:<sup><a id="footnote-ref-2" href="https://mirror.nixoscn.org/wiki/Syncthing#footnote-2" data-footnote-ref aria-describedby="footnote-label">2</a></sup></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.syncthing</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">openDefaultPorts</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">guiPasswordFile</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/etc/syncthing-gui-password&quot;</span>;
+  <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">gui.user</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;myuser&quot;</span>;
+    <span class="hljs-attr">devices</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-string">&quot;device1&quot;</span> <span class="hljs-operator">=</span> { <span class="hljs-attr">id</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;DEVICE-ID-GOES-HERE&quot;</span>; };
+      <span class="hljs-string">&quot;device2&quot;</span> <span class="hljs-operator">=</span> { <span class="hljs-attr">id</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;DEVICE-ID-GOES-HERE&quot;</span>; };
+    };
+    <span class="hljs-attr">folders</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-string">&quot;Documents&quot;</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">path</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/home/myusername/Documents&quot;</span>;
+        <span class="hljs-attr">devices</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;device1&quot;</span> <span class="hljs-string">&quot;device2&quot;</span> ];
+      };
+      <span class="hljs-string">&quot;Example&quot;</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">path</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/home/myusername/Example&quot;</span>;
+        <span class="hljs-attr">devices</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;device1&quot;</span> ];
+        <span class="hljs-attr">ignorePerms</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>; <span class="hljs-comment"># Enable file permission syncing</span>
+      };
+    };
+  };
+};</code></pre>
+      </div><p>Note: As per syncthing Device ids are not sensitive and should be okay to keep in your config file.<sup><a id="footnote-ref-3" href="https://mirror.nixoscn.org/wiki/Syncthing#footnote-3" data-footnote-ref aria-describedby="footnote-label">3</a></sup></p>
+<h2 id="tips-and-tricks">Tips and tricks</h2><h3 id="sync-folders-and-remote-hosts">Sync folders and remote hosts</h3><p>The following configuration will trust the remote hosts <code>device1</code> and <code>device2</code> by adding their <code>id</code>s. The shares <code>Documents</code> and <code>Example</code> are added to the local node, defined by their local file paths and list of allowed devices.</p>
+<p>The share <code>Sensitive</code> is shared unencrypted with <code>device1</code>, and encrypted with <code>device2</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.syncthing</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">devices</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-string">&quot;device1&quot;</span> <span class="hljs-operator">=</span> { <span class="hljs-attr">id</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;DEVICE-ID-GOES-HERE&quot;</span>; };
+      <span class="hljs-string">&quot;device2&quot;</span> <span class="hljs-operator">=</span> { <span class="hljs-attr">id</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;DEVICE-ID-GOES-HERE&quot;</span>; };
+    };
+    <span class="hljs-attr">folders</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-string">&quot;Documents&quot;</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">path</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/home/myusername/Documents&quot;</span>;
+        <span class="hljs-attr">devices</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;device1&quot;</span> <span class="hljs-string">&quot;device2&quot;</span> ];
+      };
+      <span class="hljs-string">&quot;Example&quot;</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">path</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/home/myusername/Example&quot;</span>;
+        <span class="hljs-attr">devices</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;device1&quot;</span> ];
+        <span class="hljs-comment"># By default, Syncthing doesn&#x27;t sync file permissions. This line enables it for this folder.</span>
+        <span class="hljs-attr">ignorePerms</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+      };
+      <span class="hljs-string">&quot;Sensitive&quot;</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">path</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/home/myusername/Sensitive&quot;</span>;
+        <span class="hljs-attr">devices</span> <span class="hljs-operator">=</span> [
+          <span class="hljs-comment"># We trust this device to have access</span>
+          <span class="hljs-comment"># to the decrypted contents of this folder.</span>
+          <span class="hljs-string">&quot;device1&quot;</span>
+          <span class="hljs-comment"># We do not trust this device, but we want to have another</span>
+          <span class="hljs-comment"># (encrypted) copy of the data for redundancy/backup/sync purposes.</span>
+          {
+            <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;device2&quot;</span>;
+            <span class="hljs-comment"># encryptionPasswordFile is a path to a file containing the encryption password.</span>
+            <span class="hljs-comment"># See below for information about managing secrets on NixOS.</span>
+            <span class="hljs-attr">encryptionPasswordFile</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/run/secrets/st-sensitive-password&quot;</span>;
+          }
+        ];
+      };
+    };
+  };
+};</code></pre>
+      </div><h3 id="declarative-node-ids">Declarative node IDs</h3><p>If you set up Syncthing with the above configuration, you will still need to manually accept the connection from your other devices. If you want to make this automatic, you must also set the key.pem and cert.pem options:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.syncthing</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">key</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/run/secrets/path/to/key.pem&quot;</span>;
+  <span class="hljs-attr">cert</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/run/secrets/path/to/cert.pem&quot;</span>;
+  <span class="hljs-comment"># ... other configuration</span>
+};</code></pre>
+      </div><p>This will ensure your node has a stable ID. You can optionally include the key.pem and cert.pem files in the NixOS configuration using a tool like sops-nix. See <a href="https://mirror.nixoscn.org/wiki/Syncthing/Comparison_of_secret_managing_schemes" class="wikilink" title="Comparison of secret managing schemes">Comparison of secret managing schemes</a>.</p>
+<p>To generate a new key.cert and key.pem for a deployment, you can use the -generate argument:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">$ nix-shell -p syncthing --run <span class="hljs-string">&quot;syncthing generate --config myconfig/&quot;</span>
+2024/04/23 11:41:17 INFO: Generating ECDSA key and certificate <span class="hljs-keyword">for</span> syncthing...
+2024/04/23 11:41:17 INFO: Device ID: DMWVMM6-MKEQVB4-I4UZTRH-5A6E24O-XHQTL3K-AAI5R5L-MXNMUGX-QTGRHQ2
+2024/04/23 11:41:17 INFO: Default folder created and/or linked to new config
+$ <span class="hljs-built_in">ls</span> myconfig/
+cert.pem  config.xml  key.pem</code></pre>
+      </div><h3 id="disable-default-sync-folder">Disable default sync folder</h3><p>Before version 2.0.0, Syncthing creates a &#39;Sync&#39; folder in your home directory every time it regenerates a configuration, even if your declarative configuration does not have this folder. You can disable that by using the <code>--no-default-folder</code> command-line option<sup><a id="footnote-ref-4" href="https://mirror.nixoscn.org/wiki/Syncthing#footnote-4" data-footnote-ref aria-describedby="footnote-label">4</a></sup>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.syncthing.extraFlags</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;--no-default-folder&quot;</span> ]; <span class="hljs-comment"># Don&#x27;t create default ~/Sync folder</span></code></pre>
+      </div><p>The default folder concept is removed in Syncthing 2.0.0 and this flag is no longer available.<sup><a id="footnote-ref-5" href="https://mirror.nixoscn.org/wiki/Syncthing#footnote-5" data-footnote-ref aria-describedby="footnote-label">5</a></sup></p>
+<h2 id="troubleshooting">Troubleshooting</h2><h3 id="some-settings-not-being-applied">Some settings not being applied</h3><p>Note the <a href="https://search.nixos.org/options?channel=unstable&amp;show=services.syncthing.settings">services.syncthing.settings</a> option accepts anything that can be parsed into JSON, even if it does not have a corresponding config option. Check the logs of the <code>syncthing-init</code> service with <code>systemctl status syncthing-init.service</code>to see if some settings are not being applied.</p>
+<h2 id="see-also">See also</h2><ul>
+<li><a href="https://mirror.nixoscn.org/wiki/Syncthing/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> – Use Syncthing declaratively at the user level: <a href="https://github.com/nix-community/home-manager/blob/master/modules/services/syncthing.nix">Syncthing module in Home Manager</a></li>
+<li><a href="https://mirror.nixoscn.org/wiki/Syncthing/Comparison_of_secret_managing_schemes" class="wikilink" title="Comparison of secret managing schemes">Comparison of secret managing schemes</a> – Compare different ways to manage secrets declaratively on NixOS, including for use with Syncthing.</li>
+<li><a href="https://nixos.org/manual/nixos/stable/index.html#sec-services">Syncthing in NixOS Manual</a> – Official documentation for configuring services like Syncthing.</li>
+<li><a href="https://docs.syncthing.net/">Syncthing User Documentation</a> – In-depth official guide on Syncthing features, configuration, and troubleshooting.</li>
+<li><a href="https://discourse.nixos.org/search?q=syncthing">Syncthing discussions on Discourse</a> – Community tips, troubleshooting, and advanced use cases.</li>
+</ul>
+<h2 id="references">References</h2><p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="category:File_synchronization" class="wikilink" title="Category:File synchronization">Category:File synchronization</a> <a href="category:Web_Applications" class="wikilink" title="Category:Web Applications">Category:Web Applications</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p><a href="https://syncthing.net/">https://syncthing.net/</a> <a href="https://mirror.nixoscn.org/wiki/Syncthing#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+<li id="footnote-2">
+<p><a href="https://docs.syncthing.net/users/config.html">https://docs.syncthing.net/users/config.html</a> <a href="https://mirror.nixoscn.org/wiki/Syncthing#footnote-ref-2" data-footnote-backref aria-label="Back to reference 2">↩</a></p>
+</li>
+<li id="footnote-3">
+<p><a href="https://docs.syncthing.net/users/faq.html#should-i-keep-my-device-ids-secret">Should I keep my device IDs secret?</a> <a href="https://mirror.nixoscn.org/wiki/Syncthing#footnote-ref-3" data-footnote-backref aria-label="Back to reference 3">↩</a></p>
+</li>
+<li id="footnote-4">
+<p><a href="https://docs.syncthing.net/users/syncthing.html#cmdoption-no-default-folder">https://docs.syncthing.net/users/syncthing.html#cmdoption-no-default-folder</a> <a href="https://mirror.nixoscn.org/wiki/Syncthing#footnote-ref-4" data-footnote-backref aria-label="Back to reference 4">↩</a></p>
+</li>
+<li id="footnote-5">
+<p><a href="https://github.com/syncthing/syncthing/pull/10068">https://github.com/syncthing/syncthing/pull/10068</a> <a href="https://mirror.nixoscn.org/wiki/Syncthing#footnote-ref-5" data-footnote-backref aria-label="Back to reference 5">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

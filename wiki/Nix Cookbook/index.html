@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nix Cookbook</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Nix Cookbook</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Nix Cookbook -->
+
+<h2 id="managing-storage">Managing storage</h2><h3 id="reclaim-space-on-nix-install">Reclaim space on Nix install?</h3><h4 id="remove-old-generations">Remove old generations</h4><p>When you make changes to your system, Nix creates a new system <a href="https://mirror.nixoscn.org/wiki/Nix%20Cookbook/generation" class="wikilink" title="generation">generation</a>. All of the changes to the system since the previous generation are stored there. Old generations can add up and will not be removed automatically by default. You can see your saved system generations with:</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell-session hljs">  # nix-env --profile /nix/var/nix/profiles/system --list-generations</code></pre>
+      </div><p>To keep just your current generation and the two older than it:</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell-session hljs">  # nix-env --profile … --delete-generations +3</code></pre>
+      </div><p>To remove all but your current generation:</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell-session hljs">  # nix-env --profile … --delete-generations old</code></pre>
+      </div><p>Apart from the system profile in <code>/nix/var/nix/profiles/system</code>, every user has profiles for their user environment and channels. The operations above may be repeated for those profiles. By default, they are located at <code>~/.nix-profile</code> and <code>~/.nix-defexpr/channels</code>. For more information on profile locations, see <a href="https://nix.dev/manual/nix/stable/command-ref/nix-env#files">Nix Manual - nix-env - Files</a>.</p>
+<h5 id="generation-trimmer-script">Generation trimmer script</h5><p>For a smart interactive script which can handle all the normally available profile types across NixOS and be more conservative and safe than the built-in Nix generations deletion commands, see <a href="https://mirror.nixoscn.org/wiki/Nix%20Cookbook/NixOS_Generations_Trimmer" class="wikilink" title="NixOS Generations Trimmer">NixOS Generations Trimmer</a>.</p>
+<h4 id="garbage-collection">Garbage collection</h4><p>As you work with your system (installs, uninstalls, upgrades), files in the <a href="https://mirror.nixoscn.org/wiki/Nix%20Cookbook/Nix_store" class="wikilink" title="Nix store">Nix store</a> are not automatically removed, even when no longer needed. Nix instead has a garbage collector which must be run periodically (you could set up, e.g., a cron to do this).</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs"><span class="hljs-meta prompt_">  $ </span><span class="language-bash">nix-collect-garbage</span></code></pre>
+      </div><p>This is safe so long as everything you need is listed in an existing <em>generation</em> or garbage collector root (<strong>gcroot</strong>).</p>
+<p>If you are sure you only need your current generation, this will delete all old generations and then do garbage collection:</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs"><span class="hljs-meta prompt_">  $ </span><span class="language-bash">nix-collect-garbage -d</span></code></pre>
+      </div><p>On NixOS, you can enable a service to automatically do daily garbage collection:</p>
+<h4 id="deduplication">Deduplication</h4><p>You may wind up with duplicate files in your Nix store. <a href="https://en.wikipedia.org/wiki/Data_deduplication">Data deduplication</a> is a resource intense process while running, so is not done automatically by default. Often you can save about 25-35% of your store space by optimizing the store though. This will perform a deduplication process on your Nix store (hard link duplicates together):</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs"><span class="hljs-meta prompt_">  $ </span><span class="language-bash">nix store optimise</span></code></pre>
+      </div><p>With standalone Nix, you can set the <code>nix.conf</code> option below to set this to happen periodically:</p>
+<p>For NixOS, the option to set this is:</p>
+<p>NixOS will update <code>nix.conf</code> for you, with that setting.</p>
+<h4 id="nix-manual-references">Nix manual references</h4><ul>
+<li><a href="https://nix.dev/manual/nix/stable/quick-start">Nix Manual - Quick Start</a></li>
+<li><a href="https://nix.dev/manual/nix/stable/package-management/garbage-collection.html">Nix Manual - Garbage Collection</a></li>
+<li><a href="https://nix.dev/manual/nix/stable/command-ref/nix-store/optimise">Nix Manual - nix-store --optimize</a></li>
+<li><a href="https://nixos.org/manual/nixos/#sec-nix-gc">NixOS Manual - Cleaning the Nix store</a></li>
+</ul>
+<h4 id="deeper-cleaning">Deeper cleaning</h4><ul>
+<li><a href="https://mirror.nixoscn.org/wiki/Nix%20Cookbook/Storage_optimization" class="wikilink" title="Storage optimization">Storage optimization</a> goes into more depth on these options</li>
+<li><a href="https://mirror.nixoscn.org/wiki/Nix%20Cookbook/Cleaning_the_nix_store" class="wikilink" title="Cleaning the nix store">Cleaning the nix store</a> has more specialized tips and further links to helper tools.</li>
+</ul>
+<h2 id="environment-tasks">Environment tasks</h2><h3 id="creating-shell-scripts">Creating shell scripts</h3><p>Arbitrary system shell scripts can be created with <a href="https://github.com/NixOS/nixpkgs/blob/808125fff694e4eb4c73952d501e975778ffdacd/pkgs/build-support/trivial-builders.nix#L225-L250">pkgs.writeShellScriptBin</a>. It creates a derivation which you add to <a href="https://nixos.org/nixos/manual/#sec-declarative-package-mgmt">environment.systemPackages</a>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs, ... }:
+
+<span class="hljs-keyword">let</span>
+  <span class="hljs-attr">helloWorld</span> <span class="hljs-operator">=</span> pkgs.writeShellScriptBin <span class="hljs-string">&quot;helloWorld&quot;</span> <span class="hljs-string">&#x27;&#x27;
+    echo Hello World
+  &#x27;&#x27;</span>;
+
+<span class="hljs-keyword">in</span> {
+  <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> [ helloWorld ];
+}</code></pre>
+      </div><h3 id="creating-periodic-services">Creating periodic services</h3><p>Using the <a href="https://nixos.org/nixos/manual/#sec-systemctl">systemd support</a> periodic services can be defined. In this case a service named <code>simple-timer</code> writes out the current time to <code>/tmp/simple-timer.log</code> every minute. &lt;syntaxHighlight lang=&quot;nix&gt; { pkgs, ... }:</p>
+<p>{</p>
+<p><code> systemd = {</code><br><code>   timers.simple-timer = {</code><br><code>     wantedBy = [ &quot;timers.target&quot; ];</code><br><code>     partOf = [ &quot;simple-timer.service&quot; ];</code><br><code>     timerConfig.OnCalendar = &quot;minutely&quot;;</code><br><code>   };</code><br><code>   services.simple-timer = {</code><br><code>     serviceConfig.Type = &quot;oneshot&quot;;</code><br><code>     script = &#39;&#39;</code><br><code>       echo &quot;Time: $(date).&quot; &gt;&gt; /tmp/simple-timer.log</code><br><code>     &#39;&#39;;</code><br><code>   };</code><br><code> };</code></p>
+<p>}</p>
+</syntaxHighlight>
+
+<h2 id="deprecating-a-specific-input-parameter-in-mkderivation-style-packages">Deprecating a specific input parameter in mkDerivation-style packages</h2><p>Sometimes we want to rename some input parameter in .</p>
+<p>E.G. an option `withX` that enables the X11 GUI for a certain app:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-comment">/*. . .*/</span>
+  withX <span class="hljs-operator">?</span> <span class="hljs-literal">true</span>,
+  <span class="hljs-comment">/*. . .*/</span>
+}:
+
+stdenv.mkDerivation { <span class="hljs-comment">/* . . . */</span>}</code></pre>
+      </div><p>Suppose that a new version of this package features a more agnostic GUI that can be linked to X11, GTK, Qt etc. Because of it, `withX` is no longer a descriptive name for this functionality.</p>
+<p>However, renaming the parameter is dangerous, because other functions that call this function expect this parameter. The problem becomes more pronounced when in conjunction with custom, third-party overlays.</p>
+<p>The solution is, roughly, to emit a warning about the old parameter being used, reporting the user to the new parameter:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-comment">/*. . .*/</span>
+  withX <span class="hljs-operator">?</span> <span class="hljs-literal">null</span>,
+  withGui <span class="hljs-operator">?</span>
+  <span class="hljs-keyword">if</span> (withX <span class="hljs-operator">!=</span> <span class="hljs-literal">null</span>) <span class="hljs-keyword">then</span>
+    lib.warn <span class="hljs-string">&#x27;&#x27;
+      withX is deprecated and will be removed in the next release;
+      use withGui instead.
+    &#x27;&#x27;</span> withX
+  <span class="hljs-keyword">else</span>
+    <span class="hljs-literal">true</span>
+  <span class="hljs-comment">/*. . .*/</span>
+}</code></pre>
+      </div><p>With this warning, consumers will have time to patch their codes.</p>
+<h2 id="bulk-pre-download-all-dependencies-of-a-package">Bulk pre-download all dependencies of a package</h2><p>Sometimes we need to download all source dependencies of a package. E.G. a long build is being planned, so we first download all needed files, so that after that we only need to worry about local (non-Internet) issues.</p>
+<p>Here is a one-liner for downloading all the source dependencies of a package (thanks Eelco Dolstra!):</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs"><span class="hljs-meta prompt_">
+$</span><span class="language-bash">&gt; nix-store -r $(grep -l outputHash $(nix-store -qR $(nix-instantiate <span class="hljs-string">&#x27;&lt;nixpkgs&gt;&#x27;</span> -A bochs) | grep <span class="hljs-string">&#x27;.drv{{content}}#x27;</span>))</span></code></pre>
+      </div><p>Let&#39;s dissect this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-sh hljs"><span class="hljs-comment">## instantiate bochs into `.drv` files and print the filenames;</span>
+instantiate=$(nix-instantiate <span class="hljs-string">&#x27;&lt;nixpkgs&gt;&#x27;</span> -A bochs)
+
+<span class="hljs-comment">## print all references/requirements, filtering the .drv files (which is where static derivations live)</span>
+requirements=$(nix-store -qR <span class="hljs-variable">$instantiate</span> | grep <span class="hljs-string">&#x27;.drv{{content}}#x27;</span>)
+
+<span class="hljs-comment">## keep only the source derivations, since those will have a predefined hash of the output </span>
+sources=$(grep -l outputHash <span class="hljs-variable">$requirements</span>)
+
+<span class="hljs-comment">## realize those derivations, downloading all sources and storing them in the nix store </span>
+nix-store -r <span class="hljs-variable">$sources</span></code></pre>
+      </div><p>After that, all sources will be locally stored!</p>
+<p>Source: <a href="https://web.archive.org/web/20160829181620/http://lists.science.uu.nl/pipermail/nix-dev/2013-January/010438.html">nix-dev thread</a></p>
+<h2 id="wrapping-packages">Wrapping packages</h2><p>If you need to wrap a binary of a package (or a non-binary), there are a few ways of doing it. The simplest of which is just creating a new binary that calls the old one:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">pkgs.writeShellScriptBin <span class="hljs-string">&quot;hello&quot;</span> <span class="hljs-string">&#x27;&#x27;
+  # Call hello with a traditional greeting 
+  exec <span class="hljs-subst">${pkgs.hello}</span>/bin/hello -t
+&#x27;&#x27;</span></code></pre>
+      </div><p>The disadvantage of this way is that it doesn&#39;t propagate man pages and other paths from the old derivation. There are multiple ways of solving that:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-keyword">let</span>
+  <span class="hljs-attr">wrapped</span> <span class="hljs-operator">=</span> pkgs.writeShellScriptBin <span class="hljs-string">&quot;hello&quot;</span> <span class="hljs-string">&#x27;&#x27;
+    exec <span class="hljs-subst">${pkgs.hello}</span>/bin/hello -t
+  &#x27;&#x27;</span>;
+<span class="hljs-keyword">in</span>
+
+pkgs.symlinkJoin {
+  <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;hello&quot;</span>;
+  <span class="hljs-attr">paths</span> <span class="hljs-operator">=</span> [
+    wrapped
+    pkgs.hello
+  ];
+}</code></pre>
+      </div><p>Similarly the following works too:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">pkgs.symlinkJoin {
+  <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;hello&quot;</span>;
+  <span class="hljs-attr">paths</span> <span class="hljs-operator">=</span> [ pkgs.hello ];
+  <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> [ pkgs.makeWrapper ];
+  <span class="hljs-attr">postBuild</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    wrapProgram $out/bin/hello \
+      --add-flags &quot;-t&quot;
+  &#x27;&#x27;</span>;
+}</code></pre>
+      </div><p>If you prefer not to have every file symlinked and have a cleaner result, the following is also possible:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">pkgs.runCommand <span class="hljs-string">&quot;hello&quot;</span> {
+  <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> [ pkgs.makeWrapper ];
+} <span class="hljs-string">&#x27;&#x27;
+  mkdir $out
+  # Link every top-level folder from pkgs.hello to our new target
+  ln -s <span class="hljs-subst">${pkgs.hello}</span>/* $out
+  # Except the bin folder
+  rm $out/bin
+  mkdir $out/bin
+  # We create the bin folder ourselves and link every binary in it
+  ln -s <span class="hljs-subst">${pkgs.hello}</span>/bin/* $out/bin
+  # Except the hello binary
+  rm $out/bin/hello
+  # Because we create this ourself, by creating a wrapper
+  makeWrapper <span class="hljs-subst">${pkgs.hello}</span>/bin/hello $out/bin/hello \
+    --add-flags &quot;-t&quot;
+&#x27;&#x27;</span></code></pre>
+      </div><p>And lastly, there is the possibility of wrapping things right inside the derivation you want to wrap, this is however discouraged and impractical in most cases, as it requires recompilation of it:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">pkgs.hello.overrideAttrs (<span class="hljs-params">oldAttrs:</span> {
+  <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> oldAttrs.buildInputs <span class="hljs-keyword">or</span> [] <span class="hljs-operator">++</span> [ pkgs.makeWrapper ];
+  <span class="hljs-attr">postInstall</span> <span class="hljs-operator">=</span> oldAttrs.postInstall <span class="hljs-keyword">or</span> <span class="hljs-string">&quot;&quot;</span> <span class="hljs-operator">+</span> <span class="hljs-string">&#x27;&#x27;
+    wrapProgram $out/bin/hello \
+      --add-flags &quot;-t&quot;
+  &#x27;&#x27;</span>;
+})</code></pre>
+      </div><h2 id="securing-nix">Securing Nix</h2><p>See <a href="https://mirror.nixoscn.org/wiki/Nix%20Cookbook/Security" class="wikilink" title="Security">Security</a></p>
+<h2 id="debugging">Debugging</h2><h3 id="common-errors">Common errors</h3><h4 id="bad-configuration-option-gssapikexalgorithms">Bad configuration option: gssapikexalgorithms</h4><p>Found when using an SSH binary from Nix on typically RPM-based distros like CentOS, Fedora, Scientific Linux, Redhat, etc. Possible fixes, from least to most invasive:</p>
+<ol>
+<li><strong>The quick fix:</strong> Just comment out the configuration option in the ssh config file</li>
+<li>If you want to keep the option in but don&#39;t need it to work (e.g., you&#39;re sharing a config across systems, but only use GSSAPI/Kerberos on another system): add to your ssh configuration</li>
+<li>Install the package instead of . This will fix ssh used directly, but some dependencies may still use the non-GSSAPI package.</li>
+<li>Force specific other packages to build with the GSSAPI version: for example, you might add <code>(git-repo.override { openssh = openssh_gssapi; })</code> to your list (if git-repo is the problematic package), or use <a href="https://mirror.nixoscn.org/wiki/Nix%20Cookbook/overlays" class="wikilink" title="overlays">overlays</a> like:</li>
+</ol>
+<p><code> nixpkgs.overlays = [</code><br><code>   (final: prev: {</code><br><code>     mosh = prev.mosh.override { openssh = prev.openssh_gssapi; };</code><br><code>   })</code><br><code> ];</code></p>
+</syntaxhighlight>
+
+<p>(which will fix <a href="https://mirror.nixoscn.org/wiki/Nix%20Cookbook/mosh" class="wikilink" title="mosh">mosh</a> used as a dependency too)</p>
+<ol>
+<li>Force all packages that depend on openssh to use openssh_gssapi instead:</li>
+</ol>
+<p><code>nixpkgs.overlays = [</code><br><code>  (final: prev: { openssh = prev.openssh_gssapi; } )</code><br><code>];</code></p>
+</syntaxhighlight>
+
+<h4 id="desktop-environment-does-not-find-desktop-files">Desktop environment does not find .desktop files</h4><p>IF your DE does not look in <code>$HOME/.nix-profile/share</code> for .desktop files. You need to add that path to the <code>XDG_DATA_DIRS</code>, the position reflects precedence so files in earlier directories shadow files in later directories. This can be accomplished in various ways depending on your login manager, see <a href="https://wiki.archlinux.org/index.php/Xprofile">Arch wiki: Xprofile</a> for more information. For example using <code>~/.xprofile</code> as follows:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">export</span> XDG_DATA_DIRS=<span class="hljs-variable">$HOME</span>/.nix-profile/share:/usr/local/share:/usr/share</span></code></pre>
+      </div><p>Notice that you have to include the default locations on your system, otherwise they will be overwritten. Find out the proper paths using <code>echo $XDG_DATA_DIRS</code>. (Note: <code>export XDG_DATA_DIRS=$HOME/.nix-profile/share:$XDG_DATA_DIRS</code> did not work, XDG_DATA_DIRS ended up containing only <code>$HOME/.nix-profile/share:</code> which isn&#39;t even a valid path.)</p>
+<p>NOTE: The above fix will make your programs installed by nix visible in your application menu, but you still will not be able to run them, because they are symlinked outside your XDG_DATA_DIRS paths, and are not executable (one or the other criteria must be met to run the program from a menu). This impacts KDE users, and potentially others. I noticed that on native NixOS with KDE, NixOS adds all these paths for each application to one&#39;s XDG_DATA_DIRS variable.</p>
+<h4 id="error-the-option-has-conflicting-definitions">Error: the option has conflicting definitions</h4><p>If while doing a</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs">nixos-rebuild switch</code></pre>
+      </div><p>you see an error like:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs">building Nix...
+building the system configuration...
+error: The option `systemd.services.postfix.serviceConfig.PIDFile&#x27; has conflicting definitions, in `/nix/var/nix/profiles/per-user/root/channels/nixos/nixos/modules/
+services/mail/postfix.nix&#x27; and `/etc/nixos/configuration.nix&#x27;.
+(use &#x27;--show-trace&#x27; to show detailed location information)</code></pre>
+      </div><p>This means exactly what it says, but how to fix it? Assuming one of the nix files is your configuration file, then you want your version to stick, and not the version from some maintainer somewhere, you can use</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">mkOverride </code></pre>
+      </div><p>, which is a nix property defined in lib. so in the example above, the option in conflict is &#39;systemd.services.postfix.serviceConfig.PIDFile&#39;, so to override it you would do something like:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ystemd.services.postfix.serviceConfig.PIDFile</span> <span class="hljs-operator">=</span> pkgs.lib.mkOverride <span class="hljs-number">0</span> <span class="hljs-string">&quot;mynewvalue&quot;</span>;</code></pre>
+      </div><p>which will override the other value, and force yours to have priority.</p>
+<h2 id="auditing">Auditing</h2><h3 id="license-stance">License stance</h3><p>Example on how to check if a given list of packages (as returned by the <em>pkgs.nix</em> derivation) conforms to permitted licenses criteria:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-keyword">with</span> <span class="hljs-keyword">rec</span> {
+  <span class="hljs-comment"># Incomplete list, customize to your policies.</span>
+  <span class="hljs-attr">permissiveLicense</span> <span class="hljs-operator">=</span> <span class="hljs-params">v:</span> v.license <span class="hljs-operator">==</span> <span class="hljs-string">&quot;bsd3&quot;</span> <span class="hljs-operator">||</span> v.license <span class="hljs-operator">==</span> <span class="hljs-string">&quot;mit&quot;</span> <span class="hljs-operator">||</span> v.license <span class="hljs-operator">==</span> <span class="hljs-string">&quot;bsd2&quot;</span> <span class="hljs-operator">||</span> v.license <span class="hljs-operator">==</span> <span class="hljs-string">&quot;publicDomain&quot;</span> <span class="hljs-operator">||</span> v.license <span class="hljs-operator">==</span> <span class="hljs-string">&quot;asl20&quot;</span> <span class="hljs-operator">||</span> v.license <span class="hljs-operator">==</span> <span class="hljs-string">&quot;zlib&quot;</span> <span class="hljs-operator">||</span> v.license <span class="hljs-operator">==</span> <span class="hljs-string">&quot;bsdOriginal&quot;</span> <span class="hljs-operator">||</span> v.license <span class="hljs-operator">==</span> <span class="hljs-string">&quot;openssl&quot;</span>;
+
+  <span class="hljs-comment"># Omit some false-positive buildInputs like bash and perl.. those should be nativeBuildInputs rather?</span>
+  <span class="hljs-attr">saneDep</span> <span class="hljs-operator">=</span> <span class="hljs-params">d:</span> d <span class="hljs-operator">?</span> meta.license
+      <span class="hljs-operator">&amp;&amp;</span> <span class="hljs-built_in">builtins.sub</span>string <span class="hljs-number">0</span> <span class="hljs-number">5</span> d.name <span class="hljs-operator">!=</span> <span class="hljs-string">&quot;bash-&quot;</span>
+      <span class="hljs-operator">&amp;&amp;</span> <span class="hljs-built_in">builtins.sub</span>string <span class="hljs-number">0</span> <span class="hljs-number">5</span> d.name <span class="hljs-operator">!=</span> <span class="hljs-string">&quot;perl-&quot;</span>;
+
+  <span class="hljs-comment"># Keep if the license is not allowed, or if has any (transitive) dep with a license that is not allowed.</span>
+  <span class="hljs-attr">keepBadDeps</span> <span class="hljs-operator">=</span> <span class="hljs-params">ds:</span> <span class="hljs-built_in">builtins.filter</span> (<span class="hljs-params">n:</span> <span class="hljs-operator">!</span>(permissiveLicense n) <span class="hljs-operator">||</span> n.baddeps <span class="hljs-operator">!=</span> []) (<span class="hljs-built_in">map</span> derivToNode (<span class="hljs-built_in">builtins.filter</span> saneDep ds));
+
+  <span class="hljs-attr">derivToNode</span> <span class="hljs-operator">=</span> <span class="hljs-params">d:</span> 
+    { <span class="hljs-attr">license</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">if</span> <span class="hljs-built_in">builtins.typeOf</span> d.meta.license <span class="hljs-operator">==</span> <span class="hljs-string">&quot;string&quot;</span> 
+                <span class="hljs-keyword">then</span> d.meta.license
+                <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> <span class="hljs-built_in">builtins.typeOf</span> d.meta.license <span class="hljs-operator">==</span> <span class="hljs-string">&quot;list&quot;</span>  <span class="hljs-comment"># can happen sometimes, could concat.. but have a look rather</span>
+                     <span class="hljs-keyword">then</span> <span class="hljs-string">&quot;MULTI&quot;</span>
+                     <span class="hljs-keyword">else</span> d.meta.license.shortName;
+      <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> d.name;
+      <span class="hljs-attr">baddeps</span> <span class="hljs-operator">=</span> keepBadDeps (<span class="hljs-built_in">builtins.filter</span> saneDep d.buildInputs);
+    };
+};
+<span class="hljs-keyword">let</span> ps <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">./pkgs.nix</span>;  <span class="hljs-comment"># pkgs.nix should result in a list of derivations to check</span>
+<span class="hljs-keyword">in</span> keepBadDeps ps</code></pre>
+      </div><p>Then exercise it in <strong>nix repl</strong>, using :p to force the result so we can actually see it:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-meta prompt_">nix-repl&gt;</span> xs <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">./lic.nix</span>
+<span class="hljs-meta prompt_">nix-repl&gt;</span> <span class="hljs-meta">:p</span> xs </code></pre>
+      </div><p>This will print a (somewhat unreadable) nested tree of derivation names and their licences, where (at least) at the roots there are not-allowed licenses.</p>
+<p>Be sure to manually check them for being false positives - navigate to the derivation in the nixpkgs repo and eyeball the license info (it is updated every now and then), also cross-check with the original source to make sure.</p>
+<h3 id="vulnerabilities">Vulnerabilities</h3><p>See <a href="https://github.com/nix-community/vulnix">vulnix</a>.</p>
+<p><a href="category:nix" class="wikilink" title="Category:nix">Category:nix</a> <a href="category:Cookbook" class="wikilink" title="Category:Cookbook">Category:Cookbook</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Active Directory Client</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Active Directory Client</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Active Directory Client -->
+
+<p>Active Directory (AD) is a directory service that enables you to provide login to computers and other useful purposes.</p>
+<h2 id="basic-setup">Basic Setup</h2><p>1) Create /etc/nixos/nixos-ad.nix and add the following. Replace your_domain_lowercase and YOUR_DOMAIN_UPPERCASE with something like ad.foobar.com and AD.FOOBAR.COM.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment">#</span>
+<span class="hljs-comment"># nixos-ad.nix -- Active Directory Client</span>
+<span class="hljs-comment">#</span>
+<span class="hljs-comment"># Join AD: sudo adcli join --domain=your.domain.com --user=administrator</span>
+<span class="hljs-comment">#</span>
+{
+  config,
+  pkgs,
+  ...
+}: {
+  <span class="hljs-comment">#</span>
+  <span class="hljs-comment"># Packages</span>
+  <span class="hljs-comment">#</span>
+  <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+    adcli <span class="hljs-comment"># Helper library and tools for Active Directory client operations</span>
+    oddjob <span class="hljs-comment"># Odd Job Daemon</span>
+    samba4Full <span class="hljs-comment"># Standard Windows interoperability suite of programs for Linux and Unix</span>
+    sssd <span class="hljs-comment"># System Security Services Daemon</span>
+    krb5 <span class="hljs-comment"># MIT Kerberos 5</span>
+    realmd <span class="hljs-comment"># DBus service for configuring Kerberos and other</span>
+  ];
+
+  <span class="hljs-comment">#</span>
+  <span class="hljs-comment"># Security</span>
+  <span class="hljs-comment">#</span>
+  <span class="hljs-attr">security</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">krb5</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">libdefaults</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">udp_preference_limit</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>;
+          <span class="hljs-attr">default_realm</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;YOUR_DOMAIN_UPPERCASE&quot;</span>;
+        };
+      };
+    };
+
+    <span class="hljs-attr">pam</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">makeHomeDir.umask</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;077&quot;</span>;
+      <span class="hljs-attr">services.login.makeHomeDir</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">services.sshd.makeHomeDir</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    };
+
+    <span class="hljs-attr">sudo</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">extraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        %domain<span class="hljs-char escape_">\ </span>admins ALL=(ALL:ALL) NOPASSWD: ALL
+        Defaults:%domain<span class="hljs-char escape_">\ </span>admins env_keep+=TERMINFO_DIRS
+        Defaults:%domain<span class="hljs-char escape_">\ </span>admins env_keep+=TERMINFO
+      &#x27;&#x27;</span>;
+
+      <span class="hljs-comment"># Use extraConfig because of blank space in &#x27;domain admins&#x27;.</span>
+      <span class="hljs-comment"># Alternatively, you can use the GID.</span>
+      <span class="hljs-comment"># extraRules = [</span>
+      <span class="hljs-comment">#   { groups = [ &quot;domain admins&quot; ];</span>
+      <span class="hljs-comment">#     commands = [ { command = &quot;ALL&quot;; options = [ &quot;NOPASSWD&quot; ]; }  ]; }</span>
+      <span class="hljs-comment"># ];</span>
+    };
+  };
+
+  <span class="hljs-comment">#</span>
+  <span class="hljs-comment"># Services</span>
+  <span class="hljs-comment">#</span>
+  <span class="hljs-attr">services</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">nscd</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">config</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        server-user nscd
+        enable-cache hosts yes
+        positive-time-to-live hosts 0
+        negative-time-to-live hosts 0
+        shared hosts yes
+        enable-cache passwd no
+        enable-cache group no
+        enable-cache netgroup no
+        enable-cache services no
+      &#x27;&#x27;</span>;
+    };
+
+    <span class="hljs-attr">sssd</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">config</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        [sssd]
+        domains = your_domain_lowercase
+        config_file_version = 2
+        services = nss, pam
+
+        [domain/your_domain_lowercase]
+        override_shell = /run/current-system/sw/bin/zsh
+        krb5_store_password_if_offline = True
+        cache_credentials = True
+        krb5_realm = YOUR_DOMAIN_UPPERCASE
+        realmd_tags = manages-system joined-with-samba
+        id_provider = ad
+        fallback_homedir = /home/%u
+        ad_domain = your_domain_lowercase
+        use_fully_qualified_names = false
+        ldap_id_mapping = false
+        auth_provider = ad
+        access_provider = ad
+        chpass_provider = ad
+        ad_gpo_access_control = permissive
+        enumerate = true
+      &#x27;&#x27;</span>;
+    };
+  };
+
+  <span class="hljs-comment">#</span>
+  <span class="hljs-comment"># Systemd</span>
+  <span class="hljs-comment">#</span>
+  <span class="hljs-attr">systemd</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">services.realmd</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Realm Discovery Service&quot;</span>;
+      <span class="hljs-attr">wantedBy</span> <span class="hljs-operator">=</span> [<span class="hljs-string">&quot;multi-user.target&quot;</span>];
+      <span class="hljs-attr">after</span> <span class="hljs-operator">=</span> [<span class="hljs-string">&quot;network.target&quot;</span>];
+      <span class="hljs-attr">serviceConfig</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">Type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;dbus&quot;</span>;
+        <span class="hljs-attr">BusName</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;org.freedesktop.realmd&quot;</span>;
+        <span class="hljs-attr">ExecStart</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.realmd}</span>/libexec/realmd&quot;</span>;
+        <span class="hljs-attr">User</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;root&quot;</span>;
+      };
+    };
+  };
+}</code></pre>
+      </div><p>2) Update your configuration.nix to import ./nixos-ad.nix</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">i<span class="hljs-attr">mports</span> <span class="hljs-operator">=</span>
+  [
+    <span class="hljs-symbol">./hardware-configuration.nix</span>
+    <span class="hljs-symbol">./nixos-ad.nix</span>
+  ]</code></pre>
+      </div><p>3) <code>nix-channel --update ; nixos-switch rebuild --upgrade</code></p>
+<p><strong>Note</strong></p>
+<ul>
+<li>These commands presume that you&#39;re using the classic NixOS channels and not the experimental flakes configuration.</li>
+<li>These commands will freshen all installed packages and configuration settings.</li>
+<li>If you experience an error from systemd/sssd, disregard it. You will fix that error by joining the domain.</li>
+</ul>
+<p>4) Join your domain</p>
+<p><code>sudo adcli join --domain=your.domain.com --user=administrator</code></p>
+<p>5) Restart SSSD</p>
+<p><code>sudo systemctl restart sssd</code></p>
+<p>6) Confirm that you have successfully joined your AD</p>
+<p><code>realm discover your_domain_lowercase</code></p>
+<p><code>id user_in_AD</code></p>
+<p>7) Optional: You may reboot to ensure that your machine sustains its domain binding and that end users can login. As of 2024, the adcli join and sssd restart seem to be sufficient.</p>
+<p>8) Optional: If the computer is a laptop, you may add a named user to the NixOS local networkmanager group so that person can add a WiFI network, switch between wireless/wired, and so on.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">u<span class="hljs-attr">sers.groups.networkmanager.members</span> <span class="hljs-operator">=</span> [<span class="hljs-string">&quot;user_in_AD&quot;</span>];</code></pre>
+      </div><p>Unfortunately, Linux local groups do not support nesting of AD groups. You have to grant this access to individual users.</p>
+<p><a href="category:Cookbook" class="wikilink" title="Category:Cookbook">Category:Cookbook</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

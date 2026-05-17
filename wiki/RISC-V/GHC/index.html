@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RISC-V/GHC</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/RISC-V">RISC-V</a><span aria-hidden="true"> / </span>GHC</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: RISC-V/GHC -->
+
+<h2 id="current-status">Current status</h2><p>We can cross-compile (<a href="https://github.com/NixOS/nixpkgs/pull/305392">#305392</a>) but we are missing bootstrap tarballs for native builds.</p>
+<p><code>cannot bootstrap GHC on this platform (&#39;riscv64-linux&#39; with libc &#39;defaultLibc&#39;)</code></p>
+<ul>
+<li><a href="https://gitlab.haskell.org/ghc/ghc/-/issues/?label_name%5B%5D=RISC-V">RISC-V Label</a></li>
+<li><a href="https://gitlab.haskell.org/ghc/ghc/-/issues/16783">Main issue</a> ✅</li>
+<li><a href="https://gitlab.haskell.org/ghc/ghc/-/issues/23179">NCG</a> ✅</li>
+<li><a href="https://gitlab.haskell.org/ghc/ghc/-/commit/31e265c1df948d1bcc82d08affe995fd1d1c1438">LLVM backend</a> ✅</li>
+<li><strong><a href="https://gitlab.haskell.org/ghc/ghc/-/issues/23519">Binary tarballs</a></strong></li>
+</ul>
+<p>Some popular affected packages are:</p>
+<ul>
+<li>nix-tree</li>
+<li>nixfmt</li>
+<li>hledger</li>
+<li>hledger-ui</li>
+<li>hledger-web</li>
+<li>exa</li>
+<li>pandoc</li>
+<li>nix-output-monitor</li>
+<li>xmonad</li>
+</ul>
+<h2 id="booting-ghc-via-cross-compilation">Booting GHC via cross-compilation</h2><p>On a platform where Nixpkgs supports compiling GHC (e.g. <code>x86_64-linux</code>):</p>
+<div class="code-container">
+        
+        <pre><code class="language-sh hljs">nix copy --to ssh://root@<span class="hljs-variable">$riscv_host</span> --no-check-sigs \
+  <span class="hljs-string">&#x27;github:alexandretunstall/nixpkgs/ghc-cross-usable#pkgsCross.riscv64.haskell.compiler.integer-simple.ghc8107&#x27;</span></code></pre>
+      </div><p>(You don’t need to SSH as root if you copy it via a trusted user.)</p>
+<p>Then you’ll want to pin the copied path so that the GC never deletes it. On the RISC-V host:</p>
+<div class="code-container">
+        
+        <pre><code class="language-sh hljs">nix-store --realise --indirect --add-root <span class="hljs-variable">$root_path</span> <span class="hljs-variable">$cross_ghc_path</span></code></pre>
+      </div><p>Finally, create the GHC configuration on the RISC-V host so that native builds use the cross-compiled GHC.</p>
+<p>The configuration below assumes that there is a symbolic link to the previously built GHC at <code>../boot/ghc-8.10.7</code>.</p>
+<p>The configuration should work with any modern version of Nixpkgs.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ config, lib, pkgs, ... }:
+
+<span class="hljs-keyword">let</span>
+  <span class="hljs-attr">mkBootCompiler</span> <span class="hljs-operator">=</span> { version, outPath, llvmPackages }: <span class="hljs-keyword">let</span>
+    <span class="hljs-attr">passthru</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">targetPrefix</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;</span>;
+      <span class="hljs-attr">enableShared</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+      <span class="hljs-attr">hasHaddock</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+      <span class="hljs-attr">hasThreadedRuntime</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+
+      <span class="hljs-keyword">inherit</span> llvmPackages;
+
+      <span class="hljs-attr">haskellCompilerName</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ghc-<span class="hljs-subst">${version}</span>&quot;</span>;
+    };
+  <span class="hljs-keyword">in</span> passthru <span class="hljs-operator">//</span> {
+    <span class="hljs-keyword">inherit</span> version outPath passthru;
+
+    <span class="hljs-attr">meta</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">license</span> <span class="hljs-operator">=</span> lib.licenses.bsd3;
+      <span class="hljs-attr">platforms</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;riscv64-linux&quot;</span> ];
+    };
+  };
+
+  <span class="hljs-attr">mkBootPackages</span> <span class="hljs-operator">=</span> { base, ghc }: <span class="hljs-keyword">let</span>
+    <span class="hljs-attr">buildHaskellPackages</span> <span class="hljs-operator">=</span> base.override (<span class="hljs-params">old:</span> {
+      <span class="hljs-keyword">inherit</span> buildHaskellPackages ghc;
+
+      <span class="hljs-attr">overrides</span> <span class="hljs-operator">=</span> bootOverrides;
+    });
+  <span class="hljs-keyword">in</span> buildHaskellPackages;
+
+  <span class="hljs-attr">hsLib</span> <span class="hljs-operator">=</span> pkgs.haskell.lib.compose;
+
+  <span class="hljs-comment"># Overrides that are needed to boot a native GHC</span>
+  <span class="hljs-attr">bootOverrides</span> <span class="hljs-operator">=</span> <span class="hljs-params">self:</span> <span class="hljs-params">super:</span> {
+    <span class="hljs-attr">mkDerivation</span> <span class="hljs-operator">=</span> <span class="hljs-params">args:</span> super.mkDerivation ({
+      <span class="hljs-attr">enableLibraryProfiling</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+    } <span class="hljs-operator">//</span> args);
+
+    <span class="hljs-attr">alex</span> <span class="hljs-operator">=</span> hsLib.dontCheck super.alex;
+    <span class="hljs-attr">data-array-byte</span> <span class="hljs-operator">=</span> hsLib.dontCheck super.data-array-byte;
+    <span class="hljs-attr">doctest</span> <span class="hljs-operator">=</span> hsLib.dontCheck super.doctest;
+    <span class="hljs-attr">hashable</span> <span class="hljs-operator">=</span> hsLib.dontCheck super.hashable;
+    <span class="hljs-attr">optparse-applicative</span> <span class="hljs-operator">=</span> hsLib.dontCheck super.optparse-applicative;
+    <span class="hljs-attr">QuickCheck</span> <span class="hljs-operator">=</span> hsLib.dontCheck super.QuickCheck;
+    <span class="hljs-attr">temporary</span> <span class="hljs-operator">=</span> hsLib.dontCheck super.temporary;
+    <span class="hljs-attr">vector</span> <span class="hljs-operator">=</span> hsLib.dontCheck super.vector;
+  };
+
+  <span class="hljs-comment"># If a package fails to build, try disabling checks here.</span>
+  <span class="hljs-comment"># Since RISC-V has to use an unregisterised GHC, many test suites fail.</span>
+  <span class="hljs-attr">unregOverrides</span> <span class="hljs-operator">=</span> <span class="hljs-params">self:</span> <span class="hljs-params">super:</span> {
+    <span class="hljs-comment"># Example: lens fails without this override</span>
+    <span class="hljs-attr">lens</span> <span class="hljs-operator">=</span> hsLib.dontCheck super.lens;
+  };
+
+<span class="hljs-keyword">in</span> {
+  <span class="hljs-attr">nixpkgs.overlays</span> <span class="hljs-operator">=</span> [
+    (<span class="hljs-params">self:</span> <span class="hljs-params">super:</span> {
+      <span class="hljs-comment"># If you need to change the default GHC, uncomment these lines.</span>
+      <span class="hljs-comment"># Using the Nixpkgs default is better as it can build more packages than</span>
+      <span class="hljs-comment"># other versions of GHC.</span>
+      <span class="hljs-comment">#ghc = self.haskell.compiler.ghc94;</span>
+      <span class="hljs-comment">#haskellPackages = self.haskell.packages.ghc94;</span>
+
+      <span class="hljs-attr">haskell</span> <span class="hljs-operator">=</span> super.haskell <span class="hljs-operator">//</span> {
+        <span class="hljs-attr">compiler</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">ghc8107Boot</span> <span class="hljs-operator">=</span> mkBootCompiler {
+            <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;8.10.7&quot;</span>;
+            <span class="hljs-attr">outPath</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">builtins.storePath</span> <span class="hljs-symbol">../boot/ghc-8.10.7</span>;
+            <span class="hljs-attr">llvmPackages</span> <span class="hljs-operator">=</span> pkgs.llvmPackages_12;
+          };
+
+          <span class="hljs-attr">ghc928</span> <span class="hljs-operator">=</span> (super.haskell.compiler.ghc928.override (<span class="hljs-params">old:</span> {
+            <span class="hljs-attr">bootPkgs</span> <span class="hljs-operator">=</span> self.pkgsBuildBuild.haskell.packages.ghc8107Boot;
+          })).overrideAttrs ({ configureFlags <span class="hljs-operator">?</span> [], ... }: {
+            <span class="hljs-comment"># Registerised RV64 produces programs that segfault</span>
+            <span class="hljs-attr">configureFlags</span> <span class="hljs-operator">=</span> configureFlags <span class="hljs-operator">++</span> [ <span class="hljs-string">&quot;--enable-unregisterised&quot;</span> ];
+          });
+          
+          <span class="hljs-attr">ghc92</span> <span class="hljs-operator">=</span> self.haskell.compiler.ghc928;
+          
+          <span class="hljs-attr">ghc964</span> <span class="hljs-operator">=</span> (super.haskell.compiler.ghc964.override (<span class="hljs-params">old:</span> {
+            <span class="hljs-attr">bootPkgs</span> <span class="hljs-operator">=</span> self.pkgsBuildBuild.haskell.packages.ghc928;
+          }).overrideAttrs ({ configureFlags <span class="hljs-operator">?</span> [], ... }: {
+            <span class="hljs-attr">configureFlags</span> <span class="hljs-operator">=</span> configureFlags <span class="hljs-operator">++</span> [ <span class="hljs-string">&quot;--enable-unregisterised&quot;</span> ];
+          });
+          
+          <span class="hljs-attr">ghc96</span> <span class="hljs-operator">=</span> self.haskell.compiler.ghc964;
+        };
+
+        <span class="hljs-attr">packages</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">ghc928</span> <span class="hljs-operator">=</span> super.haskell.packages.ghc928.override (<span class="hljs-params">old:</span> {
+            <span class="hljs-attr">overrides</span> <span class="hljs-operator">=</span> unregOverrides;
+          });
+          
+          <span class="hljs-attr">ghc92</span> <span class="hljs-operator">=</span> self.haskell.packages.ghc928;
+          
+          <span class="hljs-attr">ghc964</span> <span class="hljs-operator">=</span> super.haskell.packages.ghc964.override (<span class="hljs-params">old:</span> {
+            <span class="hljs-attr">overrides</span> <span class="hljs-operator">=</span> unregOverrides;
+          });
+          
+          <span class="hljs-attr">ghc96</span> <span class="hljs-operator">=</span> self.haskell.packages.ghc96;
+
+          <span class="hljs-attr">ghc8107Boot</span> <span class="hljs-operator">=</span> mkBootPackages {
+            <span class="hljs-attr">base</span> <span class="hljs-operator">=</span> super.haskell.packages.ghc8107;
+            <span class="hljs-attr">ghc</span> <span class="hljs-operator">=</span> self.pkgsBuildHost.haskell.compiler.ghc8107Boot;
+          };
+        };
+      };
+    })
+  ];
+}</code></pre>
+      </div><p>For newer GHCs, refer to the GHC documentation or the Nixpkgs source to find which version of GHC and LLVM is needed for compilation.</p>
+<p>GHC &gt;=9.2 is unable to boot 9.2 and 9.4. GHC &gt;=9.6 cannot be cross-compiled at all due to issues with Hadrian. Newer GHCs can be booted using natively compiled versions of GHC instead.</p>
+<p>See <a href="https://github.com/AlexandreTunstall/nixos-riscv">https://github.com/AlexandreTunstall/nixos-riscv</a> for an example of a pure flake that uses this trick to compile Haskell programs for RISC-V.</p>
+<h2 id="see-also">See also</h2><ul>
+<li><a href="https://github.com/NixOS/nixpkgs/pull/243619">Nixpkgs PR 243619 (fix cross-built native GHC)</a></li>
+<li><a href="https://github.com/NixOS/nixpkgs/pull/305392">Nixpkgs PR 305392 (fix cross-built native GHC, version 2)</a></li>
+</ul>
+<p><a href="category:Haskell" class="wikilink" title="Category:Haskell">Category:Haskell</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

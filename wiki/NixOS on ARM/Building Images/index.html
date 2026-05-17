@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NixOS on ARM/Building Images</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM">NixOS on ARM</a><span aria-hidden="true"> / </span>Building Images</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: NixOS on ARM/Building Images -->
+
+<h2 id="build-your-own-image-natively">Build your own image natively</h2><p>You can customize image by using the following snippet.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># save as sd-image.nix somewhere</span>
+{ ... }: {
+  <span class="hljs-attr">imports</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-operator">&lt;</span>nixpkgs<span class="hljs-operator">/</span>nixos<span class="hljs-operator">/</span>modules<span class="hljs-operator">/</span>installer<span class="hljs-operator">/</span>sd-card<span class="hljs-operator">/</span>sd-image-aarch64.nix<span class="hljs-operator">&gt;</span>
+  ];
+  <span class="hljs-comment"># put your own configuration here, for example ssh keys:</span>
+  <span class="hljs-attr">users.users.root.openssh.authorizedKeys.keys</span> <span class="hljs-operator">=</span> [
+     <span class="hljs-string">&quot;ssh-ed25519 AAAAC3NzaC1lZDI1.... username@tld&quot;</span>
+  ];
+}</code></pre>
+      </div><p>Then build with:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">$ nix-build &#x27;<span class="hljs-symbol">&lt;nixpkgs/nixos&gt;</span>&#x27; <span class="hljs-operator">-</span>A config.system.build.sdImage <span class="hljs-operator">-</span>I nixos-config<span class="hljs-operator">=</span>.<span class="hljs-operator">/</span>sd-image.nix</code></pre>
+      </div><p>Note that this requires a machine with aarch64. You can however also build it from your laptop using an aarch64 remote builder as described in <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/Building%20Images/Distributed_build" class="wikilink" title="Distributed build">Distributed build</a> or ask for access on the <a href="https://github.com/nix-community/aarch64-build-box">community aarch64 builder</a>.</p>
+<p>if you use the experimental flake, instead of doing the above stuff, can put the following lines in <code>flake.nix</code>, <code>git add flake.nix</code> and build with <code>nix build .#images.rpi2</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Build image&quot;</span>;
+  <span class="hljs-attr">inputs.nixpkgs.url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:nixos/nixpkgs/nixos-22.11&quot;</span>;
+  <span class="hljs-attr">outputs</span> <span class="hljs-operator">=</span> { self, nixpkgs }: <span class="hljs-keyword">rec</span> {
+    <span class="hljs-attr">nixosConfigurations.rpi2</span> <span class="hljs-operator">=</span> nixpkgs.lib.nixosSystem {
+      <span class="hljs-attr">modules</span> <span class="hljs-operator">=</span> [
+        <span class="hljs-string">&quot;<span class="hljs-subst">${nixpkgs}</span>/nixos/modules/installer/sd-card/sd-image-raspberrypi.nix&quot;</span>
+        {
+          <span class="hljs-attr">nixpkgs.config.allowUnsupportedSystem</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+          <span class="hljs-attr">nixpkgs.hostPlatform.system</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;armv7l-linux&quot;</span>;
+          <span class="hljs-attr">nixpkgs.buildPlatform.system</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;x86_64-linux&quot;</span>; <span class="hljs-comment">#If you build on x86 other wise changes this.</span>
+          <span class="hljs-comment"># ... extra configs as above</span>
+        }
+      ];
+    };
+    <span class="hljs-attr">images.rpi2</span> <span class="hljs-operator">=</span> nixosConfigurations.rpi2.config.system.build.sdImage;
+  };
+}</code></pre>
+      </div><h3 id="cross-compiling">Cross-compiling</h3><p>It is possible to cross-compile from a different architecture. To cross-compile to <code>armv7l</code>, on the same <code>sd-image.nix</code> add in <code>crossSystem</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ ... }: {
+  <span class="hljs-attr">nixpkgs.crossSystem.system</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;armv7l-linux&quot;</span>;
+  <span class="hljs-attr">imports</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-operator">&lt;</span>nixpkgs<span class="hljs-operator">/</span>nixos<span class="hljs-operator">/</span>modules<span class="hljs-operator">/</span>installer<span class="hljs-operator">/</span>sd-card<span class="hljs-operator">/</span>sd-image-aarch64.nix<span class="hljs-operator">&gt;</span>
+  ];
+  <span class="hljs-comment"># ...</span>
+}</code></pre>
+      </div><h3 id="compiling-through-binfmt-qemu">Compiling through binfmt QEMU</h3><p>It is also possible to compile for aarch64 on your non-aarch64 local machine, or a remote builder, by registering QEMU as a binfmt wrapper for the aarch64 architecture. This <b>wrapper uses emulation</b> and will therefore be slower than comparable native machines or cross-compiling.</p>
+<p>To enable the binfmt wrapper on NixOS, add the following to <code>configuration.nix</code></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">boot.binfmt.emulatedSystems</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;aarch64-linux&quot;</span> ];
+}</code></pre>
+      </div><p>Then, add <code>--argstr system aarch64-linux</code> to the build command:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">$ nix-build &#x27;<span class="hljs-symbol">&lt;nixpkgs/nixos&gt;</span>&#x27; <span class="hljs-operator">-</span>A config.system.build.sdImage <span class="hljs-operator">-</span>I nixos-config<span class="hljs-operator">=</span><span class="hljs-symbol">./sd-image.nix</span> <span class="hljs-operator">-</span>-argstr system aarch64-linux</code></pre>
+      </div><p>If you are building on non-NixOS machine with QEMU binfmt wrapper configured, you will want to configure nix daemon to let it know that it can build for aarch64. Add the following line to <code>/etc/nix/nix.conf</code>: <code>extra-platforms = aarch64-linux arm-linux</code></p>
+<p>If you want to build just one specific package, use this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">nix-build &#x27;<span class="hljs-symbol">&lt;nixpkgs/nixos&gt;</span>&#x27; <span class="hljs-operator">-</span>A pkgs.theRequiredPackage <span class="hljs-operator">-</span>-argstr system aarch64-linux <span class="hljs-operator">-</span>I nixos-config<span class="hljs-operator">=</span><span class="hljs-operator">/</span>path<span class="hljs-operator">/</span>to<span class="hljs-operator">/</span>target<span class="hljs-operator">/</span>machine<span class="hljs-operator">/</span>nixos<span class="hljs-operator">/</span>config<span class="hljs-operator">/</span>copy</code></pre>
+      </div><p>(the last option should not be required on NixOS machines)</p>
+<h3 id="compiling-through-qemu-kvm">Compiling through QEMU/kvm</h3><p>It is also possible to build nixos images through full emulation using QEMU/kvm but will be way slower than native and binfmt QEMU.</p>
+<h2 id="alternatives-to-building-custom-images">Alternatives to building custom images</h2><h3 id="stock-nixos-installer-image-with-custom-u-boot">Stock NixOS installer image with custom U-Boot</h3><p>The <a href="https://github.com/Mic92/nixos-aarch64-images">Mic92/nixos-aarch64-images</a> repository provides a mechanism to modify the official NixOS installer to embed the board-specific U-Boot firmware required for different boards. This method does not require QEMU or native ARM builds since the existing Hydra-built U-Boot binaries are used.</p>
+<h3 id="editing-the-image-manually">Editing the image manually</h3><p>For some simple operations, like adding an SSH public key, the expected usage for new users is to manually edit the image, add the proper directory and <code>authorized_keys</code> file, with proper modes.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">namei -l /home/nixos/.ssh/authorized_keys</span>
+f: /home/nixos/.ssh/authorized_keys
+drwxr-xr-x root   root  /
+drwxr-xr-x root   root  home
+drwx------ nixos  users nixos
+drwx------ nixos  users .ssh
+-rw------- nixos  users authorized_keys</code></pre>
+      </div>
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

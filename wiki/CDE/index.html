@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CDE</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / CDE</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: CDE -->
+
+<figure>
+<img src="https://mirror.nixoscn.org/wiki/CDE/CDE.png" title="CDE.png" />
+<figcaption>CDE.png</figcaption>
+</figure>
+
+<p>Aka <strong>cdesktopenv</strong> or <strong>Common Desktop Environment</strong> is a vintage desktop environment.</p>
+<h2 id="changing-fonts">Changing fonts</h2><p><code> sudo mkdir -p /etc/dt/config/xfonts</code><br><code> sudo cp -r ${pkgs.cdesktopenv}/opt/dt/config/xfonts/$LANG /etc/dt/config/xfonts</code><br><code> sudo sed -i &#39;/dt-interface/d&#39; /etc/dt/config/xfonts/$LANG/fonts.alias</code></p>
+<p>Now add the following to /etc/dt/config/xfonts/$LANG/fonts.alias file. In this example Helvetica and Courier are used instead of fixed fonts.</p>
+<p><code> &quot;-dt-interface system-medium-r-normal-xxs sans-10-100-72-72-p-61-iso8859-1&quot;  &quot;-adobe-helvetica-medium-r-normal--10-*-75-75-p-56-iso8859-1&quot;</code><br><code> &quot;-dt-interface system-medium-r-normal-xs sans-11-110-72-72-p-64-iso8859-1&quot;   &quot;-adobe-helvetica-medium-r-normal--11-80-100-100-p-56-iso8859-1&quot;</code><br><code> &quot;-dt-interface system-medium-r-normal-s sans-12-120-72-72-p-73-iso8859-1&quot;    &quot;-adobe-helvetica-medium-r-normal--12-120-75-75-p-67-iso8859-1&quot;</code><br><code> &quot;-dt-interface system-medium-r-normal-m sans-13-130-72-72-p-87-iso8859-1&quot;    &quot;-adobe-helvetica-medium-r-normal--14-140-75-75-p-77-iso8859-1&quot;</code><br><code> &quot;-dt-interface system-medium-r-normal-l sans-15-150-72-72-p-100-iso8859-1&quot;   &quot;-adobe-helvetica-medium-r-normal--14-140-75-75-p-77-iso8859-1&quot;</code><br><code> &quot;-dt-interface system-medium-r-normal-xl sans-18-180-72-72-p-114-iso8859-1&quot;  &quot;-adobe-helvetica-medium-r-normal--18-180-75-75-p-98-iso8859-1&quot;</code><br><code> &quot;-dt-interface system-medium-r-normal-xxl sans-21-210-72-72-p-123-iso8859-1&quot; &quot;-adobe-helvetica-medium-r-normal--20-140-100-100-p-100-iso8859-1&quot;</code><br><code> &quot;-dt-interface user-medium-r-normal-xxs serif-10-100-72-72-m-60-iso8859-1&quot;   &quot;-adobe-courier-medium-r-normal--10-100-75-75-m-60-iso8859-1&quot;</code><br><code> &quot;-dt-interface user-medium-r-normal-xs serif-11-110-72-72-m-60-iso8859-1&quot;    &quot;-adobe-courier-medium-r-normal--11-80-100-100-m-60-iso8859-1&quot;</code><br><code> &quot;-dt-interface user-medium-r-normal-s serif-12-120-72-72-m-80-iso8859-1&quot;     &quot;-adobe-courier-medium-r-normal--12-120-75-75-m-70-iso8859-1&quot;</code><br><code> &quot;-dt-interface user-medium-r-normal-m serif-13-130-72-72-m-90-iso8859-1&quot;     &quot;-adobe-courier-medium-r-normal--14-140-75-75-m-90-iso8859-1&quot;</code><br><code> &quot;-dt-interface user-medium-r-normal-l serif-15-150-72-72-m-110-iso8859-1&quot;    &quot;-adobe-courier-medium-r-normal--14-140-75-75-m-90-iso8859-1&quot;</code><br><code> &quot;-dt-interface user-medium-r-normal-xl serif-18-180-72-72-m-120-iso8859-1&quot;   &quot;-adobe-courier-medium-r-normal--18-180-75-75-m-110-iso8859-1&quot;</code><br><code> &quot;-dt-interface user-medium-r-normal-xxl serif-21-210-72-72-m-140-iso8859-1&quot;  &quot;-adobe-courier-medium-r-normal-*-20-140-100-100-m-110-iso8859-1&quot;</code><br><code> &quot;-dt-interface user-bold-r-normal-xxs serif-10-100-72-72-m-60-iso8859-1&quot;     &quot;-adobe-courier-bold-r-normal--10-100-75-75-m-60-iso8859-1&quot;</code><br><code> &quot;-dt-interface user-bold-r-normal-xs serif-11-110-72-72-m-60-iso8859-1&quot;      &quot;-adobe-courier-bold-r-normal--11-80-100-100-m-60-iso8859-1&quot;</code><br><code> &quot;-dt-interface user-bold-r-normal-s serif-12-120-72-72-m-80-iso8859-1&quot;       &quot;-adobe-courier-bold-r-normal--12-120-75-75-m-70-iso8859-1&quot;</code><br><code> &quot;-dt-interface user-bold-r-normal-m serif-13-130-72-72-m-90-iso8859-1&quot;       &quot;-adobe-courier-bold-r-normal--14-140-75-75-m-90-iso8859-1&quot;</code><br><code> &quot;-dt-interface user-bold-r-normal-l serif-15-150-72-72-m-110-iso8859-1&quot;      &quot;-adobe-courier-bold-r-normal--14-140-75-75-m-90-iso8859-1&quot;</code><br><code> &quot;-dt-interface user-bold-r-normal-xl serif-18-180-72-72-m-120-iso8859-1&quot;     &quot;-adobe-courier-bold-r-normal--18-180-75-75-m-110-iso8859-1&quot;</code><br><code> &quot;-dt-interface user-bold-r-normal-xxl serif-21-210-72-72-m-140-iso8859-1&quot;    &quot;-adobe-courier-bold-r-normal--20-140-100-100-m-110-iso8859-1&quot;</code></p>
+<h2 id="adding-programs-to-autolaunch">Adding programs to autolaunch</h2><p><code> chmod +x ~/.dt/sessions/sessionetc</code></p>
+<h2 id="editing-panel">Editing panel</h2><p><code> cp ${pkgs.cdesktopenv}/opt/dt/appconfig/types/C/dtwm.fp ~/.dt/types</code><br><code> chmod +w ~/.dt/types/dtwm.fp</code></p>
+<p>Now edit ~/.dt/types/dtwm.fp</p>
+<p>To disable system control, add a <strong>delete</strong> property like this</p>
+<p><code> CONTROL Trash</code><br><code>{</code><br><code> CONTAINER_NAME  Top</code><br><code> CONTAINER_TYPE  BOX</code><br><code> </code><strong><code>DELETE True</code></strong><br><code>}</code></p>
+<h2 id="creating-an-own-program-icon">Creating an own program icon</h2><p>Icons should be in XPM or XBM format. Use the following configuration to convert from png icons For example</p>
+<p><code> cde-icons /run/current-system/sw/share/icons/hicolor/512x512/apps/qutebrowser.png</code></p>
+<p>Then select it in Desktop_Apps/Create Action tool. Save actions under ~/.dt/appmanager</p>
+<h2 id="setting-icons-on-minimized-programs">Setting icons on minimized programs</h2><p>Please note that not all programs support this</p>
+<h2 id="setting-wallpaper">Setting wallpaper</h2><p>Put .jpg or .png under ~/.dt/backdrops then select it in Style Manager / Backdrop</p>
+<h2 id="gtk-and-qt-theme">Gtk and Qt theme</h2><p>Add to your configuration Now copy the theme to home directory. Instead of Arizona.dp pick the palette you currently use in CDE for the match</p>
+<p><code> mkdir -p ~/.themes</code><br><code> cp -Lr --no-preserve=mode /run/current-system/sw/share/themes/cdetheme ~/.themes/</code><br><code> chmod +x ~/.themes/cdetheme/scripts/switchtheme</code><br><code> cd ~/.themes/cdetheme/scripts/</code><br><code> ./switchtheme ../palettes/Arizona.dp 8 3 22 false true false</code></p>
+<h2 id="changing-volume-and-brightness-with-media-keys">Changing volume and brightness with media keys</h2><p>Add the following to ~/.dt/dtwmrc</p>
+<p><code> Keys DtKeyBindings</code><br><code> {</code><br><code>   </code><Key><code>XF86AudioLowerVolume   root|icon|window|ifkey  f.exec &quot;amixer set Master -q 5%-&quot;</code><br><code>   </code><Key><code>XF86AudioRaiseVolume   root|icon|window|ifkey  f.exec &quot;amixer set Master -q 5%+&quot;</code><br><code>   </code><Key><code>XF86AudioMute          root|icon|window|ifkey  f.exec &quot;amixer set Master -q toggle&quot;</code><br><code>   </code><Key><code>XF86MonBrightnessUp    root|icon|window|ifkey  f.exec &quot;xbacklight -inc 1&quot;</code><br><code>   </code><Key><code>XF86MonBrightnessDown  root|icon|window|ifkey  f.exec &quot;xbacklight -dec 1&quot;</code><br><code> }</code></p>
+<h2 id="battery-widget">Battery widget</h2><p>Please read <a href="https://mirror.nixoscn.org/wiki/CDE#Adding_programs_to_autolaunch" class="wikilink" title="Adding programs to autolaunch section">Adding programs to autolaunch section</a> Please read <a href="https://mirror.nixoscn.org/wiki/CDE#Editing_panel" class="wikilink" title="Editing panel section">Editing panel section</a></p>
+<h2 id="example-configuration">Example configuration</h2><h2 id="useful-links">Useful links</h2><ul>
+<li><a href="https://sourceforge.net/p/cdesktopenv/wiki/CustomisingCDE/">https://sourceforge.net/p/cdesktopenv/wiki/CustomisingCDE/</a></li>
+</ul>
+<p><a href="category:Cookbook" class="wikilink" title="Category:Cookbook">Category:Cookbook</a> <a href="category:Desktop_environment" class="wikilink" title="Category:Desktop environment">Category:Desktop environment</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

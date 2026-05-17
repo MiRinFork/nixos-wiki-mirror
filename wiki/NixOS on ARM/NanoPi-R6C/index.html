@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NixOS on ARM/NanoPi-R6C</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM">NixOS on ARM</a><span aria-hidden="true"> / </span>NanoPi-R6C</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: NixOS on ARM/NanoPi-R6C -->
+
+<div class="infobox">
+
+<table>
+<thead>
+<tr>
+<th colspan="2" class="title"><p>NanoPi-R6C &amp; NanoPi-R6S</p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td colspan="2"><figure>
+<img src="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NanoPi-R6C/NanoPi-R6C.jpg" title="NanoPi-R6C SBC" width="256" />
+<figcaption>NanoPi-R6C SBC</figcaption>
+</figure></td>
+</tr>
+<tr>
+<td><p>Manufacturer</p></td>
+<td><p>FriendlyElec</p></td>
+</tr>
+<tr>
+<td><p>Architecture</p></td>
+<td><p>AArch64</p></td>
+</tr>
+<tr>
+<td><p>Bootloader</p></td>
+<td><p><a href="https://github.com/edk2-porting/edk2-rk3588">EDK2 UEFI firmware for Rockchip RK3588 platforms</a> or <a href="https://github.com/friendlyarm/uboot-rockchip/tree/nanopi6-v2017.09">Original FriendlyARM U-Boot</a></p></td>
+</tr>
+<tr>
+<td><p>Boot order</p></td>
+<td><p>official: eMMC, SD Card</p></td>
+</tr>
+<tr>
+<td><p>Maintainer</p></td>
+<td><p><a href="https://github.com/jakubgs">jakubgs</a></p></td>
+</tr>
+</tbody>
+</table>
+
+</div>
+
+<h2 id="hardware">Hardware</h2><p>NanoPi-R6C and R6S are single board computers built around the Rockchip RK3588S SoC.</p>
+<ul>
+<li><strong>CPU</strong>: ARM Cortex-A76 and Cortex-A55</li>
+<li><strong>GPU</strong>: Mali-G610 MP4</li>
+<li><strong>RAM</strong>: 4GB/8GB LPDDR4X at 2133MHz</li>
+<li><strong>MMC</strong>: None or 32GB eMMC</li>
+<li><strong>NET</strong>: Native Gigabit Ethernet, PCIe 2.5G Ethernet</li>
+<li><strong>USB</strong>: 1x USB 3.0 Type-A, 1x USB 2.0 Type-A</li>
+<li><strong>PCIe</strong>: 1x M.2 Key M connector with PCIe 2.1 x1</li>
+</ul>
+<h2 id="status">Status</h2><p>The board boots systems like <a href="https://www.armbian.com/nanopi-r6s/">Armbian</a> from USB pendrive or microSD reader out of the box. But stock NixOS <code>arch64</code> images do not boot correctly due to lack of correct DTS file called <code>rockchip-nanopi6.dtb</code>. You can see details of research into the boot process <a href="https://github.com/jakubgs/nixos-config/issues/3">here</a>.</p>
+<p>The official documentation, which is comprehensive, can be found on <a href="https://wiki.friendlyelec.com/wiki/index.php/NanoPi_R6C">the FriendlyElec wiki</a>.</p>
+<p>U-Boot for this board can be compiled from source, and an example of how that can be done with Nix is <a href="https://github.com/jakubgs/nixos-config/blob/2452a88bf70815ba4380757612ce29d2a49da6bf/hosts/arael/uboot.nix">here</a>. But the best way to manage booting on this device is using the <a href="https://github.com/edk2-porting/edk2-rk3588">EDK2 UEFI firmware</a> which supports booting from all available storage options, including NVMe, and works well both with <a href="https://hydra.nixos.org/job/nixos/trunk-combined/nixos.iso_minimal.aarch64-linux">standard NixOS ISO images</a> as well as Armbian ones.</p>
+<h2 id="board-specific-installation-notes">Board Specific Installation Notes</h2><h3 id="uefi-firmware">UEFI Firmware</h3><p>Boot into a working Linux system, like <a href="https://www.armbian.com/nanopi-r6s/">Armbian</a> using USB pendrive or SD Card, then simply write the <a href="https://github.com/edk2-porting/edk2-rk3588/releases/download/v0.9.1/nanopi-r6c_UEFI_Release_v0.9.1.img">UEFI image</a> to the eMMC:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">wget https://github.com/edk2-porting/edk2-rk3588/releases/download/v0.9.1/nanopi-r6c_UEFI_Release_v0.9.1.img
+<span class="hljs-built_in">sudo</span> <span class="hljs-built_in">dd</span> <span class="hljs-keyword">if</span>=nanopi-r6c_UEFI_Release_v0.9.1.img of=/dev/mmcblk2 bs=1M</code></pre>
+      </div><p>Once that has been done the UEFI firmware should be visible via UART console or over HDMI after reboot:</p>
+<figure>
+<img src="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/NanoPi-R6C/NanoPi-R6C_UEFI_Firmware.png" title="NanoPi-R6C UEFI Firmware screen" width="600" />
+<figcaption>NanoPi-R6C UEFI Firmware screen</figcaption>
+</figure>
+
+<p>In <strong>Boot Manager</strong> You can select what device to boot from this time and in <strong>Boot Maintenance Manager</strong> You can configure permanent boot order.</p>
+<p>Keep in mind this example uses the image for R6C and you&#39;ll need the right UEFI image for R6S.</p>
+<h3 id="booting-nixos">Booting NixOS</h3><p>Since <a href="https://github.com/edk2-porting/edk2-rk3588/issues/88">EDK2 UEFI firmware does not support extlinux</a> an <a href="https://hydra.nixos.org/job/nixos/trunk-combined/nixos.iso_minimal.aarch64-linux">ISO <code>aarch64</code> image</a> needs to be used to successfully boot NixOS.</p>
+<p>Currently NixOS images can see the NVMe without issues, but eMMC storage is unavailable.</p>
+<h3 id="installing-nixos">Installing NixOS</h3><p>A very basic partition layout could look like this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-function"><span class="hljs-title">format</span></span>() {
+  DEV=<span class="hljs-string">&quot;<span class="hljs-variable">${1}</span>&quot;</span> <span class="hljs-comment"># First argument is NVMe path.</span>
+  wipefs -a <span class="hljs-string">&quot;<span class="hljs-variable">${DEV}</span>&quot;</span>
+  parted -s --align optimal <span class="hljs-string">&quot;<span class="hljs-variable">${DEV}</span>&quot;</span> -- mklabel gpt;
+  parted -s --align optimal <span class="hljs-string">&quot;<span class="hljs-variable">${DEV}</span>&quot;</span> -- mkpart <span class="hljs-string">&#x27;EFI&#x27;</span>  2MB   6GiB  <span class="hljs-built_in">set</span> 1 esp on;
+  parted -s --align optimal <span class="hljs-string">&quot;<span class="hljs-variable">${DEV}</span>&quot;</span> -- mkpart <span class="hljs-string">&#x27;SWAP&#x27;</span> 6GiB  16GiB;
+  parted -s --align optimal <span class="hljs-string">&quot;<span class="hljs-variable">${DEV}</span>&quot;</span> -- mkpart <span class="hljs-string">&#x27;ROOT&#x27;</span> 16GiB <span class="hljs-string">&#x27;100%&#x27;</span>;
+  parted -s --align optimal <span class="hljs-string">&quot;<span class="hljs-variable">${DEV}</span>&quot;</span> -- <span class="hljs-built_in">print</span>;
+  mkswap    <span class="hljs-string">&quot;<span class="hljs-variable">${DEV}</span>p2&quot;</span>;
+  mkfs.vfat <span class="hljs-string">&quot;<span class="hljs-variable">${DEV}</span>p1&quot;</span>;
+  mkfs.ext4 <span class="hljs-string">&quot;<span class="hljs-variable">${DEV}</span>p3&quot;</span>;
+}</code></pre>
+      </div><p>Just call it it with <code>format /dev/nvme0n1</code> and then mount your partitions:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">swapon /dev/nvme0n1p2
+mount  /dev/nvme0n1p3 /mnt
+<span class="hljs-built_in">mkdir</span> /mnt/boot
+mount  /dev/nvme0n1p1 /mnt/boot</code></pre>
+      </div><p>And you can continue with the installation as you normally would. A <a href="https://github.com/jakubgs/nixos-config/blob/16cc3ccf5448259e6d88a24bdfa70ee2f455e200/hosts/arael/configuration.nix#L21-L33">working bootloader configuration</a> looks like this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">boot.loader</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">efi.canTouchEfiVariables</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">systemd-boot.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">grub.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+  };</code></pre>
+      </div><p><a href="category:NixOS_on_ARM" class="wikilink" title="Category:NixOS on ARM">Category:NixOS on ARM</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

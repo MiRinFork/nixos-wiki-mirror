@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mailman</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Mailman</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Mailman -->
+
+<p><a href="https://www.list.org/">Mailman</a> is free software for managing electronic mail discussion and e-newsletter lists. Mailman and its web interface can be configured using the corresponding NixOS module.</p>
+<p>This article extends the documentation in <a href="https://nixos.org/manual/nixos/stable/#module-services-mailman">NixOS manual</a>.</p>
+<p>__TOC__</p>
+<h1 id="running-mailman-on-nixos">Running Mailman on NixOS</h1><p>This example includes:</p>
+<ul>
+<li>Postfix as the MTA</li>
+<li>uwsgi to host Mailman&#39;s web interface and archives (Postorius and Hyperkitty)</li>
+<li>nginx to terminate TLS, proxy to uwsgi, and serve static assets</li>
+<li>letsencrypt to acquire TLS certificates for nginx</li>
+</ul>
+<h2 id="deployment-steps">Deployment steps</h2><ul>
+<li>Edit <code>/etc/nixos/configuration.nix</code> and add this stuff:</li>
+</ul>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ config, pkgs, ... }:
+
+<span class="hljs-keyword">let</span>
+  <span class="hljs-attr">OWNER_EMAIL</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;postmaster@example.org&quot;</span>;  <span class="hljs-comment"># Change this!</span>
+  <span class="hljs-attr">MAILMAN_HOST</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;mailman.example.org&quot;</span>;    <span class="hljs-comment"># Change this!</span>
+<span class="hljs-keyword">in</span>
+
+{
+  <span class="hljs-attr">services.postfix</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">relayDomains</span> <span class="hljs-operator">=</span> [<span class="hljs-string">&quot;hash:/var/lib/mailman/data/postfix_domains&quot;</span>];
+    <span class="hljs-attr">sslCert</span> <span class="hljs-operator">=</span> config.security.acme.certs.${MAILMAN_HOST}.directory <span class="hljs-operator">+</span> <span class="hljs-string">&quot;/full.pem&quot;</span>;
+    <span class="hljs-attr">sslKey</span> <span class="hljs-operator">=</span> config.security.acme.certs.${MAILMAN_HOST}.directory <span class="hljs-operator">+</span> <span class="hljs-string">&quot;/key.pem&quot;</span>;
+    <span class="hljs-attr">config</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">transport_maps</span> <span class="hljs-operator">=</span> [<span class="hljs-string">&quot;hash:/var/lib/mailman/data/postfix_lmtp&quot;</span>];
+      <span class="hljs-attr">local_recipient_maps</span> <span class="hljs-operator">=</span> [<span class="hljs-string">&quot;hash:/var/lib/mailman/data/postfix_lmtp&quot;</span>];
+    };
+  };
+
+  <span class="hljs-attr">services.mailman</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">siteOwner</span> <span class="hljs-operator">=</span> OWNER_EMAIL;
+    <span class="hljs-attr">webUser</span> <span class="hljs-operator">=</span> config.services.uwsgi.user;
+    <span class="hljs-attr">hyperkitty.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-comment"># Have mailman talk directly to hyperkitty, bypassing nginx:</span>
+    <span class="hljs-attr">hyperkitty.baseUrl</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;http://localhost:33141/hyperkitty/&quot;</span>;
+    <span class="hljs-attr">webHosts</span> <span class="hljs-operator">=</span> [MAILMAN_HOST];
+  };
+
+  <span class="hljs-comment"># Make sure that uwsgi gets restarted if any django settings change.</span>
+  <span class="hljs-comment"># I&#x27;m not sure why this isn&#x27;t covered by the &quot;before&quot; and</span>
+  <span class="hljs-comment"># &quot;requiredBy&quot; settings present in mailman-web.service. Maybe</span>
+  <span class="hljs-comment"># because it&#x27;s a oneshot and not a daemon?</span>
+  <span class="hljs-attr">systemd.services.uwsgi.restartTriggers</span> <span class="hljs-operator">=</span> [
+    config.environment.etc.<span class="hljs-string">&quot;mailman3/settings.py&quot;</span>.source
+  ];
+
+  <span class="hljs-comment"># Tweak permissions so nginx can read and serve the static assets</span>
+  <span class="hljs-comment"># (otherwise /var/lib/mailman-web is mode 0600)</span>
+  <span class="hljs-attr">systemd.services.mailman-settings.script</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    chmod o+x /var/lib/mailman-web
+  &#x27;&#x27;</span>;
+
+  <span class="hljs-attr">services.uwsgi</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">plugins</span> <span class="hljs-operator">=</span> [<span class="hljs-string">&quot;python3&quot;</span>];
+    <span class="hljs-attr">instance</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;normal&quot;</span>;
+      <span class="hljs-attr">pythonPackages</span> <span class="hljs-operator">=</span> (
+        <span class="hljs-comment"># <span class="hljs-doctag">TODO:</span> I hope there is a nicer way of doing this:</span>
+        <span class="hljs-params">self:</span> <span class="hljs-keyword">with</span> self.override {
+          <span class="hljs-attr">overrides</span> <span class="hljs-operator">=</span> <span class="hljs-params">self:</span> <span class="hljs-params">super:</span> { <span class="hljs-attr">django</span> <span class="hljs-operator">=</span> self.django_1_11; };
+        }; [ mailman-web ]
+      );
+      <span class="hljs-comment"># uwsgi protocol socket for nginx</span>
+      <span class="hljs-attr">socket</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;127.0.0.1:33140&quot;</span>;
+      <span class="hljs-comment"># http socket for mailman core to reach the hyperkitty API directly</span>
+      <span class="hljs-attr">http-socket</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;127.0.0.1:33141&quot;</span>;
+      <span class="hljs-attr">wsgi-file</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${config.services.mailman.webRoot}</span>/mailman_web/wsgi.py&quot;</span>;
+      <span class="hljs-attr">chdir</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/var/lib/mailman-web&quot;</span>;
+      <span class="hljs-attr">master</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">processes</span> <span class="hljs-operator">=</span> <span class="hljs-number">4</span>;
+      <span class="hljs-attr">vacuum</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    };
+  };
+
+  <span class="hljs-attr">security.acme.email</span> <span class="hljs-operator">=</span> OWNER_EMAIL;
+  <span class="hljs-attr">security.acme.acceptTerms</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+  <span class="hljs-attr">services.nginx</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">recommendedGzipSettings</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">recommendedProxySettings</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">recommendedTlsSettings</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    virtualHosts.${MAILMAN_HOST} <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">enableACME</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">forceSSL</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      locations.<span class="hljs-string">&quot;/static/&quot;</span>.alias <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/var/lib/mailman-web/static/&quot;</span>;
+      <span class="hljs-comment"># If you&#x27;re coming from Mailman 2, you might want these redirects:</span>
+      <span class="hljs-comment"># locations.&quot;~ ^/(?:pipermail|private)/([a-z-]+)/&quot;.return = &quot;303 https://${MAILMAN_HOST}/hyperkitty/list/$1.${MAILMAN_HOST}/&quot;;</span>
+      <span class="hljs-comment"># locations.&quot;~ ^/(?:listadmin)/([a-z-]+)&quot;.return = &quot;303 https://${MAILMAN_HOST}/postorius/lists/$1.${MAILMAN_HOST}/settings/&quot;;</span>
+      <span class="hljs-comment"># locations.&quot;~ ^/(?:listinfo|options)/([a-z-]+)&quot;.return = &quot;303 https://${MAILMAN_HOST}/postorius/lists/$1.${MAILMAN_HOST}/&quot;;</span>
+      <span class="hljs-comment"># locations.&quot;/create&quot;.return = &quot;301 https://${MAILMAN_HOST}/postorius/lists/new&quot;;</span>
+      locations.<span class="hljs-string">&quot;/&quot;</span>.extraConfig <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        uwsgi_pass 127.0.0.1:33140;
+        include <span class="hljs-subst">${config.services.nginx.package}</span>/conf/uwsgi_params;
+      &#x27;&#x27;</span>;
+    };
+  };
+
+  <span class="hljs-attr">networking.firewall.allowedTCPPorts</span> <span class="hljs-operator">=</span> [ <span class="hljs-number">25</span> <span class="hljs-number">80</span> <span class="hljs-number">443</span> ];
+}</code></pre>
+      </div><ul>
+<li>Install and start the services:</li>
+</ul>
+<p><span style="color: red"><code>[root@mailman:~]#</code></span><code> </code><strong><code>nixos-rebuild switch</code></strong></p>
+<ul>
+<li>Generate initial <code>postfix_domains.db</code> and <code>postfix_lmtp.db</code> databases for Postfix:</li>
+</ul>
+<p><span style="color: red"><code>[root@mailman:~]#</code></span><code> </code><strong><code>sudo -u mailman mailman aliases</code></strong></p>
+<ul>
+<li>Create a django superuser account. Be careful to run this only as the <code>uwsgi</code> user in <code>/var/lib/mailman-web</code> or you will run into permission problems later.</li>
+</ul>
+<p><span style="color: red"><code>[root@mailman:~]#</code></span><code> </code><strong><code>cd /var/lib/mailman-web</code></strong><br><span style="color: red"><code>[root@mailman:/var/lib/mailman-web]#</code></span><code> </code><strong><code>sudo -u uwsgi mailman-web createsuperuser</code></strong><br><code>### Using settings module from /etc/mailman3/settings.py   ####</code><br><code>Username (leave blank to use &#39;uwsgi&#39;): </code><strong><code>root</code></strong><br><code>Email address: </code><strong><code>postmaster@example.com</code></strong><br><code>Password: </code><br><code>Password (again): </code><br><code>Superuser created successfully.</code></p>
+<ul>
+<li><p>Navigate to <a href="https://"><code>https://</code></a><your_mailman_hostname><code>/admin</code> in a web browser and login to the Django admin interface:</p>
+<figure>
+<img src="https://mirror.nixoscn.org/wiki/Mailman/Django_admin_login.png" title="Django_admin_login.png" width="400" />
+<figcaption>Django_admin_login.png</figcaption>
+</figure></li>
+</ul>
+<!-- -->
+
+<ul>
+<li><p>Navigate to <a href="https://"><code>https://</code></a><your_mailman_hostname><code>/admin/sites/site</code>. Click on the <strong>example.com</strong> site, change it to your desired domain name, and hit Save. This configures the web serving domain, <em>not</em> the domain used for email.</p>
+<figure>
+<img src="https://mirror.nixoscn.org/wiki/Mailman/Django_select_site_to_change.png" title="Django_select_site_to_change.png" />
+<figcaption>Django_select_site_to_change.png</figcaption>
+</figure>
+
+<figure>
+<img src="https://mirror.nixoscn.org/wiki/Mailman/Django_admin_change_site.png" title="Django_admin_change_site.png" />
+<figcaption>Django_admin_change_site.png</figcaption>
+</figure></li>
+</ul>
+<!-- -->
+
+<ul>
+<li><p>Navigate to <a href="https://"><code>https://</code></a><your_mailman_hostname><code>/postorius/domains/new/</code>. Fill in the form to add the domain you wish to use for mailing list email addresses.</p>
+<figure>
+<img src="https://mirror.nixoscn.org/wiki/Mailman/Postorius_add_new_domain.png" title="Postorius_add_new_domain.png" width="425" />
+<figcaption>Postorius_add_new_domain.png</figcaption>
+</figure></li>
+</ul>
+<p>At this point you should have a working Mailman installation. Create and manage lists using the web interface or the <code>mailman</code> commandline tool, and refer to the <a href="https://docs.mailman3.org/">upstream documentation</a> for lots more information.</p>
+<h2 id="optional-extras">Optional extras</h2><h3 id="social-logins">Social logins</h3><p>Mailman 3 uses <a href="https://docs.allauth.org/en/latest/">django-allauth</a> to allow logins via many external auth providers, such as GitHub and Google. To enable these we need to update our Django settings and add some per-provider specifics in the admin UI.</p>
+<p>In this example we&#39;re just adding GitHub, but there are <a href="https://docs.allauth.org/en/latest/socialaccount/providers/">lots of other providers</a> available.</p>
+<ul>
+<li>Add to your <code>configuration.nix</code> and run <code>nixos-rebuild switch</code>:</li>
+</ul>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-comment"># Extend the django settings.py directly since this can&#x27;t all be</span>
+  <span class="hljs-comment"># done via JSON settings (services.mailman.webSettings)</span>
+  environment.etc.<span class="hljs-string">&quot;mailman3/settings.py&quot;</span>.text <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    INSTALLED_APPS.extend([
+      &quot;allauth.socialaccount.providers.github&quot;,
+    ])
+  &#x27;&#x27;</span>;</code></pre>
+      </div><ul>
+<li>Register a new OAuth application on GitHub at <a href="https://github.com/settings/applications/new">https://github.com/settings/applications/new</a>. Your Authorization Callback URL will be <a href="https://"><code>https://</code></a><your_mailman_hostname><code>/accounts/github/login/callback/</code>. Save the Client ID and Client Secret that GitHub gives you at the end of this process.</li>
+</ul>
+<!-- -->
+
+<ul>
+<li><p>Navigate to <a href="https://"><code>https://</code></a><your_mailman_hostname><code>/admin/socialaccount/socialapp/add/</code> and fill in the values you got from GitHub. Make sure you click <strong>Choose all</strong> to enable this auth provide for your django site, then click <strong>Save</strong>.</p>
+<figure>
+<img src="https://mirror.nixoscn.org/wiki/Mailman/Django_admin_add_social_application.png" title="Django_admin_add_social_application.png" />
+<figcaption>Django_admin_add_social_application.png</figcaption>
+</figure></li>
+</ul>
+<p>Now you should be able to login to your mailman site with GitHub, and see your account&#39;s connections at <a href="https://"><code>https://</code></a><your_mailman_hostname><code>/accounts/social/connections/</code></p>
+<p><a href="category:Mail_Server" class="wikilink" title="Category:Mail Server">Category:Mail Server</a> <a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="category:Web_Applications" class="wikilink" title="Category:Web Applications">Category:Web Applications</a> <a href="category:Django" class="wikilink" title="Category:Django">Category:Django</a> <a href="category:NixOS_Manual" class="wikilink" title="Category:NixOS Manual">Category:NixOS Manual</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

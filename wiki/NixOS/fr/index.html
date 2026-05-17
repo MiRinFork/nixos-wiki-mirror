@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NixOS/fr</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/NixOS">NixOS</a><span aria-hidden="true"> / </span>fr</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: NixOS/fr -->
+
+<languages/>
+
+<p><a href="https://nixos.org/">NixOS</a> est une distribution Linux basée sur <a href="special:MyLanguage/Nix" class="wikilink" title="Nix">Nix</a> un gestionnaire de paquets et un système de construction. À l&#39;échelle du système, il supporte la <a href="https://fr.wikipedia.org/wiki/Programmation_d%C3%A9clarative">programmation déclarative</a> au travers d&#39;une <a href="https://fr.wikipedia.org/wiki/Gestion_de_configuration">gestion de configuration</a> ainsi que les mises à jour <a href="https://fr.wikipedia.org/wiki/Atomicit%C3%A9_(informatique)">atomiques</a> et les &quot;retours en arrière&quot; (rollbacks), bien qu&#39;il puisse aussi supporter des paquets <a href="https://fr.wikipedia.org/wiki/Programmation_imp%C3%A9rative">impératifs</a> ainsi que la gestion des utilisateurs. Dans NixOS, tous les composants de la distribution — y compris le <a href="https://fr.wikipedia.org/wiki/Noyau_Linux">noyau Linux</a>, les <a href="https://fr.wikipedia.org/wiki/Gestionnaire_de_paquets">paquets</a> installés et les fichiers de configuration système — sont construits par <a href="special:MyLanguage/Nix" class="wikilink" title="Nix">Nix</a> depuis des <a href="wikipedia:Pure_function" class="wikilink" title="fonctions pures">fonctions pures</a> appelées <a href="special:MyLanguage/Nix_Expression_Language" class="wikilink" title="expressions Nix">expressions Nix</a>.</p>
+<p>Depuis que Nix met des <a href="https://fr.wikipedia.org/wiki/Fichier_ex%C3%A9cutable">exécutables</a> en cache, cela permet d&#39;avoir un compromis unique entre une approche orientée autour de l&#39;exécutable présente dans des distributions comme Debian et une approche orientée autour du <a href="https://fr.wikipedia.org/wiki/Code_source">code source</a> utilisée dans des distributions comme Gentoo. Les binaires peuvent être utilisés comme des composants standard, tandis que les paquets sur-mesure et les modules peuvent être utilisés automatiquement quand un binaire pré-compilé n&#39;est pas disponible.</p>
+<p>Les versions stables de NixOS sont publiées deux fois par an (vers la fin mai et la fin novembre). NixOS a été créé par <a href="https://edolstra.github.io/">Eelco Dolstra</a> et <a href="https://en.wikipedia.org/wiki/Armijn_Hemel">Armijn Hemel</a>, et a vu le jour en 2003. Il est développé et maintenu par la communauté sous l&#39;égide de la <a href="special:MyLanguage/Nix_Community#NixOS_Foundation" class="wikilink" title="Fondation NixOS">Fondation NixOS</a>.</p>
+<h2 id="installation">Installation</h2><p>Pour un guide d&#39;installation complet, voir le <a href="https://nixos.org/nixos/manual/index.html#ch-installation">chapitre &quot;Installation&quot; du guide de NixOS</a>. Ce wiki inclut aussi des alternatives ou des guides supplémentaires, comme : <a href="special:MyLanguage/NixOS_as_a_desktop" class="wikilink" title="Utiliser NixOS comme système de bureau">Utiliser NixOS comme système de bureau</a>.</p>
+<p>La plupart des utilisateurs vont installer NixOS via <a href="https://nixos.org/download/#nixos-iso">une des images ISO</a>. Les variantes &quot;graphique&quot; et &quot;minimale&quot; de l&#39;ISO sont disponibles pour chaque architecture supportée ; les images &quot;graphiques&quot; sont adaptées pour les utilisateurs souhaitant installer un environnement de bureau, et les images &quot;minimales&quot; sont conçues pour les utilisateurs souhaitant installer NixOS comme serveur, ou désirant des images ISO de taille réduite. Les images ISO sont des images hybrides qui peuvent être gravées sur des supports optiques ou copiées sur une clé USB et utilisées telles quelles. Voir le guide d&#39;installation pour plus de détails.</p>
+<p>En supplément des images ISO, la <a href="https://nixos.org/download/#nixos-iso">page de téléchargement</a> apporte un certain nombre de méthodes alternatives pour installer NixOS. Cela inclut :</p>
+<ul>
+<li>Des machines virtuelles au format OVA (compatible avec VirtualBox),</li>
+<li>Amazon EC2 AMIs,</li>
+</ul>
+<p>De plus, de nombreuses installations Linux existantes peuvent être converties en installations NixOS à l&#39;aide de nixos-infect ou nixos-in-place; cela s&#39;avère particulièrement utile pour installer NixOS chez des hébergeurs qui ne prennent pas en charge NixOS de manière native.</p>
+<p><span id="System_architectures"></span></p>
+<h2 id="architectures-syst-me">Architectures système</h2><p>NixOS fournit de manière native le support pour la plupart des appareils x86_64, ainsi que les appareils ARM64 génériques.</p>
+<p><span id="32-bit_x86_architectures"></span></p>
+<h4 id="architectures-32-bit-x86">Architectures 32-bit x86</h4><p>Le support des architectures 32-bit x86 (par exemple <code>i686</code>) est en déclin. Même si la plupart des paquets devraient toujours compiler et s&#39;exécuter, la disponibilité de leur cache est significativement réduite [^1]. L&#39;ISO 32-bit x86 n&#39;est dorénavant plus proposée en tant qu&#39;image prête à l&#39;emploi, mais peut toujours être compilée manuellement.</p>
+<p><span id="64-bit_x86_architectures"></span></p>
+<h4 id="architectures-64-bit-x86">Architectures 64-bit x86</h4><p>La plupart des appareils <code>x86_64</code> devraient faire fonctionner NixOS sans problème.</p>
+<p><span id="32-bit_ARM_architectures"></span></p>
+<h4 id="architectures-32-bit-arm">Architectures 32-bit ARM</h4><p>NixOS n&#39;est pas officiellement supportée sur les appareils ARM32 (tels que <code>armv6</code> et <code>armv7l</code>), cependant, pour certains de ces appareils, il pourrait y avoir un support de la communauté.</p>
+<p><span id="64-bit_ARM_architectures"></span></p>
+<h4 id="architectures-64-bit-arm">Architectures 64-bit ARM</h4><p>Tant qu&#39;un appareil supporte le procédé de démarrage générique stystemd, NixOS devrait fonctionner parfaitement. Cependant, certains appareils spécifiques avec des bootloaders propriétaires peuvent avoir des problèmes pour faire tourner NixOS.</p>
+<p><span id="MIPS_architectures"></span></p>
+<h4 id="architectures-mips">Architectures MIPS</h4><p>Par le passé, il y avait un support limité pour les architectures MIPS dans NixOS, et les restes de ce support peuvent peut-être être trouvées dans Nixpkgs. Cependant, il n&#39;y a pas de support officiel.</p>
+<p><span id="RISC-V_architectures"></span></p>
+<h4 id="architectures-risc-v">Architectures RISC-V</h4><p>NixOS ne fournit pas de support officiel pour les appareils RISC-V. Cependant, plusieurs appareils peuvent bénéficier du support de la communauté.</p>
+<h2 id="usage">Usage</h2><p><span id="declarative-configuration"></span> <span id="Declarative_Configuration"></span></p>
+<h3 id="configuration-d-clarative">Configuration Déclarative</h3><p>Un des piliers de NixOS est son modèle de configuration déclarative ; où l&#39;ensemble de l&#39;état du système — y compris les paquets installés, les services système et les paramètres — est décrit dans des fichiers de configuration. Le fichier de départ est généralement situé ici : /etc/nixos/configuration.nix.</p>
+<p>Les changements de configuration sont appliqués atomiquement en utilisant <code>nixos-rebuild switch</code>, assurant la reproductibilité et permettant de revenir en arrière à un état précédant (rollback). La plupart des utilisateurs suivent leurs fichiers de configurations à l&#39;aide d&#39;un logiciel gestionnaire de versions, permettant des configurations cohérentes et portables. Ces lacunes sont souvent rectifiées après tir par des solutions de gestion de configuration comme Puppet, Ansible ou encore Chef. Ces outils essayent de rapprocher la configuration système de la description de l&#39;état attendu. Néanmoins, ces outils ne sont pas intégrés dans la conception du système d&#39;exploitation et sont simplement présents &quot;au dessus&quot;, et la configuration du système d&#39;exploitation pourrait toujours varier si un aspect de la configuration système n&#39;a pas été spécifié dans la description de l&#39;état attendu.</p>
+<p>Contrairement à des distributions plus conventionnelles, où la configuration système est souvent éclatés dans de nombreux fichiers édités manuellement, NixOS intègre la gestion de la configuration directement dans le système d&#39;exploitation. Cela élimine toute dérive de la configuration et permet de rendre NixOS particulièrement adapté pour des déploiements automatisés et reproductibles.</p>
+<p>Pour plus de détails et d&#39;exemples sur les configurations NixOS, voir <a href="special:MyLanguage/NixOS_system_configuration" class="wikilink" title="configurations système NixOS">configurations système NixOS</a>.</p>
+<p><span id="Imperative_Operations"></span></p>
+<h3 id="op-rations-imp-ratives">Opérations Impératives</h3><p>Même si NixOS est configurée autant que possible de manière déclarative, il y a quelques domaines où les opérations impératives sont toujours nécessaires ; cela inclut la gestion de l&#39;environnement utilisateur et la gestion des canaux.</p>
+<p><span id="User_Environments"></span></p>
+<h4 id="environnements-utilisateur">Environnements Utilisateur</h4><p>En plus de la configuration déclarative du système, les utilisateurs de NixOS peuvent utiliser la commande impérative Nix nommée <code>nix-env</code> pour installer des paquets locaux (seulement pour l&#39;utilisateur en question), sans changer l&#39;état du système. Voir la <a href="special:MyLanguage/Nix#User_Environments" class="wikilink" title=" section de l&#39;article Nix sur les environnements utilisateur"> section de l&#39;article Nix sur les environnements utilisateur</a> pour plus d&#39;information.</p>
+<p><span id="Channels"></span></p>
+<h4 id="canaux">Canaux</h4><p>Dans l&#39;<a href="special:MyLanguage/Nix_ecosystem" class="wikilink" title="écosystème Nix">écosystème Nix</a>, les <a href="special:MyLanguage/Channel_branches" class="wikilink" title="canaux">canaux</a> (channels en anglais) sont un mécanisme pour distribuer un ensemble de <a href="special:MyLanguage/Nixpkgs" class="wikilink" title="paquets Nix">paquets Nix</a> et de définitions de modules <a href="special:MyLanguage/NixOS" class="wikilink" title="NixOS">NixOS</a>. Un canal représente un ensemble de définitions de paquets et de configurations système, organisé et versionné. Généralement cela correspond à une version particulière ou le dernier état de développement.</p>
+<p>Lorsque les canaux sont utilisés, votre système ou l&#39;<a href="special:MyLanguage/_User_Environment" class="wikilink" title="environnement utilisateur">environnement utilisateur</a> récupère les définitions des paquets et les options depuis une URL qui pointe vers une image de l&#39;ensemble des paquets Nix (Nixpkgs) et les modules NixOS associés.</p>
+<p>Pour plus d&#39;information sur l&#39;utilisation et la mise en place des canaux, merci de vous référer aux <a href="special:MyLanguage/channel_branches" class="wikilink" title=" branches"> branches</a>.</p>
+<p><span id="Internals"></span></p>
+<h2 id="en-interne">En interne</h2><p><span id="Comparison_with_traditional_Linux_Distributions"></span></p>
+<h3 id="comparaison-avec-les-distributions-linux-traditionnelles">Comparaison avec les distributions Linux traditionnelles</h3><p><em>Article principal: <a href="special:MyLanguage/Nix_vs._Linux_Standard_Base" class="wikilink" title="Nix vs. Linux Standard Base">Nix vs. Linux Standard Base</a></em></p>
+<p>La principale différence entre NixOS et les autres distributions Linux réside dans le fait que NixOS ne suit pas la structure de système de fichiers définie par la <a href="https://en.wikipedia.org/wiki/Linux_Standard_Base">Linux Standard Base</a>. Sur les systèmes conformes à la norme LSB, les logiciels sont stockés sous <code>/{,usr}/{bin,lib,share}</code> et les fichiers de configuration sont généralement stockés dans <code>/etc</code>. Les binaires logiciels sont disponibles dans l&#39;environnement utilisateur s&#39;ils sont placés dans l&#39;un des répertoires <code>/bin</code> de la LSB. Lorsqu&#39;un programme fait référence à des bibliothèques dynamiques, il recherche les bibliothèques requises dans les dossiers LSB (<code>/lib</code>, <code>/usr/lib</code>).</p>
+<p>Dans NixOS, cependant, <code>/lib</code> et <code>/usr/lib</code> n&#39;existent pas. À la place, toutes les bibliothèques système, les binaires, les noyaux, les micrologiciels et les fichiers de configuration sont placés dans le <a href="special:MyLanguage/Nix#Nix_store" class="wikilink" title="Nix store">Nix store</a>. Les fichiers et répertoires situés dans <code>/nix/store</code> sont nommés d&#39;après les hachages des informations décrivant les données compilées. Tous les fichiers et répertoires placés dans le magasin Nix sont immuables. <code>/bin</code> et <code>/usr/bin</code> sont pratiquement inexistants : ils ne contiennent respectivement que <code>/bin/sh</code> et <code>/usr/bin/env</code>, afin d&#39;assurer une compatibilité minimale avec les scripts existants utilisant des lignes shebang. Les environnements au niveau utilisateur sont implémentés à l&#39;aide d&#39;un grand nombre de liens symboliques vers tous les paquets et fichiers auxiliaires requis. Ces environnements sont appelés <a href="special:MyLanguage/Nix#Profiles" class="wikilink" title="profils">profils</a> et sont stockés dans <code>/nix/var/nix/profiles</code>, chaque utilisateur disposant de ses propres profils. C&#39;est en structurant le système de cette manière que NixOS tire ses principaux avantages par rapport aux distributions Linux classiques, tels que l&#39;atomicité et la prise en charge des retours en arrière.</p>
+<p><span id="Usage_of_the_Nix_store"></span></p>
+<h3 id="utilisation-du-nix-store">Utilisation du Nix store</h3><p>Une grande partie de la confusion chez les débutants provient du fait que la configuration est stockée dans l&#39;arborescence en lecture seule <code>/nix/store</code>, aux côtés de tous les paquets installés. Cela rend impossible toute modification manuelle de la configuration du système ; toutes les modifications de configuration doivent être effectuées en éditant le fichier <code>/etc/nixos/configuration.nix</code> et en exécutant la commande <code>nixos-rebuild switch</code>. NixOS fournit le <a href="special:MyLanguage/NixOS_modules" class="wikilink" title="système de modules">système de modules</a> pour modifier toutes les configurations requises. Les utilisateurs doivent d&#39;abord utiliser <a href="https://search.nixos.org/options">l&#39;outil de recherche d&#39;options</a> pour vérifier si l&#39;option dont ils ont besoin existe avant de tenter d&#39;ajouter manuellement des fichiers ou des configurations via des fonctionnalités de bas niveau de NixOS telles que les scripts d&#39;activation.</p>
+<p>La pureté du système permet de centraliser la configuration, sans avoir à modifier plusieurs fichiers. Cette configuration peut être distribuée ou soumise à un contrôle de version, selon les besoins. Elle garantit également le déterminisme : si vous fournissez les mêmes données d&#39;entrée, la même version de Nixpkgs et le même fichier <code>/etc/nixos/configuration.nix</code>, vous obtiendrez exactement le même état du système.</p>
+<h3 id="modules">Modules</h3><p>Le <a href="special:MyLanguage/NixOS_modules" class="wikilink" title="système de modules NixOS">système de modules NixOS</a>, tel qu&#39;il est défini dans <a href="special:MyLanguage/Nixpkgs" class="wikilink" title="Nixpkgs">Nixpkgs</a>, fournit les outils nécessaires pour personnaliser la configuration du système d&#39;exploitation. Il sert à activer et à personnaliser des services tels que nginx, à activer le micrologiciel et à personnaliser le noyau.</p>
+<p>La configuration des modules s&#39;effectue généralement en ajoutant des options au fichier <code>/etc/nixos/configuration.nix</code>. La plupart des exemples présentés dans le wiki montrent comment utiliser ce fichier pour configurer le système d&#39;exploitation.</p>
+<p>Le système de modules de NixOS met en œuvre un système de typage qui permet de vérifier le type des paramètres d&#39;options. Il permet également de fusionner automatiquement les options définies à plusieurs endroits. Vous pouvez ainsi répartir votre configuration sur plusieurs fichiers, et les options que vous définissez dans l&#39;ensemble de ces fichiers seront fusionnées :</p>
+<p>Pour plus d&#39;informations, consultez la [section « Modules <a href="https://nixos.org/nixos/manual/index.html#sec-writing-modules">https://nixos.org/nixos/manual/index.html#sec-writing-modules</a> » du manuel NixOS].</p>
+<p><span id="Generations"></span></p>
+<h3 id="g-n-rations">Générations</h3><p>Chaque fois que l&#39;état du système est reconstruit à l&#39;aide de l&#39;option <code>nixos-rebuild switch</code>, une nouvelle génération est créée. Vous pouvez revenir à la génération précédente à tout moment, ce qui s&#39;avère utile si une modification de configuration (ou une mise à jour du système) s&#39;avère préjudiciable.</p>
+<p>Vous pouvez revenir en arrière via :</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-env --rollback               <span class="hljs-comment"># restaurer un environnement utilisateur</span></span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">nixos-rebuild switch --rollback  <span class="hljs-comment"># restaurer un environnement système</span></span></code></pre>
+      </div><p>ixOS ajoute également des entrées correspondant aux générations précédentes dans le menu du chargeur d&#39;amorçage ; ainsi, en dernier recours, vous pouvez toujours revenir à une configuration antérieure en redémarrant. Pour définir la génération actuellement démarrée comme valeur par défaut, exécutez la commande suivante :</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">/run/current-system/bin/switch-to-configuration boot</span></code></pre>
+      </div><p>Comme NixOS conserve les versions précédentes de l&#39;état du système au cas où vous souhaiteriez revenir en arrière, les anciennes versions des paquets ne sont pas supprimées de votre système immédiatement après une mise à jour. Vous pouvez supprimer ces anciennes versions manuellement :</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">efface les générations de plus de 30 jours</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-collect-garbage --delete-older-than 30d</span>
+<span class="hljs-meta prompt_">
+# </span><span class="language-bash">efface TOUTES les générations <span class="hljs-built_in">pr</span>écédentes - vous ne pouvez pas revenir en arrière après ça</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-collect-garbage -d</span>                       </code></pre>
+      </div><p>Liste les générations:</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">en tant que root</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-env --list-generations --profile /nix/var/nix/profiles/system</span></code></pre>
+      </div><p>Changer de génération:</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">en tant que root passer à la génération 204</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-env --profile /nix/var/nix/profiles/system --switch-generation 204</span></code></pre>
+      </div><p>effacer une(des) génération(s) cassée(s):</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">en tant que root effacer les générations cassées 205 et 206</span> 
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-env --profile /nix/var/nix/profiles/system --delete-generations 205 206</span></code></pre>
+      </div><p>Vous pouvez configurer le ramasse-miettes automatique en définissant les options <a href="https://search.nixos.org/options?query=nix.gc">nix.gc</a> dans le fichier <code>/etc/nixos/configuration.nix</code>. Cette configuration est recommandée, car elle permet de limiter la taille du Nix store.</p>
+<p><span id="See_also"></span></p>
+<h2 id="voir-galement">Voir également</h2><ul>
+<li><a href="special:MyLanguage/NixOS_modules" class="wikilink" title="NixOS modules">NixOS modules</a>, a library for modular <a href="special:MyLanguage/Overview_of_the_Nix_Expression_Language#Expressions" class="wikilink" title="Nix expressions">Nix expressions</a> which powers <a href="https://mirror.nixoscn.org/wiki/NixOS/fr#declarative-configuration" class="wikilink" title="the declarative configuration of NixOS">the declarative configuration of NixOS</a>.</li>
+<li><a href="special:MyLanguage/NixOS_VM_tests" class="wikilink" title="NixOS VM tests">NixOS VM tests</a>, a library for creating reproducible infrastructure tests, based on <a href="special:MyLanguage/Nixpkgs" class="wikilink" title="Nixpkgs">Nixpkgs</a>, <a href="special:MyLanguage/NixOS" class="wikilink" title="NixOS">NixOS</a>, QEMU and Perl.</li>
+<li><a href="https://github.com/ryan4yin/nixos-and-flakes-book">NixOS &amp; Flakes Book</a> (Ryan4yin, 2023) - 🛠️ ❤️ An unofficial NixOS &amp; Flakes book for beginners.</li>
+</ul>
+<p><a href="category:Pedias" class="wikilink" title="Category:Pedias">Category:Pedias</a> <a href="category:NixOS" class="wikilink" title="Category:NixOS">Category:NixOS</a> <a href="category:Nix```{{#translation:}}%60%60%60" class="wikilink" title="Category:Nix```
+{{#translation:}}
+```">Category:Nix```
+{{#translation:}}</p>
+<div class="code-container">
+        
+        <pre><code class="language-</a> hljs">
+[^1]: &lt;https://discourse.nixos.org/t/limited-cache-availability-for-i686-32-bits-x86-architecture/37626&gt;</code></pre>
+      </div>
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

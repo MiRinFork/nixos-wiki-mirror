@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Agenix</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Agenix</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Agenix -->
+
+<languages/>
+
+<p><translate> <strong><a href="https://github.com/ryantm/agenix">Agenix</a></strong><sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Agenix#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup> is a command-line tool for managing secrets in Nix configurations. It relies on existing SSH key pairs and integrates with the <a href="https://age-encryption.org/">age</a> encryption tool to protect secrets while they reside in the Nix store and during system activation.<sup><a id="footnote-ref-2" href="https://mirror.nixoscn.org/wiki/Agenix#footnote-2" data-footnote-ref aria-describedby="footnote-label">2</a></sup><sup><a id="footnote-ref-3" href="https://mirror.nixoscn.org/wiki/Agenix#footnote-3" data-footnote-ref aria-describedby="footnote-label">3</a></sup></p>
+<h2 id="features">Features</h2><ul>
+<li><strong>SSH-based encryption workflow:</strong> The `agenix` CLI encrypts raw secret files with user and host SSH public keys, allowing decryption wherever the matching private keys are present.<sup><a id="footnote-ref-4" href="https://mirror.nixoscn.org/wiki/Agenix#footnote-4" data-footnote-ref aria-describedby="footnote-label">4</a></sup></li>
+<li><strong>Reproducible storage model:</strong> Encrypted `.age` files can live in version control, enter the Nix store, and are decrypted during system activation to paths such as <code>/run/agenix</code>.<sup><a id="footnote-ref-5" href="https://mirror.nixoscn.org/wiki/Agenix#footnote-5" data-footnote-ref aria-describedby="footnote-label">5</a></sup></li>
+<li><strong>Declarative module support:</strong> NixOS and Home Manager modules ship with the project, so secrets can be imported, decrypted, and exposed declaratively alongside other configuration.<sup><a id="footnote-ref-6" href="https://mirror.nixoscn.org/wiki/Agenix#footnote-6" data-footnote-ref aria-describedby="footnote-label">6</a></sup></li>
+<li><strong>Minimal dependency footprint:</strong> Agenix depends on the `age` tool rather than GnuPG and intentionally omits templating features, keeping the code base small and auditable.<sup><a id="footnote-ref-7" href="https://mirror.nixoscn.org/wiki/Agenix#footnote-7" data-footnote-ref aria-describedby="footnote-label">7</a></sup><sup><a id="footnote-ref-8" href="https://mirror.nixoscn.org/wiki/Agenix#footnote-8" data-footnote-ref aria-describedby="footnote-label">8</a></sup></li>
+</ul>
+<h2 id="installation">Installation</h2><p>The following example describes installing <a href="https://github.com/ryantm/agenix">Agenix</a> with <a href="https://mirror.nixoscn.org/wiki/Agenix/Flakes" class="wikilink" title="Flakes">Flakes</a>.<sup><a id="footnote-ref-9" href="https://mirror.nixoscn.org/wiki/Agenix#footnote-9" data-footnote-ref aria-describedby="footnote-label">9</a></sup> For additional installation methods, consult the README.<sup><a id="footnote-ref-10" href="https://mirror.nixoscn.org/wiki/Agenix#footnote-10" data-footnote-ref aria-describedby="footnote-label">10</a></sup> </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">inputs.agenix.url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:ryantm/agenix&quot;</span>;
+  <span class="hljs-comment"># optional, not necessary for the module</span>
+  <span class="hljs-comment">#inputs.agenix.inputs.nixpkgs.follows = &quot;nixpkgs&quot;;</span>
+
+  <span class="hljs-attr">outputs</span> <span class="hljs-operator">=</span> { self, nixpkgs, agenix }: {
+    <span class="hljs-attr">nixosConfigurations.yourhostname</span> <span class="hljs-operator">=</span> nixpkgs.lib.nixosSystem {
+      <span class="hljs-attr">system</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;x86_64-linux&quot;</span>;
+      <span class="hljs-attr">modules</span> <span class="hljs-operator">=</span> [
+        <span class="hljs-symbol">./configuration.nix</span>
+        agenix.nixosModules.default
+      ];
+    };
+  };
+}</code></pre>
+      </div><p><translate> Replace <code>yourhostname</code> with the actual host name and <code>x86_64-linux</code> with the relevant system architecture.</p>
+<p>After adding the input, install the <code>agenix</code> client application with: </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> [ pkgs.agenix-cli ];</code></pre>
+      </div><translate>
+
+<h2 id="configuration">Configuration</h2><h3 id="choose-a-public-private-key">Choose a public/private key</h3><p>Decide which <a href="https://mirror.nixoscn.org/wiki/Agenix/SSH_public_key_authentication" class="wikilink" title="SSH public key">SSH public key</a> should encrypt the secrets. The corresponding private key decrypts the secrets when rebuilding the system.</p>
+<p>If you deploy the configuration as the root user, the host key pairs generated by <a href="https://mirror.nixoscn.org/wiki/Agenix/SSH" class="wikilink" title="SSH">SSH</a> are already available at:</p>
+<ul>
+<li><code>/etc/ssh/ssh_host_rsa_key</code> / <code>/etc/ssh/ssh_host_rsa_key.pub</code></li>
+<li><code>/etc/ssh/ssh_host_ed25519_key</code> / <code>/etc/ssh/ssh_host_ed25519_key.pub</code></li>
+</ul>
+<p>For deployments triggered by another user, create a dedicated key pair with <code>ssh-keygen</code>. Such keys typically reside at:</p>
+<ul>
+<li><code>~/.ssh/id_rsa</code> / <code>~/.ssh/id_rsa.pub</code></li>
+<li><code>~/.ssh/id_ed25519</code> / <code>~/.ssh/id_ed25519.pub</code></li>
+</ul>
+<p>Refer to <a href="https://mirror.nixoscn.org/wiki/Agenix/SSH_public_key_authentication" class="wikilink" title="SSH public key authentication">SSH public key authentication</a> for more information.</p>
+<h3 id="create-the-secrets">Create the secrets</h3><p>Create a directory that stores encrypted secrets. For example: </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-comment"># mkdir /etc/nixos/secrets</span></code></pre>
+      </div><p><translate> Inside the secrets directory, create a <code>secrets.nix</code> file that defines the encryption rules. The following example gives <code>user1</code> and <code>system1</code> access to <code>secret1.age</code>: </translate> <translate></p>
+<h2 id="usage">Usage</h2><p>Create a secret file and encrypt it by running: </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-comment"># cd /etc/nixos/secrets</span>
+<span class="hljs-comment"># agenix -e secret1.age</span></code></pre>
+      </div><p><translate> The <code>agenix</code> command opens the default terminal editor. Enter the secret (for example, <code>password123</code>) and save the file. The <code>secret1.age</code> filename is defined in <code>secrets.nix</code>, allowing <code>agenix</code> to select the correct SSH keys.<sup><a id="footnote-ref-11" href="https://mirror.nixoscn.org/wiki/Agenix#footnote-11" data-footnote-ref aria-describedby="footnote-label">11</a></sup></p>
+<p>To reference the secret inside a NixOS module, use a configuration similar to the following example: </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">a<span class="hljs-attr">ge.secrets.nextcloud</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">file</span> <span class="hljs-operator">=</span> <span class="hljs-symbol">./secrets/secret1.age</span>;
+  <span class="hljs-attr">owner</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nextcloud&quot;</span>;
+  <span class="hljs-attr">group</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nextcloud&quot;</span>;
+};
+<span class="hljs-attr">services.nextcloud</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">package</span> <span class="hljs-operator">=</span> pkgs.nextcloud28;
+  <span class="hljs-attr">hostName</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;localhost&quot;</span>;
+  <span class="hljs-attr">config.adminpassFile</span> <span class="hljs-operator">=</span> config.age.secrets.nextcloud.path;
+};</code></pre>
+      </div><p><translate> In this case, the <a href="https://mirror.nixoscn.org/wiki/Agenix/Nextcloud" class="wikilink" title="Nextcloud">Nextcloud</a> service reads its administrator password from the age-encrypted file, preventing the secret from appearing in the world-readable Nix store.<sup><a id="footnote-ref-12" href="https://mirror.nixoscn.org/wiki/Agenix#footnote-12" data-footnote-ref aria-describedby="footnote-label">12</a></sup></p>
+<p>Secrets can also be deployed as files with specific permissions:<sup><a id="footnote-ref-13" href="https://mirror.nixoscn.org/wiki/Agenix#footnote-13" data-footnote-ref aria-describedby="footnote-label">13</a></sup> </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">a<span class="hljs-attr">ge.secrets</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">netrc</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">file</span> <span class="hljs-operator">=</span> <span class="hljs-symbol">./secrets/netrc.age</span>;
+    <span class="hljs-attr">path</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/home/myuser/.netrc&quot;</span>;
+    <span class="hljs-attr">owner</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;myuser&quot;</span>;
+    <span class="hljs-attr">group</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;users&quot;</span>;
+    <span class="hljs-attr">mode</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;600&quot;</span>;
+  };
+};</code></pre>
+      </div><translate>
+
+<h2 id="tips-and-tricks">Tips and tricks</h2><h3 id="replace-in-place-strings-with-secrets">Replace in-place strings with secrets</h3><p>Some modules do not yet support reading secrets from a file. Provide a placeholder string and replace it during activation. </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">system.activationScripts.<span class="hljs-string">&quot;dex-user-secret&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+  secret=$(cat &quot;<span class="hljs-subst">${config.age.secrets.dex-user-password.path}</span>&quot;)
+  configFile=/run/dex/config.yaml
+  <span class="hljs-subst">${pkgs.gnused}</span>/bin/sed -i &quot;s#@dex-user-password@#$secret#&quot; &quot;$configFile&quot;
+&#x27;&#x27;</span>;</code></pre>
+      </div><translate>
+
+<h3 id="access-secrets-inside-a-container">Access secrets inside a container</h3><p>Expose secrets to a container by binding the decrypted file into the container filesystem: </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">containers.mycontainer.bindMounts.<span class="hljs-string">&quot;<span class="hljs-subst">${config.agenix.secrets.mysecret.path}</span>&quot;</span>.isReadOnly <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><p><translate> Another option is to import <code>agenix.nixosModules.default</code> directly inside the container and supply the required private key: </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ agenix, ... }: {
+  containers.<span class="hljs-string">&quot;mycontainer&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-comment"># pass the private key to the container for agenix to decrypt the secret</span>
+    bindMounts.<span class="hljs-string">&quot;/etc/ssh/ssh_host_ed25519_key&quot;</span>.isReadOnly <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+    <span class="hljs-attr">config</span> <span class="hljs-operator">=</span> { config, lib, pkgs, ... }: {
+      <span class="hljs-attr">imports</span> <span class="hljs-operator">=</span> [ agenix.nixosModules.default ];
+
+      <span class="hljs-attr">age.identityPaths</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;/etc/ssh/ssh_host_ed25519_key&quot;</span> ];
+
+      age.secrets.<span class="hljs-string">&quot;mysecret&quot;</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">file</span> <span class="hljs-operator">=</span> <span class="hljs-symbol">../secrets/mysecret.age</span>;
+        <span class="hljs-attr">owner</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;myuser&quot;</span>;
+      };
+    };
+  };
+}</code></pre>
+      </div><translate>
+
+<h3 id="use-secrets-in-the-initrd">Use secrets in the initrd</h3><p>Agenix provisions secrets during system activation, so they are unavailable while building the initrd. As a workaround, create the secret as a static file outside <code>/run/agenix</code> and reference it from <code>/etc/initrd-hostkey</code>. </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">a<span class="hljs-attr">ge.secrets.hostkey-initrd</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">file</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${paths.agenix}</span>/hostkey-initrd.age&quot;</span>;
+  <span class="hljs-attr">path</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/etc/initrd-hostkey&quot;</span>;
+  <span class="hljs-attr">symlink</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+};
+
+<span class="hljs-attr">boot.initrd.network.ssh.hostKeys</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;/etc/initrd-hostkey&quot;</span> ];</code></pre>
+      </div><p><translate> Rebuild the system twice and reference <code>/etc/initrd-hostkey</code> only after the file exists.</p>
+<h3 id="agenix-with-impermanence">Agenix with Impermanence</h3><p>Systems that use <a href="https://mirror.nixoscn.org/wiki/Agenix/Impermanence" class="wikilink" title="Impermanence">Impermanence</a> may regenerate host keys on each boot. Point <code>age.identityPaths</code> to the persistent locations of those keys: </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">a<span class="hljs-attr">ge.identityPaths</span> <span class="hljs-operator">=</span> [
+  <span class="hljs-string">&quot;/persist/etc/ssh/ssh_host_ed25519_key&quot;</span>
+  <span class="hljs-string">&quot;/persist/etc/ssh/ssh_host_rsa_key&quot;</span>
+];</code></pre>
+      </div><translate>
+
+<h2 id="see-also">See also</h2><ul>
+<li><a href="https://mirror.nixoscn.org/wiki/Agenix/Comparison_of_secret_managing_schemes" class="wikilink" title="Comparison of secret managing schemes">Comparison of secret managing schemes</a> – Overview of alternative secret management approaches</li>
+<li><a href="https://age-encryption.org/">age</a> – Encryption tool that underpins Agenix secrets<sup><a id="footnote-ref-14" href="https://mirror.nixoscn.org/wiki/Agenix#footnote-14" data-footnote-ref aria-describedby="footnote-label">14</a></sup></li>
+<li><a href="https://mirror.nixoscn.org/wiki/Agenix/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> – Declarative per-user configuration that can consume Agenix-managed secrets</li>
+</ul>
+<h2 id="references">References</h2><references />
+
+</translate>
+
+<p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="category:Security" class="wikilink" title="Category:Security">Category:Security</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p>Ryan Mulligan and contributors, &quot;agenix&quot;, GitHub Repository, Accessed October 2025. <a href="https://github.com/ryantm/agenix">https://github.com/ryantm/agenix</a> <a href="https://mirror.nixoscn.org/wiki/Agenix#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+<li id="footnote-2">
+<p>Filippo Valsorda and collaborators, &quot;age&quot;, Official Website, Accessed October 2025. <a href="https://age-encryption.org/">https://age-encryption.org/</a> <a href="https://mirror.nixoscn.org/wiki/Agenix#footnote-ref-2" data-footnote-backref aria-label="Back to reference 2">↩</a></p>
+</li>
+<li id="footnote-3">
+<p>Ryan Mulligan and contributors, &quot;agenix README&quot;, GitHub Repository, Accessed October 2025. <a href="https://github.com/ryantm/agenix/blob/main/README.md">https://github.com/ryantm/agenix/blob/main/README.md</a> <a href="https://mirror.nixoscn.org/wiki/Agenix#footnote-ref-3" data-footnote-backref aria-label="Back to reference 3">↩</a></p>
+</li>
+<li id="footnote-4">
+ <a href="https://mirror.nixoscn.org/wiki/Agenix#footnote-ref-4" data-footnote-backref aria-label="Back to reference 4">↩</a>
+</li>
+<li id="footnote-5">
+ <a href="https://mirror.nixoscn.org/wiki/Agenix#footnote-ref-5" data-footnote-backref aria-label="Back to reference 5">↩</a>
+</li>
+<li id="footnote-6">
+ <a href="https://mirror.nixoscn.org/wiki/Agenix#footnote-ref-6" data-footnote-backref aria-label="Back to reference 6">↩</a>
+</li>
+<li id="footnote-7">
+ <a href="https://mirror.nixoscn.org/wiki/Agenix#footnote-ref-7" data-footnote-backref aria-label="Back to reference 7">↩</a>
+</li>
+<li id="footnote-8">
+<p>NixOS Wiki Community, &quot;Comparison of secret managing schemes&quot;, NixOS Wiki, Accessed October 2025. <a href="https://wiki.nixos.org/wiki/Comparison_of_secret_managing_schemes">https://wiki.nixos.org/wiki/Comparison_of_secret_managing_schemes</a> <a href="https://mirror.nixoscn.org/wiki/Agenix#footnote-ref-8" data-footnote-backref aria-label="Back to reference 8">↩</a></p>
+</li>
+<li id="footnote-9">
+ <a href="https://mirror.nixoscn.org/wiki/Agenix#footnote-ref-9" data-footnote-backref aria-label="Back to reference 9">↩</a>
+</li>
+<li id="footnote-10">
+ <a href="https://mirror.nixoscn.org/wiki/Agenix#footnote-ref-10" data-footnote-backref aria-label="Back to reference 10">↩</a>
+</li>
+<li id="footnote-11">
+ <a href="https://mirror.nixoscn.org/wiki/Agenix#footnote-ref-11" data-footnote-backref aria-label="Back to reference 11">↩</a>
+</li>
+<li id="footnote-12">
+ <a href="https://mirror.nixoscn.org/wiki/Agenix#footnote-ref-12" data-footnote-backref aria-label="Back to reference 12">↩</a>
+</li>
+<li id="footnote-13">
+ <a href="https://mirror.nixoscn.org/wiki/Agenix#footnote-ref-13" data-footnote-backref aria-label="Back to reference 13">↩</a>
+</li>
+<li id="footnote-14">
+ <a href="https://mirror.nixoscn.org/wiki/Agenix#footnote-ref-14" data-footnote-backref aria-label="Back to reference 14">↩</a>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nixpkgs/fr</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/Nixpkgs">Nixpkgs</a><span aria-hidden="true"> / </span>fr</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Nixpkgs/fr -->
+
+<p><languages/> &#39;“&#39;Nixpkgs”&#39;&#39; est le plus grand référentiel de paquets <a href="https://mirror.nixoscn.org/wiki/Nixpkgs/fr/Nix" class="wikilink" title="Nix">Nix</a> et de modules <a href="https://mirror.nixoscn.org/wiki/Nixpkgs/fr/NixOS" class="wikilink" title="NixOS">NixOS</a>. Ce référentiel est hébergé sur GitHub et géré par la communauté, avec le soutien officiel de la <a href="https://mirror.nixoscn.org/wiki/Nixpkgs/fr/NixOS_Foundation" class="wikilink" title="NixOS Foundation">NixOS Foundation</a>.</p>
+<p>Pour effectuer une recherche parmi les paquets et options disponibles, consultez la page <a href="https://mirror.nixoscn.org/wiki/Nixpkgs/fr/Recherche_de_paquets" class="wikilink" title="Recherche de paquets">Recherche de paquets</a>.</p>
+<p>Comme le souligne <a href="https://nixos.org/blog/announcements/2024/nixos-2411/">l&#39;annonce</a> de la sortie de NixOS 24.11, « NixOS est déjà reconnue comme la distribution la plus à jour tout en étant la distribution proposant le plus grand nombre de paquets ». Cela est dû à l&#39;engagement continu de la communauté pour faire de Nixpkgs le dépôt de paquets Linux par excellence.</p>
+<p><span id="Subpages"></span></p>
+<h3 id="sous-pages">Sous-pages</h3><p>Il existe plusieurs articles consacrés plus particulièrement à l&#39;utilisation de <code>nixpkgs</code> :</p>
+<p><span id="Releases"></span></p>
+<h2 id="versions">Versions</h2><p>Les paquets et modules hébergés sur Nixpkgs sont distribués via différentes <a href="https://mirror.nixoscn.org/wiki/Nixpkgs/fr/branches_de_canaux" class="wikilink" title="branches de canaux">branches de canaux</a> destinées à des cas d&#39;utilisation spécifiques. Concrètement, ils se distinguent par le niveau de test que les mises à jour doivent passer sur l&#39;instance officielle <a href="https://nixos.org/hydra/manual/#idm140737315980672">nixos.org Hydra</a> et par le nombre de mises à jour qu&#39;ils reçoivent.</p>
+<p>Pour les utilisateurs de <a href="https://mirror.nixoscn.org/wiki/Nixpkgs/fr/NixOS" class="wikilink" title="NixOS">NixOS</a>, la branche <code>nixos-unstable</code> correspond à la version en mise à jour continue, dans laquelle les paquets passent les tests de compilation et les <a href="https://mirror.nixoscn.org/wiki/Nixpkgs/fr/tests_de_NixOS_sur_VM" class="wikilink" title="tests d&#39;intégration sur une machine virtuelle">tests d&#39;intégration sur une machine virtuelle</a>, et sont testés en tant que système d&#39;exploitation (c&#39;est-à-dire des éléments tels que le <a href="https://mirror.nixoscn.org/wiki/Nixpkgs/fr/Xorg" class="wikilink" title="serveur X">serveur X</a>, <a href="https://mirror.nixoscn.org/wiki/Nixpkgs/fr/KDE" class="wikilink" title="KDE">KDE</a>, divers serveurs, ainsi que des détails de plus bas niveau tels que l&#39;installation de <a href="https://mirror.nixoscn.org/wiki/Nixpkgs/fr/Bootloader" class="wikilink" title="chargeurs d&#39;amorçage">chargeurs d&#39;amorçage</a> et l&#39;exécution des étapes d&#39;installation de NixOS sont également testés).</p>
+<p>Pour les utilisateurs autonomes de <a href="https://mirror.nixoscn.org/wiki/Nixpkgs/fr/Nix" class="wikilink" title="Nix">Nix</a>, la branche <code>nixpkgs-unstable</code> constitue la version à mise à jour continue, dans laquelle les paquets ne sont soumis qu&#39;à des tests de compilation de base et sont mis à jour en permanence.</p>
+<p>Les utilisateurs de <a href="https://mirror.nixoscn.org/wiki/Nixpkgs/fr/NixOS" class="wikilink" title="NixOS">NixOS</a> et de <a href="https://mirror.nixoscn.org/wiki/Nixpkgs/fr/Nix" class="wikilink" title="Nix">Nix</a> peuvent recourir aux branches du canal stable (voir <a href="https://status.nixos.org/">https://status.nixos.org/</a> pour connaître les canaux actuels) afin de ne recevoir que des mises à jour mineures destinées à corriger les bogues critiques et les failles de sécurité. Les branches du canal stable sont publiées deux fois par an, à la fin du mois de mai et à la fin du mois de novembre.</p>
+<p>L&#39;utilisation des branches stables sous NixOS offre une expérience similaire à celle proposée par d&#39;autres distributions Linux.</p>
+<h2 id="alternatives">Alternatives</h2><p>Étant donné que Nixpkgs n&#39;est « qu&#39;une » expression Nix, il est possible d&#39;étendre ou de remplacer sa logique par vos propres sources. Il existe d&#39;ailleurs un certain nombre d&#39;extensions ainsi que des remplacements complets de Nixpkgs ; consultez l&#39;article <a href="https://mirror.nixoscn.org/wiki/Nixpkgs/fr/Ensembles_de_paquets_alternatifs" class="wikilink" title="Ensembles de paquets alternatifs">Ensembles de paquets alternatifs</a>.</p>
+<p><a href="category:Pedias" class="wikilink" title="Category:Pedias">Category:Pedias</a> <a href="category:Nixpkgs" class="wikilink" title="Category:Nixpkgs">Category:Nixpkgs</a> <a href="category:Nix" class="wikilink" title="Category:Nix">Category:Nix</a> <a href="category:Software" class="wikilink" title="Category:Software">Category:Software</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

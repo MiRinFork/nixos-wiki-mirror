@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Error handling</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Error handling</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Error handling -->
+
+<p>This page is a collection of facilities and tools from nix, nixpkgs and NixOS for error handling and debugging. You can use them to convey configuration errors to users or to debug nix expressions trough interactive or print debugging.</p>
+<p>In most cases you will want to stick to the highest level abstraction: <code>config.warnings</code> or <code>lib.warn</code> and its relatives.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ config, lib, ... }: 
+<span class="hljs-comment"># in any nix code:</span>
+lib.warn <span class="hljs-string">&quot;This is a sample warning message.&quot;</span>
+{
+    <span class="hljs-attr">config.warnings</span> <span class="hljs-operator">=</span> (
+      <span class="hljs-comment"># Some NixOS module: throw error, if services.foo.bar == true</span>
+      lib.optionals config.services.foo.bar <span class="hljs-string">&quot;This is also a sample warning message, but invoked differently.&quot;</span>
+    );
+}</code></pre>
+      </div><h2 id="nix">Nix</h2><p>The nix language has a construct to help with printing messages.</p>
+<ul>
+<li><strong>assert</strong>: throw an error (see <a href="https://nixos.org/manual/nix/stable/language/syntax.html?highlight=assert#assertions">Nix manual: Assertions</a>)</li>
+</ul>
+<p>The nix language also comes with some related <a href="https://nixos.org/manual/nix/stable/language/builtins.html">builtin functions</a>:</p>
+<ul>
+<li><strong>throw</strong>: throw an error with a message</li>
+<li><strong>abort</strong>: same as throw, but always stop evaluation</li>
+<li><strong>trace</strong>: print to stderr</li>
+<li><strong>traceVerbose</strong>: print, but only when in <code>--trace-verbose</code> mode</li>
+<li><strong>break</strong>: breakpoint when in <code>--debugger</code> mode</li>
+<li><strong>tryEval</strong>: catch throws and asserts</li>
+</ul>
+<p>Most of those functions (nix builtins as well as nixpkgs lib functions) take an expression <code>e</code> as their last argument which they return unmodified. Thus they are chained in front of some expression:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">a <span class="hljs-operator">=</span> <span class="hljs-built_in">builtins.trace</span> <span class="hljs-string">&quot;trace message&quot;</span> {
+   <span class="hljs-comment"># what should be assigned to a</span>
+};</code></pre>
+      </div><p>Commonly, assert is combined with throw to generate meaningful error messages: <code>assert condition || throw &quot;message&quot;;</code>. This pattern is essentially how <code>lib.assertMsg</code> works (see Sec. nixpkgs). <sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Error%20handling#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup></p>
+<h2 id="nixpkgs">nixpkgs</h2><p>There are three main facilities for printing errors and do print debugging in nixpkgs:</p>
+<ul>
+<li>lib.trivial.* (see <a href="https://nixos.org/manual/nixpkgs/stable/#sec-functions-library-trivial">nixpkgs manual: lib.trivial</a>)<ul>
+<li>lib.<strong>throwIf</strong> and throwIfNot</li>
+<li>lib.<strong>warn</strong>, <strong>warnIf</strong> and warnIfNot</li>
+</ul>
+</li>
+<li><a href="https://nixos.org/manual/nixpkgs/stable/#sec-functions-library-debug">lib.<strong>debug</strong>.*</a>: tracing functions with some pretty printing (e.g. <code>lib.debug.traceIf</code>) <sup><a id="footnote-ref-2" href="https://mirror.nixoscn.org/wiki/Error%20handling#footnote-2" data-footnote-ref aria-describedby="footnote-label">2</a></sup></li>
+<li><a href="https://nixos.org/manual/nixpkgs/stable/#sec-functions-library-asserts">lib.<strong>asserts</strong>.*</a>: assert functions (e.g. <code>lib.asserts.assertMsg</code>)</li>
+</ul>
+<p>These facilities also expose their attributes directly via <code>lib.*</code> (e.g. <code>lib.throwIf</code>).</p>
+<p>Nixpkgs also has a debugging facility like nix&#39;s <code>break</code>: the <a href="https://nixos.org/manual/nixpkgs/stable/#breakpointhook">breakpointHook</a>.</p>
+<h2 id="nixos">NixOS</h2><p>The NixOS module system again wraps these library functions and makes them available via module options (see <a href="https://nixos.org/manual/nixos/stable/index.html#sec-assertions-warnings">NixOS manual: Assertions/Warnings</a>): <sup><a id="footnote-ref-3" href="https://mirror.nixoscn.org/wiki/Error%20handling#footnote-3" data-footnote-ref aria-describedby="footnote-label">3</a></sup></p>
+<ul>
+<li><code>config.warnings = [];</code></li>
+<li><code>config.assertions = [];</code></li>
+</ul>
+<p>An example for a debugging facility in NixOS is running <a href="https://nixos.org/manual/nixos/stable/index.html#sec-running-nixos-tests-interactively">NixOS tests interactively</a>.</p>
+<h2 id="debugging">Debugging</h2><p>To summarise debugging approaches discussed in this article, you can use <code>break</code> to debug nix code, <code>breakpointHook</code> to debug nix builds and interactive tools to debug NixOS tests.</p>
+<p>To find the location where variables get defined, you can use the following tools:</p>
+<p>For bare nix code, use <code>builtins.unsafeGetAttrPos</code> (<a href="https://github.com/NixOS/nix/blob/b17c4290cf61d8a0386817b87231762c175097c5/tests/lang/eval-okay-getattrpos.nix">example</a>) which returns the line and column of where an attribute is defined. It is undocumented and considered bad practice.</p>
+<p>(soon to come <a href="https://github.com/NixOS/nixpkgs/pull/249243">github PR</a>): For NixOS options unsafeGetAttrPos doesn&#39;t work, but the module system itself records that information: to find the location of <code>config.networking.hostName</code>, use <code>:p options.networking.hostName.declarationPositions</code>.</p>
+<h2 id="references">References</h2><section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p><a href="https://github.com/NixOS/nixpkgs/issues/154292">throw vs assert discussion</a> <a href="https://mirror.nixoscn.org/wiki/Error%20handling#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+<li id="footnote-2">
+<p><a href="http://ryantm.github.io/nixpkgs/functions/library/debug/#sec-functions-library-debug">Nixpkgs/docs: lib.debug</a> <a href="https://mirror.nixoscn.org/wiki/Error%20handling#footnote-ref-2" data-footnote-backref aria-label="Back to reference 2">↩</a></p>
+</li>
+<li id="footnote-3">
+<p><a href="https://github.com/NixOS/nixpkgs/blob/nixos-22.11/nixos/doc/manual/development/assertions.section.md">Nixpkgs/docs: Assertions</a> <a href="https://mirror.nixoscn.org/wiki/Error%20handling#footnote-ref-3" data-footnote-backref aria-label="Back to reference 3">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

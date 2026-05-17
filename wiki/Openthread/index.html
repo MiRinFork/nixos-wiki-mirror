@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Openthread</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Openthread</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Openthread -->
+
+<h2 id="openthread">Openthread</h2><p><a href="https://openthread.io/">Openthread</a> is an open source implementation of the <a href="https://threadgroup.org/What-is-Thread/Overview">Thread</a> IOT networking specification.</p>
+<p>This implementation provides an openthread border router server and a small webui to monitor it. It can be used to setup a thread network on your server if it is equiped with a Thread radio device. The border router allows for routing IPv6 communication between a classic wifi or ethernet network and a Thread network.</p>
+<p>Popular Thread radio devices include Home assistant&#39;s connect ZBT-2 and SONOFF Zigbee 3.0 USB dongles among many other.</p>
+<p>Once your thread network is established, you can use the Matter IOT standard to control various home automation devices adhering to the standard.</p>
+<p>The most likely configuration for NixOS users will be to use openthread in combination with the <a href="https://mirror.nixoscn.org/wiki/Openthread/Home_Assistant" class="wikilink" title="Home Assistant">Home Assistant</a> module and the <a href="https://mirror.nixoscn.org/wiki/Openthread/Matter_Server" class="wikilink" title="Matter Server">Matter Server</a> module.</p>
+<h3 id="basic-setup">Basic Setup</h3><p>Make sure you have the required radio USB device connected to your server and note its device path which should look something like</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs">/dev/serial/by-id/usb-Nabu_Casa_ZBT-2_xxxxxxxxx_ifxx
+<span class="hljs-meta prompt_"># </span><span class="language-bash">or</span>
+/dev/serial/by-id/usb-Itead_Sonoff_Zigbee_3.0_USB_Dongle_Plus_V2_xxxxxxxxxxxxxxxxxxxxx-ifxx-portx</code></pre>
+      </div><p>of course these are merely examples for specific devices but you will want to use the by-id path to ensure it remains stable across reboots and multiple device configurations.</p>
+<p>Then you can enable the open thread border router service in NixOS</p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs">    <span class="hljs-attr">openthread-border-router</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">backboneInterfaces</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;eno1&quot;</span> ];
+      <span class="hljs-comment"># logLevel = &quot;notice&quot;; controls the log levels</span>
+      <span class="hljs-attr">radio</span> <span class="hljs-operator">=</span> { 
+        <span class="hljs-attr">device</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/dev/serial/by-id/usb-Nabu_Casa_ZBT-2_xxxxxxxxxxx-if00&quot;</span>;
+        <span class="hljs-attr">baudRate</span> <span class="hljs-operator">=</span> <span class="hljs-number">460800</span>;   <span class="hljs-comment"># This and flow control are hardware dependant</span>
+        <span class="hljs-attr">flowControl</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>; <span class="hljs-comment"># check your device&#x27;s documentation</span>
+      };
+      <span class="hljs-attr">rest</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-comment"># listenAddress = &quot;::&quot;; # Defaults to 127.0.0.1</span>
+
+        <span class="hljs-comment"># It is recommended to use port 8081 as some web UI features do not work </span>
+        <span class="hljs-comment"># with a different port </span>
+        <span class="hljs-comment"># listenPort = 8081;</span>
+       
+      };
+      <span class="hljs-attr">web</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; <span class="hljs-comment"># enables the basic web interface </span>
+
+        <span class="hljs-comment"># listenAddress = &quot;::&quot;; # defaults to 127.0.0.1</span>
+        <span class="hljs-comment"># listenPort = 58082;   # this port can be altered freely</span>
+      };      
+    };</code></pre>
+      </div><p>once the service is started you should be able to access the web ui <img src="https://mirror.nixoscn.org/wiki/Openthread/Openthread_border_router_web_ui.png" title="Openthread_border_router_web_ui.png" width="938" height="938" alt="Openthread_border_router_web_ui.png" /> You can use the UI to form your own network or join an existing network provided you have the credentials for it. The module also installs the <code>ot-ctl</code> CLI tool which can achieve the same actions and allows for a deeper inspection of the thread network and routing tables</p>
+<p>Once you have formed or joined a Thread network, you should have a basic setup up and running. However at this point there is little you can do with it.</p>
+<h3 id="integrating-with-home-assistant">Integrating with Home Assistant</h3><p>Having a thread border router by itself it not all that useful except for the most hard core power users. You will most likely want to use this network to communicate with Thread/Matter devices. To do so the easiest option is to integrate both Thread and Matter components with <a href="https://mirror.nixoscn.org/wiki/Openthread/Home_Assistant" class="wikilink" title="Home Assistant">Home Assistant</a>.</p>
+<p>You will need to ensure that you have configured the relevant home assistant addons (see the <a href="https://mirror.nixoscn.org/wiki/Openthread/Home_Assistant" class="wikilink" title="Home Assistant">Home Assistant</a> page for a more complete configuration example)</p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs">  <span class="hljs-attr">services</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">home-assistant</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">extraComponents</span> <span class="hljs-operator">=</span> [        
+        <span class="hljs-comment">#...</span>
+        <span class="hljs-comment"># Components required to operate a matter-over-thread </span>
+        <span class="hljs-comment"># network with home-assistant</span>
+        <span class="hljs-string">&quot;matter&quot;</span>
+        <span class="hljs-string">&quot;otbr&quot;</span>
+        <span class="hljs-string">&quot;thread&quot;</span>
+        <span class="hljs-comment">#...</span>
+      ];
+    }
+  }</code></pre>
+      </div><p>And you will need to enable the <a href="https://mirror.nixoscn.org/wiki/Openthread/Matter_Server" class="wikilink" title="Matter Server">Matter Server</a> module. <img src="https://mirror.nixoscn.org/wiki/Openthread/Home_assistant_thread_large.png" title="Home_assistant_thread_large.png" width="891" height="891" alt="Home_assistant_thread_large.png" /> Once restarted, home assistant should detect the Open thread border router, the corresponding Thread network and the matter server automatically and propose to add them as integrations.</p>
+<p>At this point you should be ready to commission your first device.</p>
+<p><a href="category:Software" class="wikilink" title="Category:Software">Category:Software</a> <a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

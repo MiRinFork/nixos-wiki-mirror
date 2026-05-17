@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nix Evaluation Performance</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Nix Evaluation Performance</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Nix Evaluation Performance -->
+
+<p>TODO: Explain that not only thunks are important for performance and memory usage, but other things as well, such as function calls, number of attributes, number of values in general (includes thunks), etc. Pretty much most of the <code>NIX_SHOW_STATS</code> metrics.</p>
+<p>TODO: Explain how to profile Nix with <code>NIX_PROFILE</code> and other ways.</p>
+<h2 id="thunks">Thunks</h2><h3 id="what-are-thunks">What are thunks</h3><p>In Nix, thunks are used to implement laziness. A thunk is a type of Nix value that is not yet evaluated. It is only evaluated once needed. It consists of:</p>
+<ul>
+<li>The expression that the value should be evaluated from</li>
+<li>The environment in which the expression should be evaluated, aka the variables in scope</li>
+</ul>
+<p>It is very easy to introduce a lot of thunks in Nix code, which can have negative consequences:</p>
+<ul>
+<li>Every new thunk requires heap memory allocation</li>
+<li>A thunk prevents the evaluation garbage collector from collecting any variables from the referenced environment, causing not only the memory of the chunk itself to be kept alive, but also all its references</li>
+<li>Too deeply nested thunk chains can lead to stack overflows when evaluated</li>
+</ul>
+<p>Of course, thunks are essential to Nix, so it&#39;s not possible to avoid them. And in fact, using thunks properly can improve performance.</p>
+<h3 id="when-thunks-are-created">When thunks are created</h3><p>The rules of thunk creation in Nix are relatively straightforward.</p>
+<ol>
+<li><p>Nix won&#39;t create thunks for atomic expressions</p>
+<p>This includes <code>integers</code>, <code>floats</code>, <code>strings</code>, <code>paths</code>, <code>booleans</code> and <code>null</code></p>
+<p>This means that when you see e.g. <code>&quot;hello&quot;</code> or <code>true</code> in Nix, you know that Nix won&#39;t allocate a thunk for that. The reason for this is that there&#39;s not much to evaluate there, putting it into a thunk wouldn&#39;t make much sense.</p>
+<p>Note however that this is <em>not</em> the case for <code>&quot;Hello ${name}&quot;</code>, because that is desugared to <code>&quot;Hello &quot; + name</code> underneath, which won&#39;t be a string by itself anymore</p>
+</li>
+<li><p>Nix won&#39;t create thunks for referenced variables</p>
+<p>This means that once you defined a variable in a <code>let in</code> expression, or you&#39;re in a function that received some arguments at the top, Nix won&#39;t create extra thunks for when you reference these variables.</p>
+<p>It makes a lot of sense for Nix to do this, because variables themselves already point to either a thunk or an evaluated value, which can be used directly and doesn&#39;t need to be wrapped in another thunk that would just say &quot;Evaluate this variable&quot;.</p>
+</li>
+<li><p>The following expressions attempt to create thunks if allowed by above two rules</p>
+<ul>
+<li><code>let in</code> expressions attempt to create a thunk for each variable</li>
+<li><code>{ ... }</code> (attribute set) expressions attempt to create a thunk for each attribute</li>
+<li><code>[ ... ]</code> (list) expressions attempt to create a thunk for each element</li>
+<li><code>f a</code> (function application) expressions attempt to create a thunk for the argument</li>
+<li><code>{ attr ? def }: ...</code>: For every function evaluation where the function takes an attribute set where an attribute has a default value which <em>doesn&#39;t</em> exist in the passed argument, a thunk for the default value is attempted to be created</li>
+</ul>
+</li>
+</ol>
+<h3 id="example">Example</h3><p>The following shows an illustrative example of when and how many thunks are allocated. The comments give the thunk counts and explanation in the format</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># total (+difference) Explanation</span></code></pre>
+      </div><div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># let in expressions can allocate thunks</span>
+<span class="hljs-keyword">let</span>
+
+  <span class="hljs-comment"># 0 (+0) No thunk allocated because strings are atomic value expressions</span>
+  <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Paul&quot;</span>;
+
+  <span class="hljs-comment"># 1 (+1) Thunk is allocated, because the + operator is neither an atomic</span>
+  <span class="hljs-comment"># value nor a direct variable</span>
+  <span class="hljs-attr">greeting</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Hello, &quot;</span> <span class="hljs-operator">+</span> name;
+
+  <span class="hljs-comment"># 1 (+0) No thunk is allocated because greeting is a direct variable</span>
+  <span class="hljs-attr">result1</span> <span class="hljs-operator">=</span> greeting;
+
+  <span class="hljs-comment"># 2 (+1) This let in variable creates a new thunk, but the attribute itself</span>
+  <span class="hljs-comment"># isn&#x27;t evaluated, meaning it also won&#x27;t create any thunks for its values</span>
+  <span class="hljs-attr">deadAttrs</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">deadName</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;dead &quot;</span> <span class="hljs-operator">+</span> <span class="hljs-string">&quot;value&quot;</span>;
+  };
+
+  <span class="hljs-comment"># 4 (+2) One for the variable, but also one for the value inside, because the</span>
+  <span class="hljs-comment"># attribute itself is evaluated</span>
+  <span class="hljs-attr">attrs</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;alive &quot;</span> <span class="hljs-operator">+</span> <span class="hljs-string">&quot;value&quot;</span>;
+  };
+
+  <span class="hljs-comment"># 5 (+1) Intermediate result, forcing evaluation of the attrs, one thunk for</span>
+  <span class="hljs-comment"># the variable declaration. Note that this is a function call, but because</span>
+  <span class="hljs-comment"># both arguments are variables, no extra thunks are allocated</span>
+  <span class="hljs-attr">result2</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">builtins.seq</span> attrs <span class="hljs-literal">null</span>;
+
+  <span class="hljs-comment"># 7 (+2) Same with a list which is evaluated</span>
+  <span class="hljs-attr">list</span> <span class="hljs-operator">=</span> [
+    (<span class="hljs-string">&quot;alive &quot;</span> <span class="hljs-operator">+</span> <span class="hljs-string">&quot;value&quot;</span>)
+  ];
+
+  <span class="hljs-comment"># 8 (+1) And again, another intemediate result</span>
+  <span class="hljs-attr">result3</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">builtins.seq</span> list result2;
+
+  <span class="hljs-comment"># 10 (+2) Just two variables, a normal function doesn&#x27;t allocate a thunk on</span>
+  <span class="hljs-comment"># its own</span>
+  <span class="hljs-attr">fun</span> <span class="hljs-operator">=</span> <span class="hljs-params">a:</span> a;
+  <span class="hljs-attr">result4</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">builtins.seq</span> fun result3;
+
+  <span class="hljs-comment"># 13 (+3) However if the function is applied to a non-atom, non-variable</span>
+  <span class="hljs-comment"># value, a thunk for the argument is created</span>
+  <span class="hljs-attr">app</span> <span class="hljs-operator">=</span> fun (<span class="hljs-number">1</span> <span class="hljs-operator">+</span> <span class="hljs-number">1</span>);
+  <span class="hljs-attr">result5</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">builtins.seq</span> app result4;
+
+  <span class="hljs-comment"># 16 (+3) A function with a default attribute argument can allocate a thunk</span>
+  <span class="hljs-comment"># for the default argument if it isn&#x27;t passed</span>
+  <span class="hljs-attr">attrApp</span> <span class="hljs-operator">=</span> ({ notPassed <span class="hljs-operator">?</span> <span class="hljs-number">1</span> <span class="hljs-operator">+</span> <span class="hljs-number">1</span>, ... }: <span class="hljs-literal">null</span>) attrs;
+  <span class="hljs-attr">result6</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">builtins.seq</span> attrApp result5;
+
+
+  <span class="hljs-comment"># Let bindings can allocate thunks even if their variables are unused</span>
+  <span class="hljs-comment">#  -&gt; Push let bindings outside as much as possible!</span>
+  <span class="hljs-comment"># 16 (+2) Outer let bindings</span>
+  <span class="hljs-comment"># 19 (+3) inner let bindings, one for every iteration</span>
+  <span class="hljs-comment"># 23 (+2) for the two non-atomic/non-variable function argument</span>
+  <span class="hljs-comment"># 23 (+0) Atomic value list elements</span>
+  <span class="hljs-attr">lets</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">map</span> (<span class="hljs-params">x:</span>
+    <span class="hljs-keyword">let</span> y <span class="hljs-operator">=</span> <span class="hljs-number">1</span> <span class="hljs-operator">+</span> <span class="hljs-number">1</span>;
+    <span class="hljs-keyword">in</span> x
+  ) [ <span class="hljs-number">1</span> <span class="hljs-number">2</span> <span class="hljs-number">3</span> ];
+  <span class="hljs-attr">result7</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">builtins.deepSeq</span> lets result6;
+
+  <span class="hljs-comment"># 24 (+1) One variable</span>
+  <span class="hljs-attr">values</span> <span class="hljs-operator">=</span> [ <span class="hljs-number">1</span> <span class="hljs-number">2</span> <span class="hljs-number">3</span> ];
+
+  <span class="hljs-comment"># 27 (+3) Three variables next</span>
+  <span class="hljs-comment"># 27 (+0) Function receives variable as argument -&gt; no extra thunk</span>
+  <span class="hljs-attr">elAt</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">builtins.elem</span>At values;
+  <span class="hljs-comment"># 27 (+0) Function called three times, but all arguments don&#x27;t need thunks</span>
+  <span class="hljs-attr">elAtApp</span> <span class="hljs-operator">=</span> elAt <span class="hljs-number">0</span> <span class="hljs-operator">+</span> elAt <span class="hljs-number">1</span> <span class="hljs-operator">+</span> elAt <span class="hljs-number">2</span>;
+  <span class="hljs-attr">result8</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">builtins.seq</span> elAtApp result7;
+
+  <span class="hljs-comment"># 29 (+2) Two variables next</span>
+  <span class="hljs-comment"># 29 (+0) Function (and nested function) called three times,</span>
+  <span class="hljs-comment"># but all arguments don&#x27;t need thunks</span>
+  <span class="hljs-attr">elemAtApp</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">builtins.elem</span>At values <span class="hljs-number">0</span>
+    <span class="hljs-operator">+</span> <span class="hljs-built_in">builtins.elem</span>At values <span class="hljs-number">1</span>
+    <span class="hljs-operator">+</span> <span class="hljs-built_in">builtins.elem</span>At values <span class="hljs-number">2</span>;
+  <span class="hljs-attr">result9</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">builtins.seq</span> elemAtApp result8;
+
+<span class="hljs-keyword">in</span> result9</code></pre>
+      </div><p>We can verify the final thunk count by using the <code>NIX_SHOW_STATS</code> environment variable. The above file is assumed to be in <code>thunks.nix</code></p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">$ NIX_SHOW_STATS=1 NIX_SHOW_STATS_PATH=stats.json \
+  nix-instantiate --<span class="hljs-built_in">eval</span> thunks.nix
+null
+$ jq .nrThunks stats.json
+29</code></pre>
+      </div><h3 id="using-thunks-to-your-advantage">Using Thunks to Your Advantage</h3><p>TODO: Explain how to use thunks to avoid duplicating work. Often it makes sense to move let bindings out as far as possible, but sometimes that can even cause extra thunks to be allocated. Show how attribute sets or lists can be used for memoization.</p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

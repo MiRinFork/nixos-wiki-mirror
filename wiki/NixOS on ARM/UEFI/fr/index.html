@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NixOS on ARM/UEFI/fr</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM">NixOS on ARM</a><span aria-hidden="true"> / </span><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/UEFI">UEFI</a><span aria-hidden="true"> / </span>fr</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: NixOS on ARM/UEFI/fr -->
+
+<languages/>
+
+<p>Cette section de la documentation NixOS sur ARM a pour but de documenter le plus d&#39;éléments possibles pour démarrer <em>n&#39;importe quelle</em> carte ARM utilisant l&#39;UEFI. Ce document se concentre particulièrement sur les <em>ordinateurs à carte unique</em> (aussi appelés SBCs), étant donné que c&#39;est pour ceux-ci que le démarrage est le plus compliqué, voir carrément impossible.</p>
+<p><span id="The_Basics_First"></span></p>
+<h2 id="les-bases">Les bases</h2><p><span id="Target_Support"></span></p>
+<h3 id="support-cible">Support cible</h3><p>Certains points ne seront pas spécifiques à UEFI. Pour exemple, le support en fonction du noyau utilisé. Ce document présume que les distributions Linux standard fonctionnent sur le système cible afin d&#39;envisager l&#39;installation depuis une image disque (ISO) générique.</p>
+<p>Tout comme il est possible de le faire sur <code>x86_64</code>, vous pouvez construire une image disque personnalisée. Les détails sur une telle opération sortent du cadre de cet article. Les mêmes pièges sont à prévoir et éviter. Par exemple, la configuration générée ne prendra pas en compte la personnalisation de la configuration du noyau.</p>
+<p><span id="Platform_Firmware"></span></p>
+<h3 id="micrologiciel-de-plateforme">Micrologiciel de plateforme</h3><p>Définissons d&#39;abord ce qu&#39;est un <strong>micrologiciel de plateforme</strong>. C&#39;est un terme générique utilisé pour décrire la première chose démarrée par le processeur lors du démarrage. Sur un système <code>x86_64</code>, il s&#39;agit de ce qu&#39;on appelait autrefois le <em>BIOS</em>. Aujourd&#39;hui souvent appelé <em>EFI</em>. C&#39;est ce qui initialise suffisamment de matériel pour que le système d&#39;exploitation puisse démarrer. De plus, il offre souvent à l&#39;utilisateur d&#39;effectuer une configuration basique ainsi que la gestion des options de démarrage.</p>
+<p>Dans le monde ARM des SBC, <em><strong><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/UEFI/fr/U-Boot" class="wikilink" title="U-Boot">U-Boot</a></strong></em> est la solution de facto pour le <em>micrologiciel de plateforme</em>. Bien que <em>U-Boot</em> soit souvent appelé à confusion, mais à juste titre, <em>Boot Loader</em>, il joue souvent un double rôle. Il est chargé d*&#39;initialiser le matériel* mais est également utilisé pour gérer <em>le chargement et le démarrage</em> du système d&#39;exploitation.</p>
+<h3 id="uefi">UEFI</h3><p>Le <em><a href="https://fr.wikipedia.org/wiki/UEFI">standard UEFI</a></em> n&#39;est pas quelque chose de tangible par lui-même. Mal résumé, il s&#39;agit d&#39;une spécification fournissant une <em>interface</em> qui décrit le processus de démarrage standard et comprend un environnement avant le démarrage du système ainsi que des protocoles pour les systèmes d&#39;exploitation.</p>
+<p>Il existe plusieurs implémentation de l&#39;UEFI. Des constructeurs tels que <em>American Megatrends</em>, <em>Phoenix Technologies</em> et <em>Insyde Software</em> ont probablement produit celui présent sur votre machine <code>x86_64</code>. <strong>TianoCore</strong> est <em>la</em> référence open source des implémentations UEFI. Heureusement, <em>U-Boot</em> implémente suffisamment (et même un peu plus que) la spécification UEFI.</p>
+<p><span id="SBBR?_EBBR?"></span></p>
+<h4 id="sbbr-ebbr">SBBR ? EBBR ?</h4><p>Bien que barbares, ces sigles signifient respectivement en anglais <em>Server Base Boot Requirements</em> et <em>Embedded Base Boot Requirements</em>, qu&#39;on pourrait traduire par <em>Exigences de démarrage de base du serveur</em> et <em>Exigences de démarrage de base intégrée</em>. Ce sont deux spécifications pour ARM. Si votre système cible est en conformité avec l&#39;une d&#39;entre elles, le démarrage UEFI devrait être pris en charge. Avec la prise en charge minimale présente dans <em>U-Boot</em>, les systèmes cibles qui ne sont pas conforme avec la spécification EBBR peuvent être rendues conformes, ou presque, en supportant le strict minimum.</p>
+<p><span id="UEFI,_on_my_SBC???"></span></p>
+<h2 id="uefi-sur-mon-sbc">UEFI, sur mon SBC ???</h2><p>Croyez-le ou non, c&#39;est bien plus probable que vous ne le pensez si votre SBC est bien pris en charge par <em><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/UEFI/fr/U-Boot" class="wikilink" title="U-Boot">U-Boot</a></em>. <em>U-Boot</em> fournit suffisamment d&#39;UEFI pour se conformer à EBBR, qui à son tour est suffisant pour démarrer l&#39;image disque <code>AArch64</code> UEFI de NixOS. Et ceci avec quasiment aucune différence par rapport au guide <code>x86_64</code>. Suivez simplement les instructions pour démarrer sur un système installé.</p>
+<p><span id="Getting_a_Platform_Firmware"></span></p>
+<div class="mw-translate-fuzzy">
+
+<h2 id="obtenir-un-micrologiciel-de-plateforme">Obtenir un <em>micrologiciel de plateforme</em></h2></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>As an opinionated example, you can get started with <a href="https://github.com/Tow-Boot/Tow-Boot">Tow-Boot, a <em>U-Boot</em> distribution</a>, which is intended to make the initial setup a bit easier by abstracting the platform differences so that they do not matter.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Where supported, Nix can be used to build U-boot from its main-line repositories. See <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/UEFI/fr/U-Boot#Building_a_packaged_U-Boot" class="wikilink" title="U-Boot#Building a packaged U-Boot">U-Boot#Building a packaged U-Boot</a> for further information. The resulting firmware image can then be flashed to SPI with tools such as <code>flashcp</code> or <code>flashrom</code>, or installed to EMMC/SD card by writing to specific offsets. This is platform specific, refer to <a href="https://github.com/u-boot/u-boot/tree/master/doc/board">upstream U-boot documentation for your platform or board</a>.</p>
+</div>
+
+<p>N&#39;importe quel autre <em>micrologiciel de plateforme</em> conforme UEFI peut être utilisé.</p>
+<p><span id="Getting_the_installer_image_(ISO)"></span></p>
+<h3 id="obtenir-l-39-image-disque-d-39-installation">Obtenir l&#39;image disque d&#39;installation</h3><p>Choisissez l&#39;une des images suivantes (par ordre de préférence):</p>
+<ul>
+<li><a href="https://hydra.nixos.org/job/nixos/trunk-combined/nixos.iso_minimal_new_kernel_no_zfs.aarch64-linux">NixOS instable, nouveau noyau</a> – publication continue, dernier noyau, n&#39;inclut pas ZFS étant donné qu&#39;il est souvent en retard.</li>
+<li><a href="https://hydra.nixos.org/job/nixos/trunk-combined/nixos.iso_minimal.aarch64-linux">NixOS instable, noyau LTS</a> – compatibilité avec du matériel spécifique amoindrit, mais utilise une version plus récente de Nixpkgs</li>
+<li><a href="https://nixos.org/download.html#download-nixos">NixOS stable</a> – branche stable, noyau LTS, généralement non recommandé à moins d&#39;être certain que votre matériel soit bien supporté</li>
+</ul>
+<p>Des images disque avec environnement graphique GNOME ou KDE sont également disponibles.</p>
+<p>Cette image disque d&#39;installation devrait être écrite sur une clé USB, comme d&#39;habitude. Elle peut à la rigueur être écrite sur une carte SD si le micrologiciel de votre plateforme n&#39;a pas besoin d&#39;être écrit sur cette même carte.</p>
+<p><span id="Installing"></span></p>
+<h3 id="installation">Installation</h3><p>Il suffit de suivre <a href="https://nixos.org/manual/nixos/stable/index.html#sec-installation">les instructions habituelles d&#39;installation pour UEFI</a> en tenant compte des points d&#39;attention suivants.</p>
+<p><span id="Shared_Firmware_Storage"></span></p>
+<h4 id="stockage-partag-du-micrologiciel">Stockage partagé du micrologiciel</h4><p>Si votre <em>micrologiciel de plateforme</em> se trouve sur le même média que l&#39;image disque d&#39;installation, e.g. écrit sur une carte SD depuis laquelle vous effectuez l&#39;installation, vous devez vous assurer que:</p>
+<ul>
+<li>Vous n&#39;écrasez pas le micrologiciel s&#39;il ne se trouve pas sur une partition.</li>
+<li>La table de partition n&#39;est pas réécrite depuis zéro.</li>
+<li>Vous ne supprimez pas les partitions existantes du micrologiciel.</li>
+</ul>
+<p>En dehors de ces points, vous pouvez procéder comme vous le feriez d&#39;habitude en créant une partition ESP, FAT32, monter sur <code>/boot/</code>, votre partition rootfs préférée, le swap si vous le souhaitez, etc.</p>
+<p><span id="Bootloader_configuration"></span></p>
+<h4 id="configuration-du-chargeur-de-d-marrage">Configuration du chargeur de démarrage</h4><p>Vérifiez que l&#39;implémentation UEFI de votre <em>micrologiciel de plateforme</em> dispose de variables EFI inscriptible. Toutes les implémentations UEFI ne le permettent pas sur ARM, c&#39;est donc un élément à prendre en compte. Si ce n&#39;est pas le cas, doit être définit sur <strong><code>false</code></strong>.</p>
+<p>Cette extrait utilise GRUB2, mais systemd-boot fonctionne également. Comme les variables EFI ne peuvent pas être manipulées, utiliser <code>efiInstallAsRemovable</code> permet l&#39;installation de GRUB2 à l&#39;emplacement de secours.</p>
+<p><span id="General_Tips"></span></p>
+<h3 id="astuces-g-n-rales">Astuces générales</h3><p>Utiliser le dernier noyau disponible est une bonne idée. Le support matériel pour les plateformes ARM étant en constante amélioration, utiliser le dernier noyau plutôt que la &quot;dernière LTS&quot; pourrait être bénéfique… ou pas.</p>
+<p><span id="Known_Issues"></span></p>
+<h2 id="probl-mes-connus">Problèmes connus</h2><p><span id="Device_Trees"></span></p>
+<h3 id="arborescence-de-p-riph-riques">Arborescence de périphériques</h3><p>À ce jour, il n&#39;y a pas de consensus parmi les distributions Linux à propos de la gestion de l&#39;arborescence des périphériques lors de processus de démarrage UEFI.</p>
+<p>La configuration actuelle s&#39;appuie sur le micrologiciel de plateforme pour fournir une arborescence de périphériques appropriée pour le noyau à exécuter.</p>
+<p>Il est possible de faire charger une arborescence de périphériques par <em>U-Boot</em>, plus récente par exemple, en plaçaant le dossier dtb d&#39;une construction de noyau à l&#39;emplacement <code>/dtb</code> de l&#39;ESP. <em>U-Boot</em> chargera automatiquement une arborescence de périphériques selon l&#39;heuristique, qui devrait être la bonne.</p>
+<p>En pratique, on ne sait pas dans quelle mesure cela constituerait un réel problème.</p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

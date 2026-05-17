@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cron</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Cron</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Cron -->
+
+<h1 id="cron">Cron</h1><h2 id="deprecated">Deprecated</h2><p>It is recommended to use <a href="https://mirror.nixoscn.org/wiki/Cron/Systemd/Timers" class="wikilink" title="systemd-timers">systemd-timers</a>. A few of many reasons:</p>
+<ul>
+<li>logs are logged to journalctl instead of relying on local mail</li>
+<li>different timers are independent of each other and do not share an environment</li>
+<li>better configurability like random offsets, run missed timers when machine was powered down and full systemd service option</li>
+</ul>
+<h2 id="general">General</h2><p>Cron is a very useful tool to run stuff at predefined times. Users, if allowed, can setup their own cron job, while the system crontab can be easily setup from the <code>configuration.nix</code></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-comment"># Enable cron service</span>
+  <span class="hljs-attr">services.cron</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">systemCronJobs</span> <span class="hljs-operator">=</span> [
+      <span class="hljs-string">&quot;*/5 * * * *      root    date &gt;&gt; /tmp/cron.log&quot;</span>
+    ];
+  };</code></pre>
+      </div><p>The above example would run the command <code>date &gt;&gt; /tmp/cron.log</code> as <code>root</code> user every <code>5 minutes</code> (indicated by <code>*/5*</code>. For more information regarding the cronjob entries, see the link below.</p>
+<h2 id="loading-environment">Loading environment</h2><p>However, sometimes cron won&#39;t run because it&#39;s missing the according environment (as it is the case for rss2email as example). In that case you just have to source the profile file first before running the desired command, like in the example below:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">      <span class="hljs-string">&quot;*/10 * * * *   johndoe   . /etc/profile; <span class="hljs-subst">${pkgs.rss2email}</span>/bin/r2e run&quot;</span></code></pre>
+      </div><p>The <code>. /etc/profile;</code> part first sources the profile file and hence loading the environment. After that, the actual command is being run in the proper environment. The above entry would run the rss2email program every <code>10 minutes</code> as user <code>johndoe</code></p>
+<h2 id="send-mail-only-when-error">Send mail only when error</h2><p>In case you have set proper sendmail and defined a user where cron should send output to, you might want limit those emails only when cron encounters a problem. This can easily be achieved by storing the output of the command given into a variable and use the <code>||</code> control operator to echo this output only when there is a non-zero exit status of the command.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">      <span class="hljs-string">&quot;0 * * * *      johndoe   out=$( <span class="hljs-subst">${pkgs.pass}</span>/bin/pass git pull 2&gt;&amp;1 ) || echo $out&quot;</span></code></pre>
+      </div><h1 id="see-also">See also</h1><ul>
+<li><a href="https://linux.die.net/man/5/crontab">crontab(5): tables for driving cron</a></li>
+</ul>
+<p><a href="category:Configuration" class="wikilink" title="Category:Configuration">Category:Configuration</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

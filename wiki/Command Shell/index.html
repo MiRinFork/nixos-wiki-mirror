@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Command Shell</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Command Shell</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Command Shell -->
+
+<p>A <a href="https://en.wikipedia.org/wiki/Unix_shell">shell</a> is a program that translates text commands (like , , etc) into instructions for your computer. The default shell on NixOS is <a href="https://mirror.nixoscn.org/wiki/Command%20Shell/bash" class="wikilink" title="bash">bash</a>, but it can be easily changed.</p>
+<h2 id="enable">Enable</h2><p>When adding a new shell, always enable the shell system-wide, even if it&#39;s already enabled in your <a href="https://mirror.nixoscn.org/wiki/Command%20Shell/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> configuration, otherwise it won&#39;t source the necessary files.</p>
+<p>For example, for <a href="https://mirror.nixoscn.org/wiki/Command%20Shell/Zsh" class="wikilink" title="Zsh">Zsh</a>:</p>
+<h2 id="changing-the-default-shell">Changing the default shell</h2><h3 id="for-all-users">For all users</h3><p>To set a command shell as the default for all users, use the <a href="https://search.nixos.org/options?query=defaultUserShell"><code>defaultUserShell</code></a> option.</p>
+<p>For example, to set Zsh as the default user shell for all users(including root):</p>
+<h3 id="for-a-specific-user">For a specific user</h3><p>To set a command shell as the default for a particular user, use the <a href="https://search.nixos.org/options?query=%3Cname%3E.shell"><code>&lt;name&gt;.shell</code></a> option.</p>
+<p>For example, to set user &quot;myuser&quot;&#39;s shell to <a href="https://mirror.nixoscn.org/wiki/Command%20Shell/fish" class="wikilink" title="fish">fish</a>:</p>
+<p>You can also choose whether or not a user should use the default shell:</p>
+<h2 id="using-a-different-shell-in-nix-shell-and-nix-develop">Using a different shell in nix-shell and nix develop</h2><p>By default, both <code>nix develop</code> and <code>nix-shell</code> launch an interactive bash shell. However, it is possible to configure these environments to use an alternative shell.</p>
+<p>There are multiple approaches available:</p>
+<h3 id="nix-your-shell">nix-your-shell</h3><p>Refer to <a href="https://github.com/MercuryTechnologies/nix-your-shell">nix-your-shell</a> for installation and usage instructions.</p>
+<h3 id="any-nix-shell">any-nix-shell</h3><p>Refer to <a href="https://github.com/haslersn/any-nix-shell">any-nix-shell</a> for installation and usage instructions.</p>
+<h3 id="aliasing-command">Aliasing command</h3><p>A simple, lightweight method is to alias the relevant commands to invoke the shell directly. For example:</p>
+<p>There are some caveats with this approach:</p>
+<ul>
+<li>Nested shells will require you to type <code>exit</code> twice, once to leave the inner shell and once to exit the Nix shell environment itself.</li>
+<li>Potential for alias conflicts as overriding commands can introduce unintended side effects in scripts or other tooling that expects the standard behavior.</li>
+</ul>
+<h2 id="using-flakes">Using Flakes</h2><p>If you are using <a href="https://mirror.nixoscn.org/wiki/Command%20Shell/Flakes" class="wikilink" title="Flakes">Flakes</a> with fish, the &#39;command-not-found&#39; error message will not work correctly, but can be fixed by disabling the builtin Nix <code>command-not-found</code> program:<sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Command%20Shell#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup></p>
+<h2 id="see-also">See also</h2><ul>
+<li><a href="https://mirror.nixoscn.org/wiki/Command%20Shell/Fish" class="wikilink" title="Fish">Fish</a></li>
+<li><a href="https://mirror.nixoscn.org/wiki/Command%20Shell/Nushell" class="wikilink" title="Nushell">Nushell</a></li>
+<li><a href="https://mirror.nixoscn.org/wiki/Command%20Shell/Zsh" class="wikilink" title="Zsh">Zsh</a></li>
+<li><a href="https://mirror.nixoscn.org/wiki/Command%20Shell/Flakes" class="wikilink" title="Flakes">Flakes</a></li>
+</ul>
+<h2 id="references">References</h2><p><a href="category:Configuration" class="wikilink" title="Category:Configuration">Category:Configuration</a> <a href="category:Software" class="wikilink" title="Category:Software">Category:Software</a> <a href="category:Shell" class="wikilink" title="Category:Shell">Category:Shell</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p><a href="https://github.com/NixOS/nixpkgs/issues/425613#issuecomment-3076081921">https://github.com/NixOS/nixpkgs/issues/425613#issuecomment-3076081921</a> <a href="https://mirror.nixoscn.org/wiki/Command%20Shell#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

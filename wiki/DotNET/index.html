@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DotNET</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / DotNET</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: DotNET -->
+
+<p>From <a href="https://en.wikipedia.org/wiki/.NET">Wikipedia</a></p>
+<blockquote>
+<p>The .NET platform (formerly named .NET Core) is a free and open-source, managed computer software framework for Windows, Linux, and macOS operating systems. It is a cross-platform successor to the .NET Framework. The project is mainly developed by Microsoft employees by way of the .NET Foundation and is today released under an MIT License.</p>
+</blockquote>
+<h2 id="nativeaot">NativeAOT</h2><p>This is relevant for NixOS only.</p>
+<p><a href="https://github.com/Mic92/nix-ld">nix-ld</a> is needed:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">programs.nix-ld.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+}</code></pre>
+      </div><p>Now we will need a bunch of native dependencies. Here&#39;s an example of a shell:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-keyword">with</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> {};
+pkgs.mkShell <span class="hljs-keyword">rec</span> {
+
+  <span class="hljs-attr">dotnetPkg</span> <span class="hljs-operator">=</span> 
+    (<span class="hljs-keyword">with</span> dotnetCorePackages; combinePackages [
+      sdk_7_0
+    ]);
+
+  <span class="hljs-attr">deps</span> <span class="hljs-operator">=</span> [
+    zlib
+    zlib.dev
+    openssl
+    dotnetPkg
+  ];
+
+  <span class="hljs-attr">NIX_LD_LIBRARY_PATH</span> <span class="hljs-operator">=</span> lib.makeLibraryPath ([
+    stdenv.cc.cc
+  ] <span class="hljs-operator">++</span> deps);
+  <span class="hljs-attr">NIX_LD</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.stdenv.cc.libc_bin}</span>/bin/ld.so&quot;</span>;
+  <span class="hljs-attr">nativeBuildInputs</span> <span class="hljs-operator">=</span> [ 
+  ] <span class="hljs-operator">++</span> deps;
+
+  <span class="hljs-attr">shellHook</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    DOTNET_ROOT=&quot;<span class="hljs-subst">${dotnetPkg}</span>&quot;;
+  &#x27;&#x27;</span>;
+}</code></pre>
+      </div><h2 id="global-tools">Global Tools</h2><p>Local installation of .NET global tools is fully supported and preferred when possible - more info <a href="https://learn.microsoft.com/en-us/dotnet/core/tools/global-tools#install-a-local-tool">in the Microsoft docs</a>.</p>
+<p>For globally installing .NET tools, search if they are available as Nix packages - they are packaged as any other normal .NET binary, using <code>buildDotnetModule</code>. For .NET tools with no source available, or those hard to build from source, <code>buildDotnetGlobalTool</code> is available. See <a href="https://github.com/NixOS/nixpkgs/blob/master/doc/languages-frameworks/dotnet.section.md#dotnet-global-tools-dotnet-global-tools">dotnet nixpkgs manual</a> for more info.</p>
+<p>Note that Nix-packaged .NET tools use a special wrapper (toggled by <code>useDotnetFromEnv</code> option in <code>buildDotnetModule</code>) that automatically picks up .NET install from the user environment. If you want to use a different SDK version with a Nix-packaged .NET tools than the default, make sure the <code>dotnet</code> CLI of your wanted SDK version is installed and available.</p>
+<h2 id="packaging">Packaging</h2><p>.NET packages can be built with <code>buildDotnetModule</code></p>
+<p>More information about <code>buildDotnetModule</code> can be found in the <a href="https://nixos.org/manual/nixpkgs/unstable/#dotnet">nixpkgs manual</a> Example build file:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  buildDotnetModule,
+  dotnetCorePackages,
+}:
+
+buildDotnetModule {
+  <span class="hljs-attr">pname</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;hello&quot;</span>;
+  <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;0.1&quot;</span>;
+
+  <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> <span class="hljs-symbol">./.</span>;
+
+  <span class="hljs-attr">projectFile</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Hello/Hello.csproj&quot;</span>;
+  <span class="hljs-attr">dotnet-sdk</span> <span class="hljs-operator">=</span> dotnetCorePackages.sdk_8_0;
+  <span class="hljs-attr">dotnet-runtime</span> <span class="hljs-operator">=</span> dotnetCorePackages.runtime_8_0;
+  <span class="hljs-attr">nugetDeps</span> <span class="hljs-operator">=</span> <span class="hljs-symbol">./deps.json</span>;
+}</code></pre>
+      </div><p>If the <code>fetch-deps</code> script isn&#39;t working for whatever reason, you can manually run <code>nuget-to-json</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell-session hljs">$ dotnet restore --packages=packageDir ./SomeProject.csproj
+$ nuget-to-json packageDir &gt; deps.json
+$ rm -r packageDir</code></pre>
+      </div><p>Remember to build and run the <code>fetch-deps</code> script after NuGet packages are updated, or building the derivation will fail.</p>
+<h3 id="building-non--net-core-packages">Building non-.NET Core packages</h3><p>Keep in mind that building projects which don&#39;t use the .NET SDK (formerly the .NET Core SDK) and its <code>dotnet</code> CLI tool isn&#39;t supported. For those projects, you&#39;ll have to heavily customise the <code>buildDotnetModule</code> build steps, or write a custom derivation.</p>
+<p>Projects which target .NET Standard or .NET Framework (incl. Mono), but still use the new project structure and SDK, work as expected. Just remember to add `mono` to `buildInputs` and generate a wrapper script in `postInstall`.</p>
+<h3 id="packaging-asp-net-projects">Packaging ASP.NET projects</h3><p>Currently building ASP.NET project as Nix package produces a website that does not work correctly out of the box because the executable can not find <code>wwwroot</code>, so all the static assets won&#39;t load with 404.</p>
+<blockquote>
+<p>Request finished HTTP/2 GET <a href="https://my.app/css/site.css">https://my.app/css/site.css</a> - 404 0</p>
+</blockquote>
+<p>The situation can be fixed by setting <code>WEBROOT</code> environment variable to the package path.</p>
+<p>An example of systemd + ASP.NET 8 service:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># myapp package needs to be imported; and added to `environment.systemPackages`</span>
+<span class="hljs-comment"># the variable myapp is used below</span>
+
+<span class="hljs-attr">systemd.services.my-app</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Runs my.app&quot;</span>;
+  <span class="hljs-attr">wantedBy</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;multi-user.target&quot;</span> ];
+  <span class="hljs-attr">after</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;network-online.target&quot;</span> ];
+  <span class="hljs-attr">wants</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;network-online.target&quot;</span> ];
+  <span class="hljs-attr">serviceConfig</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-comment"># allow binding to privileged ports - when you want to expose Kestrel directly without reverse proxy</span>
+    <span class="hljs-attr">AmbientCapabilities</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;CAP_NET_BIND_SERVICE&quot;</span>;
+    <span class="hljs-attr">User</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;myapp&quot;</span>; <span class="hljs-comment"># must be created using users.users.myapp = { isSystemUser = true; group = &quot;myapp&quot;; };</span>
+    <span class="hljs-attr">Group</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;myapp&quot;</span>; <span class="hljs-comment"># must be created using users.groups.myapp = {};</span>
+    <span class="hljs-attr">Restart</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;always&quot;</span>;
+    <span class="hljs-attr">ExecStart</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${myapp}</span>/bin/myapp&quot;</span>;
+    <span class="hljs-attr">StateDirectory</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;myapp&quot;</span>;
+    <span class="hljs-attr">StateDirectoryMode</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;0750&quot;</span>;
+    <span class="hljs-attr">WorkingDirectory</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/var/lib/myapp&quot;</span>;
+    <span class="hljs-comment"># EnvironmentFile = &quot;/var/lib/myapp/env&quot;;</span>
+  };
+  <span class="hljs-attr">environment</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">WEBROOT</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${myapp}</span>/lib/myapp/wwwroot&quot;</span>; <span class="hljs-comment"># IMPORTANT, required to pick up static assets</span>
+
+    <span class="hljs-attr">DOTNET_ENVIRONMENT</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Production&quot;</span>;
+
+    <span class="hljs-comment"># the following are examples</span>
+    <span class="hljs-attr">ConnectionStrings__DefaultConnection</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Host=/var/run/postgresql;Database=myapp&quot;</span>;
+
+    <span class="hljs-comment"># Kestrel + HTTPS; must setup https://wiki.nixos.org/wiki/ACME</span>
+    <span class="hljs-attr">Kestrel__Endpoints__Https__Url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://my.app&quot;</span>;
+    <span class="hljs-attr">Kestrel__Endpoints__Https__Certificate__Path</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/var/lib/acme/my.app/cert.pem&quot;</span>;
+    <span class="hljs-attr">Kestrel__Endpoints__Https__Certificate__KeyPath</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/var/lib/acme/my.app/key.pem&quot;</span>;
+
+    <span class="hljs-attr">Logging__LogLevel__Default</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Information&quot;</span>;
+    <span class="hljs-attr">Logging__LogLevel__Microsoft__AspNetCore</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Warning&quot;</span>; <span class="hljs-comment"># this does not actually work, not sure how to fix</span>
+
+    <span class="hljs-attr">Authentication__Google__ClientId</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;xxxyyyzzz.apps.googleusercontent.com&quot;</span>;
+    <span class="hljs-attr">Authentication__Microsoft__ClientId</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;aaaaaa-0000-aaaa-0000-aaaaaaaaaa&quot;</span>;
+    <span class="hljs-comment"># secrets must be placed in /var/lib/myapp/appsettings.json</span>
+
+    <span class="hljs-comment"># TODO email</span>
+
+    <span class="hljs-comment"># TODO Stripe</span>
+    <span class="hljs-attr">Stripe__Currency</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;USD&quot;</span>;
+  };
+};</code></pre>
+      </div><p>See also: setting up SSL certificates using <a href="https://mirror.nixoscn.org/wiki/DotNET/ACME" class="wikilink" title="ACME">ACME</a></p>
+<h3 id="packaging-test-projects">Packaging Test projects</h3><p>If you use MSBuild SDKs for test projects, then you have to manually copy of the Nuget package to pkg folder, since MSBuild SDK are not saved during `dotnet restore --packages pkg` process.</p>
+<h2 id="examples">Examples</h2><h3 id="running-rider-with-dotnet-amp-powershell">Running Rider with dotnet &amp; PowerShell</h3><p>Rider has better compatibility when run in FHS mode</p>
+<p>Rider package</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">pkgs.jetbrains.rider</code></pre>
+      </div><p>rider-fhs.nix</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs <span class="hljs-operator">?</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> {} }:
+
+(pkgs.buildFHSEnv {
+  <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;rider-env&quot;</span>;
+  <span class="hljs-attr">targetPkgs</span> <span class="hljs-operator">=</span> <span class="hljs-params">pkgs:</span> (<span class="hljs-keyword">with</span> pkgs; [
+    dotnetCorePackages.dotnet_8.sdk
+    dotnetCorePackages.dotnet_8.aspnetcore
+    powershell
+  ]);
+  <span class="hljs-attr">multiPkgs</span> <span class="hljs-operator">=</span> <span class="hljs-params">pkgs:</span> (<span class="hljs-keyword">with</span> pkgs; [
+  ]);
+  <span class="hljs-attr">runScript</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nohup rider &amp;&quot;</span>;
+}).env</code></pre>
+      </div><div class="code-container">
+        
+        <pre><code class="language-nix hljs">nix-shell .<span class="hljs-operator">/</span>rider-fhs.nix</code></pre>
+      </div><p>This can be added as an alias to your shell if you update the reference to an absolute address, such as location within your home directory.</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">run-rider = &quot;nix-shell ~/nix/rider-fhs.nix&quot;;</code></pre>
+      </div><h3 id="multi-sdk-installation-with-local-workload-installation-enabled">Multi-SDK installation with local workload installation enabled</h3><p>By default, workload installation will fail on NixOS, as dotnet will attempt to save it to $DOTNET_ROOT, which is inside the read-only Nix store.</p>
+<p>Please visit the <a href="https://discourse.nixos.org/t/dotnet-maui-workload/20370/10">forum</a> for an example of a multi-SDK installation with workload changed to install to home directory.</p>
+<h2 id="troubleshooting">Troubleshooting</h2><h3 id="net-location-not-found">.NET location: Not found</h3><p>If running a .NET-build executable you get the above error, make sure the DOTNET_ROOT environment variable is set:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.sessionVariables</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">DOTNET_ROOT</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.dotnet-sdk}</span>/share/dotnet/&quot;</span>;
+};</code></pre>
+      </div><p>See : <a href="https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-environment-variables#net-sdk-and-cli-environment-variables">https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-environment-variables#net-sdk-and-cli-environment-variables</a></p>
+<h3 id="targetframework-value-was-not-recognized">TargetFramework value was not recognized</h3><blockquote>
+<p>error NETSDK1013: The TargetFramework value &#39;net6.0-windows&#39; was not recognized. It may be misspelled. If not, then the TargetFrameworkIdentifier and/or TargetFrameworkVersion properties must be specified explicitly.</p>
+</blockquote>
+<p>Wontfix: The project will build only on Windows.</p>
+<h3 id="unable-to-find-package">Unable to find package</h3><blockquote>
+<p>error NU1101: Unable to find package runtime.any.System.Collections. No packages exist with this id in source(s): nugetSource</p>
+</blockquote>
+<p>Unsure what specific situations cause this, probably has something to do with .NET Standard libraries.</p>
+<p>The workaround is modifying the bits that generate nuget-deps.nix:</p>
+<div class="code-container">
+        
+        <pre><code class="language-sh hljs">dotnet restore --packages=packageDir --use-current-runtime ./SomeProject.csproj
+nuget-to-nix packageDir &gt;deps.nix
+<span class="hljs-built_in">rm</span> -r packageDir</code></pre>
+      </div><p>The new parameter <code>--use-current-runtime</code> requires .NET SDK 8+. I believe what it does is explicitly adding packages missing in this runtime vs .NET Standard to packageDir.</p>
+<p>If this still does not work, it might indicate a good time to update target frameworks and dependencies.</p>
+<h2 id="see-also">See also</h2><ul>
+<li><a href="https://github.com/NixOS/nixpkgs/blob/master/doc/languages-frameworks/dotnet.section.md">NixOS GitHub dotnet docs</a></li>
+<li><a href="https://nixos.org/manual/nixpkgs/unstable/#dotnet">dotnet in the nixpkgs manual</a></li>
+<li><a href="https://github.com/search?q=repo%3ANixOS%2Fnixpkgs%20buildDotnetModule&amp;type=code">buildDotnetModule references in nixpkgs</a></li>
+<li><a href="https://www.reddit.com/r/NixOS_dotnet">NixOS.NET community on Reddit</a></li>
+<li><a href="https://discord.gg/pTpq7Qfs">NixOS.NET community on Discord</a></li>
+<li><a href="https://sgt.hootr.club/molten-matter/dotnet-on-nix/">The journey of packaging a .NET app on Nix</a></li>
+<li><a href="https://en.wikipedia.org/wiki/.NET_Framework">https://en.wikipedia.org/wiki/.NET_Framework</a> - The old, windows-only version of .NET. Newer versions (ie. .NET Core) are multiplatform.<ul>
+<li><a href="https://en.wikipedia.org/wiki/Mono_(software)">https://en.wikipedia.org/wiki/Mono_(software)</a> is the open source reimplementation of .NET Framework. Its runtime/JIT has been merged into .NET Core, and now it only receives bugfixes.</li>
+</ul>
+</li>
+<li><a href="https://learn.microsoft.com/en-us/dotnet/core/introduction">https://learn.microsoft.com/en-us/dotnet/core/introduction</a></li>
+</ul>
+<p><a href="category:Languages" class="wikilink" title="Category:Languages">Category:Languages</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

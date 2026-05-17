@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Godot</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Godot</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Godot -->
+
+<p><a href="https://godotengine.org/">Godot</a> is an open-source game engine, capable of creating both 2D and 3D games.</p>
+<h2 id="installation">Installation</h2><p>Add <code>pkgs.godot</code> (GDScript only) to <code>environment.systemPackages</code>.</p>
+<p>For installing Godot-Mono (C#), see <a href="https://mirror.nixoscn.org/wiki/Godot/Godot-Mono" class="wikilink" title="Godot-Mono">Godot-Mono</a> article.</p>
+<h2 id="export-templates">Export Templates</h2><p>On Godot upgrade, the new export template can be automatically provisioned this way:</p>
+<p><code>home.file.&quot;.local/share/godot/export_templates/${builtins.replaceStrings [ &quot;-&quot; ] [ &quot;.&quot; ] pkgs.godot_4-export-templates.version}&quot;.source = pkgs.godot_4-export-templates;</code></p>
+<h3 id="android-export-target">Android Export Target</h3><p>Accept Android license:</p>
+<p><code>nixpkgs.config.android_sdk.accept_license = true;</code></p>
+<p>Add to your system the usual Android and Java development packages, such as:</p>
+<p><code>environment.systemPackages = with pkgs; [</code><br><code>  android-studio</code><br><code>  android-tools</code><br><code>  androidenv.androidPkgs.androidsdk</code><br><code>  androidenv.androidPkgs.emulator</code><br><code>  androidenv.androidPkgs.ndk-bundle</code><br><code>  jdk # Java</code><br><code>];</code></p>
+<p>Configure Godot&#39;s <strong>Editor</strong> -&gt; <strong>Editor Settings</strong> -&gt; <strong>General</strong> [Tab] -&gt; <strong>Export</strong> [Category] -&gt; <strong>Android</strong> [Sub-item], as such:</p>
+<ul>
+<li><strong>Android SDK Path:</strong> Reference <code>pkgs.androidenv.androidPkgs.androidsdk</code> path. Like: <code>/nix/store/p2cdj75bbzswjc84789cmlwhy6ll7avr-androidsdk/libexec/android-sdk/</code></li>
+<li><strong>Java SDK Path:</strong> Reference <code>pkgs.jdk</code> path. Like: <code>/nix/store/55qm2mvhmv7n2n6yzym1idrvnlwia73z-openjdk-21.0.5+11</code></li>
+</ul>
+<h3 id="running-exported-application-in-nixos">Running Exported Application in NixOS</h3><p>Use <code>steam-run</code> to run a Godot exported project without having to fix paths for Nix.</p>
+<p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="category:IDE" class="wikilink" title="Category:IDE">Category:IDE</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

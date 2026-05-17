@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DaVinci Resolve</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / DaVinci Resolve</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: DaVinci Resolve -->
+
+<p><a href="https://www.blackmagicdesign.com/products/davinciresolve">Black Magic DaVinci Resolve</a> is a program for video editing, color effects and A/V post production. For FOSS alternatives you might want to look into <a href="https://www.shotcut.org/">Shotcut</a> and <a href="https://kdenlive.org/">Kdenlive</a>.</p>
+<h2 id="installation">Installation</h2><p>There are <a href="https://github.com/NixOS/nixpkgs/blob/504dc57774510c1213a8a3a04d03048893d8edce/pkgs/by-name/da/davinci-resolve/package.nix#L37">two versions</a> of <a href="https://www.blackmagicdesign.com/products/davinciresolve">Black Magic DaVinci Resolve</a> on NixOS.</p>
+<p><code>* ``davinci-resolve`` (the free version)</code><br><code>* ``davinci-resolve-studio`` (the paid version)</code></p>
+<p>For Linux, DaVinci Resolve Free has <a href="https://www.reddit.com/r/davinciresolve/comments/y4ytkl/why_no_mp4h264_support_on_linux/">only partial h.264 and h.265 support due to licensing restrictions</a>. AAC audio is also not supported in the Free version.</p>
+<h2 id="drivers">Drivers</h2><p>DaVinci Resolve requires a GPU that supports either OpenCL 1.2 or CUDA 11.</p>
+<h3 id="amd">AMD</h3><p>There are multiple options to run DaVinci Resolve with AMD cards, but it strongly depends on the generation of your AMD card. Also make sure to read the <a href="https://mirror.nixoscn.org/wiki/DaVinci%20Resolve/AMD_GPU" class="wikilink" title="AMD GPU page">AMD GPU page</a> (this wiki) and the <a href="https://wiki.archlinux.org/title/DaVinci_Resolve">DaVinci Resolve entry on Archwiki</a>.</p>
+<table>
+<thead>
+<tr>
+<th>GPU Generation</th>
+<th>Series</th>
+<th>DaVinci Resolve Compatibility</th>
+<th>ROCm Support</th>
+<th>AMDGPU Support</th>
+<th>Rusticl Support</th>
+<th>Confirmed</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Pre-GCN (Terascale)</td>
+<td>Radeon HD 2000–6000 Series</td>
+<td>❌ No GPU Compute (Software Only)</td>
+<td>❌ Not Supported</td>
+<td>❌ Uses Radeon DRM</td>
+<td>❌ Most Terascale GPUs lack OpenCL support in Rusticl. Rusticl officially targets Gallium drivers, but <code>r600g</code> lacks full OpenCL support.</td>
+<td>❌ No OpenCL. Please let us know if you got it running with <code>r600g</code></td>
+</tr>
+<tr>
+<td>GCN 1.0 &amp; 1.1</td>
+<td>Radeon HD 7000, R9 270/280 Series</td>
+<td>Limited (OpenCL 1.1)</td>
+<td>❌ Not Supported</td>
+<td>Experimental</td>
+<td>Partially (Some support via <code>radeonsi</code> but limited OpenCL)</td>
+<td>Only working if card is supported in <code>amdgpu</code> open-source driver!</td>
+</tr>
+<tr>
+<td>GCN 1.2 (Gen 3)</td>
+<td>Radeon R9 285, R9 380, R9 Fury</td>
+<td>Moderate (OpenCL 1.2)</td>
+<td>❌ Not Supported</td>
+<td>✅ Yes</td>
+<td>✅ Rusticl supported via <code>radeonsi</code> &amp; Mesa</td>
+<td>✅ Confirmed with amdgpu, radeonsi and OpenCL via Mesa (Rusticl). See the demo configuration below</td>
+</tr>
+<tr>
+<td>GCN 4th Gen (Polaris)</td>
+<td>Radeon RX 400/500 Series</td>
+<td>Moderate (OpenCL 1.2)</td>
+<td>Supported up to ROCm 5.6</td>
+<td>✅ Yes</td>
+<td>✅ Rusticl supported via <code>radeonsi</code> &amp; Mesa</td>
+<td>✅ Confirmed with <code>amdgpu</code>, <code>radeonsi</code>, and OpenCL via Rusticl (Mesa)</td>
+</tr>
+<tr>
+<td>GCN 5th Gen (Vega)</td>
+<td>Radeon RX Vega Series</td>
+<td>Moderate (OpenCL 1.2)</td>
+<td>Supported up to ROCm 5.6</td>
+<td>✅ Yes</td>
+<td>✅ Rusticl supported via <code>radeonsi</code> &amp; Mesa</td>
+<td>✅ Confirmed</td>
+</tr>
+<tr>
+<td>RDNA (Navi)</td>
+<td>Radeon RX 5000 Series</td>
+<td>Good (OpenCL 1.2)</td>
+<td>Supported</td>
+<td>✅ Yes</td>
+<td>✅ Rusticl supported via <code>radeonsi</code> &amp; Mesa</td>
+<td>✅ Confirmed</td>
+</tr>
+<tr>
+<td>RDNA2 (Navi 2x)</td>
+<td>Radeon RX 6000 Series</td>
+<td>Good (OpenCL 1.2)</td>
+<td>Supported</td>
+<td>✅ Yes</td>
+<td>✅ Rusticl supported via <code>radeonsi</code> &amp; Mesa</td>
+<td>✅ Confirmed</td>
+</tr>
+<tr>
+<td>RDNA3 (Navi 3x)</td>
+<td>Radeon RX 7000 Series</td>
+<td>Good (OpenCL 1.2)</td>
+<td>Supported</td>
+<td>✅ Yes</td>
+<td>✅ Rusticl supported via <code>radeonsi</code> &amp; Mesa</td>
+<td>✅ Confirmed</td>
+</tr>
+</tbody></table>
+<p>AMD GPU Compatibility with DaVinci Resolve on Linux</p>
+<p>Cheap and minimal supported cards to look out for are the <em>Radeon R9</em> series starting from GCN 1.2 and higher. Find more information about the <a href="wikipedia:AMDgpu_(Linux_kernel_module)" class="wikilink" title="AMDgpu (Linux kernel module)">AMDgpu (Linux kernel module)</a> which is upstreamed with Linux. There is also the proprietary <strong>amdgpu-pro</strong> driver which has <a href="https://www.reddit.com/r/NixOS/comments/13vcufk/install_radeon_6650xt_pro_drivers/">mixed results</a>. The free drivers (amdgpu) are better.</p>
+<p><strong>Here is a confirmed minimal configuration for amdgpu, radeonsi and OpenCL via Mesa (Rusticl):</strong></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+{
+  <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+    davinci-resolve
+  ];
+  <span class="hljs-attr">environment.variables</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">RUSTICL_ENABLE</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;radeonsi&quot;</span>;
+  };
+  <span class="hljs-attr">hardware.graphics</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">extraPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+      mesa.opencl <span class="hljs-comment"># Enables Rusticl (OpenCL) support</span>
+    ];
+  };
+}</code></pre>
+      </div><h3 id="intel">Intel</h3><p>DaVinci Resolve has partial support for Intel GPUs on Linux. Audio playback works on the Fairlight page, but the video timeline does not work. To add Intel support, add one of the option to your <code>configuration.nix</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"> <span class="hljs-attr">hardware.graphics</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">enable32Bit</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">extraPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+        intel-compute-runtime <span class="hljs-comment"># For Intel 12th Gen and newer</span>
+        intel-compute-runtime-legacy1 <span class="hljs-comment"># For Intel Gen 8, 9, 11</span>
+    ];
+  };</code></pre>
+      </div><h2 id="x11-or-wayland">X11 or Wayland</h2><p>Currently, DaVinci Resolve can not run on native Wayland. This is due to qtwayland version mismatch. See <a href="https://github.com/NixOS/nixpkgs/issues/341634">nixpkgs issue</a> .</p>
+<p>If you want to maximize your chances you can try and start davinci in the following way to check for ROCM or Rusticl support</p>
+<p><code>ROC_ENABLE_PRE_VEGA=1 RUSTICL_ENABLE=amdgpu,amdgpu-pro,radv,radeon,radeonsi DRI_PRIME=1 QT_QPA_PLATFORM=xcb davinci-resolve</code></p>
+<h2 id="openfx-plugins">OpenFX Plugins</h2><p>The usual install location <code>/usr/OFX/Plugins</code> is not available on NixOS. Fortunately, DaVinci Resolve supports loading OpenFX plugins from locations specified in <code>OFX_PLUGIN_PATH</code>. This environment variable can be configured comfortably by adding the following code listing to the system configuration:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs">e<span class="hljs-attr">nvironment.variables</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">OFX_PLUGIN_PATH</span> <span class="hljs-operator">=</span> lib.concatStringsSep <span class="hljs-string">&quot;;&quot;</span> [
+      <span class="hljs-comment"># specify plugin packages here</span>
+    ];
+};</code></pre>
+      </div><p>Plugins usually contain a directory called <code>$PLUGINNAME.ofx.bundle</code> with a <code>.ofx</code> file somewhere inside of it. Since the coercion of a package to a string outputs its store location and the paths specified in the environment variable are traversed recursively, it is not necessary to specify the precise location of the ofx bundle in the nix store.</p>
+<h2 id="troubleshooting">Troubleshooting</h2><h3 id="resolve-crashes-fails-to-start">Resolve crashes/fails to start</h3><p>If it doesn&#39;t launch, and crashes when running <code>davinci-resolve</code>, then try running it as root.</p>
+<p>If it didn&#39;t help, you can view the error log at <code>~/.local/share/DaVinciResolve/logs/ResolveDebug.txt</code> to pinpoint the issue.</p>
+<p>If you can spot a line similar to <code>Cannot mix incompatible Qt library (5.15.12) with this library (5.15.2)</code>, and have configured QT options in your NixOS configuration (<code>qt.enable = true;</code>), try disabling them.</p>
+<h3 id="resolve-crashes-on-edit-fusion-tab-with-intel-igpu">Resolve crashes on Edit/Fusion tab with Intel iGPU</h3><p>If you are using <code>intel-compute-runtime-legacy1</code> and DaVinci Resolve crashes whenever you try to switch to Edit or Fusion tab, it indicates the issue with the latest package. If you want to learn more about how pinning packages to specific versions works, you can read <a href="https://mirror.nixoscn.org/wiki/DaVinci%20Resolve/FAQ/Pinning_Nixpkgs" class="wikilink" title="this article">this article</a>.</p>
+<p>Here&#39;s the solution for <a href="https://mirror.nixoscn.org/wiki/DaVinci%20Resolve/NixOS_system_configuration#Defining_NixOS_as_a_flake" class="wikilink" title="flake-based">flake-based</a> NixOS system:</p>
+<h3 id="cannot-import-video-file">Cannot import video file</h3><p>DaVinci Resolve&#39;s free edition does not come with H264/H265 support. You need to convert your video to a supported video format, like DNxHD/DNxHR and Cineform. you can do this with <code>ffmpeg</code>. With FFmpeg installed, assuming your video is called <code>video.mp4</code>, you can use the following command to convert:</p>
+<p><code>ffmpeg -i video.mp4 -c:v dnxhd -profile:v dnxhr_hq -c:a pcm_s16le -pix_fmt yuv422p output.mov</code></p>
+<p>This command will convert your video to a DNxHR video and your audio to uncompressed 16bit PCM. For 24bit PCM, use <code>-c:a pcm_s24le</code> instead.</p>
+<p>You can know more about DNxHD/HR profiles with the command <code>ffmpeg -h encoder=dnxhd</code></p>
+<p>Resolve also supports Cineform and a few other formats. For Cineform encoding, use the <code>cfhd</code> encoder.</p>
+<h3 id="unsupported-gpu-processing-mode">Unsupported GPU Processing Mode</h3><p>If DaVinci Resolve shows a popup asking to review GPU configuration in preferences, and if there is no GPU detected in &quot;Memory and GPU&quot; in preferences, you can try the following in your <code>configuration.nix</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">h<span class="hljs-attr">ardware.graphics</span> <span class="hljs-operator">=</span> {
+   <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+ };
+<span class="hljs-attr">hardware.amdgpu.opencl.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

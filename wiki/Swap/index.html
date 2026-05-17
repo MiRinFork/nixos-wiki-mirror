@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Swap</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Swap</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Swap -->
+
+<p>Swap allows &quot;cold&quot; pages of virtual memory to be stored in places other than directly in the physical RAM, effectively allowing more pages to be stored. This can be accomplished by using space on disk, such as <a href="https://mirror.nixoscn.org/wiki/Swap#Swap_file" class="wikilink" title="swap file">swap file</a> or <a href="https://mirror.nixoscn.org/wiki/Swap#Swap_partition" class="wikilink" title="swap partition">swap partition</a>, or through compression based methods like <a href="https://mirror.nixoscn.org/wiki/Swap#Zram_swap" class="wikilink" title="zram">zram</a>. Additionally, <a href="https://mirror.nixoscn.org/wiki/Swap#Zswap_swap_cache" class="wikilink" title="zswap">zswap</a> can act as a RAM-based compressed cache sitting in front of a traditional disk-based swap device.</p>
+<h1 id="configuration">Configuration</h1><p>The following sections describe how to configure and manage swap on NixOS.</p>
+<p>To check your current swap setup and usage, you can use the following command: <code>swapon --show</code></p>
+<h2 id="swap-file">Swap file</h2><p>A swap file provides swap space using a regular file on your filesystem, offering greater flexibility compared to a dedicated swap partition.</p>
+<p>To add a swap file in NixOS, add the following:</p>
+<p>This will create a 16GB swapfile at <code>/var/lib/swapfile</code>. The <code>size</code> value [<a href="https://search.nixos.org/options?show=swapDevices">https://search.nixos.org/options?show=swapDevices</a>.*.size is specified in mebibytes]. This will cause a swap file to be generated and an entry to be set up in <code>/etc/fstab</code>.</p>
+<h2 id="swap-partition">Swap partition</h2><p>Swap partitions are typically created during the initial disk partitioning phase of a NixOS installation. For instructions on creating swap partitions, see the relevant NixOS manual sections for <a href="https://nixos.org/manual/nixos/stable/#sec-installation-manual-partitioning-UEFI">UEFI</a>/<a href="https://nixos.org/manual/nixos/stable/#sec-installation-manual-partitioning-MBR">MBR</a> partition schemes and <a href="https://nixos.org/manual/nixos/stable/#sec-installation-manual-partitioning-formatting">formatting</a>.</p>
+<p>Swap partitions can be defined in <code>configuration.nix</code> like above or (if GPT) be automatically discovered by <code>systemd-gpt-auto-generator(8)</code>. Using the former allows you to have some control over swap mounting options and to enable features such as encrypted swap.</p>
+<h2 id="zram-swap">Zram swap</h2><p>Zram is a kernel module for creating a compressed block device in RAM.</p>
+<p>It is an alternative or complementary approach to swap disks, suitable for systems with enough RAM. In the event the system needs to swap it will move uncompressed RAM contents into the compressed area, saving RAM space while effectively increasing the available RAM at the cost of computational power for compression and decompression.</p>
+<p>See <a href="https://search.nixos.org/options?query=zramSwap">zramSwap</a> for a full list of available options and their descriptions.</p>
+<h3 id="zram-writeback">Zram writeback</h3><p>Zram supports writeback functionality, allowing idle or incompressible pages to be moved to a backing storage device rather than keeping it in memory. Currently, writeback can only use block storage devices (such as partitions) and does not support swap files. The backing partition must be manually created first, but does not require formatting.</p>
+<p>An example configuration:</p>
+<p>To verify the block storage device is being used:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">cat</span> /sys/block/zram0/backing_dev</code></pre>
+      </div><p>If you see an error entry like</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">Jul 08 17:14:50 COMPUTER zram-generator[3056]: Error: Failed to configure write-back device into /sys/block/zram0/backing_dev
+Jul 08 17:14:50 COMPUTER zram-generator[3056]: Caused by:
+Jul 08 17:14:50 COMPUTER zram-generator[3056]:     Device or resource busy (os error 16)</code></pre>
+      </div><p>This is probably because the writeback device has already been mounted elsewhere (e.g. as swap). To avoid this you need to do as the <a href="https://mirror.nixoscn.org/wiki/Swap#Disable_swap" class="wikilink" title="#Disable swap">#Disable swap</a> section says and make sure your writeback device is not being mounted as swap (this can happen due to <code>systemd-gpt-auto-generator(8)</code>). Do note that zram writeback does <em>not</em> respect the swap on-disk format and will destroy your existing swap header.</p>
+<h2 id="zswap-swap-cache">Zswap swap cache</h2><p><a href="https://docs.kernel.org/admin-guide/mm/zswap.html">Zswap</a> is a compressed RAM cache for swap pages. It acts as a middle layer between system memory and a traditional disk-based swap device, storing compressed pages in RAM before optionally writing them out to disk-based swap if necessary. Because zswap integrates directly into the kernel&#39;s memory management subsystem, it automatically and dynamically evicts the coldest pages to your backing disk when memory pressure rises. This graceful degradation provides a significant architectural advantage over zram for systems that have physical disk swap.</p>
+<p>Unlike zram, zswap requires a disk-based swap device or file to back it.</p>
+<p>Zswap is controlled by kernel parameters and can be enabled in your NixOS configuration by setting appropriate options through <code>boot.kernelParams</code>.</p>
+<p>You can verify zswap&#39;s runtime status via <code>cat /sys/module/zswap/parameters/enabled</code> and inspect usage statistics with <code># grep -r . /sys/kernel/debug/zswap/</code></p>
+<p>A proper zswap configuration module is <a href="https://github.com/NixOS/nixpkgs/pull/470366">currently under review</a>.</p>
+<h2 id="disable-swap">Disable swap</h2><p>To remove all swap devices from NixOS, set the following to remove the swap partition or file from being included in <code>/etc/fstab</code>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">wapDevices</span> <span class="hljs-operator">=</span> lib.mkForce [ ];</code></pre>
+      </div><p>If you are using GPT partitioning tables, <code>systemd-gpt-auto-generator(8)</code> will still mount your swap partition automatically. You must therefore turn on attribute 63 (&quot;no-auto&quot;) on <em>each</em> swap partition partition in the partition table. This can be done with gptfdisk or similar:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs">gdisk /dev/sda
+x
+a
+&lt;partition number&gt;
+63
+&lt;enter&gt;
+w</code></pre>
+      </div><p>Alternatively, <code>systemd-gpt-auto-generator(8)</code> for swap can be disabled globally through a kernel cmdline <code>systemd.swap=0</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">b<span class="hljs-attr">oot.kernelParams</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;systemd.swap=0&quot;</span> ];</code></pre>
+      </div><h1 id="tips-and-tricks">Tips and Tricks</h1><h2 id="mount-options">Mount options</h2><h3 id="discard">discard</h3><p>Solid state drives have fast random access times, which make them great for swap if you ignore the limited lifespan. Enabling TRIM (discard) on the swap files can help avoid unnecessary copy actions on the SSD, reducing wear and potentially helping increase performance.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">wapDevices</span> <span class="hljs-operator">=</span> [{
+  <span class="hljs-attr">device</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/dev/sdXY&quot;</span>;
+  <span class="hljs-attr">options</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;discard&quot;</span> ]; <span class="hljs-comment"># equivalent to swapon --discard</span>
+}];</code></pre>
+      </div><p>A lower-impact option is <code>&quot;discard=once&quot;</code>, which runs discard exactly once when the swap is enabled, but does not continually issue discard commands as pages are being overwritten. This could make more sense depending on your hardware.</p>
+<p><code>systemd-gpt-auto-generator(8)</code> does not automatically enable <code>discard</code>. Also, never enable <code>discard</code> on mdadm RAID setups, as ArchWiki reports that it causes lockup.</p>
+<h2 id="encrypt-swap-with-random-key">Encrypt swap with random key</h2><p>Because data from memory is evicted into swap, any secret data in memory can also end up in swap. Because the disks backing the swap is often nonvolatile (data is not lost after power cut), this can represent another way for data to end up in the wrong hands if you computer is seized.</p>
+<p>By encrypting the swap with a random key kept in memory, we make sure that the contents of the swap become unreadable as soon as the data in memory has been lost. NixOS contains a handy helper to help you do this, generating a new key on each boot:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">wapDevices</span> <span class="hljs-operator">=</span> [{
+  <span class="hljs-attr">device</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/dev/disk/by-partuuid/aaaaaaaaa-bbbb-cccc-dddd-0123456789ab&quot;</span>;
+  <span class="hljs-attr">randomEncryption.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; 
+}];</code></pre>
+      </div><p>The selected device will have all its content made unusable at every boot. Using a partuuid or partlabel is recommended because it is less subject to change when the overall partition scheme changes.</p>
+<p>If you want to use TRIM, set <code>randomEncryption.allowDiscards</code> in addition to the <code>options</code>. This has the security implication of:</p>
+<ul>
+<li>telling whoever gets ahold of your swap drive which parts are being actually used (bad),</li>
+<li>telling your SSD to not give out the data in unused parts and to not try to keep them around during garbage collection (good).</li>
+</ul>
+<p>You will need to weigh between the two.</p>
+<p><strong>Warning:</strong> On some NixOS versions, if <code>randomEncryption.enable = true</code> and the <code>swap</code> is a file (rather than a partition) located on an encrypted LUKS partition, <a href="https://discourse.nixos.org/t/swap-file-on-luks-partition/72234">the system can freeze as soon as the swap is used.</a></p>
+<p>Using a random key makes hibernation impossible. If you want to use hibernation, use a regular <a href="https://mirror.nixoscn.org/wiki/Swap/Full_Disk_Encryption" class="wikilink" title="Full Disk Encryption">Full Disk Encryption</a> with a fixed key. Alternatively, you can encrypt the swap partition separately:</p>
+<h2 id="encrypt-swap-partition-with-password-or-fixed-key">Encrypt swap partition with password or fixed key</h2><p>If you prefer to encrypt the swap partition individually, first create an unformatted partition of the desired size, for example using <code>gparted</code>. In the following, the partition is <code>/dev/sdXY</code>. Then</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">sudo</span> cryptsetup luksFormat /dev/sdXY --label lb_luks_swap
+<span class="hljs-built_in">sudo</span> cryptsetup luksOpen /dev/disk/by-label/lb_luks_swap swap
+<span class="hljs-built_in">sudo</span> mkswap /dev/mapper/swap -L lb_swap</code></pre>
+      </div><p>When asked, provide a password for unlocking the partition.</p>
+<p>This will create</p>
+<ul>
+<li>a LUKS container on the unformatted partition with label <code>lb_luks_swap</code></li>
+<li>open it and mount it under <code>/dev/mapper/swap</code>,</li>
+<li>format it as swap with label <code>lb_swap</code>.</li>
+</ul>
+<p>If all is correct, block devices should look similar to:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">$ lsblk -o +LABEL
+...
+└─sdaXY      259:16   0   128G  0 part                 lb_luks_swap
+  └─lb_swap  254:0    0   128G  0 crypt [SWAP]         lb_swap
+...</code></pre>
+      </div><p>To tell NixOS to use this partition for swap, add to <code>hardware-configuration.nix</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">wapDevices</span> <span class="hljs-operator">=</span> [{
+  <span class="hljs-attr">device</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/dev/disk/by-label/lb_swap&quot;</span>;
+  <span class="hljs-attr">encrypted</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">label</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;swap&quot;</span>;
+    <span class="hljs-attr">blkDev</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/dev/disk/by-label/lb_luks_swap&quot;</span>;
+  };
+}];</code></pre>
+      </div><p>This automatically adds the swap partition to <code>boot.initrd.luks.devices</code> so that <code>initrd</code> will ask for a password on reboot. initrd will automatically try to use the same password on any other LUKS volumes listed in <code>boot.initrd.luks.devices</code>. Therefore if you use the same password for other volumes you will only have to type it once. If all went well, the swap partition should be mapped at <code>/mapper/swap</code> and <code>/dev/disk/by-id/lb_swap</code>.</p>
+<p>It is also possible to specify a key file using the <code>--key-file</code> argument to <code>luksFormat</code> and <code>luksOpen</code>. Be aware that the system needs access to this file during boot, so if the key itself is stored on an encrypted volume, it may be tricky to get the unlock sequencing right.</p>
+<h2 id="adjusting-swap-usage-behaviour">Adjusting swap usage behaviour</h2><p><a href="https://docs.kernel.org/admin-guide/sysctl/vm.html#swappiness">Swappiness</a> controls how aggressively swap space is used, specifically how to free up memory when needed. By default, Linux uses a swappiness value of 60. Higher values will make the kernel prefer swapping out idle processes over dropping caches. Conversely lower values will try to avoid swapping as much as possible, keeping processes in RAM unless absolutely necessary. An optimal value is workload dependent and will require experimentation.</p>
+<p>You can see your current swappiness level by <code>cat /proc/sys/vm/swappiness</code>. The lowest accepted value is 0 while the maximum value is 200. The lowest sane value is 1 (0 causes the system to not scan for unused anonymous pages, i.e. memory freed by processes, at all).</p>
+<p>For more on tuning the swap, start with <a href="https://wiki.archlinux.org/title/Swap#Swappiness">ArchWiki</a>&#39;s description.</p>
+<h2 id="zfs-and-swap">ZFS and swap</h2><p>OpenZFS does not support swap files on a ZFS dataset. Swap on zvols is technically supported, but does not support resume from hibernation and can lead to system lockup in high memory pressure situation and is thus not recommended (see <a href="https://github.com/openzfs/zfs/issues/7734">OpenZFS issue #7734</a> and the <a href="https://wiki.archlinux.org/title/ZFS#Swap_volume">arch wiki on Swap Volumes in ZFS</a>).</p>
+<p>Instead, you should set up a swap partition or swap file on a non-ZFS filesystem.<sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Swap#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup></p>
+<h2 id="using-swap-files-on-btrfs">Using swap files on Btrfs</h2><p>For Btrfs file system-specific considerations, see the <a href="https://mirror.nixoscn.org/wiki/Swap/Btrfs#Swap_file" class="wikilink" title="Btrfs swap file section">Btrfs swap file section</a>.</p>
+<h2 id="swapspace">Swapspace</h2><p><a href="https://github.com/Tookmund/Swapspace">Swapspace</a> is a dynamic swap space manager for GNU/Linux. i.e. it allows unused disk space to be utilised as swap to handle the occasional memory-intensive task, and frees the disk space once done.</p>
+<p>Enable it via <code>services.swapspace.enable = true;</code> in your nixos configuration. And after switching, check that <code>systemctl status swapspace.service</code> is green, that&#39;s all, swapspace will auto manage swap for you.</p>
+<p>See all the options it supports here, <a href="https://search.nixos.org/options?query=swapspace">search.nixos.org</a></p>
+<p>You can also use zramSwap along with this service.</p>
+<p>See your active swap partitions/files with <code>swapon</code>. For eg.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">Read the WARNING above, and adjust 2, 20GB according to your free space</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-comment"># nix shell nixpkgs#stress.out -c stress --vm 2 --vm-bytes 20G</span></span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">swapon</span>
+NAME                 TYPE       SIZE  USED PRIO
+/dev/zram0           partition 13.8G  2.6G    5
+/var/lib/swapspace/1 file       5.2G 59.2M   -2
+/var/lib/swapspace/2 file       6.1G 56.4M   -3</code></pre>
+      </div><p><a href="category:Configuration" class="wikilink" title="Category:Configuration">Category:Configuration</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p><a href="https://utcc.utoronto.ca/~cks/space/blog/solaris/ZFSForSwapMyViews">https://utcc.utoronto.ca/~cks/space/blog/solaris/ZFSForSwapMyViews</a> <a href="https://mirror.nixoscn.org/wiki/Swap#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

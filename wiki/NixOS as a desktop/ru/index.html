@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NixOS as a desktop/ru</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop">NixOS as a desktop</a><span aria-hidden="true"> / </span>ru</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: NixOS as a desktop/ru -->
+
+<languages/>
+
+<div class="mw-translate-fuzzy">
+
+<p>NixOS может быть использована для разных целей. Если вы желаете использовать её как основную десктопную ОС для повседневного использования (на реальном железе или <a href="https://twitter.com/mitchellh/status/1346136404682625024">виртуальной машине</a>(англ.)), то эта страница для вас. Даже если вы планируете использовать NixOS в облаке или на специально настроенных серверах, вы, возможно, хотите начать с уроков, изложенных здесь, чтобы ближе познакомиться с экосистемой Nix.</p>
+</div>
+
+<p><span id="Installation"></span></p>
+<h2 id="">Установка</h2><p>Если вы предпочитаете чтение, для начала посмотрите <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ru/NixOS_Installation_Guide/ru" class="wikilink" title="инструкцию по установке">инструкцию по установке</a>. Учитывайте, что для десктопной установки, вам потребуется как минимум 30 Гб места на диске, чтобы вместить <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ru/:Category:Desktop_environment" class="wikilink" title="рабочее окружение">рабочее окружение</a>, <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ru/:Category:Web_Browser" class="wikilink" title="браузеры">браузеры</a>, и другие <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ru/:Category:Applications" class="wikilink" title="графические утилиты">графические утилиты</a>, что вполне разумно для повседневного использования. Для минимальной установки, вероятно, хватит и 15 Гб.</p>
+<p><span id="Managing_your_configuration"></span></p>
+<h2 id="">Управление своей конфигурацией</h2><p>Как описанно в <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ru/Overview_of_the_NixOS_Linux_distribution#Declarative_Configuration" class="wikilink" title="Обзор NixOS Linux дистрибутива (англ.)">Обзор NixOS Linux дистрибутива (англ.)</a>, NixOS декларативный. Это значит, что, полную конфигурацию системы, включая установленные пакеты, сервисы, параметры ядра, и пользовательские аккаунты обьявлены в конфигурационном файле, обычно в <code>/etc/nixos/configuration.nix</code>. Затем эти настройки могут быть применены последовательно и воспроизводимо ко всем компьютерам.</p>
+<p>Процесс в настройке вашей конфигурации описан в документе .</p>
+<p><span id="System_Configuration"></span></p>
+<h3 id="">Систеиная конфигурация</h3><p>Онсновным конфигурационным файлом яляется <code>/etc/nixos/configuration.nix</code>, который определяет общие и основные системные настройки. Такие как: активация сервисов, управлением системы пользователей, установки системных настроек, и установки указанных пакетов. Изменения можно увидеть с помощью комманды:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">nixos-rebuild switch</span></code></pre>
+      </div><p><span id="User_configuration_with_Home_Manager"></span></p>
+<h3 id="home-manager">Пользовательская конфигурация с Home Manager</h3><p>Для настройки пользовательских конфигураций, таких как, настройка приложений, коммандных утилит, и dot-файлов, <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ru/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> обеспечивает удобный и декларотивный подход. Он позволяет пользователям вписывать какие программы будут устновленны и как настроены, без нужды включать их в общую систему <a href="https://nixos.org/manual/nixos/stable/#sec-changing-config">configuration.nix</a>.</p>
+<p>Home Manager работает независимо от системной концигурации (configuration.nix). Помимо традиционных настроек Home Manager поддерживает новый способ конфигурации, с помощью <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ru/Flakes" class="wikilink" title="Flakes">Flakes</a>.</p>
+<p><span id="With_Flakes"></span></p>
+<h3 id="flakes">С помощью Flakes</h3><p>Для пользователей, которые ищут более простой и воспроизводимый способ управления конфигурациями NixOS, в сообществе набирает популярность функция <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ru/Flakes" class="wikilink" title="Flakes">Flakes</a>. Хотя Flakes предлагает несколько новых концепций по сравнению с традиционными рабочими процессами, многие пользователи находят их удобным и организованным подходом к управлению конфигурациями системы и разработки.</p>
+<p>Смотрите <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ru/NixOS_system_configuration#Defining_NixOS_as_a_flake" class="wikilink" title="NixOS system configuration#Defining NixOS as a flake">NixOS system configuration#Defining NixOS as a flake</a> для подробного понимания в начале.</p>
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h2 id="beyond-initial-setup">Beyond initial setup</h2></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Once your basic NixOS installation is complete and functional, you can further customize your system with a variety of optional configurations tailored for desktop use. For a list of recommended initial system configurations, see <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ru/NixOS_Installation_Guide#NixOS_configuration" class="wikilink" title="NixOS Installation Guide#NixOS configuration">NixOS Installation Guide#NixOS configuration</a>.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Common configuration areas include:</p>
+</div>
+
+<p><span id="Desktop_Environments"></span></p>
+<h4 id="">Рабочие Окружения</h4><p>Установка и настройка полнофункциональных рабочих окружений таких как <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ru/GNOME" class="wikilink" title="GNOME">GNOME</a>, <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ru/KDE_Plasma" class="wikilink" title="KDE Plasma">KDE Plasma</a>, или <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ru/Xfce" class="wikilink" title="Xfce">Xfce</a>.</p>
+<p>Смотрите полный список <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ru/:Category:Desktop_environment" class="wikilink" title=":Category:Desktop environment">:Category:Desktop environment</a>.</p>
+<p><span id="Window_Managers"></span></p>
+<h4 id="">Оконные Менеджеры</h4><p>Устновка легковесных или тайловых оконных менеджеров по типу <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ru/i3" class="wikilink" title="i3">i3</a>, <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ru/Sway" class="wikilink" title="Sway">Sway</a>, <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ru/Hyprland" class="wikilink" title="Hyprland">Hyprland</a> или <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ru/xmonad" class="wikilink" title="xmonad">xmonad</a>.</p>
+<p>Полный список <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ru/:Category:Window_managers" class="wikilink" title=":Category:Window managers">:Category:Window managers</a></p>
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h4 id="display-managers-login-managers">Display Managers (Login Managers)</h4></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Configure graphical session managers such as <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ru/Gnome" class="wikilink" title="GDM">GDM</a>, <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ru/KDE" class="wikilink" title="SDDM">SDDM</a>, or <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ru/LightDM" class="wikilink" title="LightDM">LightDM</a>.</p>
+</div>
+
+<p><span id="Audio_Setup"></span></p>
+<h4 id="">Настройка звука</h4><p>Активация и настройка звка <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ru/:Category:Audio" class="wikilink" title="audio">audio</a> таких как <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ru/PipeWire" class="wikilink" title="PipeWire">PipeWire</a>, <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ru/PulseAudio" class="wikilink" title="PulseAudio">PulseAudio</a> или <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ru/ALSA" class="wikilink" title="ALSA">ALSA</a>.</p>
+<p><span id="Network_Management"></span></p>
+<h4 id="">Настройка Сети</h4><p>Используйте истумены такие как <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ru/NetworkManager" class="wikilink" title="NetworkManager">NetworkManager</a> или <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ru/systemd-networkd" class="wikilink" title="systemd-networkd">systemd-networkd</a> для настройки сети <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ru/Networking" class="wikilink" title="network">network</a></p>
+<p><span id="Bluetooth_Support"></span></p>
+<h4 id="bluetooth">Поддержка Bluetooth</h4><p>Настройте <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ru/Bluetooth" class="wikilink" title="Bluetooth">Bluetooth</a> с помощью blueman или других похожих утилит.</p>
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h4 id="power-management">Power Management</h4></div>
+
+<p>Настройте <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ru/laptop" class="wikilink" title="laptop">laptop</a> <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ru/Power_Management" class="wikilink" title="battery management">battery management</a>, сон, и гибернацию с такими инструментами как <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ru/Laptop#tlp" class="wikilink" title="tlp">tlp</a> или <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ru/systemd" class="wikilink" title="systemd">systemd</a> сервисом.</p>
+<p><span id="Printing_and_Scanning"></span></p>
+<h4 id="">Печать и скан</h4><p>Включите <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ru/Cups" class="wikilink" title="Cups">Cups</a> для поддержки принтера и инструментов типа Sane для <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ru/Scanners" class="wikilink" title="сканеров">сканеров</a>.</p>
+<p><span id="Tips_and_tricks"></span></p>
+<h2 id="">Советы и рекомендации</h2><p><span id="Modularizing_your_configuration_with_modules"></span></p>
+<h3 id="">Модулизация вашей конфигурации с помощью модулей</h3><div lang="en" dir="ltr" class="mw-content-ltr">
+
+</div>
+
+<p><span id="See_also"></span></p>
+<h2 id="">См. Также</h2><div lang="en" dir="ltr" class="mw-content-ltr">
+
+<ul>
+<li><a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ru/Overview_of_the_NixOS_Linux_distribution" class="wikilink" title="Overview of the NixOS Linux distribution">Overview of the NixOS Linux distribution</a></li>
+<li><a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ru/Comparison_of_NixOS_setups" class="wikilink" title="Comparison of NixOS setups">Comparison of NixOS setups</a> for a table comparing some popular choices.</li>
+<li><a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ru/Configuration_Collection" class="wikilink" title="Configuration Collection">Configuration Collection</a> for a long list within the wiki.</li>
+<li><a href="https://github.com/topics/nix-flake">nix-flake</a>, <a href="https://github.com/topics/nixos-configuration">nixos-configuration</a>, <a href="https://github.com/topics/nixos-dotfiles">nixos-dotfiles</a> Github topics</li>
+<li><a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/ru/Wil_T_Nix_Guides" class="wikilink" title="Wil T Nix Guides">Wil T Nix Guides</a> Youtube video format guide</li>
+</ul>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+</div>
+
+<p><a href="category:Desktop" class="wikilink" title="Category:Desktop">Category:Desktop</a> <a href="category:Guide" class="wikilink" title="Category:Guide">Category:Guide</a> <a href="category:NixOS" class="wikilink" title="Category:NixOS">Category:NixOS</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Flatpak</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Flatpak</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Flatpak -->
+
+<p><a href="https://www.flatpak.org/">Flatpak</a> is a Linux application sandboxing and distribution framework.</p>
+<p>This article extends the documentation in the <a href="https://nixos.org/manual/nixos/stable/#module-services-flatpak">NixOS manual</a>.</p>
+<h2 id="installation">Installation</h2><h3 id="global">Global</h3><p>Using this configuration, <code>flatpak</code> will be installed and ready to use globally for all users:</p>
+<h3 id="per-user">Per-User</h3><p>If you&#39;d rather make Flatpak available to a specific user, add <code>flatpak</code> to that user&#39;s packages</p>
+<h3 id="window-managers-compositors-patches">Window Managers / Compositors Patches</h3><p>After adding the desired solution to your configuration file, Flatpak will be installed, but it is not always added to your path directly, e.g. when you are using Sway.</p>
+<p>To manually add it to the path while using the <a href="https://mirror.nixoscn.org/wiki/Flatpak/Greetd" class="wikilink" title="Greetd">Greetd</a> login manager and <a href="https://mirror.nixoscn.org/wiki/Flatpak/Sway" class="wikilink" title="Sway">Sway</a>, create a <code>.profile</code> file with an override for your <code>XDG_DATA_DIRS</code> path, e.g.: This is also required when installing <code>flatpak</code> on a per-user basis.</p>
+<h3 id="with-impermanence">With Impermanence</h3><p>If you&#39;re using <a href="https://mirror.nixoscn.org/wiki/Flatpak/Impermanence" class="wikilink" title="Impermanence">Impermanence</a>, you&#39;ll need to make sure you persist the directories that flatpak will be using</p>
+<ul>
+<li><code>/var/lib/flatpak</code> (for system configuration, repositories, etc.)</li>
+<li><code>~/.var/app</code> (for app data)</li>
+<li><code>~/.local/share/flatpak</code> (for user-specific configuration)</li>
+</ul>
+<p>The directories in your home (starting with <code>~</code>) will need to be persisted for every user who will use flatpak</p>
+<h2 id="usage">Usage</h2><h3 id="declarative">Declarative</h3><p>To manage Flatpak declaratively, you can either use <a href="https://github.com/gmodena/nix-flatpak">nix-flatpak</a> or <a href="https://github.com/in-a-dil-emma/declarative-flatpak">declarative-flatpak</a></p>
+<p>In the event of a Nix rollback, both modules will reinstall the previously declared Flatpak packages</p>
+<h4 id="nix-flatpak"><a href="https://github.com/gmodena/nix-flatpak">nix-flatpak</a></h4><p>A convergent approach to Flatpak management where refs are managed in place</p>
+<p>Flatpak packages are not cached in the Nix store</p>
+<p>It supports flakes or <a href="https://mirror.nixoscn.org/wiki/Flatpak/Home_Manager" class="wikilink" title="home-manager">home-manager</a>, but doesn&#39;t support non-flakes only</p>
+<p><small>For more details, see <a href="https://github.com/gmodena/nix-flatpak/discussions/168">nix-flatpak/discussions/168</a></small></p>
+<h4 id="declarative-flatpak"><a href="https://github.com/in-a-dil-emma/declarative-flatpak">declarative-flatpak</a></h4><p>A congruent approach to Flatpak management where changes are designed to be atomic, ensuring that either they succeed or nothing happens. This module uses a temporary installation and then overwrites the current one.</p>
+<p>It supports non-flake, flakes, and <a href="https://mirror.nixoscn.org/wiki/Flatpak/Home_Manager" class="wikilink" title="home-manager">home-manager</a></p>
+<p><small>For more details, see <a href="https://github.com/in-a-dil-emma/declarative-flatpak/issues/44">declarative-flatpak/issues/44</a></small></p>
+<h3 id="imperative">Imperative</h3><h4 id="terminal-user-interface">Terminal User Interface</h4><p>To manage Flatpak imperatively, you can use <a href="https://docs.flatpak.org/en/latest/using-flatpak.html">the <code>flatpak</code> command</a> (<a href="https://docs.flatpak.org/en/latest/flatpak-command-reference.html"><code>flatpak</code> Command Reference Documentation</a>)</p>
+<h5 id="example">Example</h5><div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">flatpak update</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">flatpak search Flatseal</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">flatpak install flathub com.github.tchx84.Flatseal</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">flatpak run com.github.tchx84.Flatseal</span></code></pre>
+      </div><h4 id="graphical-user-interface">Graphical User Interface</h4><p>To install Flatpaks graphically, you can use <a href="https://apps.gnome.org/en-GB/Software/">the GNOME Software Application</a> (<a href="https://search.nixos.org/packages?show=gnome-software"><code>gnome-software</code> in nixpkgs</a>)</p>
+<p><small><strong>Note</strong>: installing Flatpaks through it is imperative</small></p>
+<h4 id="configure-repositories-globally">Configure Repositories Globally</h4><p>To automatically configure Flatpak repositories for all users, one can add this snippet to <code>configuration.nix</code>:</p>
+<h2 id="development">Development</h2><h3 id="build-a-flatpak-project">Build a Flatpak project</h3><p>The following example builds a demo app of the <a href="https://github.com/GNOME/libadwaita">libadwaita</a> repository using <code>flatpak-builder</code>, installs it locally in the user space and runs it. First install <code>flatpak</code> and <code>flatpak-builder</code> on your system</p>
+<p>Clone, build and run the example project.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">flatpak remote-add --if-not-exists gnome-nightly https://nightly.gnome.org/gnome-nightly.flatpakrepo</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">flatpak install gnome-nightly org.gnome.Sdk org.gnome.Platform</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">git <span class="hljs-built_in">clone</span> https://gitlab.gnome.org/GNOME/libadwaita.git</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">cd</span> libadwaita</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">nix shell nixpkgs#appstream</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">flatpak-builder --disable-tests --user --install build demo/org.gnome.Adwaita1.Demo.json</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">flatpak run org.gnome.Adwaita1.Demo.json</span></code></pre>
+      </div><p>Note that the <code>gnome-nightly</code> repository and the <code>appstream</code> dependency are especially required for this specific project and might be different for other Flatpak projects.</p>
+<h2 id="tips-and-tricks">Tips and tricks</h2><h3 id="emulate-flatpaks-of-different-architecture">Emulate Flatpaks of different architecture</h3><p>It is possible to install and run Flatpaks which were compiled for a different platform.</p>
+<p>In this example we imperatively install the application &quot;Metronome&quot; <code>aarch64</code> Flatpak package and run it (regardless of the architecture of the host, but in that case, it was <code>x86_64</code>):</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">flatpak install flathub com.adrienplazas.Metronome --<span class="hljs-built_in">arch</span>=aarch64</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">flatpak run com.adrienplazas.Metronome</span></code></pre>
+      </div><p>To support emulation with Qemu, <a href="https://mirror.nixoscn.org/wiki/Flatpak/QEMU#Run_binaries_of_different_architecture" class="wikilink" title="following Binfmt configuration">following Binfmt configuration</a> is required.</p>
+<h2 id="troubleshooting">Troubleshooting</h2><h3 id="missing-themes-and-cursors">Missing themes and cursors</h3><p>If you have issues with cursors or themes in general, take a look at <a href="https://mirror.nixoscn.org/wiki/Flatpak/Fonts#Flatpak_applications_can't_find_system_fonts" class="wikilink" title="Fonts#Flatpak_applications_can&#39;t_find_system_fonts">Fonts#Flatpak_applications_can&#39;t_find_system_fonts</a></p>
+<p><a href="category:Software" class="wikilink" title="Category:Software">Category:Software</a> <a href="category:NixOS_Manual" class="wikilink" title="Category:NixOS Manual">Category:NixOS Manual</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,795 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Python</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Python</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Python -->
+
+<h2 id="python-development-environments-with-nix">Python development environments with Nix</h2><p>Nix supports a number of approaches to creating &quot;development environments&quot; for Python programming. These provide functionality analogous to <a href="https://virtualenv.pypa.io/en/latest/">virtualenv</a> or <a href="https://docs.conda.io/en/latest/">conda</a>: a shell environment with access to pinned versions of the <code>python</code> executable and Python packages.</p>
+<h3 id="using-the-nixpkgs-python-infrastructure-via-shell-nix-recommended">Using the Nixpkgs Python infrastructure via <code>shell.nix</code> (recommended)</h3><p>Nixpkgs has the few last Python versions packaged, as well as a consequent set of Python packages packaged that you can use to quickly create a Python environment.</p>
+<p>Create a file <code>shell.nix</code> in the project directory, with the following template:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># shell.nix</span>
+<span class="hljs-keyword">let</span>
+  <span class="hljs-comment"># We pin to a specific nixpkgs commit for reproducibility.</span>
+  <span class="hljs-comment"># Last updated: 2024-04-29. Check for new commits at https://status.nixos.org.</span>
+  <span class="hljs-attr">pkgs</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> (<span class="hljs-built_in">fetchTarball</span> <span class="hljs-string">&quot;https://github.com/NixOS/nixpkgs/archive/cf8cc1201be8bc71b7cbbbdaf349b22f4f99c7ae.tar.gz&quot;</span>) {};
+<span class="hljs-keyword">in</span> pkgs.mkShell {
+  <span class="hljs-attr">packages</span> <span class="hljs-operator">=</span> [
+    (pkgs.python3.withPackages (<span class="hljs-params">python-pkgs:</span> <span class="hljs-keyword">with</span> python-pkgs; [
+      <span class="hljs-comment"># select Python packages here</span>
+      pandas
+      requests
+    ]))
+  ];
+}</code></pre>
+      </div><p>In this example, we create a Python environment with packages <code>pandas</code> and <code>requests</code>.</p>
+<p>You can find Python packages that are available in Nixpkgs using <a href="https://search.nixos.org/packages">search.nixos.org</a>. For instance, type a Python package name like <code>numpy</code> in the search bar and click on the search button on the right. You can narrow down results by clicking on eg. &quot;python311Packages&quot; in the &quot;Package sets&quot; section on the left. Note that in the snippet above, on lines 10-11, each package is listed in the form <code>python-pkgs.</code><name> where <name> corresponds to the one found in <a href="https://search.nixos.org/packages">search.nixos.org</a> . See <a href="https://nix.dev/tutorials/nix-language.html">Nix language basics</a> for more information on the <code>python-pkgs</code> attribute set.</p>
+<p>Once you have picked the Python packages you want, run <code>nix-shell</code> (or <code>nix develop -f shell.nix</code>) to build the Python environment and enter it. Once in the environment Python will be available in your PATH, so you can run eg. <code>python --version</code>.</p>
+<p>Note that with NixOS, this method can be used to install packages at the system level, e.g.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+  <span class="hljs-comment"># ...</span>
+  (python3.withPackages (<span class="hljs-params">python-pkgs:</span> <span class="hljs-keyword">with</span> python-pkgs; [
+      pandas
+      requests
+  ]))
+];</code></pre>
+      </div><h3 id="using-r-packages-in-python-with-rpy2">Using R packages in python with rpy2</h3><div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+  <span class="hljs-comment"># ...</span>
+  (python3.withPackages (<span class="hljs-params">python-pkgs:</span> <span class="hljs-keyword">with</span> python-pkgs; [
+      pandas
+      requests
+      rpy2
+  ]))
+
+  <span class="hljs-comment"># don&#x27;t use rWrapper.override</span>
+  rPackages.tidyverse
+  rPackages.uwot
+];</code></pre>
+      </div><h3 id="using-nix-shell-new-command-line">Using Nix shell (new command line)</h3><p><code>nix shell --impure --expr &#39;(import </code><nixpkgs><code> {}).python3.withPackages (ps: with ps; [ swh-core swh-scanner ])&#39;</code></p>
+<p>If you don&#39;t use the channels any more, you can replace <nixpkgs> by an instance of the <code>NixOS/nixpkgs</code> repository using its absolute path.</p>
+<h4 id="using-a-python-package-not-in-nixpkgs">Using a Python package not in Nixpkgs</h4><p>Python packages in Nixpkgs are created and updated by Nixpkgs maintainers. Although the community invests a great effort to keep a complete and up-to-date package set, some packages you want may be missing, out of date, or broken. To use your own packages in a Nix environment, you may package it yourself.</p>
+<p>The following is a high-level overview. For a complete explanation, see <a href="https://nixos.org/manual/nixpkgs/unstable/#developing-with-python">Developing with Python</a> in the Nixpkgs Manual.</p>
+<p>Generally, you may create a file that looks like this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># toolz.nix</span>
+{
+  lib,
+  buildPythonPackage,
+  fetchPypi,
+  setuptools,
+  wheel,
+}:
+
+buildPythonPackage <span class="hljs-keyword">rec</span> {
+  <span class="hljs-attr">pname</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;toolz&quot;</span>;
+  <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;0.10.0&quot;</span>;
+
+  <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> fetchPypi {
+    <span class="hljs-keyword">inherit</span> pname version;
+    <span class="hljs-attr">hash</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sha256-CP3V73yWSArRHBLUct4hrNMjWZlvaaUlkpm1QP66RWA=&quot;</span>;
+  };
+
+  <span class="hljs-comment"># do not run tests</span>
+  <span class="hljs-attr">doCheck</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+
+  <span class="hljs-comment"># specific to buildPythonPackage, see its reference</span>
+  <span class="hljs-attr">pyproject</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">build-system</span> <span class="hljs-operator">=</span> [
+    setuptools
+    wheel
+  ];
+}</code></pre>
+      </div><p>Given the file above is named <code>toolz.nix</code> and is the same directory as the previous <code>shell.nix</code> , you can edit <code>shell.nix</code> to use the package <code>toolz</code> above like so:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># shell.nix</span>
+<span class="hljs-keyword">let</span>
+  <span class="hljs-attr">pkgs</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> {};
+
+  <span class="hljs-attr">python</span> <span class="hljs-operator">=</span> pkgs.python3.override {
+    <span class="hljs-attr">self</span> <span class="hljs-operator">=</span> python;
+    <span class="hljs-attr">packageOverrides</span> <span class="hljs-operator">=</span> <span class="hljs-params">pyfinal:</span> <span class="hljs-params">pyprev:</span> {
+      <span class="hljs-attr">toolz</span> <span class="hljs-operator">=</span> pyfinal.callPackage <span class="hljs-symbol">./toolz.nix</span> { };
+    };
+  };
+
+<span class="hljs-keyword">in</span> pkgs.mkShell {
+  <span class="hljs-attr">packages</span> <span class="hljs-operator">=</span> [
+    (python.withPackages (<span class="hljs-params">python-pkgs:</span> [
+      <span class="hljs-comment"># select Python packages here</span>
+      python-pkgs.pandas
+      python-pkgs.requests
+      python-pkgs.toolz
+    ]))
+  ];
+}</code></pre>
+      </div><p>Next time you enter the shell specified by this file, Nix will build and include the Python package you have written.</p>
+<h3 id="running-python-packages-which-requires-compilation-and-or-contains-libraries-precompiled-without-nix">Running Python packages which requires compilation and/or contains libraries precompiled without <code>nix</code></h3><p>If you want to use some Python packages containing libraries precompiled without <code>nix</code> as for example <a href="https://pypi.org/project/grpcio/"><code>grpcio</code></a> or <a href="https://pypi.org/project/numpy"><code>Numpy</code></a>, you may encounter the following error :</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell-session hljs">$ python -c 'import grpc'
+Traceback (most recent call last):
+  File &quot;&lt;string&gt;&quot;, line 1, in &lt;module&gt;
+  File &quot;/.../grpc/__init__.py&quot;, line 22, in &lt;module&gt;
+    from grpc import _compression
+  File &quot;/.../grpc/_compression.py&quot;, line 20, in &lt;module&gt;
+    from grpc._cython import cygrpc
+ImportError: libstdc++.so.6: cannot open shared object file: No such file or directory</code></pre>
+      </div><p>This means that the Python package depends on compiled dynamically linked binaries that your NixOs environment fail to resolve.</p>
+<p>On NixOS, installing packages that need to compile code or use C libraries from outside of the <code>nix</code> package manager may fail if dependencies are not found in the expected locations. There are multiple ways to solve this, and most of them are just different ways for adding <code>/nix/store/...</code> to <code>$LD_LIBRARY_PATH</code>.</p>
+<p>After doing one of the following, you should be able to install compiled libraries using <code>venv</code>, <code>poetry</code>, <code>uv</code>, <code>conda</code> or other packages managers.</p>
+<h4 id="using-nix-overlay">Using nix overlay</h4><div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">nixpkgs.overlays</span> <span class="hljs-operator">=</span> [(
+    <span class="hljs-params">self:</span> <span class="hljs-params">super:</span> <span class="hljs-keyword">rec</span> {
+      <span class="hljs-comment"># https://github.com/NixOS/nixpkgs/blob/c339c066b893e5683830ba870b1ccd3bbea88ece/nixos/modules/programs/nix-ld.nix#L44</span>
+      <span class="hljs-comment"># &gt; We currently take all libraries from systemd and nix as the default.</span>
+      <span class="hljs-attr">pythonldlibpath</span> <span class="hljs-operator">=</span> lib.makeLibraryPath (<span class="hljs-keyword">with</span> super; [
+        zlib zstd stdenv.cc.cc curl openssl attr libssh bzip2 libxml2 acl libsodium util-linux xz systemd
+      ]);
+      <span class="hljs-comment"># here we are overriding python program to add LD_LIBRARY_PATH to it&#x27;s env</span>
+      <span class="hljs-attr">python</span> <span class="hljs-operator">=</span> super.stdenv.mkDerivation {
+        <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;python&quot;</span>;
+        <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> [ super.makeWrapper ];
+        <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> super.python311;
+        <span class="hljs-attr">installPhase</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+          mkdir -p $out/bin
+          cp -r $src/* $out/
+          wrapProgram $out/bin/python3 --set LD_LIBRARY_PATH <span class="hljs-subst">${pythonldlibpath}</span>
+          wrapProgram $out/bin/python3.11 --set LD_LIBRARY_PATH <span class="hljs-subst">${pythonldlibpath}</span>
+        &#x27;&#x27;</span>;
+      };
+      <span class="hljs-attr">poetry</span> <span class="hljs-operator">=</span> super.stdenv.mkDerivation {
+        <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;poetry&quot;</span>;
+        <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> [ super.makeWrapper ];
+        <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> super.poetry;
+        <span class="hljs-attr">installPhase</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+          mkdir -p $out/bin
+          cp -r $src/* $out/
+          wrapProgram $out/bin/poetry --set LD_LIBRARY_PATH <span class="hljs-subst">${pythonldlibpath}</span>
+        &#x27;&#x27;</span>;
+      };
+    }
+  )];
+  <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+    python  <span class="hljs-comment"># here python will be taken from the overlay up here</span>
+    poetry
+  ];
+}</code></pre>
+      </div><h4 id="using-nix-ld">Using <a href="https://github.com/Mic92/nix-ld">nix-ld</a></h4><div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">programs.nix-ld</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">libraries</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+      zlib zstd stdenv.cc.cc curl openssl attr libssh bzip2 libxml2 acl libsodium util-linux xz systemd
+    ];
+  };
+  <span class="hljs-comment"># https://github.com/nix-community/nix-ld?tab=readme-ov-file#my-pythonnodejsrubyinterpreter-libraries-do-not-find-the-libraries-configured-by-nix-ld</span>
+  <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> [
+    (pkgs.writeShellScriptBin <span class="hljs-string">&quot;python&quot;</span> <span class="hljs-string">&#x27;&#x27;
+      export LD_LIBRARY_PATH=$NIX_LD_LIBRARY_PATH
+      exec <span class="hljs-subst">${pkgs.python3}</span>/bin/python &quot;$@&quot;
+    &#x27;&#x27;</span>)
+  ];
+  <span class="hljs-comment"># another (dangerous) solution</span>
+  <span class="hljs-comment"># environment.systemPackages = with pkgs; [ python3 ];</span>
+  <span class="hljs-comment"># programs.bash = {</span>
+  <span class="hljs-comment">#   enable = true;</span>
+  <span class="hljs-comment">#   initExtra = &#x27;&#x27;</span>
+  <span class="hljs-comment">#     export LD_LIBRARY_PATH=$LD_LIBRARY_PATH&#x27;&#x27;${LD_LIBRARY_PATH:+:}$NIX_LD_LIBRARY_PATH</span>
+  <span class="hljs-comment">#   &#x27;&#x27;;</span>
+  <span class="hljs-comment"># };</span>
+}</code></pre>
+      </div><h4 id="using-fix-python">Using <a href="https://github.com/GuillaumeDesforges/fix-python/">fix-python</a></h4><p>Install with:</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs">nix profile install github:GuillaumeDesforges/fix-python</code></pre>
+      </div><p>Enter the venv and run:</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs">fix-python --venv .venv</code></pre>
+      </div><h4 id="using-buildfhsenv-recommended">Using <code>buildFHSEnv</code> (Recommended)</h4><div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment">#!/usr/bin/env nix-shell</span>
+{ pkgs <span class="hljs-operator">?</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> { } }:
+(
+  <span class="hljs-keyword">let</span> base <span class="hljs-operator">=</span> pkgs.appimageTools.defaultFhsEnvArgs; <span class="hljs-keyword">in</span>
+  pkgs.buildFHSEnv (base <span class="hljs-operator">//</span> {
+    <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;FHS&quot;</span>;
+    <span class="hljs-attr">targetPkgs</span> <span class="hljs-operator">=</span> <span class="hljs-params">pkgs:</span> (<span class="hljs-keyword">with</span> pkgs; [
+      gcc glibc zlib
+    ]);
+    <span class="hljs-attr">runScript</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;zsh&quot;</span>;
+    <span class="hljs-attr">extraOutputsToInstall</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;dev&quot;</span> ];
+  })
+).env</code></pre>
+      </div><h4 id="using-a-custom-nix-shell">Using a custom nix-shell</h4><p>The following configuration automatically fix the dependencies:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs"><span class="hljs-keyword">let</span>
+  <span class="hljs-attr">python</span> <span class="hljs-operator">=</span> pkgs.python311;
+  <span class="hljs-comment"># We currently take all libraries from systemd and nix as the default</span>
+  <span class="hljs-comment"># https://github.com/NixOS/nixpkgs/blob/c339c066b893e5683830ba870b1ccd3bbea88ece/nixos/modules/programs/nix-ld.nix#L44</span>
+  <span class="hljs-attr">pythonldlibpath</span> <span class="hljs-operator">=</span> lib.makeLibraryPath (<span class="hljs-keyword">with</span> pkgs; [
+    zlib zstd stdenv.cc.cc curl openssl attr libssh bzip2 libxml2 acl libsodium util-linux xz systemd
+  ]);
+  <span class="hljs-attr">patchedpython</span> <span class="hljs-operator">=</span> (python.overrideAttrs (
+    <span class="hljs-params">previousAttrs:</span> {
+      <span class="hljs-comment"># Add the nix-ld libraries to the LD_LIBRARY_PATH.</span>
+      <span class="hljs-comment"># creating a new library path from all desired libraries</span>
+      <span class="hljs-attr">postInstall</span> <span class="hljs-operator">=</span> previousAttrs.postInstall <span class="hljs-operator">+</span> <span class="hljs-string">&#x27;&#x27;
+        mv  &quot;$out/bin/python3.11&quot; &quot;$out/bin/unpatched_python3.11&quot;
+        cat &lt;&lt; EOF &gt;&gt; &quot;$out/bin/python3.11&quot;
+        #!/run/current-system/sw/bin/bash
+        export LD_LIBRARY_PATH=&quot;<span class="hljs-subst">${pythonldlibpath}</span>&quot;
+        exec &quot;$out/bin/unpatched_python3.11&quot; &quot;\$@&quot;
+        EOF
+        chmod +x &quot;$out/bin/python3.11&quot;
+      &#x27;&#x27;</span>;
+    }
+  ));
+  <span class="hljs-comment"># if you want poetry</span>
+  <span class="hljs-attr">patchedpoetry</span> <span class="hljs-operator">=</span>  ((pkgs.poetry.override { <span class="hljs-attr">python3</span> <span class="hljs-operator">=</span> patchedpython; }).overrideAttrs (
+    <span class="hljs-params">previousAttrs:</span> {
+      <span class="hljs-comment"># same as above, but for poetry</span>
+      <span class="hljs-comment"># not that if you dont keep the blank line bellow, it crashes :(</span>
+      <span class="hljs-attr">postInstall</span> <span class="hljs-operator">=</span> previousAttrs.postInstall <span class="hljs-operator">+</span> <span class="hljs-string">&#x27;&#x27;
+
+        mv &quot;$out/bin/poetry&quot; &quot;$out/bin/unpatched_poetry&quot;
+        cat &lt;&lt; EOF &gt;&gt; &quot;$out/bin/poetry&quot;
+        #!/run/current-system/sw/bin/bash
+        export LD_LIBRARY_PATH=&quot;<span class="hljs-subst">${pythonldlibpath}</span>&quot;
+        exec &quot;$out/bin/unpatched_poetry&quot; &quot;\$@&quot;
+        EOF
+        chmod +x &quot;$out/bin/poetry&quot;
+      &#x27;&#x27;</span>;
+    }
+  ));
+<span class="hljs-keyword">in</span>
+{
+  <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+    patchedpython
+    <span class="hljs-comment"># if you want poetry</span>
+    patchedpoetry
+  ];
+}</code></pre>
+      </div><p>This configuration set the <code>LD_LIBRARY_PATH</code> environment variable before running python using the <code>overrideAttrs</code><sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Python#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup> function to override the <code>postInstall</code> script of cpython <code>mkDerivation</code><sup><a id="footnote-ref-2" href="https://mirror.nixoscn.org/wiki/Python#footnote-2" data-footnote-ref aria-describedby="footnote-label">2</a></sup>.</p>
+<h4 id="prefix-library-paths-using-wrapprogram">Prefix library paths using wrapProgram</h4><p>wrapProgram is a part of the makeWrapper build input<sup><a id="footnote-ref-3" href="https://mirror.nixoscn.org/wiki/Python#footnote-3" data-footnote-ref aria-describedby="footnote-label">3</a></sup>. By combining it with the symlinkJoin, we can create a wrapper around the Python executable that will always set the required library paths. It’s worth noting that, for this solution to be compatible with Darwin, we need to use a different wrap prefix, as shown in the example below.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs"><span class="hljs-keyword">let</span>
+  <span class="hljs-comment"># We currently take all libraries from systemd and nix as the default</span>
+  <span class="hljs-comment"># https://github.com/NixOS/nixpkgs/blob/c339c066b893e5683830ba870b1ccd3bbea88ece/nixos/modules/programs/nix-ld.nix#L44</span>
+  <span class="hljs-attr">pythonldlibpath</span> <span class="hljs-operator">=</span> lib.makeLibraryPath (<span class="hljs-keyword">with</span> pkgs; [
+    zlib zstd stdenv.cc.cc curl openssl attr libssh bzip2 libxml2 acl libsodium util-linux xz systemd
+  ]);
+  <span class="hljs-comment"># Darwin requires a different library path prefix</span>
+  <span class="hljs-attr">wrapPrefix</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">if</span> (<span class="hljs-operator">!</span>pkgs.stdenv.isDarwin) <span class="hljs-keyword">then</span> <span class="hljs-string">&quot;LD_LIBRARY_PATH&quot;</span> <span class="hljs-keyword">else</span> <span class="hljs-string">&quot;DYLD_LIBRARY_PATH&quot;</span>;
+  <span class="hljs-attr">patchedpython</span> <span class="hljs-operator">=</span> (pkgs.symlinkJoin {
+    <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;python&quot;</span>;
+    <span class="hljs-attr">paths</span> <span class="hljs-operator">=</span> [ pkgs.python312 ];
+    <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> [ pkgs.makeWrapper ];
+    <span class="hljs-attr">postBuild</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+      wrapProgram &quot;$out/bin/python3.12&quot; --prefix <span class="hljs-subst">${wrapPrefix}</span> : &quot;<span class="hljs-subst">${pythonldlibpath}</span>&quot;
+    &#x27;&#x27;</span>;
+  });
+<span class="hljs-keyword">in</span>
+{
+  <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+    patchedpython
+  ];
+}</code></pre>
+      </div><h3 id="using-venv">Using <code>venv</code></h3><p>To create a Python virtual environment with <code>venv</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-shell -p python3 --<span class="hljs-built_in">command</span> <span class="hljs-string">&quot;python -m venv .venv --copies&quot;</span></span></code></pre>
+      </div><p>You can then activate and use the Python virtual environment as usual and install dependencies with <code>pip</code> and similar.</p>
+<h3 id="using-uv">Using uv</h3><blockquote>
+<p>A single tool to replace <code>pip</code>, <code>pip-tools</code>, <code>pipx</code>, <code>poetry</code>, <code>pyenv</code>, <code>virtualenv</code>, and more.</p>
+</blockquote>
+<p>uv is written in Rust and does <em>not</em> need Python as a prerequisite. Use the <code>uv</code> command to initialize Python projects, add Python packages, create or update virtual environments (in <code>.venv</code> folders), etc. as <a href="https://docs.astral.sh/uv/concepts/projects/">described in the uv docs</a>. Use uv&#39;s <a href="https://docs.astral.sh/uv/guides/tools/">tool interface</a> to install and run Python packages that provide a CLI.</p>
+<p>As a system package</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+    uv
+];</code></pre>
+      </div><p>or as a home-manager package</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">h<span class="hljs-attr">ome.packages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+    uv
+];</code></pre>
+      </div><p>If you use uv it&#39;s recommended that you install the Python versions you need using the <code>uv python install</code> command, e.g.</p>
+<div class="code-container">
+        
+        <pre><code class="language-python hljs">uv python install <span class="hljs-number">3.14</span> --preview --default</code></pre>
+      </div><p>You may want to set the <code>UV_PYTHON_DOWNLOADS=never</code> environment variable in your shell to stop uv from downloading Python binaries automatically if needed. Setting <code>environment.localBinInPath = true;</code> is highly recommended, because uv will install binaries in <code>~/.local/bin</code>.</p>
+<h3 id="using-poetry">Using poetry</h3><div class="code-container">
+        
+        <pre><code class="language-nix hljs">
+<span class="hljs-comment"># shell.nix</span>
+<span class="hljs-keyword">let</span>
+  <span class="hljs-attr">pkgs</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> {};
+<span class="hljs-keyword">in</span> pkgs.mkShell {
+  <span class="hljs-attr">packages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+    python310
+    (poetry.override { <span class="hljs-attr">python3</span> <span class="hljs-operator">=</span> python310; })
+  ];
+}</code></pre>
+      </div><h4 id="poetry2nix">poetry2nix</h4><p><a href="https://github.com/nix-community/poetry2nix">poetry2nix</a> uses the contents of a <code>poetry.lock</code> and <code>pyproject.toml</code> file to create Nix derivations. It has several functions for generating development environments and python projects. Because some older python projects rely on deprecated build systems (see <a href="https://github.com/nix-community/poetry2nix/blob/master/docs/edgecases.md">edgecase.md</a> for more info), poetry2nix provides overrides so these packages can still be built.</p>
+<h3 id="using-micromamba">Using micromamba</h3><p>Install the <code>micromamba</code> package to create environments and install packages as <a href="https://github.com/mamba-org/mamba#micromamba">documented by micromamba</a>.</p>
+<p>To activate an environment you will need a <a href="https://nixos.org/manual/nixpkgs/stable/#sec-fhs-environments">FHS environment</a> e.g.:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-shell -E <span class="hljs-string">&#x27;with import &lt;nixpkgs&gt; {}; (pkgs.buildFHSEnv { name = &quot;fhs&quot;; }).env&#x27;</span></span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">eval</span> <span class="hljs-string">&quot;<span class="hljs-subst">$(micromamba shell hook -s bash)</span>&quot;</span></span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">micromamba activate my-environment</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">python</span>
+<span class="hljs-meta prompt_">&gt;</span><span class="language-bash">&gt;&gt; import numpy as np</span></code></pre>
+      </div><p>Eventually you&#39;ll probably want to put this in a shell.nix so you won&#39;t have to type all that stuff every time e.g.:</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs">{ pkgs ? import &lt;nixpkgs&gt; {}}:
+let
+  fhs = pkgs.buildFHSEnv {
+    name = &quot;my-fhs-environment&quot;;
+
+    targetPkgs = _: [
+      pkgs.micromamba
+    ];
+
+    profile = &#x27;&#x27;
+      set -e
+      eval &quot;$(micromamba shell hook --shell=posix)&quot;
+      export MAMBA_ROOT_PREFIX=${builtins.getEnv &quot;PWD&quot;}/.mamba
+      if ! test -d $MAMBA_ROOT_PREFIX/envs/my-mamba-environment; then
+          micromamba create --yes -q -n my-mamba-environment
+      fi
+      micromamba activate my-mamba-environment
+      micromamba install --yes -f conda-requirements.txt -c conda-forge
+      set +e
+    &#x27;&#x27;;
+  };
+in fhs.env</code></pre>
+      </div><h3 id="using-conda">Using conda</h3><p>Install the package <code>conda</code> and run</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">conda-shell</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">conda-install</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">conda <span class="hljs-built_in">env</span> update --file environment.yml</span></code></pre>
+      </div><h4 id="imperative-use">Imperative use</h4><p>It is also possible to use <code>conda-install</code> directly. On first use, run:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">conda-shell</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">conda-install</span></code></pre>
+      </div><p>to set up conda in <code>~/.conda</code></p>
+<h3 id="using-pixi">Using pixi</h3><p>Install the <code>pixi</code> package to create environments and install packages as <a href="https://pixi.sh/latest/">documented by pixi</a>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">pixi init</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">pixi add python</span></code></pre>
+      </div><p>To activate an environment you will need a <a href="https://nixos.org/manual/nixpkgs/stable/#sec-fhs-environments">FHS environment</a> e.g. a <a href="https://github.com/NixOS/nixpkgs/issues/316443#issuecomment-2151963505">flake.nix</a> <sup><a id="footnote-ref-4" href="https://mirror.nixoscn.org/wiki/Python#footnote-4" data-footnote-ref aria-describedby="footnote-label">4</a></sup></p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs">{
+  <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;pixi env&quot;</span>;
+  <span class="hljs-attr">inputs</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">flake-utils.url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:numtide/flake-utils&quot;</span>;
+  };
+  <span class="hljs-attr">outputs</span> <span class="hljs-operator">=</span>
+    { flake-utils, nixpkgs, ... }:
+    flake-utils.lib.eachDefaultSystem (
+      <span class="hljs-params">system:</span>
+      <span class="hljs-keyword">let</span>
+        <span class="hljs-attr">pkgs</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> nixpkgs { <span class="hljs-keyword">inherit</span> system; };
+        <span class="hljs-attr">fhs</span> <span class="hljs-operator">=</span> pkgs.buildFHSEnv {
+          <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;pixi-env&quot;</span>;
+
+          <span class="hljs-attr">targetPkgs</span> <span class="hljs-operator">=</span> <span class="hljs-params">_:</span> [ pkgs.pixi ];
+        };
+      <span class="hljs-keyword">in</span>
+      {
+        <span class="hljs-attr">devShell</span> <span class="hljs-operator">=</span> fhs.env;
+      }
+    );
+}</code></pre>
+      </div><p>Then using <a href="https://wiki.nixos.org/wiki/Development_environment_with_nix-shell#nix_develop"><code>nix develop</code></a> the environment can be activated:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix develop</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">pixi s</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">python</span>
+<span class="hljs-meta prompt_">&gt;</span><span class="language-bash">&gt;&gt; import numpy as np</span></code></pre>
+      </div><h4 id="using-home-manager">Using Home Manager</h4><p>Alternatively an <a href="https://nixos.org/manual/nixpkgs/stable/#sec-fhs-environments">FHS environment</a> can wrap pixi using <a href="https://mirror.nixoscn.org/wiki/Python/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> e.g<sup><a id="footnote-ref-5" href="https://mirror.nixoscn.org/wiki/Python#footnote-5" data-footnote-ref aria-describedby="footnote-label">5</a></sup></p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs">{ lib, pkgs, ... }:
+{
+  <span class="hljs-attr">home.packages</span> <span class="hljs-operator">=</span> [
+    (pkgs.buildFHSEnv {
+      <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;pixi&quot;</span>;
+      <span class="hljs-attr">runScript</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;pixi&quot;</span>;
+      <span class="hljs-attr">targetPkgs</span> <span class="hljs-operator">=</span> <span class="hljs-params">pkgs:</span> <span class="hljs-keyword">with</span> pkgs; [ pixi ];
+    })
+  ];
+}</code></pre>
+      </div><p>Then the environment can be activated:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">pixi s</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">python</span>
+<span class="hljs-meta prompt_">&gt;</span><span class="language-bash">&gt;&gt; import numpy as np</span></code></pre>
+      </div><h2 id="package-a-python-application">Package a Python application</h2><h3 id="with-setup-py">With <code>setup.py</code></h3><p>To package a Python application that uses <code>setup.py</code> you can use <code>buildPythonApplication</code>. More details about this and similar functions can be found in <a href="https://nixos.org/manual/nixpkgs/stable/#building-packages-and-applications">the nixpkgs manual</a>.</p>
+<p>For example, we can package this simple flask server <code>main.py:</code></p>
+<div class="code-container">
+        
+        <pre><code class="language-python hljs"><span class="hljs-comment">#!/usr/bin/env python</span>
+
+<span class="hljs-keyword">from</span> flask <span class="hljs-keyword">import</span> Flask
+
+app = Flask(__name__)
+
+<span class="hljs-meta">@app.route(<span class="hljs-params"><span class="hljs-string">&#x27;/&#x27;</span></span>)</span>
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">hello_world</span>():
+    <span class="hljs-keyword">return</span> <span class="hljs-string">&#x27;Hello, World!&#x27;</span>
+
+<span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&#x27;__main__&#x27;</span>:
+    app.run(host=<span class="hljs-string">&quot;0.0.0.0&quot;</span>, port=<span class="hljs-number">8080</span>)</code></pre>
+      </div><p>We also need a <code>setup.py</code> file, like this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-python hljs"><span class="hljs-keyword">from</span> setuptools <span class="hljs-keyword">import</span> setup, find_packages
+
+setup(name=<span class="hljs-string">&#x27;myFlaskServer&#x27;</span>,
+      version=<span class="hljs-string">&#x27;1.0&#x27;</span>,
+      <span class="hljs-comment"># Modules to import from other scripts:</span>
+      packages=find_packages(),
+      <span class="hljs-comment"># Executables</span>
+      scripts=[<span class="hljs-string">&quot;main.py&quot;</span>],
+     )</code></pre>
+      </div><p>Then, we use the <code>buildPythonApplication</code> in the <code>default.nix</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs <span class="hljs-operator">?</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> {} }:
+
+pkgs.python3Packages.buildPythonApplication {
+  <span class="hljs-attr">pname</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;myFlaskApp&quot;</span>;
+  <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;0.1.0&quot;</span>;
+
+  <span class="hljs-attr">propagatedBuildInputs</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs.python3Packages; [
+    flask
+  ];
+
+  <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> <span class="hljs-symbol">./.</span>;
+}</code></pre>
+      </div><p>Finally, build your project using <code>nix-build</code>. The result will be executable in <code>./result/bin/app.py</code>.</p>
+<h3 id="with-pyproject-toml">With <code>pyproject.toml</code></h3><p>When your project is using <code>pyproject.toml</code>you can use <a href="https://github.com/nix-community/pyproject.nix">pyproject.nix</a> to package your application.</p>
+<p>First, a simple file structure could look like this:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">├── app/
+    └── main.py
+├── flake.nix
+├── pyproject.toml
+└── README.md</code></pre>
+      </div><p>To reuse the example from above, we use the same flask application:</p>
+<div class="code-container">
+        
+        <pre><code class="language-python hljs"><span class="hljs-keyword">from</span> flask <span class="hljs-keyword">import</span> Flask
+
+app = Flask(__name__)
+
+<span class="hljs-meta">@app.route(<span class="hljs-params"><span class="hljs-string">&#x27;/&#x27;</span></span>)</span>
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">hello_world</span>():
+    <span class="hljs-keyword">return</span> <span class="hljs-string">&#x27;Hello, World!&#x27;</span>
+
+<span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&#x27;__main__&#x27;</span>:
+    app.run(host=<span class="hljs-string">&quot;0.0.0.0&quot;</span>, port=<span class="hljs-number">8080</span>)</code></pre>
+      </div><p>Also, you need to define the <code>pyproject.toml</code>. Here, we only show some of the important parts. Please refer to <code>pyproject.nix</code> <a href="https://pyproject-nix.github.io/pyproject.nix/use-cases/pyproject.html">documentation</a> for a full example.</p>
+<div class="code-container">
+        
+        <pre><code class="language-toml hljs"><span class="hljs-section">[project]</span>
+<span class="hljs-attr">name</span> = <span class="hljs-string">&quot;my-app&quot;</span>
+<span class="hljs-attr">version</span> = <span class="hljs-string">&quot;0.1.0&quot;</span>
+<span class="hljs-attr">description</span> = <span class="hljs-string">&quot;Simple app&quot;</span>
+
+<span class="hljs-comment"># define any Python dependencies</span>
+<span class="hljs-attr">dependencies</span> = [
+  <span class="hljs-string">&quot;flask&gt;3&quot;</span>,
+]
+
+<span class="hljs-comment"># define the CLI executable</span>
+<span class="hljs-comment"># Here, we define the entry point to be the &#x27;main()&#x27; function in the module &#x27;app/main.py&#x27;</span>
+<span class="hljs-section">[project.scripts]</span>
+<span class="hljs-attr">cli</span> = <span class="hljs-string">&quot;app.main:main&quot;</span></code></pre>
+      </div><p>We package the application by calling the <code>loadPyproject</code> function from <code>pyproject.nix</code>. Again, we only show a minimal example. More information can be found in the <a href="https://pyproject-nix.github.io/pyproject.nix/use-cases/pyproject.html">documentation</a>. Note that this example relies on flakes in contrast to some of the others on this page.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;A basic flake using pyproject.toml project metadata&quot;</span>;
+
+  <span class="hljs-attr">inputs</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">pyproject-nix</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:nix-community/pyproject.nix&quot;</span>;
+      <span class="hljs-attr">inputs.nixpkgs.follows</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nixpkgs&quot;</span>;
+    };
+  };
+
+  <span class="hljs-attr">outputs</span> <span class="hljs-operator">=</span> { nixpkgs, pyproject-nix, ... }:
+    <span class="hljs-keyword">let</span>
+      <span class="hljs-keyword">inherit</span> (nixpkgs) lib;
+
+      <span class="hljs-attr">project</span> <span class="hljs-operator">=</span> pyproject-nix.lib.project.loadPyproject {
+        <span class="hljs-comment"># Read &amp; unmarshal pyproject.toml relative to this project root.</span>
+        <span class="hljs-comment"># projectRoot is also used to set `src` for renderers such as buildPythonPackage.</span>
+        <span class="hljs-attr">projectRoot</span> <span class="hljs-operator">=</span> <span class="hljs-symbol">./.</span>;
+      };
+
+      <span class="hljs-comment"># This example is only using x86_64-linux</span>
+      <span class="hljs-attr">pkgs</span> <span class="hljs-operator">=</span> nixpkgs.legacyPackages.x86_64-linux;
+
+      <span class="hljs-attr">python</span> <span class="hljs-operator">=</span> pkgs.python3;
+
+    <span class="hljs-keyword">in</span>
+    {
+      <span class="hljs-comment"># Build our package using `buildPythonPackage</span>
+      <span class="hljs-attr">packages.x86_64-linux.default</span> <span class="hljs-operator">=</span>
+        <span class="hljs-keyword">let</span>
+          <span class="hljs-comment"># Returns an attribute set that can be passed to `buildPythonPackage`.</span>
+          <span class="hljs-attr">attrs</span> <span class="hljs-operator">=</span> project.renderers.buildPythonPackage { <span class="hljs-keyword">inherit</span> python; };
+        <span class="hljs-keyword">in</span>
+        <span class="hljs-comment"># Pass attributes to buildPythonPackage.</span>
+        <span class="hljs-comment"># Here is a good spot to add on any missing or custom attributes.</span>
+        python.pkgs.buildPythonPackage (attrs <span class="hljs-operator">//</span> {
+          <span class="hljs-attr">env.CUSTOM_ENVVAR</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;hello&quot;</span>;
+        });
+    };
+}</code></pre>
+      </div><p>To run the application, call <code>nix run</code>.</p>
+<p>You can also launch an IDE under <code>nix develop</code> and get full dependency resolution. For example, the following command opens VS Code in the constructed environment:</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell-session hljs">$ nix develop --command code</code></pre>
+      </div><h2 id="nixpkgs-python-contribution-guidelines">Nixpkgs Python contribution guidelines</h2><h3 id="libraries">Libraries</h3><p>According to the <a href="https://nixos.org/nixpkgs/manual/#contributing-guidelines">official guidelines</a> for Python, new package expressions for libraries should be placed in</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">pkgs/development/python-modules/&lt;name&gt;/default.nix</code></pre>
+      </div><p>.</p>
+<p>Those expressions are then referenced from <code>pkgs/top-level/python-packages.nix</code> as in</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">aenum</span> <span class="hljs-operator">=</span> callPackage <span class="hljs-symbol">../development/python-modules/aenum</span> { };</code></pre>
+      </div><h3 id="applications">Applications</h3><p>Applications meant to be executed should be referenced directly from <code>pkgs/top-level/all-packages.nix</code>.</p>
+<p>Other Python packages used in the Python package of the application should be taken from the <code>callPackage</code> argument <code>pythonPackages</code> , which guarantees that they belong to the same &quot;pythonPackage&quot; set. For example:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  lib,
+  pythonPackages,
+}:
+buildPythonApplication {
+  <span class="hljs-attr">propagatedBuildInputs</span> <span class="hljs-operator">=</span> [ pythonPackages.numpy ];
+  <span class="hljs-comment"># ...</span>
+}</code></pre>
+      </div><h2 id="special-modules">Special Modules</h2><h3 id="gnome">GNOME</h3><p><code>gobject-introspection</code> based python modules need some environment variables to work correctly. For standalone applications, <code>wrapGAppsHook</code> (see the <a href="https://nixos.org/nixpkgs/manual/#sec-language-gnome">relevant documentation</a>) wraps the executable with the necessary variables. But this is not fit for development. In this case use a <code>nix-shell</code> with <code>gobject-introspection</code> and all the libraries you are using (gtk and so on) as <code>buildInputs</code>. For example:</p>
+<p>Or, if you want to use matplotlib interactively:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-shell -p gobject-introspection gtk3 <span class="hljs-string">&#x27;python36.withPackages(ps : with ps; [ matplotlib pygobject3 ipython ])&#x27;</span></span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">ipython</span></code></pre>
+      </div><div class="code-container">
+        
+        <pre><code class="language-python hljs">In [<span class="hljs-number">1</span>]: <span class="hljs-keyword">import</span> matplotlib
+In [<span class="hljs-number">2</span>]: matplotlib.use(<span class="hljs-string">&#x27;gtk3agg&#x27;</span>)
+In [<span class="hljs-number">3</span>]: <span class="hljs-keyword">import</span> matplotlib.pyplot <span class="hljs-keyword">as</span> plt
+In [<span class="hljs-number">4</span>]: plt.ion()
+In [<span class="hljs-number">5</span>]: plt.plot([<span class="hljs-number">1</span>,<span class="hljs-number">3</span>,<span class="hljs-number">2</span>,<span class="hljs-number">4</span>])</code></pre>
+      </div><p>You can also set <code>backend : GTK3Agg</code> in your <code>~/.config/matplotlib/matplotlibrc</code> file to avoid having to call <code>matplotlib.use(&#39;gtk3agg&#39;)</code>.</p>
+<h2 id="debug-build">Debug Build</h2><p>See <a href="https://docs.python.org/3/using/configure.html#python-debug-build">python wiki on debug build</a>.</p>
+<p>In order to use a CPython interpreter built using <code>--with-pydebug</code> during configure phase, override any of the python packages passing <code>enableDebug = true</code> argument:</p>
+<p><code>pythonDebug = pkgs.python310.override { enableDebug = true; };</code></p>
+<h2 id="installing-multiple-versions">Installing Multiple Versions</h2><p>can be used to install multiple versions without conflicts ():</p>
+<p>In this case you may run Python 3.13 via or and Python 3.14 via .</p>
+<h2 id="performance">Performance</h2><p>The derivation of CPython that is available via <code>nixpkgs</code> only contains optimizations that do not harm reproducibility. Link-Time-Optimization (LTO) is only enabled on 64-bit Linux systems, while Profile Guided Optimization (PGO) is currently disabled. See <a href="https://docs.python.org/3/using/configure.html#performance-options">Configuring Python 3.1.3. Performance options</a> Additionally, when compiling something within <code>nix-shell</code> or a derivation security hardening flags are passed to the compiler by default which may have a small performance impact.</p>
+<p>At the time of writing certain optimizations cause Python wheels to be non-reproducible and increase install times. For a detailed overview of the trials and tribulations of discovering such performance regressions see <a href="https://discourse.nixos.org/t/why-is-the-nix-compiled-python-slower/18717">Why is the nix-compiled Python slower?</a>.</p>
+<h3 id="regression">Regression</h3><p>With the <code>nixpkgs</code> version of Python you can expect anywhere from a 30-40% regression on synthetic benchmarks. For example:</p>
+<div class="code-container">
+        
+        <pre><code class="language-python hljs"><span class="hljs-comment">## Ubuntu&#x27;s Python 3.8</span>
+username:<span class="hljs-built_in">dir</span>$ python3<span class="hljs-number">.8</span> -c <span class="hljs-string">&quot;import timeit; print(timeit.Timer(&#x27;for i in range(100): oct(i)&#x27;, &#x27;gc.enable()&#x27;).repeat(5))&quot;</span>
+[<span class="hljs-number">7.831622750498354</span>, <span class="hljs-number">7.82998560462147</span>, <span class="hljs-number">7.830805554986</span>, <span class="hljs-number">7.823807033710182</span>, <span class="hljs-number">7.84282516874373</span>]
+
+<span class="hljs-comment">## nix-shell&#x27;s Python 3.8</span>
+[nix-shell:~/src]$ python3<span class="hljs-number">.8</span> -c <span class="hljs-string">&quot;import timeit; print(timeit.Timer(&#x27;for i in range(100): oct(i)&#x27;, &#x27;gc.enable()&#x27;).repeat(5))&quot;</span>
+[<span class="hljs-number">10.431915327906609</span>, <span class="hljs-number">10.435049421153963</span>, <span class="hljs-number">10.449542525224388</span>, <span class="hljs-number">10.440207410603762</span>, <span class="hljs-number">10.431304694153368</span>]</code></pre>
+      </div><p>However, synthetic benchmarks are not necessarily reflective of real-world performance. In common real-world situations, the performance difference between optimized and non-optimized interpreters is minimal. For example, using <code>pylint</code> with a significant number of custom linters to scan a very large Python codebase (&gt;6000 files) resulted in only a 5.5% difference. Other workflows that were not performance sensitive saw no impact to their run times.</p>
+<h3 id="possible-optimizations">Possible Optimizations</h3><p>If you run code that heavily depends on Python performance, and you desire the most performant Python interpreter possible, here are some possible things you can do:</p>
+<ul>
+<li><strong>Enable the <code>enableOptimizations</code> flag for your Python derivation</strong>. See <a href="https://discourse.nixos.org/t/why-is-the-nix-compiled-python-slower/18717/10">Example</a>. Do note that this will cause you to compile Python the first time that you run it which will take a few minutes.</li>
+<li><strong>Switch to a newer version of Python</strong>. In the example above, going from 3.8 to 3.10 yielded an average 7.5% performance improvement, but this is only a single benchmark. Switching versions most likely won&#39;t make all your code 7.5% faster.</li>
+<li><strong>Disable hardening</strong>. Beware this only yields a small performance boost and it has impacts beyond Python code. See <a href="https://nixos.org/manual/nixpkgs/stable/#sec-hardening-in-nixpkgs">Hardening in Nixpkgs</a>.</li>
+</ul>
+<p><strong>Ultimately, it is up to your use case to determine if you need an optimized version of the Python interpreter. We encourage you to benchmark and test your code to determine if this is something that would benefit you.</strong></p>
+<h2 id="troubleshooting">Troubleshooting</h2><h3 id="my-module-cannot-be-imported">My module cannot be imported</h3><p>If you are unable to do `import yourmodule` there are a number of reasons that could explain that.</p>
+<p>First, make sure that you installed/added your module to python. Typically you would use something like <code>(python3.withPackages (ps: with ps; [ yourmodule ]))</code> in the list of installed applications.</p>
+<p>It is also still possible (e.g. when using nix-shell) that you aren&#39;t using the python interpreter you want because another package provides its own <code>python3.withPackages</code> in buildInputs, for example, yosys. In this case, you should either include that package (or all needed packages) in your withPackages list to only have a single Python interpreter. Or you can change the order of your packages, such that the <code>python3.withPackages</code> comes first, and becomes the Python interpreter that you get.</p>
+<p>If you packaged yourself your application, make sure to use <code>buildPythonPackage</code> and **not** <code>buildPythonApplication</code> or <code>stdenv.mkDerivation</code>. The reason is that <code>python3.withPackages</code> <a href="https://github.com/NixOS/nixpkgs/blob/91d1eb9f2a9c4e3c9d68a59f6c0cada8c63d5340/pkgs/top-level/python-packages.nix#L57">filters</a> the packages to check that they are built using the appropriate python interpreter: this is done by verifying that the derivation has a <code>pythonModule</code> attribute and only buildPythonPackage <a href="https://github.com/NixOS/nixpkgs/blob/91d1eb9f2a9c4e3c9d68a59f6c0cada8c63d5340/pkgs/top-level/python-packages.nix#L43">sets this value</a> (passthru <a href="https://github.com/NixOS/nixpkgs/blob/91d1eb9f2a9c4e3c9d68a59f6c0cada8c63d5340/pkgs/top-level/python-packages.nix#L75">here</a>) thanks to, notably <code>passthru = { pythonModule = python; }</code>. If you used <code>stdenv.mkDerivation</code> then you can maybe set this value manually, but it&#39;s safer to simply use <code>buildPythonPackage {format = &quot;other&quot;; … your derivation …}</code> instead of <code>mkDerivation</code>.</p>
+<h2 id="see-also">See also</h2><ul>
+<li><a href="https://nixos.org/manual/nixpkgs/unstable/#python">&quot;Python&quot; in Nixpkgs Manual</a></li>
+</ul>
+<p><a href="category:Languages" class="wikilink" title="Category:Languages">Category:Languages</a> <a href="category:Python" class="wikilink" title="Category:Python">Category:Python</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p><a href="https://nixos.org/manual/nixpkgs/stable/#sec-pkg-overrideAttrs">https://nixos.org/manual/nixpkgs/stable/#sec-pkg-overrideAttrs</a> <a href="https://mirror.nixoscn.org/wiki/Python#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+<li id="footnote-2">
+<p><a href="https://github.com/NixOS/nixpkgs/blob/24.05/pkgs/development/interpreters/python/cpython/default.nix">https://github.com/NixOS/nixpkgs/blob/24.05/pkgs/development/interpreters/python/cpython/default.nix</a> <a href="https://mirror.nixoscn.org/wiki/Python#footnote-ref-2" data-footnote-backref aria-label="Back to reference 2">↩</a></p>
+</li>
+<li id="footnote-3">
+<p><a href="https://github.com/NixOS/nixpkgs/blob/master/pkgs/build-support/setup-hooks/make-wrapper.sh">https://github.com/NixOS/nixpkgs/blob/master/pkgs/build-support/setup-hooks/make-wrapper.sh</a> <a href="https://mirror.nixoscn.org/wiki/Python#footnote-ref-3" data-footnote-backref aria-label="Back to reference 3">↩</a></p>
+</li>
+<li id="footnote-4">
+<p>Suggested flake.nix by <a href="https://github.com/jonas-w">@jonas-w</a> in response to <strong><a href="https://github.com/NixOS/nixpkgs/issues/316443">#316443 <bdi>Unable to add / run packages with pixi</bdi></a></strong> <a href="https://mirror.nixoscn.org/wiki/Python#footnote-ref-4" data-footnote-backref aria-label="Back to reference 4">↩</a></p>
+</li>
+<li id="footnote-5">
+<p>Suggested home manager config by <a href="https://github.com/jennydaman">@jennydaman</a> in response to <strong><a href="https://github.com/NixOS/nixpkgs/issues/316443">#316443 <bdi>Unable to add / run packages with pixi</bdi></a></strong> <a href="https://mirror.nixoscn.org/wiki/Python#footnote-ref-5" data-footnote-backref aria-label="Back to reference 5">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

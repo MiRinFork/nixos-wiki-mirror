@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Scanners</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Scanners</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Scanners -->
+
+<h2 id="installing-scanner-support">Installing scanner support</h2><p>Scanner support is provided by the <a href="http://www.sane-project.org/">SANE</a> library. To enable scanner support, amend your system configuration like so: Users in the <code>scanner</code> group will gain access to the scanner, or the <code>lp</code> group if it’s also a printer. To add yourself to these groups, amend your system configuration as follows:</p>
+<h2 id="testing-scanner-support">Testing scanner support</h2><p>To determine if your scanner is supported by SANE:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">scanimage -L</span></code></pre>
+      </div><p>If you can only see scanners when running as root, try adding the user to the <code>scanner</code> or <code>lp</code> groups, either using the method given above, or as follows (beware, don&#39;t forget to logout/login after running this command):</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">sudo</span> usermod -a -G scanner,lp username</span></code></pre>
+      </div><h2 id="supported-backends">Supported backends</h2><p>See the <a href="http://www.sane-project.org/sane-supported-devices.html">Supported Devices</a> page to check if your scanner is supported. Some backends are proprietary and are not installed by default; see below. You may also be interested in &quot;driverless&quot; scanning (see below) if your scanner supports Apple AirScan and/or Microsoft WSD.</p>
+<h3 id="driverless-apple-airscan-and-microsoft-wsd">Driverless Apple AirScan and Microsoft WSD</h3><p>A large number of printers now support &quot;driverless&quot; scanning. As explained <a href="https://github.com/alexpevzner/sane-airscan">at the sane-airscan backend project</a>:</p>
+<blockquote>
+<p>Driverless scanning comes in two flavors:</p>
+<ul>
+<li>Apple AirScan or AirPrint scanning (official protocol name is eSCL)</li>
+<li>Microsoft WSD, or WS-Scan (Web Services for Devices)</li>
+</ul>
+<p>This backend implements both protocols, choosing automatically between them. It was successfully tested with many devices from Brother, Canon, Dell, Kyocera, Lexmark, Epson, HP, Panasonic, Ricoh, Samsung and Xerox, both in WSD and eSCL modes.</p>
+<p>For eSCL devices, Apple maintains a <a href="https://support.apple.com/en-us/HT201311">comprehensive list of compatible devices</a>. This list has scanners, multifunction devices and pure printers.</p>
+</blockquote>
+<p>eSCL/Apple Airscan scanners should be found natively by the default escl backend. However, the <code>sane-airscan</code> third party backend is more actively maintained and you may have better luck using it:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">h<span class="hljs-attr">ardware.sane.extraBackends</span> <span class="hljs-operator">=</span> [ pkgs.sane-airscan ];
+<span class="hljs-attr">services.udev.packages</span> <span class="hljs-operator">=</span> [ pkgs.sane-airscan ];</code></pre>
+      </div><p>It can be that your scanner is found twice (once by <code>escl</code> and once by <code>airscan</code>, in this case disable <code>escl</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">h<span class="hljs-attr">ardware.sane.disabledDefaultBackends</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;escl&quot;</span> ];</code></pre>
+      </div><p>To detect Microsoft WSD &quot;driverless&quot; scanning, also use the <code>sane-airscan</code> backend.</p>
+<p>If the scanner is connected by USB, also set the following option:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.ipp-usb.enable</span><span class="hljs-operator">=</span><span class="hljs-literal">true</span>;</code></pre>
+      </div><h3 id="hp">HP</h3><div class="code-container">
+        
+        <pre><code class="language-nix hljs">h<span class="hljs-attr">ardware.sane.extraBackends</span> <span class="hljs-operator">=</span> [ pkgs.hplipWithPlugin ];</code></pre>
+      </div><h3 id="epson">Epson</h3><p>If your scanner is listed as supported by the <code>epkowa</code> backend and is connected by USB or SCSI:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">h<span class="hljs-attr">ardware.sane.extraBackends</span> <span class="hljs-operator">=</span> [ pkgs.epkowa ];</code></pre>
+      </div><p>If your scanner is listed as supported by the <code>epkowa</code> backend and is on the network, substitute the host name or IP address in:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">h<span class="hljs-attr">ardware.sane.extraBackends</span> <span class="hljs-operator">=</span> [
+  (pkgs.epkowa.overrideAttrs (<span class="hljs-params">oldAttrs:</span> {
+    <span class="hljs-attr">postInstall</span> <span class="hljs-operator">=</span> oldAttrs.postInstall <span class="hljs-operator">+</span> <span class="hljs-string">&#x27;&#x27;
+      echo &quot;net epson10a2e0.local&quot; &gt;&gt; $out/etc/sane.d/epkowa.conf
+    &#x27;&#x27;</span>;
+  }))
+];</code></pre>
+      </div><p>Some other scanners (see <a href="https://gitlab.com/utsushi/utsushi/blob/master/README">list</a>) need the <code>utsushi</code> backend:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">h<span class="hljs-attr">ardware.sane.extraBackends</span> <span class="hljs-operator">=</span> [ pkgs.utsushi ];
+<span class="hljs-attr">services.udev.packages</span> <span class="hljs-operator">=</span> [ pkgs.utsushi ];</code></pre>
+      </div><h3 id="snapscan-firmware">SnapScan firmware</h3><p>Many scanners require firmware blobs which can be downloaded from the website of the scanner or extracted from the drivers they provide. Once you have the appropriate firmware you need to tell SANE where to find it in your configuration.nix:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">hardware.sane.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">hardware.sane.drivers.scanSnap.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-comment"># the below may be necessary</span>
+  <span class="hljs-attr">nixpkgs.config.sane.snapscanFirmware</span> <span class="hljs-operator">=</span> pkgs.fetchurl {
+    <span class="hljs-comment"># https://wiki.ubuntuusers.de/Scanner/Epson_Perfection/#Unterstuetzte-Geraete</span>
+    <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://media-cdn.ubuntu-de.org/wiki/attachments/52/46/Esfw41.bin&quot;</span>; <span class="hljs-comment">#Epson Perfection 2480</span>
+    <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;00cv25v4xlrgp3di9bdfd07pffh9jq2j0hncmjv3c65m8bqhjglq&quot;</span>;
+  };
+}</code></pre>
+      </div><h3 id="brother">Brother</h3><p>Brother currently provides four different scanner backends for various generations of its scanners. The newest (brscan4) is supported as a loadable submodule in NixOS. It can be activated by importing the appropriate file into <code>/etc/nixos/configuration.nix</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  ...
+  <span class="hljs-attr">imports</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-operator">&lt;</span>nixpkgs<span class="hljs-operator">/</span>nixos<span class="hljs-operator">/</span>modules<span class="hljs-operator">/</span>services<span class="hljs-operator">/</span>hardware<span class="hljs-operator">/</span>sane_extra_backends<span class="hljs-operator">/</span>brscan4.nix<span class="hljs-operator">&gt;</span>
+    <span class="hljs-symbol">./hardware-configuration.nix</span>
+  ];
+  ...
+}</code></pre>
+      </div><p>Then just add a scanner in the sane module:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  ...
+  <span class="hljs-attr">hardware</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">sane</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">brscan4</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+        <span class="hljs-attr">netDevices</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">home</span> <span class="hljs-operator">=</span> { <span class="hljs-attr">model</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;MFC-L2700DN&quot;</span>; <span class="hljs-attr">ip</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;192.168.178.23&quot;</span>; };
+        };
+      };
+    };
+  };
+  ...
+}</code></pre>
+      </div><p>In some cases, configuration changes may not take effect until after a reboot.</p>
+<h2 id="gimp-support">GIMP support</h2><p>To enable support for scanning in GIMP:</p>
+<ol>
+<li>Enable GIMP support in xsane by editing <code>/etc/nixos/configuration.nix.</code> Remove <code>pkgs.xsane</code> from your package list, and use the following instead:<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-comment">#...</span>
+  <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> [
+    (pkgs.xsane.override { <span class="hljs-attr">gimpSupport</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; })
+  ];
+  <span class="hljs-comment">#...</span>
+}</code></pre>
+      </div></li>
+<li>Rebuild:<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">sudo</span> nixos-rebuild switch</span></code></pre>
+      </div></li>
+<li>Finally, you will need to manually create a symlink:<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">ln</span> -s /run/current-system/sw/bin/xsane ~/.config/GIMP/2.10/plug-ins/xsane</span></code></pre>
+      </div></li>
+</ol>
+<h2 id="network-scanning">Network scanning</h2><p>If NixOS cannot find a scanner located on your network, you may be interested in adding in your <code>configuration.nix</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  ...
+  <span class="hljs-attr">services.avahi.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">services.avahi.nssmdns</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  ...
+}</code></pre>
+      </div><p>Currently (2017-08-16) the SANE backend does not support overriding according to . The workaround for this is to download <a href="https://raw.githubusercontent.com/michalrus/dotfiles/d943be3089aa436e07cea5f22d829402936a9229/.nixos-config.symlink/modules/sane-extra-config.nix">michaelrus&#39;s sane-extra-config.nix</a>, copy it to <code>/etc/nixos/sane-extra-config.nix</code> and import it in <code>/etc/nixos/configuration.nix</code> as follows:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  ...
+  <span class="hljs-attr">imports</span> <span class="hljs-operator">=</span> [
+    ...
+    <span class="hljs-symbol">./sane-extra-config.nix</span>
+    ...
+  ];
+ ...
+ hardware.sane.extraConfig.<span class="hljs-string">&quot;magicolor&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+   net 10.0.0.30 0x2098
+ &#x27;&#x27;</span>; <span class="hljs-comment"># Magicolor 1690mf</span>
+ ...
+}</code></pre>
+      </div><h2 id="using-the-scanner-button">Using the scanner button</h2><p>Many scanners feature a hardware button which makes for very convenient operation, especially in combination with an automated document processing system like <code>paperless</code>. NixOS includes the scanner button daemon <code>scanbd</code> which can be used for this purpose; however, its setup isn&#39;t terribly user friendly.</p>
+<p>Basic <code>scanbd</code> configuration requires us to provide:</p>
+<ol>
+<li>a config file;</li>
+<li>a script to execute the scanning sequence;</li>
+<li>a systemd service that loads the config file, starts polling the scanner, and executes the script when it detects a button press.</li>
+</ol>
+<p>There is a more advanced configuration which allows sharing the scanner with SANE frontends, but I haven&#39;t yet figured out how to set this up under NixOS (the config is a bit recursive).</p>
+<p>Full documentation is in <a href="https://sourceforge.net/p/scanbd/code/HEAD/tree/releases/1.5.1/doc/README.txt">the project README</a>.</p>
+<p><a href="https://kliu.io/post/automatic-scanning-with-scansnap-s500m/">kliu&#39;s blog</a> includes in his writeup a nice script, bits of which have been cribbed here.</p>
+<p>Here is a working derivation that dumps the scanned document into the <code>paperless</code> intake directory; you&#39;ll need to modify it to suit your own needs.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ config, lib, pkgs, ... }:
+
+<span class="hljs-keyword">with</span> lib;
+
+<span class="hljs-keyword">let</span>
+  <span class="hljs-attr">configDir</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/etc/scanbd&quot;</span>;
+  <span class="hljs-attr">saneConfigDir</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${configDir}</span>/sane.d&quot;</span>;
+
+  <span class="hljs-attr">scanbdConf</span> <span class="hljs-operator">=</span> pkgs.writeText <span class="hljs-string">&quot;scanbd.conf&quot;</span>
+    <span class="hljs-string">&#x27;&#x27;
+      global {
+        debug = true
+        debug-level = <span class="hljs-subst">${<span class="hljs-built_in">toString</span> config.services.scanbd.debugLevel}</span>
+        user = <span class="hljs-subst">${config.services.scanbd.user}</span>
+        group = <span class="hljs-subst">${config.services.scanbd.group}</span>
+        scriptdir = <span class="hljs-subst">${configDir}</span>/scripts
+        pidfile = <span class="hljs-subst">${config.services.scanbd.pidFile}</span>
+        timeout = <span class="hljs-subst">${<span class="hljs-built_in">toString</span> config.services.scanbd.timeOut}</span>
+        environment {
+          device = &quot;SCANBD_DEVICE&quot;
+          action = &quot;SCANBD_ACTION&quot;
+        }
+
+        multiple_actions = true
+        action scan {
+          filter = &quot;^scan.*&quot;
+          numerical-trigger {
+            from-value = 1
+            to-value = 0
+          }
+          desc = &quot;Scan to file&quot;
+          script = &quot;scan.script&quot;
+        }
+        <span class="hljs-subst">${config.services.scanbd.extraConfig}</span>
+      }
+    &#x27;&#x27;</span>;
+
+  <span class="hljs-attr">scanScript</span> <span class="hljs-operator">=</span> pkgs.writeScript <span class="hljs-string">&quot;scanbd_scan.script&quot;</span>
+    <span class="hljs-string">&#x27;&#x27;
+      #! <span class="hljs-subst">${pkgs.bash}</span>/bin/bash
+      export PATH=<span class="hljs-subst">${lib.makeBinPath [ pkgs.coreutils pkgs.sane-frontends pkgs.sane-backends pkgs.ghostscript pkgs.imagemagick ]}</span>
+      set -x
+      date=&quot;$(date --iso-8601=seconds)&quot;
+      filename=&quot;Scan $date.pdf&quot;
+      tmpdir=&quot;$(mktemp -d)&quot;
+      pushd &quot;$tmpdir&quot;
+      scanadf -d &quot;$SCANBD_DEVICE&quot; --source &quot;ADF Duplex&quot; --mode Gray --resolution 200dpi
+
+      # Convert any PNM images produced by the scan into a PDF with the date as a name
+      convert image* -density 200 &quot;$filename&quot;
+      chmod 0666 &quot;$filename&quot;
+
+      # Remove temporary PNM images
+      rm --verbose image*
+
+      # Atomic move converted PDF to destination directory
+      paperlessdir=&quot;/var/lib/paperless/consume&quot;
+      cp -pv &quot;$filename&quot; $paperlessdir/&quot;$filename&quot;.tmp &amp;&amp;
+      mv $paperlessdir/&quot;$filename&quot;.tmp $paperlessdir/&quot;$filename&quot; &amp;&amp;
+      rm &quot;$filename&quot;
+
+      popd
+      rm -r &quot;$tmpdir&quot;
+    &#x27;&#x27;</span>;
+
+<span class="hljs-keyword">in</span>
+
+{
+
+  <span class="hljs-comment">###### interface</span>
+  <span class="hljs-attr">options</span> <span class="hljs-operator">=</span> {
+
+    <span class="hljs-attr">services.scanbd.enable</span> <span class="hljs-operator">=</span> mkOption {
+      <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> types.bool;
+      <span class="hljs-attr">default</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+      <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        Enable support for scanbd (scanner button daemon).
+
+        &lt;note&gt;&lt;para&gt;
+          If scanbd is enabled, then saned must be disabled.
+        &lt;/para&gt;&lt;/note&gt;
+      &#x27;&#x27;</span>;
+    };
+
+    <span class="hljs-attr">services.scanbd.user</span> <span class="hljs-operator">=</span> mkOption {
+      <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> types.str;
+      <span class="hljs-attr">default</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;scanner&quot;</span>;
+      <span class="hljs-attr">example</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;</span>;
+      <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        scanbd daemon user name.
+      &#x27;&#x27;</span>;
+    };
+
+    <span class="hljs-attr">services.scanbd.group</span> <span class="hljs-operator">=</span> mkOption {
+      <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> types.str;
+      <span class="hljs-attr">default</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;scanner&quot;</span>;
+      <span class="hljs-attr">example</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;</span>;
+      <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        scanbd daemon group name.
+      &#x27;&#x27;</span>;
+    };
+
+    <span class="hljs-attr">services.scanbd.extraConfig</span> <span class="hljs-operator">=</span> mkOption {
+      <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> types.lines;
+      <span class="hljs-attr">default</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;</span>;
+      <span class="hljs-attr">example</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        device canon {
+          filter = &quot;^genesys.*&quot;
+          desc = &quot;Canon LIDE&quot;
+          action file {
+            filter = &quot;^file.*&quot;
+            desc = &quot;File&quot;
+            script = &quot;copy.script&quot;
+          }
+        }
+        &#x27;&#x27;</span>;
+      <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        Extra configuration lines included verbatim in scanbd.conf.
+        Use e.g. in lieu of including device-specific config templates
+        under scanner.d/
+      &#x27;&#x27;</span>;
+    };
+
+    <span class="hljs-attr">services.scanbd.pidFile</span> <span class="hljs-operator">=</span> mkOption {
+      <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> types.str;
+      <span class="hljs-attr">default</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/var/run/scanbd.pid&quot;</span>;
+      <span class="hljs-attr">example</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;</span>;
+      <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        PID file path.
+      &#x27;&#x27;</span>;
+    };
+
+    <span class="hljs-attr">services.scanbd.timeOut</span> <span class="hljs-operator">=</span> mkOption {
+      <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> types.int;
+      <span class="hljs-attr">default</span> <span class="hljs-operator">=</span> <span class="hljs-number">500</span>;
+      <span class="hljs-attr">example</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;</span>;
+      <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        Device polling timeout (in ms).
+      &#x27;&#x27;</span>;
+    };
+
+    <span class="hljs-attr">services.scanbd.debugLevel</span> <span class="hljs-operator">=</span> mkOption {
+      <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> types.int;
+      <span class="hljs-attr">default</span> <span class="hljs-operator">=</span> <span class="hljs-number">3</span>;
+      <span class="hljs-attr">example</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;</span>;
+      <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        Debug logging (1=error, 2=warn, 3=info, 4-7=debug)
+      &#x27;&#x27;</span>;
+    };
+
+  };
+
+  <span class="hljs-comment">###### implementation</span>
+  <span class="hljs-attr">config</span> <span class="hljs-operator">=</span> mkIf config.services.scanbd.enable {
+
+      <span class="hljs-attr">users.groups.scanner.gid</span> <span class="hljs-operator">=</span> config.ids.gids.scanner;
+      <span class="hljs-attr">users.users.scanner</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">uid</span> <span class="hljs-operator">=</span> config.ids.uids.scanner;
+        <span class="hljs-attr">group</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;scanner&quot;</span>;
+      };
+
+      environment.etc.<span class="hljs-string">&quot;scanbd/scanbd.conf&quot;</span>.source <span class="hljs-operator">=</span> scanbdConf;
+      environment.etc.<span class="hljs-string">&quot;scanbd/scripts/scan.script&quot;</span>.source <span class="hljs-operator">=</span> scanScript;
+      environment.etc.<span class="hljs-string">&quot;scanbd/scripts/test.script&quot;</span>.source <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.scanbd}</span>/etc/scanbd/test.script&quot;</span>;
+
+      <span class="hljs-attr">systemd.services.scanbd</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+        <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Scanner button polling service&quot;</span>;
+        <span class="hljs-attr">documentation</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;https://sourceforge.net/p/scanbd/code/HEAD/tree/releases/1.5.1/integration/systemd/README.systemd&quot;</span> ];
+        <span class="hljs-attr">script</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.scanbd}</span>/bin/scanbd -c <span class="hljs-subst">${configDir}</span>/scanbd.conf -f&quot;</span>;
+        <span class="hljs-attr">wantedBy</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;multi-user.target&quot;</span> ];
+        <span class="hljs-attr">aliases</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;dbus-de.kmux.scanbd.server.service&quot;</span> ];
+      };
+}</code></pre>
+      </div><h2 id="see-also">See also</h2><h3 id="scanner-firmware-files">Scanner firmware files</h3><ul>
+<li><a href="https://sites.google.com/site/rameyarnaud/media/books/agfa-scanners-with-linux">Agfa Snapscan e40</a></li>
+<li><a href="https://download.tuxfamily.org/xcfaudio/">Misc Agfa Snapscan</a> | <a href="https://ipfs.io/ipfs/QmZJ2SfpfYUAS23TujhcdLpTox1SW3Dw3MoCej9GAfs4ya">IPFS mirror</a></li>
+</ul>
+<p><a href="category:Hardware" class="wikilink" title="Category:Hardware">Category:Hardware</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

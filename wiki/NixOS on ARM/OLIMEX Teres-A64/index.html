@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NixOS on ARM/OLIMEX Teres-A64</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM">NixOS on ARM</a><span aria-hidden="true"> / </span>OLIMEX Teres-A64</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: NixOS on ARM/OLIMEX Teres-A64 -->
+
+<div class="infobox">
+
+<table>
+<thead>
+<tr>
+<th colspan="2" class="title"><p>OLIMEX Teres-A64</p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td colspan="2"><figure>
+<img src="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/OLIMEX%20Teres-A64/Teres-A64-glamour.png" title="The King Himself" width="256" />
+<figcaption>The King Himself</figcaption>
+</figure></td>
+</tr>
+<tr>
+<td><p>Manufacturer</p></td>
+<td><p>OLIMEX, Ltd</p></td>
+</tr>
+<tr>
+<td><p>Architecture</p></td>
+<td><p>AArch64</p></td>
+</tr>
+<tr>
+<td><p>Bootloader</p></td>
+<td><p>Upstream U-Boot<a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/OLIMEX%20Teres-A64#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p></td>
+</tr>
+<tr>
+<td><p>Boot order</p></td>
+<td><p>SD, eMMC</p></td>
+</tr>
+<tr>
+<td><p>Maintainer</p></td>
+<td><p><a href="user:KREYREN" class="wikilink" title="KREYREN">KREYREN</a></p></td>
+</tr>
+</tbody>
+</table>
+<section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1"><a href="https://github.com/NixOS/nixpkgs/pull/240827">https://github.com/NixOS/nixpkgs/pull/240827</a><a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/OLIMEX%20Teres-A64#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></li>
+</ol>
+</section>
+
+</div>
+
+<p>Teres-1 (often referred as teres-a64) is an open-source hardware and software netbook design based on the Allwinner A64 SoC.</p>
+<p>It can boot from SD or from the included and slow af eMMC module (insane people use only).</p>
+<h2 id="status">Status</h2><p>Stable, production-ready and suitable for mission critical environment</p>
+<p>For U-Boot use armbian&#39;s distribution as currently the nixos&#39;s version is outdated and broken</p>
+<h2 id="installation-instructions">Installation instructions</h2><h3 id="uefi-recommended">UEFI (recommended)</h3><p>Refer to the nixos.org download page and download the installer to your preference, then proceed to follow instructions in the <a href="https://nixos.org/manual/nixos/stable/">NixOS manual on how to flash the installer</a> on e.g. USB drive</p>
+<h3 id="extlinux-legacy">EXTLINUX (legacy)</h3><h2 id="serial-console">Serial console</h2><p>Serial console can be accessed by default on BAUM 115200 using the <a href="https://www.olimex.com/Products/DIY-Laptop/KITS/TERES-USB-DEBUG/">TERES-USB-DEBUG</a> cable (or make one it&#39;s 3 pole jack with pl2303 converter, can be made work off of single board computer, etc..) in headphone jack port and accessed through:</p>
+<p><code>   $ picocom -b BAUD /dev/SERIAL-DEVICE # Often set as /dev/ttyUSB0 @ baud of 115200</code></p>
+<p>Currently the sdcard has set this by fault, but if you use custom configuration and want to maintain the serial console functionality then you need to append it to the kernel CLI through:</p>
+<p><code>   boot.kernelParams = [&quot;console=ttyS0,115200n8&quot;];</code></p>
+<h2 id="compatibility-notes">Compatibility notes</h2><table>
+<thead>
+<tr>
+<th colspan="2" style="background: var(--color-inverted)"><p>Mainline kernel on NixOS</p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><p>HDMI</p></td>
+<td><ul>
+<li>Works</li>
+</ul></td>
+</tr>
+<tr>
+<td><p>Display</p></td>
+<td><ul>
+<li>Expected to work without issues with exceptions, see sunxi wiki</li>
+</ul></td>
+</tr>
+<tr>
+<td><p>WiFi/Bluetooth</p></td>
+<td><ul>
+<li>Works, currently requires non-libre firmware for RTL8723BS which is projected to be mitigated</li>
+</ul></td>
+</tr>
+<tr>
+<td><p>Audio (reproductors)</p></td>
+<td><ul>
+<li>Unknown</li>
+</ul></td>
+</tr>
+<tr>
+<td><p>Audio (audio jack)</p></td>
+<td><ul>
+<li>Unknown</li>
+</ul></td>
+</tr>
+<tr>
+<td><p>3D Acceleration</p></td>
+<td><ul>
+<li>Works</li>
+</ul></td>
+</tr>
+<tr>
+<td><p>Webcam</p></td>
+<td><ul>
+<li>Unknown</li>
+</ul></td>
+</tr>
+<tr>
+<td><p>Touchpad</p></td>
+<td><ul>
+<li>Works</li>
+</ul></td>
+</tr>
+<tr>
+<td><p>Keyboard</p></td>
+<td><ul>
+<li>Works</li>
+</ul></td>
+</tr>
+<tr>
+<td><p>SdCard reader</p></td>
+<td><ul>
+<li>Works</li>
+</ul></td>
+</tr>
+<tr>
+<td><p>FOSS Bootloader</p></td>
+<td><ul>
+<li>Works - U-Boot/TowBoot</li>
+</ul></td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="kernels">Kernels</h3><h4 id="downstream-kernel">Downstream Kernel</h4><h2 id="usb-booting-with-u-boot">USB booting with U-Boot</h2><p>You will need to either have mainline U-Boot installed to the eMMC or to an SD card.</p>
+<p>Stop the boot process when prompted (by pressing a key). Then, do the following:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">Hit any key to stop autoboot:  0
+=&gt; setenv boot_targets usb0
+=&gt; boot</code></pre>
+      </div><p>This sets the boot order for this boot only. U-Boot can boot (among others) either of the NixOS sd-image or EFI iso from USB.</p>
+<h2 id="notes">Notes</h2><p>Refer to the device&#39;s sunxi-linux wiki page for more details: <a href="https://linux-sunxi.org/Olimex_Teres-A64">https://linux-sunxi.org/Olimex_Teres-A64</a></p>
+<p>For u-boot installation refer to the u-boot documentation for AllWinner devices: <a href="https://docs.u-boot.org/en/stable/board/allwinner/sunxi.html#installing-on-a-micro-sd-card">https://docs.u-boot.org/en/stable/board/allwinner/sunxi.html#installing-on-a-micro-sd-card</a></p>
+<p>For TowBoot installation refer to the TowBoot wiki:</p>
+<h2 id="resources">Resources</h2><p>0. <a href="https://linux-sunxi.org/Olimex_Teres-A64">The Sunxi Linux Wiki Page for the device</a></p>
+<p>1. <a href="https://www.olimex.com/Products/DIY-Laptop/">Official product page</a></p>
+<p>2. <a href="https://linux-sunxi.org/A64">linux-sunxi wiki page</a></p>
+<p>3. <a href="https://u-boot.readthedocs.io/en/latest/board/allwinner/sunxi.html">U-Boot documentation for the SoC</a></p>
+<p>4. <a href="https://www.armbian.com/olimex-teres-a64">Armbian product page for Teres</a></p>
+<p>5. <a href="https://www.olimex.com/forum/index.php?board=39.0">Teres-A64 section on the OLIMEX forum</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

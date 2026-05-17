@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nixos-anywhere</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Nixos-anywhere</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Nixos-anywhere -->
+
+<p><a href="https://github.com/nix-community/nixos-anywhere">nixos-anywhere</a> is a tool for installing NixOS to a remote machine. It uses kexec to boot into a temporary ram based NixOS system. From there, it can use a tool called disko to erase and repartition an entire disk, and install NixOS.</p>
+<p>More information can be found on the official documents. <a href="https://github.com/nix-community/nixos-anywhere">https://github.com/nix-community/nixos-anywhere</a></p>
+<h1 id="installing-mbr">Installing MBR</h1><p>The official documents recommend installing a GPT partition table, and installing an msdos partition table is not well supported, and there are no official examples. This is unfortunate, as many VPS do not use UEFI boot and are not over 4TB for the root partition. Additionally, on a VPS with limited disk space, it can be an unnecessary waste to create a separate partition for /boot.</p>
+<p>Fortunately, it is possible to install an msdos partition table in spite of the lack of support. With an msdos partition table, a bootable system can be made with only 1 partition, allowing utilization of all 100% disk space. Below is a simple example for installing a <a href="https://mirror.nixoscn.org/wiki/Nixos-anywhere/Btrfs" class="wikilink" title="Btrfs">Btrfs</a> root filesystem as the only partition on disk. If a swap partition is desired, it can be added after install, as Btrfs has support for live filesystem resizing.</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs"># disk-config.nix
+# Example to create a msdos partition
+{ lib, ... }:
+{
+  disko.devices = {
+    disk.disk1 = {
+      device = lib.mkDefault &quot;/dev/sda&quot;;
+#      type = &quot;disk&quot;;
+      content = {
+        type = &quot;table&quot;;
+        format = &quot;msdos&quot;;
+        partitions = [
+          {
+            part-type = &quot;primary&quot;;
+            fs-type = &quot;btrfs&quot;;
+            name = &quot;root&quot;;
+            bootable = true;
+            content = {
+              type = &quot;filesystem&quot;;
+              format = &quot;btrfs&quot;;
+              extraArgs = [ &quot;-f&quot; &quot;-O block-group-tree&quot; ];
+              mountpoint = &quot;/&quot;;
+              mountOptions = [ &quot;compress=zstd&quot; ];
+            };
+          }
+        ];
+      };
+    };
+  };
+}</code></pre>
+      </div><p><a href="category:Deployment" class="wikilink" title="Category:Deployment">Category:Deployment</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

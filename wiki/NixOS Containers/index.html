@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NixOS Containers</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / NixOS Containers</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: NixOS Containers -->
+
+<p>Setup native <a href="https://wiki.archlinux.org/title/systemd-nspawn">systemd-nspawn</a> containers, which are running NixOS and are configured and managed by NixOS using the <code>containers</code> directive.</p>
+<p>See <a href="https://mirror.nixoscn.org/wiki/NixOS%20Containers/Docker" class="wikilink" title="Docker">Docker</a> page for OCI container (Docker, Podman) configuration.</p>
+<h3 id="host-configuration">Host Configuration</h3><p>For all of the examples below to work, you&#39;ll have to enable virtualization and the use of containers in your host systems nix configuration.</p>
+<h3 id="configuration">Configuration</h3><p>The following example creates a container called webserver running a httpd web server. It will start automatically at boot and has its private network subnet.</p>
+<p>In order to reach the web application on the host system, we have to open <a href="https://mirror.nixoscn.org/wiki/NixOS%20Containers/Firewall" class="wikilink" title="Firewall">Firewall</a> port 80 and also configure NAT through <code>networking.nat</code>. The web service of the container will be available at <a href="http://192.168.100.11/">http://192.168.100.11</a></p>
+<h4 id="networking">Networking</h4><p>By default, if <code>privateNetwork</code> is not set, the container shares the network with the host, enabling it to bind any port on any interface. However, when <code>privateNetwork</code> is set to <code>true</code>, the container gains its private virtual <code>eth0</code> and <code>ve-</code><container_name> on the host. This isolation is beneficial when you want the container to have its dedicated networking stack.</p>
+<p><strong>NAT (Network Address Translation)</strong></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"></code></pre>
+      </div><p><strong>Bridge</strong></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">etworking</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">bridges.br0.interfaces</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;eth0s31f6&quot;</span> ]; <span class="hljs-comment"># Adjust interface accordingly</span>
+  
+  <span class="hljs-comment"># Get bridge-ip with DHCP</span>
+  <span class="hljs-attr">useDHCP</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+  interfaces.<span class="hljs-string">&quot;br0&quot;</span>.useDHCP <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+  <span class="hljs-comment"># Set bridge-ip static</span>
+  interfaces.<span class="hljs-string">&quot;br0&quot;</span>.ipv4.addresses <span class="hljs-operator">=</span> [{
+    <span class="hljs-attr">address</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;192.168.100.3&quot;</span>;
+    <span class="hljs-attr">prefixLength</span> <span class="hljs-operator">=</span> <span class="hljs-number">24</span>;
+  }];
+  <span class="hljs-attr">defaultGateway</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;192.168.100.1&quot;</span>;
+  <span class="hljs-attr">nameservers</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;192.168.100.1&quot;</span> ];
+};
+
+containers.<span class="hljs-symbol">&lt;name&gt;</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">privateNetwork</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">hostBridge</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;br0&quot;</span>; <span class="hljs-comment"># Specify the bridge name</span>
+  <span class="hljs-attr">localAddress</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;192.168.100.5/24&quot;</span>;
+  <span class="hljs-attr">config</span> <span class="hljs-operator">=</span> { };
+};</code></pre>
+      </div><h4 id="without-privatenetwork-simpler">Without privateNetwork (simpler)</h4><p>If the service can be accessed by changing its port, the private network is not needed necessarily. Be careful to not use occupied ports. This example runs an <a href="https://mirror.nixoscn.org/wiki/NixOS%20Containers/Actual" class="wikilink" title="Actual">Actual</a> server on port 3003. It can be accessed through the host at <a href="http://localhost:3003/"><code>http://localhost:3003</code></a>. Since <code>privateNetwork</code> is not defined, it defaults to <code>false</code>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">c<span class="hljs-attr">ontainers.actualContainer</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">autoStart</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">config</span> <span class="hljs-operator">=</span> {...}: {
+    <span class="hljs-attr">services.actual</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">settings.port</span> <span class="hljs-operator">=</span> <span class="hljs-number">3003</span>;
+    };
+  };
+};</code></pre>
+      </div><h3 id="usage">Usage</h3><p>List containers</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">machinectl list</span></code></pre>
+      </div><p>Checking the status of the container</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">systemctl status container@webserver</span></code></pre>
+      </div><p>Login into the container</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">nixos-container root-login webserver</span></code></pre>
+      </div><p>Start or stop a container</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">nixos-container start webserver</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">nixos-container stop webserver</span></code></pre>
+      </div><p>Destroy a container including its file system</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">nixos-container destroy webserver</span></code></pre>
+      </div><p>View log for container</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">journalctl -M webserver</span></code></pre>
+      </div><p>Further informations are available in the .</p>
+<h2 id="tips-and-tricks">Tips and tricks</h2><h4 id="define-and-create-nixos-container-from-a-flake-file">Define and create nixos-container from a Flake file</h4><p>We can define and create a custom container called <code>container</code> from a file stored as <code>flake.nix</code>. In this case we use the unstable branch of the nixpkgs repository as a source.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">inputs.nixpkgs.url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nixpkgs/nixos-unstable&quot;</span>;
+
+  <span class="hljs-attr">outputs</span> <span class="hljs-operator">=</span> { self, nixpkgs }: {
+
+    <span class="hljs-attr">nixosConfigurations.container</span> <span class="hljs-operator">=</span> nixpkgs.lib.nixosSystem {
+      <span class="hljs-attr">system</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;x86_64-linux&quot;</span>;
+      <span class="hljs-attr">modules</span> <span class="hljs-operator">=</span>
+        [ ({ pkgs, ... }: {
+            <span class="hljs-attr">boot.isContainer</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+            <span class="hljs-attr">networking.firewall.allowedTCPPorts</span> <span class="hljs-operator">=</span> [ <span class="hljs-number">80</span> ];
+
+            <span class="hljs-attr">services.httpd</span> <span class="hljs-operator">=</span> {
+              <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+              <span class="hljs-attr">adminAddr</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;morty@example.org&quot;</span>;
+            };
+          })
+        ];
+    };
+
+  };
+}</code></pre>
+      </div><p>To create and run that container, enter following commands. In this example the <code>flake.nix</code> file is in the same directory.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">nixos-container create flake-test --flake .</span>
+host IP is 10.233.4.1, container IP is 10.233.4.2
+<span class="hljs-meta prompt_">
+# </span><span class="language-bash">nixos-container start flake-test</span></code></pre>
+      </div><h4 id="use-agenix-secrets-in-container">Use agenix secrets in container</h4><p>To add <code>agenix</code> secrets to a container bind mount the <code>ssh-host.key</code> and import the <code>agenix.nixosModule</code> and set <code>age.identityPaths</code> <a href="https://discourse.nixos.org/t/secrets-inside-nixos-containers/34403/6">Source</a></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ agenix, ... }:
+{
+
+  containers.<span class="hljs-string">&quot;withSecret&quot;</span> <span class="hljs-operator">=</span> {
+
+    <span class="hljs-comment"># pass the private key to the container for agenix to decrypt the secret</span>
+    bindMounts.<span class="hljs-string">&quot;/etc/ssh/ssh_host_ed25519_key&quot;</span>.isReadOnly <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+    <span class="hljs-attr">config</span> <span class="hljs-operator">=</span>
+      {
+        config,
+        lib,
+        pkgs,
+        ...
+      }:
+      {
+        <span class="hljs-attr">imports</span> <span class="hljs-operator">=</span> [ agenix.nixosModules.default ]; <span class="hljs-comment"># import agenix-module into the nixos-container</span>
+
+        <span class="hljs-attr">age.identityPaths</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;/etc/ssh/ssh_host_ed25519_key&quot;</span> ]; <span class="hljs-comment"># isn&#x27;t set automatically when openssh is not setup</span>
+        <span class="hljs-comment"># import the secret</span>
+        age.secrets.<span class="hljs-string">&quot;secret-name&quot;</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">file</span> <span class="hljs-operator">=</span> <span class="hljs-symbol">../secrets/secret.age</span>;
+        };
+      };
+  };
+}</code></pre>
+      </div><h2 id="troubleshooting">Troubleshooting</h2><h4 id="i-have-changed-the-host-39-s-channel-and-some-services-are-no-longer-functional">I have changed the host&#39;s channel and some services are no longer functional</h4><p><strong>Symptoms:</strong></p>
+<ul>
+<li>Lost data in PostgreSQL database</li>
+<li>MySQL has changed its path, where it creates the database</li>
+</ul>
+<p><strong>Solution</strong></p>
+<p>If you did not have a option set inside your declarative container configuration, it will use the default one for the channel. Your data might be safe, if you did nothing meanwhile. Add the missing to your container, rebuild, and possibly stop/start the container.</p>
+<h2 id="see-also">See also</h2><p>- </p>
+<ul>
+<li><p><a href="https://blog.beardhatcode.be/2020/12/Declarative-Nixos-Containers.html">Blog Article - Declarative NixOS Containers</a></p>
+</li>
+<li><p><a href="https://discourse.nixos.org/t/extra-container-run-declarative-containers-without-full-system-rebuilds/511">NixOS Discourse - Extra-container: Run declarative containers without full system rebuilds</a></p>
+</li>
+<li><p><a href="https://github.com/NixOS/nixpkgs/blob/master/pkgs/by-name/ni/nixos-container/nixos-container.pl">Nixpkgs - nixos-container.pl</a></p>
+</li>
+<li><p><a href="https://github.com/NixOS/nixpkgs/blob/master/nixos/modules/virtualisation/nixos-containers.nix">Nixpkgs - nixos-containers.nix</a></p>
+</li>
+<li><p><a href="https://nixcademy.com/2023/08/29/nixos-nspawn/">nixos-nspawn</a></p>
+</li>
+<li><p><a href="https://github.com/tfc/nspawn-nixos">tfc/nspawn-nixos</a></p>
+</li>
+<li><p>MicroVMs as a more isolated alternative, e.g. with <a href="https://github.com/astro/microvm.nix">https://github.com/astro/microvm.nix</a></p>
+</li>
+</ul>
+<p><a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="category:NixOS" class="wikilink" title="Category:NixOS">Category:NixOS</a> <a href="category:Container" class="wikilink" title="Category:Container">Category:Container</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

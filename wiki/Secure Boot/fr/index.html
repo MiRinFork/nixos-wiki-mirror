@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Secure Boot/fr</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/Secure%20Boot">Secure Boot</a><span aria-hidden="true"> / </span>fr</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Secure Boot/fr -->
+
+<p><languages/> Le démarrage sécurisé est habituellement associé à la capacité d&#39;un micrologiciel de plateforme de vérifier les composants de démarrage et de s&#39;assurer que seul votre propre système peut démarrer.</p>
+<p>Le démarrage sécurisé est implémenté de multiple façons. La plus connue est le démarrage sécurisé UEFI qui repose sur le micrologiciel de plateforme UEFI, mais d&#39;autres implémentations existent sur les systèmes embarqués.</p>
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h2 id="checking-secure-boot-status">Checking Secure Boot status</h2><p>The easiest way to check if your machine has Secure Boot enabled is through the use of <a href="https://mirror.nixoscn.org/wiki/Secure%20Boot/fr/Systemd" class="wikilink" title="Systemd">Systemd</a>&#39;s <code>bootctl</code>. There is no need to be using <a href="https://mirror.nixoscn.org/wiki/Secure%20Boot/fr/Systemd/boot" class="wikilink" title="systemd-boot">systemd-boot</a> as your bootloader for this command to work.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">bootctl status</span>
+System:
+    Firmware: UEFI 2.80 (American Megatrends 5.25)
+    Firmware Arch: x64
+    Secure Boot: enabled (user)
+    TPM2 Support: yes
+    Measured UKI: yes
+    Boot into FW: supported
+...</code></pre>
+      </div><p>The system above has secure boot enabled and enforced. Other values include <code>disabled (setup)</code> for Setup Mode, <code>disabled (disabled)</code> or <code>disabled (unsupported)</code>. The unsupported tag only appears if your device firmware does not support Secure Boot at all. If you see <code>disabled (disabled)</code>, this means you will need to enable Secure Boot in your UEFI firmware settings before proceeding to use one of the projects outlined below.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h2 id="enabling-secure-boot-on-nixos">Enabling Secure Boot on NixOS</h2><p>On NixOS, there are currently two main ways to enable Secure Boot, <a href="https://mirror.nixoscn.org/wiki/Secure%20Boot/fr/Lanzaboote" class="wikilink" title="Lanzaboote">Lanzaboote</a> and <a href="https://mirror.nixoscn.org/wiki/Secure%20Boot/fr/Limine" class="wikilink" title="Limine">Limine</a>. See their respective wiki pages for step by step instructions on each.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>For Secure Boot to be most effective, there are certain conditions which should also be met. The most important are:</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<ol>
+<li>The UEFI firmware is protected by a strong password to prevent an untrusted drive from being booted or Secure Boot being disabled.</li>
+<li>Full disk encryption is enabled so that your drive cannot simply be read by putting it another another machine.</li>
+<li>Ideally, default OEM/third party keys are not in use as these have been shown to weaken the security of Secure Boot significantly.<sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Secure%20Boot/fr#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup> However, this may brick some devices which use Microsoft-signed OpROMS for certain hardware during the boot process, particularly some laptops, so you must be certain before removing them. It may be impossible to fix if, for example, the GPU relies on these OpROMS.</li>
+</ol>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h2 id="see-also">See Also</h2><p><a href="https://wiki.archlinux.org/title/Unified_Extensible_Firmware_Interface/Secure_Boot">Arch Wiki/Secure Boot</a> Extensive information on Secure Boot including using UKIs.</p>
+</div>
+
+<references />
+
+<p><a href="category:Security" class="wikilink" title="Category:Security">Category:Security</a> <a href="category:Booting" class="wikilink" title="Category:Booting">Category:Booting</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p><a href="https://habr.com/ru/articles/446238/">https://habr.com/ru/articles/446238/</a> <a href="https://mirror.nixoscn.org/wiki/Secure%20Boot/fr#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

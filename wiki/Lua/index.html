@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lua</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Lua</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Lua -->
+
+<h2 id="nix-shell-with-lua-interpreter">#! nix-shell with lua interpreter</h2><p>To use a nix-shell shebang with lua you will need to use following structure:</p>
+<div class="code-container">
+        
+        <pre><code class="language-lua hljs">#!/usr/bin/env nix-shell
+<span class="hljs-comment">--[[
+#!nix-shell -i lua -p lua
+]]</span>
+
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;this is from lua&quot;</span>)</code></pre>
+      </div><p>Some background by <a href="user:Samueldr" class="wikilink" title="samueldr">samueldr</a><sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Lua#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup>:</p>
+<blockquote>
+<p>Two inter-twined fun facts.</p>
+<ul>
+<li>Lua only skips one shebang line.</li>
+<li>nix-shell doesn&#39;t require its magic lines to be right after the first line.</li>
+</ul>
+</blockquote>
+<h2 id="override-a-lua-package-for-all-available-lua-interpreters">Override a Lua package for all available Lua interpreters</h2><p>The nixpkgs reference manual suggests using the following overlay template:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-params">final:</span> <span class="hljs-params">prev:</span> {
+  <span class="hljs-attr">lua</span> <span class="hljs-operator">=</span> prev.lua.override {
+    <span class="hljs-attr">packageOverrides</span> <span class="hljs-operator">=</span> <span class="hljs-params">luafinal:</span> <span class="hljs-params">luaprev:</span> {
+      <span class="hljs-attr">luarocks-nix</span> <span class="hljs-operator">=</span> luaprev.luarocks-nix.overrideAttrs (<span class="hljs-params">oa:</span> {
+        <span class="hljs-attr">pname</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;my-custom-name&quot;</span>;
+      });
+    };
+  };
+
+  <span class="hljs-attr">luaPackages</span> <span class="hljs-operator">=</span> final.lua.pkgs;
+}</code></pre>
+      </div><p>However, this approach only overrides the default Lua interpreter.</p>
+<p>The following template applies the overlay for all available Lua interpreters in nixpkgs:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-params">final:</span> <span class="hljs-params">prev:</span> <span class="hljs-keyword">let</span>
+  <span class="hljs-keyword">inherit</span> (final.lib.attrsets) filterAttrs mapAttrs;
+  <span class="hljs-attr">isLua</span> <span class="hljs-operator">=</span> <span class="hljs-params">pkg-name:</span> <span class="hljs-params">pkg:</span> pkg <span class="hljs-operator">?</span> luaversion;
+
+  <span class="hljs-comment"># I can just add my modifications by using `mapAttrs` on `luaInterpreters`.</span>
+  <span class="hljs-comment"># However, after doing this, calling `luaInterpreters.override` will undo my</span>
+  <span class="hljs-comment"># modifications. This is due to the way `lib.makeOverridable` works. It</span>
+  <span class="hljs-comment"># keeps a reference to the original function and calls it with modified</span>
+  <span class="hljs-comment"># arguments.</span>
+  <span class="hljs-attr">mkExtendedLuaInterpreters</span> <span class="hljs-operator">=</span> {...} @ <span class="hljs-params">args:</span> <span class="hljs-keyword">let</span>
+    <span class="hljs-comment"># Support overrides</span>
+    <span class="hljs-attr">interpreters</span> <span class="hljs-operator">=</span> prev.luaInterpreters.override args;
+  <span class="hljs-keyword">in</span>
+    mapAttrs (<span class="hljs-params">k:</span> <span class="hljs-params">v:</span>
+      v.override {
+        <span class="hljs-attr">packageOverrides</span> <span class="hljs-operator">=</span> <span class="hljs-params">luafinal:</span> <span class="hljs-params">luaprev:</span> {
+          <span class="hljs-attr">luarocks-nix</span> <span class="hljs-operator">=</span> luaprev.luarocks-nix.overrideAttrs (<span class="hljs-params">oa:</span> {
+            <span class="hljs-attr">pname</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;my-custom-name&quot;</span>;
+          });
+        };
+      }) (filterAttrs isLua interpreters);
+
+  <span class="hljs-attr">extendedLuaInterpreters</span> <span class="hljs-operator">=</span> final.lib.makeOverridable mkExtendedLuaInterpreters {};
+<span class="hljs-keyword">in</span> {
+  <span class="hljs-comment"># Override all available Lua interpreters</span>
+  <span class="hljs-attr">luaInterpreters</span> <span class="hljs-operator">=</span> extendedLuaInterpreters;
+}</code></pre>
+      </div><h2 id="see-also">See Also</h2><ul>
+<li><a href="https://nixos.org/manual/nixpkgs/stable/#users-guide-to-lua-infrastructure">Lua user guide in the nixpkgs manual</a></li>
+</ul>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p><a href="https://reddit.com/r/NixOS/comments/q7ns3l/interpreter_with_lua/">https://reddit.com/r/NixOS/comments/q7ns3l/interpreter_with_lua/</a> <a href="https://mirror.nixoscn.org/wiki/Lua#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

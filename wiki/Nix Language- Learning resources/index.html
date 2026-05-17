@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nix Language- Learning resources</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Nix Language- Learning resources</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Nix Language: Learning resources -->
+
+<ul>
+<li>The <a href="https://nixos.org/nix/manual/#ch-expression-language">Nix manual</a> provides a <strong>reference</strong> of the language. All language constructs you may use are defined there, together with code snippets.</li>
+</ul>
+<!-- -->
+
+<ul>
+<li><a href="https://nix.dev/tutorials/nix-language">Nix language basics</a> is a practical tutorial to reading the Nix language.</li>
+</ul>
+<!-- -->
+
+<ul>
+<li><a href="https://github.com/tazjin/nix-1p">Nix - A One Pager</a> provides a brief overview of language constructs</li>
+</ul>
+<!-- -->
+
+<ul>
+<li><a href="https://mirror.nixoscn.org/wiki/Nix%20Language-%20Learning%20resources/Nix_by_example" class="wikilink" title="Nix by example">Nix by example</a> is a step-by-step tutorial.</li>
+</ul>
+<!-- -->
+
+<ul>
+<li>Nix Pills <a href="https://nixos.org/guides/nix-pills/basics-of-language.html">Chapter 4</a> and <a href="https://nixos.org/guides/nix-pills/functions-and-imports.html">Chapter 5</a> discuss key language features</li>
+</ul>
+<!-- -->
+
+<ul>
+<li><a href="https://nixcloud.io/tour/">The Nix Tour</a> is an interactive tour that uses the actual package manager to learn you the language by example, in the browser.</li>
+</ul>
+<!-- -->
+
+<ul>
+<li><a href="https://scrive.github.io/nix-workshop/">Scrive Nix Workshop</a> is a series of examples demonstrating language features, mostly without comments or further explanations.</li>
+</ul>
+<!-- -->
+
+<ul>
+<li><a href="https://learnxinyminutes.com/docs/nix/">Learn X in Y minutes</a> is brief listing of Nix syntax, types, operations, etc.</li>
+</ul>
+<!-- -->
+
+<ul>
+<li><a href="https://nixcademy.com/posts/what-you-need-to-know-about-laziness/">What You Need to Know About Lazy Evaluation in Nix</a> by Nixcademy</li>
+</ul>
+<h2 id="relevant-pages">Relevant pages</h2><ul>
+<li><a href="https://mirror.nixoscn.org/wiki/Nix%20Language-%20Learning%20resources/Overview_of_the_Nix_Expression_Language" class="wikilink" title="Overview of the Nix Expression Language">Overview of the Nix Expression Language</a></li>
+<li><a href="https://mirror.nixoscn.org/wiki/Nix%20Language-%20Learning%20resources/Editor_Modes_for_Nix_Files" class="wikilink" title="Editor Modes for Nix Files">Editor Modes for Nix Files</a></li>
+<li><a href="https://mirror.nixoscn.org/wiki/Nix%20Language-%20Learning%20resources/Nix_Expression_Language:_Tips_&amp;_Tricks" class="wikilink" title="Nix Expression Language: Tips &amp; Tricks">Nix Expression Language: Tips &amp; Tricks</a></li>
+</ul>
+<p><a href="category:Nix_Language" class="wikilink" title="Category:Nix Language">Category:Nix Language</a> <a href="category:Guide" class="wikilink" title="Category:Guide">Category:Guide</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

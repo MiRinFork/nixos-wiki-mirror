@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tinc</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Tinc</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Tinc -->
+
+<h1 id="what-is-tinc">What is tinc</h1><p><a href="https://www.tinc-vpn.org/">Tinc</a> is an awesome vpn mesh.</p>
+<h1 id="how-peer-to-peer-setup-in-tinc">How peer to peer setup in tinc</h1><p>The following tutorial will setup a very simple scenario, where you create a tinc vpn between two computers in the same network. In this scenario <code>heinz</code> will connect to <code>peter</code>. But this will make <code>heinz</code> also visible to <code>peter</code>.</p>
+<p>It can easily be <a href="https://www.tinc-vpn.org/examples/">improved to a setup with multiple computers</a> involved.</p>
+<h2 id="overview">Overview</h2><p>The following diagram shows the network we want to setup.</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">                     network : private
++--------------------------+      +--------------------------+
+|    name : heinz          |      |    name : peter          |
+| real ip : 192.168.178.25 | ---&amp;gt; | real ip : 192.168.178.21 |
+| tinc ip : 10.1.1.25/24   |      | tinc ip : 10.1.1.21/24   |
++--------------------------+      +--------------------------+</code></pre>
+      </div><h2 id="generate-keys">Generate keys</h2><p>Tinc clients need to verify themselves to each other, which is done by keys. There are multiple ways to generate your keys. Here is one.</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">nix-shell -p tinc_pre --run &quot;tinc generate-keys 4096&quot;</code></pre>
+      </div><p>The command ask you where to put the keys. If you hit enter a few times it will generate 4 files. (instead of hitting enter you can give it different file path)</p>
+<ul>
+<li><code>/etc/tinc/rsa_key.priv</code></li>
+<li><code>/etc/tinc/rsa_key.pub</code></li>
+<li><code>/etc/tinc/ed25519_key.priv</code></li>
+<li><code>/etc/tinc/ed25519_key.pub</code></li>
+</ul>
+<h2 id="create-host-files">Create host files</h2><p>The hostfile can have a lot of parameters (<a href="https://www.tinc-vpn.org/documentation/Host-configuration-variables.html">here is an overview</a>).</p>
+<p>But these are the minimum needed for our setup</p>
+<ul>
+<li><code>Address</code> : The real world IP-Address of this machine</li>
+<li><code>Subnet</code> : The tinc network IP-Address (the one we want to connect to after the tinc network is setup).</li>
+</ul>
+<p>Also the host files need to contain the public keys for this host.</p>
+<p>So lets create the two hostfiles. Assuming we have generated keys for the 2 machines and they are stored in the folders <code>heinz</code> and <code>peter</code>.</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">cat &amp;gt;hosts_heinz &amp;lt;&amp;lt;EOF
+Address = 192.168.178.25
+Subnet  = 10.1.1.25
+EOF
+cat heinz/rsa_key.pub &amp;gt;&amp;gt; hosts_heinz
+cat heinz/ed25519_key.pub &amp;gt;&amp;gt; hosts_heinz
+
+cat &amp;gt;hosts_peter &amp;lt;&amp;lt;EOF
+Address = 192.168.178.21
+Subnet  = 10.1.1.21
+EOF
+cat peter/rsa_key.pub &amp;gt;&amp;gt; hosts_heinz
+cat peter/ed25519_key.pub &amp;gt;&amp;gt; hosts_heinz</code></pre>
+      </div><h2 id="setup-interface">Setup interface</h2><p>We have to configure the tinc tunnel interface.</p>
+<h3 id="networking-interfaces">networking.interfaces</h3><p>NOTE: There are changes proposed to nix configuration, for using networkd based configuration instead of the current fragile scripted configuration, that will hopefully make the following section obsolete.</p>
+<p>The simplest way is to use the networking module. But it has some minor flaws on package updates.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># for heinz</span>
+networking.interfaces.<span class="hljs-string">&quot;tinc.<span class="hljs-subst">${networkName}</span>&quot;</span>.ipv4.addresses <span class="hljs-operator">=</span> [ { <span class="hljs-attr">address</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;10.1.1.25&quot;</span>; <span class="hljs-attr">prefixLength</span> <span class="hljs-operator">=</span> <span class="hljs-number">24</span>; } ];</code></pre>
+      </div><p>Another author has experienced problems with the network failing to restart when using the above to configure interfaces. The following snippet <strong>seems</strong> to fix that (until perhaps a more proper fix is upstreamed?):</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-comment"># Start the unit for adding addresses if Tinc is started</span>
+  systemd.services.<span class="hljs-string">&quot;tinc.<span class="hljs-subst">${networkName}</span>&quot;</span>.wants <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;network-addresses-tinc.<span class="hljs-subst">${networkName}</span>.service&quot;</span> ];
+  <span class="hljs-comment"># Stop the unit for adding addresses if Tinc is stopped or restarted</span>
+  systemd.services.<span class="hljs-string">&quot;network-addresses-tinc.<span class="hljs-subst">${networkName}</span>&quot;</span>.partOf <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;tinc.<span class="hljs-subst">${networkName}</span>.service&quot;</span> ];
+  <span class="hljs-comment"># Start the unit for adding addresses after the Tinc device is added</span>
+  systemd.services.<span class="hljs-string">&quot;network-addresses-tinc.<span class="hljs-subst">${networkName}</span>&quot;</span>.after <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;sys-subsystem-net-devices-tinc.<span class="hljs-subst">${networkName}</span>.device&quot;</span> ];</code></pre>
+      </div><h3 id="tinc-up-tinc-down">tinc-up/tinc-down</h3><p>A more robust but more complicated way to configure the interfaces are the <code>tinc-up</code> and <code>tinc-down</code> scripts.</p>
+<p>First we have to create the scripts:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># for heinz</span>
+e<span class="hljs-attr">nvironment.etc</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-string">&quot;tinc/private/tinc-up&quot;</span>.source <span class="hljs-operator">=</span> pkgs.writeScript <span class="hljs-string">&quot;tinc-up-private&quot;</span> <span class="hljs-string">&#x27;&#x27;
+        #!<span class="hljs-subst">${pkgs.stdenv.shell}</span>
+        <span class="hljs-subst">${pkgs.nettools}</span>/bin/ifconfig $INTERFACE 10.1.1.25 netmask 255.255.255.0
+    &#x27;&#x27;</span>;
+    <span class="hljs-string">&quot;tinc/private/tinc-down&quot;</span>.source <span class="hljs-operator">=</span> pkgs.writeScript <span class="hljs-string">&quot;tinc-down-private&quot;</span> <span class="hljs-string">&#x27;&#x27;
+        #!<span class="hljs-subst">${pkgs.stdenv.shell}</span>
+        /run/wrappers/bin/sudo <span class="hljs-subst">${pkgs.nettools}</span>/bin/ifconfig $INTERFACE down
+    &#x27;&#x27;</span>;
+};</code></pre>
+      </div><p>For the <code>tinc-down</code> we need to use sudo, because the user <code>tinc.private</code> who starts the service is not able to tear down the interface.</p>
+<p>So we have to make sure this user can call sudo without entering a password.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"> <span class="hljs-attr">security.sudo.extraRules</span> <span class="hljs-operator">=</span> [
+    {
+      <span class="hljs-attr">users</span>    <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;tinc.private&quot;</span> ];
+      <span class="hljs-attr">commands</span> <span class="hljs-operator">=</span> [
+        {
+          <span class="hljs-attr">command</span>  <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.nettools}</span>/bin/ifconfig&quot;</span>;
+          <span class="hljs-attr">options</span>  <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;NOPASSWD&quot;</span> ];
+        }
+      ];
+    }
+  ];</code></pre>
+      </div><h2 id="open-the-firewall">Open the Firewall</h2><p>The computer which you connect to needs to open some ports.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">etworking.firewall.allowedUDPPorts</span> <span class="hljs-operator">=</span> [ <span class="hljs-number">655</span> ];
+<span class="hljs-attr">networking.firewall.allowedTCPPorts</span> <span class="hljs-operator">=</span> [ <span class="hljs-number">655</span> ];</code></pre>
+      </div><h2 id="use-service-tinc-module">use service.tinc module</h2><p>Now we have everything we need to configure the <code>services.tinc</code> module in our <code>configuration.nix</code> file on both machines.</p>
+<p>You can recognise that the <code>services.tinc.&quot;${myMeshName}&quot;.hosts</code> have the same content on both machines.</p>
+<p>It is also <strong>important</strong> that you set <code>services.tinc.&quot;${myMeshName}&quot;.name</code> to a machine that is contained in the <code>services.tinc.&quot;${myMeshName}&quot;.hosts</code>.</p>
+<h3 id="etc-nixos-tinc-nix-on-heinz">/etc/nixos/tinc.nix on heinz</h3><div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ config, pkgs, ... }:
+
+<span class="hljs-keyword">let</span>
+
+  <span class="hljs-attr">myMeshIp</span>   <span class="hljs-operator">=</span> <span class="hljs-string">&quot;10.1.1.25&quot;</span>;
+  <span class="hljs-attr">myMeshMask</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;255.255.255.0&quot;</span>;
+  <span class="hljs-attr">myMeshName</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;private&quot;</span>;
+
+<span class="hljs-keyword">in</span> {
+
+  <span class="hljs-comment"># simple interface setup</span>
+  <span class="hljs-comment"># ----------------------</span>
+  networking.interfaces.<span class="hljs-string">&quot;tinc.<span class="hljs-subst">${myMeshName}</span>&quot;</span> <span class="hljs-operator">=</span> [ { <span class="hljs-attr">address</span> <span class="hljs-operator">=</span> myMeshIp; } ];
+
+
+  <span class="hljs-comment"># configure tinc service</span>
+  <span class="hljs-comment"># ----------------------</span>
+  services.tinc.networks.<span class="hljs-string">&quot;<span class="hljs-subst">${myMeshName}</span>&quot;</span><span class="hljs-operator">=</span> {
+
+    <span class="hljs-attr">name</span>          <span class="hljs-operator">=</span> <span class="hljs-string">&quot;heinz&quot;</span>;      <span class="hljs-comment"># who are we in this network.</span>
+
+    <span class="hljs-attr">debugLevel</span>    <span class="hljs-operator">=</span> <span class="hljs-number">3</span>;            <span class="hljs-comment"># the debug level for journal -u tinc.private</span>
+    <span class="hljs-attr">chroot</span>        <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;        <span class="hljs-comment"># otherwise addresses can&#x27;t be a DNS</span>
+    <span class="hljs-attr">interfaceType</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;tap&quot;</span>;        <span class="hljs-comment"># tun might also work.</span>
+
+    <span class="hljs-attr">extraConfig</span>   <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+      # connect to peter
+      # ----------------
+      # check AutoConnect as alternative option.
+      ConnectTo  = peter
+
+      # Keys
+      # ----
+      # if you don&#x27;t set the path as string, it will import the file in
+      # in the nix/store where everybody can read it.
+      Ed25519PrivateKeyFile = &quot;/root/secrets/heinz/ed25519_key.priv&quot;
+      PrivateKeyFile        = &quot;/root/secrets/heinz/rsa_key.priv&quot;
+    &#x27;&#x27;</span>;
+    <span class="hljs-attr">hosts</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-comment"># content of hosts_heinz (from above)</span>
+      <span class="hljs-attr">heinz</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        Address = 192.168.178.25
+        Subnet  = 10.1.1.25
+
+        Ed25519PublicKey = asdf ...
+        -----BEGIN RSA PUBLIC KEY-----
+        bla blub ...
+        -----END RSA PUBLIC KEY-----
+        &#x27;&#x27;</span>;
+      <span class="hljs-comment"># content of hosts_peter (from above)</span>
+      <span class="hljs-attr">peter</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        Address = 192.168.178.21
+        Subnet  = 10.1.1.21
+
+        Ed25519PublicKey = asdf ...
+        -----BEGIN RSA PUBLIC KEY-----
+        bla blub ...
+        -----END RSA PUBLIC KEY-----
+      &#x27;&#x27;</span>;
+    };
+  };
+}</code></pre>
+      </div><h3 id="etc-nixos-tinc-nix-on-peter">/etc/nixos/tinc.nix on peter</h3><div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ config, pkgs, ... }:
+
+<span class="hljs-keyword">let</span>
+
+  <span class="hljs-attr">myMeshIp</span>   <span class="hljs-operator">=</span> <span class="hljs-string">&quot;10.1.1.21&quot;</span>;
+  <span class="hljs-attr">myMeshMask</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;255.255.255.0&quot;</span>;
+  <span class="hljs-attr">myMeshName</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;private&quot;</span>;
+
+<span class="hljs-keyword">in</span> {
+
+  <span class="hljs-comment"># open tinc ports</span>
+  <span class="hljs-comment"># ---------------</span>
+  <span class="hljs-attr">networking.firewall.allowedTCPPorts</span> <span class="hljs-operator">=</span> [ <span class="hljs-number">655</span> ];
+  <span class="hljs-attr">networking.firewall.allowedUDPPorts</span> <span class="hljs-operator">=</span> [ <span class="hljs-number">655</span> ];
+
+  <span class="hljs-comment"># simple interface setup</span>
+  <span class="hljs-comment"># ----------------------</span>
+  networking.interfaces.<span class="hljs-string">&quot;tinc.<span class="hljs-subst">${myMeshName}</span>&quot;</span> <span class="hljs-operator">=</span> [ { <span class="hljs-attr">address</span> <span class="hljs-operator">=</span> myMeshIp; } ];
+
+
+  <span class="hljs-comment"># configure tinc service</span>
+  <span class="hljs-comment"># ----------------------</span>
+  services.tinc.networks.<span class="hljs-string">&quot;<span class="hljs-subst">${myMeshName}</span>&quot;</span><span class="hljs-operator">=</span> {
+
+    <span class="hljs-attr">name</span>          <span class="hljs-operator">=</span> <span class="hljs-string">&quot;peter&quot;</span>;      <span class="hljs-comment"># who are we in this network.</span>
+
+    <span class="hljs-attr">debugLevel</span>    <span class="hljs-operator">=</span> <span class="hljs-number">3</span>;            <span class="hljs-comment"># the debug level for journal -u tinc.private</span>
+    <span class="hljs-attr">chroot</span>        <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;        <span class="hljs-comment"># otherwise addresses can&#x27;t be a DNS</span>
+    <span class="hljs-attr">interfaceType</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;tap&quot;</span>;        <span class="hljs-comment"># tun might also work.</span>
+
+    <span class="hljs-attr">extraConfig</span>   <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+      # Keys
+      # ----
+      # if you don&#x27;t set the path as string, it will import the file in
+      # in the nix/store where everybody can read it.
+      Ed25519PrivateKeyFile = &quot;/root/secrets/peter/ed25519_key.priv&quot;
+      PrivateKeyFile        = &quot;/root/secrets/peter/rsa_key.priv&quot;
+    &#x27;&#x27;</span>;
+    <span class="hljs-attr">hosts</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-comment"># content of hosts_heinz (from above)</span>
+      <span class="hljs-attr">heinz</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        Address = 192.168.178.25
+        Subnet  = 10.1.1.25
+
+        Ed25519PublicKey = asdf ...
+        -----BEGIN RSA PUBLIC KEY-----
+        bla blub ...
+        -----END RSA PUBLIC KEY-----
+        &#x27;&#x27;</span>;
+      <span class="hljs-comment"># content of hosts_peter (from above)</span>
+      <span class="hljs-attr">peter</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        Address = 192.168.178.21
+        Subnet  = 10.1.1.21
+
+        Ed25519PublicKey = asdf ...
+        -----BEGIN RSA PUBLIC KEY-----
+        bla blub ...
+        -----END RSA PUBLIC KEY-----
+      &#x27;&#x27;</span>;
+    };
+  };
+}</code></pre>
+      </div>
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

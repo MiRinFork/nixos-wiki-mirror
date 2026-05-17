@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NixOS Generations Trimmer</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / NixOS Generations Trimmer</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: NixOS Generations Trimmer -->
+
+<h2 id="overview">Overview</h2><p>The normal options available in NixOS to cleanup old <a href="https://mirror.nixoscn.org/wiki/NixOS%20Generations%20Trimmer/Generation" class="wikilink" title="generations">generations</a> might be too limiting. The script below is interactive and smart.</p>
+<p>By default (run with no arguments), the script keeps the last 7 days of generations and will prompt you to remove older generations if they are more than 10 generations behind the current one. So it always keeps at least 10 generations and always preserves generations from the last week.</p>
+<p>You can specify the number of <em>days</em> to always keep generations, and you can specify the number of <em>generations</em> to always keep.</p>
+<p>By default, it works on the <em>default</em> profile for the user running it.</p>
+<p>Other profile options:</p>
+<ul>
+<li>If you are root, you can run on the <code>system</code> profile</li>
+<li>If you are a normal user, you can run on either the <code>home-manager</code> or <code>channels</code> profiles too.</li>
+</ul>
+<h2 id="script-trim-generations-sh">Script (trim-generations.sh)</h2><p>The script is available here: <a href="https://gist.github.com/MaxwellDupre/3077cd229490cf93ecab08ef2a79c852">Github Gist - NixOS: trim-generations.sh</a></p>
+<h2 id="example-script-output">Example script output</h2><h3 id="without-parameters-defaults">Without parameters (defaults)</h3><div class="code-container">
+        
+        <pre><code class="language-bash hljs">❯ ./trim-generations.sh    
+
+The current defaults are:
+ Keep-Gens=30 Keep-Days=30 
+
+Keep these defaults? (y/n):y
+Using defaults..
+Keeping default: 30 generations OR 30 days, whichever is more
+Operating on profile:    /nix/var/nix/profiles/per-user/dougal/profile
+
+oldest generation:             75
+oldest generation created:     2023-08-05
+minutes before now:            46740
+hours before now:              779
+days before now:               32
+
+current generation:            217
+current generation created:    2023-09-06
+minutes before now:            660
+hours before now:              11
+days before now:               0
+
+        Something to <span class="hljs-keyword">do</span>...
+
+Found the following generation(s) to delete:
+generation 75    2023-08-05, 32 day(s) old
+generation 76    2023-08-05, 32 day(s) old
+generation 77    2023-08-05, 32 day(s) old
+generation 78    2023-08-05, 32 day(s) old
+generation 79    2023-08-05, 32 day(s) old
+generation 80    2023-08-05, 32 day(s) old
+generation 81    2023-08-05, 32 day(s) old
+generation 82    2023-08-05, 32 day(s) old
+generation 83    2023-08-05, 32 day(s) old
+generation 84    2023-08-05, 32 day(s) old
+generation 85    2023-08-05, 32 day(s) old
+generation 86    2023-08-05, 32 day(s) old
+
+Do you want to delete these? [Y/n]: </code></pre>
+      </div><h3 id="with-parameters">With parameters</h3><div class="code-container">
+        
+        <pre><code class="language-bash hljs">❯ ./trim-generations.sh 3 0 home-manager
+OK!      Keep Gens = 3   Keep Days = 0
+
+Operating on profile:    /nix/var/nix/profiles/per-user/user/home-manager
+
+oldest generation:             58
+oldest generation created:     2021-09-24
+minutes before now:            3922
+hours before now:              65
+days before now:               2
+
+current generation:            65
+current generation created:    2021-09-25
+
+    Something to <span class="hljs-keyword">do</span>...
+
+Found the following generation(s) to delete:
+generation 58    2021-09-24, 2 day(s) old
+generation 59    2021-09-25, 1 day(s) old
+generation 60    2021-09-25, 1 day(s) old
+generation 61    2021-09-25, 1 day(s) old
+generation 62    2021-09-25, 1 day(s) old
+
+Do you want to delete these? [Y/n]: </code></pre>
+      </div><h3 id="with-parameters-not-enough-though">With parameters (not enough though)</h3><p>Example if you accidentally don&#39;t specify all parameters / arguments.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">❯ <span class="hljs-built_in">sudo</span> ./trim-generations.sh 2 0
+
+Error: Not enough arguments.
+
+Usage:
+         ./trim-generations.sh &lt;keep-gernerations&gt; &lt;keep-days&gt; &lt;profile&gt; 
+
+
+(defaults are: Keep-Gens=30 Keep-Days=30 Profile=user)
+
+If you enter any parameters, you must enter all three, or none to use defaults.
+Example:
+         trim-generations.sh 15 10 home-manager
+  this will work on the home-manager profile and keep all generations from the
+last 10 days, and keep at least 15 generations no matter how old.
+
+Profiles available are: user, home-manager, channels, system (root)
+
+-h or --<span class="hljs-built_in">help</span> prints this <span class="hljs-built_in">help</span> text.</code></pre>
+      </div><h3 id="run-as-root-default">Run as root (default)</h3><div class="code-container">
+        
+        <pre><code class="language-bash hljs">❯ <span class="hljs-built_in">sudo</span> ./trim-generations.sh                 
+The current defaults are:
+ Keep-Gens=30 Keep-Days=30 
+
+Keep these defaults? (y/n):y
+Using defaults..
+Keeping default: 30 generations OR 30 days, whichever is more
+Operating on profile:    /nix/var/nix/profiles/system
+
+oldest generation:             65
+oldest generation created:     2023-08-05
+minutes before now:            46727
+hours before now:              778
+days before now:               32
+
+current generation:            102
+current generation created:    2023-09-04
+minutes before now:            3527
+hours before now:              58
+days before now:               2
+
+All generations are no more than 30 days older than current generation. 
+Oldest gen days difference from current gen: 30 
+
+        Nothing to <span class="hljs-keyword">do</span>!</code></pre>
+      </div><h3 id="run-as-root-on-system-profile">Run as root (on system profile)</h3><div class="code-container">
+        
+        <pre><code class="language-bash hljs">❯ <span class="hljs-built_in">sudo</span> ./trim-generations.sh 2 0 system
+OK!      Keep Gens = 2   Keep Days = 0
+
+Operating on profile:    /nix/var/nix/profiles/system
+
+oldest generation:             11
+oldest generation created:     2021-09-22
+minutes before now:            6807
+hours before now:              113
+days before now:               4
+
+current generation:            12
+current generation created:    2021-09-26
+
+Oldest generation (11) is only 1 generations behind current (12).    Nothing to <span class="hljs-keyword">do</span>!</code></pre>
+      </div><h3 id="run-as-root-wrong-profile">Run as root (wrong profile)</h3><p>Example if you accidentally give wrong profile (no home-manager on root):</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">❯ <span class="hljs-built_in">sudo</span> ./trim-generations.sh 3 0 home-manager
+
+Error: Do not understand your third argument. Should be one of: (user / system)
+
+Usage:
+         ./trim-generations.sh &lt;keep-gernerations&gt; &lt;keep-days&gt; &lt;profile&gt; 
+
+
+(defaults are: Keep-Gens=30 Keep-Days=30 Profile=user)
+
+If you enter any parameters, you must enter all three, or none to use defaults.
+Example:
+         trim-generations.sh 15 10 home-manager
+  this will work on the home-manager profile and keep all generations from the
+last 10 days, and keep at least 15 generations no matter how old.
+
+Profiles available are: user, home-manager, channels, system (root)
+
+-h or --<span class="hljs-built_in">help</span> prints this <span class="hljs-built_in">help</span> text.</code></pre>
+      </div><p><a href="category:Tutorial" class="wikilink" title="Category:Tutorial">Category:Tutorial</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

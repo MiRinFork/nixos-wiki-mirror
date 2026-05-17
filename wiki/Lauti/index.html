@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lauti</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Lauti</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Lauti -->
+
+<p><a href="https://lauti.org/">Lauti</a> is a community event calendar for groups and places.</p>
+<h2 id="setup">Setup</h2><p>A minimal local example setup would look like this</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">environment.etc.<span class="hljs-string">&quot;lauti-secrets&quot;</span>.text <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+LAUTI_ADMIN_PASSWORD=test123
+&#x27;&#x27;</span>;
+
+<span class="hljs-attr">services.eintopf</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">LAUTI_ADMIN_EMAIL</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;test@example.org&quot;</span>;
+    <span class="hljs-attr">LAUTI_BASE_URL</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;http://localhost:3333&quot;</span>;
+    <span class="hljs-attr">LAUTI_OSM_TILE_CACHE_DIR</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/var/lib/eintopf/osm&quot;</span>;
+    <span class="hljs-attr">LAUTI_OSM_TILE_SERVER</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://tile.openstreetmap.org/{z}/{x}/{y}.png&quot;</span>;
+    <span class="hljs-attr">LAUTI_TIMEZONE</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Europe/Berlin&quot;</span>;
+    <span class="hljs-attr">LAUTI_LANGUAGE</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;en&quot;</span>;
+  };
+  <span class="hljs-attr">secrets</span> <span class="hljs-operator">=</span> [ <span class="hljs-symbol">/etc/lauti-secrets</span> ];
+};</code></pre>
+      </div><p>The web service will be available at <a href="http://localhost:3333/">http://localhost:3333</a>. The administration login page is available at <a href="http://localhost:3333/backstage">http://localhost:3333/backstage</a> where you can use the credentials specified above.</p>
+<h2 id="configuration">Configuration</h2><h3 id="templates">Templates</h3><p>Following example packages the &quot;karlsunruh&quot; template and set it as default for Eintopf.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs, ... }:
+<span class="hljs-keyword">let</span>
+
+  <span class="hljs-attr">template-karlsunruh</span> <span class="hljs-operator">=</span> pkgs.stdenv.mkDerivation {
+    <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;karlsunruh&quot;</span>;
+    <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> pkgs.fetchFromGitLab {
+      <span class="hljs-attr">domain</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;git.project-insanity.org&quot;</span>;
+      <span class="hljs-attr">owner</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;onny&quot;</span>;
+      <span class="hljs-attr">repo</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;eintopf-karlsunruh&quot;</span>;
+      <span class="hljs-attr">rev</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;17622a22234b7eb664436582ee6147070c1b08bb&quot;</span>;
+      <span class="hljs-attr">hash</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sha256-cW1Q5clLy8b2/DblKWy5i307inymxuOz6gtY1+iHRKo=&quot;</span>;
+    };
+    <span class="hljs-attr">makeFlags</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;DESTDIR=$(out)&quot;</span> ];
+  };
+
+<span class="hljs-keyword">in</span>
+{
+
+  <span class="hljs-attr">services.eintopf</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">LAUTI_THEME</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;karlsunruh&quot;</span>;
+      <span class="hljs-attr">LAUTI_THEMES_PATH</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${template-karlsunruh}</span>&quot;</span>;
+    };
+  };
+
+}</code></pre>
+      </div><h2 id="tips-and-tricks">Tips and tricks</h2><h3 id="sync-events-from-radar-to-lauti">Sync events from Radar to Lauti</h3><p>The following script can be imported into the NixOS system configuration and will runs every half an hour to sync events from a given Radar group id to a specific target Lauti instance.</p>
+<p>Import the module and script into your system <code>flake.nix</code> file</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">inputs</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">eintopf-radar-sync.url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;git+https://git.project-insanity.org/onny/eintopf-radar-sync.git&quot;</span>;
+    [...]
+  };
+
+  <span class="hljs-attr">outputs</span> <span class="hljs-operator">=</span> {self, nixpkgs, ...}@<span class="hljs-params">inputs:</span> {
+
+    <span class="hljs-attr">nixosConfigurations.my_system</span> <span class="hljs-operator">=</span> inputs.nixpkgs.lib.nixosSystem {
+      <span class="hljs-attr">system</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;x86_64-linux&quot;</span>;
+      <span class="hljs-attr">specialArgs.inputs</span> <span class="hljs-operator">=</span> inputs;
+      <span class="hljs-attr">modules</span> <span class="hljs-operator">=</span> [
+        inputs.eintopf-radar-sync.nixosModule
+
+        ({ pkgs, ... }:{
+
+          <span class="hljs-attr">nixpkgs.overlays</span> <span class="hljs-operator">=</span> [
+            inputs.eintopf-radar-sync.overlay
+          ];
+
+        })
+
+        <span class="hljs-symbol">./configuration.nix</span>
+
+      ];
+    };
+  };
+}</code></pre>
+      </div><p>Enable the sync service in your system configuration by adding following snippet. Replace the setting variables according to your setup</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">environment.etc.<span class="hljs-string">&quot;eintopf-radar-sync-secrets&quot;</span>.text <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+EINTOPF_AUTHORIZATION_TOKEN=foobar23
+&#x27;&#x27;</span>;
+
+<span class="hljs-attr">services.eintopf-radar-sync</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">EINTOPF_URL</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://karlsunruh.project-insanity.org&quot;</span>;
+    <span class="hljs-attr">RADAR_GROUP_ID</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;436012&quot;</span>;
+  };
+  <span class="hljs-attr">secrets</span> <span class="hljs-operator">=</span> [ <span class="hljs-symbol">/etc/eintopf-radar-sync-secrets</span> ];
+};</code></pre>
+      </div><p>Get the authorization token through login request in the Lauti Swagger api interface, for example <a href="http://localhost:3333/api/v1/swagger#/auth/login">http://localhost:3333/api/v1/swagger#/auth/login</a></p>
+<p><a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="category:Web_Applications" class="wikilink" title="Category:Web Applications">Category:Web Applications</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fonts</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Fonts</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Fonts -->
+
+<p>NixOS handles fonts like it handles many different parts of the system: they are not in an environment unless explicitly marked to be part of it. This guide covers the installation, configuration and troubleshooting of fonts.</p>
+<h2 id="installing-fonts-on-nixos">Installing fonts on NixOS</h2><p>NixOS has many font packages available, and you can easily search for your favorites on the <a href="https://search.nixos.org/packages">NixOS packages site</a>.</p>
+<p>Despite looking like normal packages, simply adding these font packages to your <code>environment.systemPackages</code> won&#39;t make the fonts accessible to applications. To achieve that, put these packages in the <a href="https://search.nixos.org/options?channel=unstable&amp;show=fonts.packages&amp;from=0&amp;size=50&amp;sort=relevance&amp;type=packages&amp;query=fonts.packages"><code>fonts.packages</code></a> NixOS options list instead.</p>
+<p><em>For example:</em></p>
+<h3 id="shorthands-for-fonts">Shorthands for fonts</h3><ul>
+<li><code>fonts.enableDefaultPackages</code>: when set to <code>true</code>, causes some &quot;basic&quot; fonts to be installed for reasonable Unicode coverage. Set to <code>true</code> if you are unsure about what languages you might end up reading.</li>
+<li><code>fonts.enableGhostscriptFonts</code>: affects the <code>ghostscript</code> package. Ghostscript packages some URW fonts for the standard PostScript typefaces. If <code>true</code>, these fonts will be visible to GUI applications. You could set it to <code>true</code> if you want these fonts, but <code>gyre-fonts</code> (part of <code>fonts.enableDefaultPackages</code>) might be higher-quality depending on your judgement.</li>
+</ul>
+<h3 id="using-fonts-from-texlive">Using fonts from TexLive</h3><p>You can make use of all TeX/LaTeX fonts from CTAN and <a href="https://mirror.nixoscn.org/wiki/Fonts/TexLive" class="wikilink" title="TexLive">TexLive</a> by passing the <code>fonts</code> attribute of your TexLive package to <code>fonts.package</code>:</p>
+<h3 id="installing-nerdfonts">Installing <code>nerdfonts</code></h3><p>Individual Nerd Fonts can be installed like so:</p>
+<p>The available Nerd Font subpackages can be listed by searching for on the <a href="https://mirror.nixoscn.org/wiki/Fonts/Searching_packages" class="wikilink" title="NixOS Package Search">NixOS Package Search</a> or by running the following command:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-instantiate --<span class="hljs-built_in">eval</span> --<span class="hljs-built_in">expr</span> <span class="hljs-string">&quot;with (import &lt;nixpkgs&gt; {}); lib.attrNames (lib.filterAttrs (_: lib.isDerivation) nerd-fonts)&quot;</span></span></code></pre>
+      </div><h4 id="installing-all-nerdfonts">Installing all <code>nerdfonts</code></h4><p>Installing all fonts from the <a href="https://www.nerdfonts.com/">Nerd Fonts repository</a> is as simple as adding all of the individual packages to the NixOS configuration. The following line will do exactly that, by searching for all derivations under the <code>nerd-font</code> attribute:</p>
+<h3 id="patching-nerdfonts-into-fonts">Patching nerdfonts into fonts</h3><p>Not all fonts have Nerd Fonts variants, thankfully you can easily patch them in yourself.</p>
+<h3 id="let-fontconfig-know-the-fonts-within-your-nix-profile">Let Fontconfig know the fonts within your Nix profile</h3><p>Nix inserts its user profile path into <code>$XDG_DATA_DIRS</code>, which Fontconfig by default doesn&#39;t look in. This cause graphical applications like KDE Plasma not able to recognize the fonts installed via <code>nix-env</code> or <code>nix profile</code>.</p>
+<p>To solve this, add the file <code>100-nix.conf</code> to your Fontconfig user configuration directory (usually <code>$XDG_CONFIG_HOME/fontconfig/conf.d</code>):</p>
+<div class="code-container">
+        
+        <pre><code class="language-xml hljs"><span class="hljs-meta">&lt;?xml version=<span class="hljs-string">&quot;1.0&quot;</span>?&gt;</span>
+<span class="hljs-meta">&lt;!DOCTYPE <span class="hljs-keyword">fontconfig</span> <span class="hljs-keyword">SYSTEM</span> <span class="hljs-string">&quot;urn:fontconfig:fonts.dtd&quot;</span>&gt;</span>
+<span class="hljs-tag">&lt;<span class="hljs-name">fontconfig</span>&gt;</span>
+  <span class="hljs-comment">&lt;!-- NIX_PROFILE is the path to your Nix profile. See Nix Reference Manual for details. --&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">dir</span>&gt;</span>NIX_PROFILE/lib/X11/fonts<span class="hljs-tag">&lt;/<span class="hljs-name">dir</span>&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">dir</span>&gt;</span>NIX_PROFILE/share/fonts<span class="hljs-tag">&lt;/<span class="hljs-name">dir</span>&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">fontconfig</span>&gt;</span></code></pre>
+      </div><p>and run <code>fc-cache</code>.</p>
+<p>Alternatively, <a href="https://nix-community.github.io/home-manager/options.xhtml#opt-fonts.fontconfig.enable">enable Fontconfig configuration</a> in your Home Manager configuration.</p>
+<h3 id="imperative-installation-of-user-fonts">Imperative installation of user fonts</h3><p>This is useful for quick font experiments.</p>
+<p><em>Example</em>: Install <code>SourceCodePro-Regular</code>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">font=$(nix-build --no-out-link <span class="hljs-string">&#x27;&lt;nixpkgs&gt;&#x27;</span> -A source-code-pro)/share/fonts/opentype/SourceCodePro-Regular.otf
+<span class="hljs-built_in">cp</span> <span class="hljs-variable">$font</span> ~/.local/share/fonts
+fc-cache
+<span class="hljs-comment"># Verify that the font has been installed</span>
+fc-list -v | grep -i <span class="hljs-built_in">source</span></code></pre>
+      </div><h3 id="install-fonts-in-nix-shells">Install fonts in nix-shells</h3><p><code>fonts</code> is not available as set-valued option in <code>mkshell</code> (gives you an error because it tries to coerce an attribute set into a string). Instead, insert the following:<sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Fonts#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{pkgs <span class="hljs-operator">?</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> {} }:
+<span class="hljs-keyword">let</span>
+  <span class="hljs-attr">fontsConf</span> <span class="hljs-operator">=</span> pkgs.makeFontsConf {
+    <span class="hljs-attr">fontDirectories</span> <span class="hljs-operator">=</span> [
+      <span class="hljs-comment"># your needed fonts here, e.g.:</span>
+      pkgs.font-awesome
+      pkgs.atkinson-hyperlegible-next
+    ];
+  };
+<span class="hljs-keyword">in</span>
+  pkgs.mkShell {
+    <span class="hljs-attr">packages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+      <span class="hljs-comment"># your font-dependent packages, e.g.:</span>
+      typst
+    ];
+    <span class="hljs-attr">shellHook</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+      export FONTCONFIG_FILE=&quot;<span class="hljs-subst">${fontsConf}</span>&quot;
+    &#x27;&#x27;</span>;
+  }</code></pre>
+      </div><p>Then <code>typst fonts</code> finds the installed fonts in the nix-shell.</p>
+<h2 id="configuring-fonts">Configuring fonts</h2><p>The nixos key <a href="https://search.nixos.org/options?channel=unstable&amp;from=0&amp;size=50&amp;sort=relevance&amp;type=packages&amp;query=fonts.fontconfig"><code>fonts.fontconfig</code></a> (click to see the full list!) handles the fontconfig options. Some options are nicely wrapped in nix; there&#39;s always <code>localConf</code> to go straight to the XML.</p>
+<h3 id="set-multiple-fonts-for-different-languages">Set multiple fonts for different languages</h3><p>If you want to use other languages alongside English, you may want to set appropriate fonts for each language in your whole OS. For example, a Persian speaker might want to use the <a href="https://rastikerdar.github.io/vazirmatn/">Vazirmatn</a> font for Persian texts, but <a href="https://design.ubuntu.com/font/">Ubuntu</a> and Liberation Serif fonts for English texts. Just put these lines into your <code>configuration.nix</code>:</p>
+<p>NB:</p>
+<ul>
+<li>This actually just sets the font fallback order so that fontconfig tries using the English font first, then falls back to another font if the character set is not covered. You <em>usually</em> want to write the English font <em>before</em> the other-language font, because the other-language font might cover Latin characters too, preventing the English font from showing up.</li>
+<li><code>defaultFonts</code> translates to <code>&lt;prefer&gt;</code> in the actual fontconfig file. See <a href="https://github.com/NixOS/nixpkgs/blob/nixos-23.11/nixos/modules/config/fonts/fontconfig.nix">https://github.com/NixOS/nixpkgs/blob/nixos-23.11/nixos/modules/config/fonts/fontconfig.nix</a> for how NixOS does it, and the links below for how fontconfig interpret it.</li>
+<li>Vazirmatn is actually a &quot;sans-serif&quot; font; using it for <code>serif</code> is not a good visual match. You might need not one, but two (or if you count monospace, three!) font packages for a language.</li>
+</ul>
+<h3 id="use-custom-font-substitutions">Use custom font substitutions</h3><p>Sometimes, documents may appear to have bad kerning or hard-to-read letter spacing, due to a bad substitution. For example, Okular may show in the <em>Document Properties</em> dialog that it has substituted DejaVu Sans Mono (a sans-serif font) in place of &quot;NewCenturySchlbk&quot;. <code>fc-match NewCenturySchlbk</code> would display similiar info.</p>
+<p>Adding this to your <code>/etc/nixos/configuration.nix</code> should prompt it to use the more similar (and nicer) serif <em>Schola</em> font instead:</p>
+<p>For more information and examples on the xml configuration language:</p>
+<ul>
+<li><a href="https://www.mankier.com/5/fonts-conf">https://www.mankier.com/5/fonts-conf</a></li>
+<li><a href="https://wiki.archlinux.org/index.php/Font_configuration">https://wiki.archlinux.org/index.php/Font_configuration</a></li>
+<li><a href="https://wiki.archlinux.org/index.php/Font_configuration/Examples">https://wiki.archlinux.org/index.php/Font_configuration/Examples</a></li>
+</ul>
+<p>For a list of suitable replacement fonts:</p>
+<ul>
+<li><a href="https://wiki.archlinux.org/title/Metric-compatible_fonts">https://wiki.archlinux.org/title/Metric-compatible_fonts</a></li>
+</ul>
+<h2 id="troubleshooting">Troubleshooting</h2><h3 id="what-font-names-can-be-used-in-fonts-fontconfig-defaultfonts-monospace">What font names can be used in <code>fonts.fontconfig.defaultFonts.monospace</code>?</h3><p>Those that fontconfig will understand. This can be queried from a font file using <code>fc-query</code>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">cd</span> /nix/var/nix/profiles/system/sw/share/X11/fonts</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">fc-query DejaVuSans.ttf | grep <span class="hljs-string">&#x27;^\s\+family:&#x27;</span> | <span class="hljs-built_in">cut</span> -d<span class="hljs-string">&#x27;&quot;&#x27;</span> -f2</span></code></pre>
+      </div><p>Note that you may need to set <code>fonts.fontDir.enable = true;</code> for that X11/fonts directory to exist.</p>
+<h3 id="adding-personal-fonts-to-fonts-doesn-39-t-work">Adding personal fonts to <code>~/.fonts</code> doesn&#39;t work</h3><p>The <code>~/.fonts</code> directory is being deprecated upstream<sup><a id="footnote-ref-2" href="https://mirror.nixoscn.org/wiki/Fonts#footnote-2" data-footnote-ref aria-describedby="footnote-label">2</a></sup>. It already doesn&#39;t work in NixOS.</p>
+<p>The new preferred location is in <code>$XDG_DATA_HOME/fonts</code>, which for most users will resolve to <code>~/.local/share/fonts</code><sup><a id="footnote-ref-3" href="https://mirror.nixoscn.org/wiki/Fonts#footnote-3" data-footnote-ref aria-describedby="footnote-label">3</a></sup></p>
+<h3 id="flatpak-applications-can-39-t-find-system-fonts">Flatpak applications can&#39;t find system fonts</h3><p>To expose available fonts under <code>/run/current-system/sw/share/X11/fonts</code>, enable <code>fontDir</code> in your NixOS configuration.</p>
+<p>You will then need to link/copy this folder to one of the Flatpak-supported locations - see below.</p>
+<h4 id="solution-1-copy-fonts-to-home-local-share-fonts">Solution 1: Copy fonts to <code>$HOME/.local/share/fonts</code></h4><p>Create fonts directory <code>$HOME/.local/share/fonts</code> and copy system fonts with option <code>-L, --dereference</code>. You will need to repeat this step whenever the fonts change.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">mkdir</span> <span class="hljs-variable">$HOME</span>/.local/share/fonts &amp;&amp; <span class="hljs-built_in">cp</span> -L /run/current-system/sw/share/X11/fonts/* <span class="hljs-variable">$HOME</span>/.local/share/fonts/</span></code></pre>
+      </div><p>Note: There is no need to grant flatpak applications access to <code>$HOME/.local/share/fonts</code>.</p>
+<p>Instead, if you do that, some applications (for example, steam) won&#39;t work.</p>
+<blockquote>
+<p>Internals: How it works?</p>
+<p>Flatpak applications run in sandboxes. When you start a flatpak application, flatpak builds a rootfs for it with bubblewrap.</p>
+<p>With <code>findmnt --task {PID of flatpak app}</code> , you can explore the details of its rootfs.</p>
+<p>By default, flatpak mounts <code>$HOME/.local/share/fonts</code> to <code>/run/host/user-fonts</code> in rootfs of an flatpak application.</p>
+<div class="code-container">
+        
+        <pre><code class="language-json hljs"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;target&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;/run/host/user-fonts&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;source&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;/dev/disk/by-uuid/b2e1e6b5-738b-410b-b736-6d5c3dbbe31f[/home/username/.local/share/fonts]&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;fstype&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;ext4&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;options&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;ro,nosuid,nodev,relatime&quot;</span>
+<span class="hljs-punctuation">}</span></code></pre>
+      </div><p>Then flatpak application can read fonts from that to display contents correctly.</p>
+</blockquote>
+<h4 id="solution-2-symlink-to-system-fonts-at-home-local-share-fonts">Solution 2: Symlink to system fonts at <code>$HOME/.local/share/fonts</code></h4><blockquote>
+<p><strong>Note:</strong> this method doesn&#39;t work for some flatpak applications (for example, steam)!</p>
+<p>Error:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">flatpak run com.valvesoftware.Steam</span>
+bwrap: Can&#x27;t make symlink at /home/username/.local/share/fonts: File exists</code></pre>
+      </div></blockquote>
+<p>Create a symlink in <code>XDG_DATA_HOME/fonts</code> pointing to <code>/run/current-system/sw/share/X11/fonts</code>, e. g.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">mkdir</span> <span class="hljs-variable">$HOME</span>/.local/share/fonts &amp;&amp; <span class="hljs-built_in">ln</span> -s /run/current-system/sw/share/X11/fonts ~/.local/share/fonts/</code></pre>
+      </div><p>Now you have two options.</p>
+<h5 id="option-1-allow-access-to-the-fonts-folder-and-nix-store">Option 1: Allow access to the fonts folder and <code>/nix/store</code></h5><p>By using the Flatpak CLI or the Flatseal Flatpak make the following directory available to all Flatpaks <code>$HOME/.local/share/fonts</code> and <code>$HOME/.icons</code> the appropriate commands for this are:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">flatpak --user override --filesystem=<span class="hljs-variable">$HOME</span>/.local/share/fonts:ro
+flatpak --user override --filesystem=<span class="hljs-variable">$HOME</span>/.icons:ro</code></pre>
+      </div><p>And, because <code>~/.local/share/fonts</code> is linked to <code>/run/current-system/sw/share/X11/fonts</code>, which in turn is linked to content in <code>/nix/store</code>. You need to grant flatpak applications access to the <code>/nix/store</code> directory, so that they can load fonts correctly. You may need to reboot for this to fully take effect.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">flatpak --user override --filesystem=/nix/store:ro
+flatpak --user override --filesystem=/run/current-system/sw/share/X11/fonts:ro</code></pre>
+      </div><h5 id="option-2-allow-access-to-the-whole-filesystem">Option 2: Allow access to the WHOLE filesystem</h5><p>Allow them access the WHOLE filesystem of yours: <code>All system files</code> in Flatseal or equivalently <code>filesystem=host</code> available to your application, the command for this is:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">flatpak --user override --filesystem=host</code></pre>
+      </div><p>It is important to keep in mind that some flatpak apps may refuse to launch if given certain permissions, such as the Steam flatpak.</p>
+<h4 id="solution-3-configure-bindfs-for-fonts-cursors-icons-support">Solution 3: Configure bindfs for fonts/cursors/icons support</h4><p>Alternatively, you can expose relevant packages directly under <code>/usr/share/...</code> paths. This will also enable Flatpak to use a custom cursor theme if you have one. This solution doesn&#39;t require <code>fonts.fontDir.enable</code> to be enabled.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">system.fsPackages</span> <span class="hljs-operator">=</span> [ pkgs.bindfs ];
+  <span class="hljs-attr">fileSystems</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">let</span>
+    <span class="hljs-attr">mkRoSymBind</span> <span class="hljs-operator">=</span> <span class="hljs-params">path:</span> {
+      <span class="hljs-attr">device</span> <span class="hljs-operator">=</span> path;
+      <span class="hljs-attr">fsType</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;fuse.bindfs&quot;</span>;
+      <span class="hljs-attr">options</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;ro&quot;</span> <span class="hljs-string">&quot;resolve-symlinks&quot;</span> <span class="hljs-string">&quot;x-gvfs-hide&quot;</span> ];
+    };
+    <span class="hljs-attr">fontsPkgs</span> <span class="hljs-operator">=</span> config.fonts.packages <span class="hljs-operator">++</span> (<span class="hljs-keyword">with</span> pkgs; [
+        <span class="hljs-comment"># Add your cursor themes and icon packages here</span>
+        bibata-cursors
+        gnome.gnome-themes-extra
+        <span class="hljs-comment"># etc.</span>
+      ]);
+    <span class="hljs-attr">x11Fonts</span> <span class="hljs-operator">=</span> pkgs.runCommand <span class="hljs-string">&quot;X11-fonts&quot;</span>
+      {
+        <span class="hljs-attr">preferLocalBuild</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+        <span class="hljs-attr">nativeBuildInputs</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+          gzip
+          xorg.mkfontscale
+          xorg.mkfontdir
+        ];
+      }
+      (<span class="hljs-string">&#x27;&#x27;
+        mkdir -p &quot;$out/share/fonts&quot;
+        font_regexp=&#x27;.*<span class="hljs-char escape_">\.</span><span class="hljs-char escape_">\(</span>ttf<span class="hljs-char escape_">\|</span>ttc<span class="hljs-char escape_">\|</span>otb<span class="hljs-char escape_">\|</span>otf<span class="hljs-char escape_">\|</span>pcf<span class="hljs-char escape_">\|</span>pfa<span class="hljs-char escape_">\|</span>pfb<span class="hljs-char escape_">\|</span>bdf<span class="hljs-char escape_">\)</span><span class="hljs-char escape_">\(</span><span class="hljs-char escape_">\.</span>gz<span class="hljs-char escape_">\)</span>?&#x27;
+      &#x27;&#x27;</span>
+      <span class="hljs-operator">+</span> (<span class="hljs-built_in">builtins.concatStringsSep</span> <span class="hljs-string">&quot;<span class="hljs-char escape_">\n</span>&quot;</span> (<span class="hljs-built_in">builtins.map</span> (<span class="hljs-params">pkg:</span> <span class="hljs-string">&#x27;&#x27;
+          find <span class="hljs-subst">${<span class="hljs-built_in">toString</span> pkg}</span> -regex &quot;$font_regexp&quot; \
+            -exec ln -sf -t &quot;$out/share/fonts&quot; &#x27;{}&#x27; <span class="hljs-char escape_">\;</span>
+        &#x27;&#x27;</span>) fontsPkgs
+        ))
+      <span class="hljs-operator">+</span> <span class="hljs-string">&#x27;&#x27;
+        cd &quot;$out/share/fonts&quot;
+        mkfontscale
+        mkfontdir
+        cat $(find <span class="hljs-subst">${pkgs.xorg.fontalias}</span>/ -name fonts.alias) &gt;fonts.alias
+      &#x27;&#x27;</span>);
+    <span class="hljs-attr">aggregatedIcons</span> <span class="hljs-operator">=</span> pkgs.buildEnv {
+      <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;system-icons&quot;</span>;
+      <span class="hljs-attr">paths</span> <span class="hljs-operator">=</span> fontsPkgs;
+      <span class="hljs-attr">pathsToLink</span> <span class="hljs-operator">=</span> [
+        <span class="hljs-string">&quot;/share/icons&quot;</span>
+      ];
+    };
+  <span class="hljs-keyword">in</span> {
+    <span class="hljs-string">&quot;/usr/share/icons&quot;</span> <span class="hljs-operator">=</span> mkRoSymBind (aggregatedIcons <span class="hljs-operator">+</span> <span class="hljs-string">&quot;/share/icons&quot;</span>);
+    <span class="hljs-string">&quot;/usr/share/fonts&quot;</span> <span class="hljs-operator">=</span> mkRoSymBind (x11Fonts <span class="hljs-operator">+</span> <span class="hljs-string">&quot;/share/fonts&quot;</span>);
+  };
+
+  <span class="hljs-attr">fonts.packages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+    noto-fonts
+    noto-fonts-emoji
+    noto-fonts-cjk
+  ];</code></pre>
+      </div><p>Note that font cache inside flatpak container may not be recreated after changes to fonts in <code>/usr/share/fonts</code>, because font cache seem to be relying on file timestamps that are missing in <code>/nix/store</code>.</p>
+<p>You can make sure that font directory is bind-mounted properly inside flatpak container by running <code>flatpak enter </code><instance><code> findmnt | grep /run/host/fonts</code>, or by running <code>flatpak enter </code><instance><code> ls -alh /run/host/fonts</code> and compare it to <code>ls -alh /usr/share/fonts</code>.</p>
+<p>If everything is mounted properly, but you still do not see fonts in flatpak app - force font cache recreation inside flatpak container: <code>flatpak run --command=fc-cache </code><application id><code> -f -v</code></p>
+<h3 id="noto-color-emoji-doesn-39-t-render-on-firefox">Noto Color Emoji doesn&#39;t render on Firefox</h3><p>Enable <code>useEmbeddedBitmaps</code> in your NixOS configuration.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">f<span class="hljs-attr">onts.fontconfig.useEmbeddedBitmaps</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><hr />
+
+<p><a href="category:Configuration" class="wikilink" title="Category:Configuration">Category:Configuration</a> <a href="category:Desktop" class="wikilink" title="Category:Desktop">Category:Desktop</a> <a href="category:Fonts" class="wikilink" title="Category:Fonts">Category:Fonts</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p><a href="https://programming.dev/post/32484220">https://programming.dev/post/32484220</a> <a href="https://mirror.nixoscn.org/wiki/Fonts#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+<li id="footnote-2">
+<p><a href="https://lists.freedesktop.org/archives/fontconfig/2014-July/005269.html">https://lists.freedesktop.org/archives/fontconfig/2014-July/005269.html</a> <a href="https://mirror.nixoscn.org/wiki/Fonts#footnote-ref-2" data-footnote-backref aria-label="Back to reference 2">↩</a></p>
+</li>
+<li id="footnote-3">
+<p><a href="https://lists.freedesktop.org/archives/fontconfig/2014-July/005270.html">https://lists.freedesktop.org/archives/fontconfig/2014-July/005270.html</a> <a href="https://mirror.nixoscn.org/wiki/Fonts#footnote-ref-3" data-footnote-backref aria-label="Back to reference 3">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

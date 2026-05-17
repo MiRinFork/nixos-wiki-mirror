@@ -1,0 +1,592 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Steam/ru</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/Steam">Steam</a><span aria-hidden="true"> / </span>ru</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Steam/ru -->
+
+<languages/>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p><a href="https://store.steampowered.com/">Steam</a> is a digital distribution platform for video games, offering a vast library for purchase, download, and management. On NixOS, Steam is generally easy to install and use, often working &quot;out-of-the-box&quot;. It supports running many Windows games on Linux through its compatibility layer, <a href="https://mirror.nixoscn.org/wiki/Steam/ru#Proton" class="wikilink" title="Proton">Proton</a>.<sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Steam/ru#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup></p>
+</div>
+
+<p><span id="Installation"></span></p>
+<h2 id="">Установка</h2><div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h4 id="shell">Shell</h4></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>To temporarily use Steam-related tools like <code>steam-run</code> (for FHS environments) or <code>steamcmd</code> (for server management or tools like steam-tui setup) in a shell environment, you can run:</p>
+</div>
+
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-shell -p steam-run <span class="hljs-comment"># For FHS environment</span></span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-shell -p steamcmd  <span class="hljs-comment"># For steamcmd</span></span></code></pre>
+      </div><div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>This provides the tools in your current shell without adding them to your system configuration. For <code>steamcmd</code> to work correctly for some tasks (like initializing for steam-tui), you might need to run it once to generate necessary files, as shown in the <a href="https://mirror.nixoscn.org/wiki/Steam/ru#steam-tui" class="wikilink" title=" steam-tui section"> steam-tui section</a>.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h4 id="system-setup">System setup</h4></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>To install the <a href="special:MyLanguage/Steam" class="wikilink" title="Steam">Steam</a> package and enable all the system options necessary to allow it to run, add the following to your system configuration:</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p><a href="https://news.ycombinator.com/item?id=41549030">Anecdata on kernel 6.10 issues</a></p>
+</div>
+
+<p><span id="Configuration"></span></p>
+<h2 id="">Настройка</h2><div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Basic Steam features can be enabled directly within the attribute set:</p>
+</div>
+
+<p>true;</code> which sets to true.</span>}}</p>
+<p><span id="Tips_and_tricks"></span></p>
+<h2 id="">Советы и рекомендации</h2><div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h3 id="gamescope-compositor-quot-boot-to-steam-deck-quot">Gamescope Compositor / &quot;Boot to Steam Deck&quot;</h3></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Gamescope can function as a minimal desktop environment, meaning you can launch it from a TTY and have an experience very similar to the Steam Deck hardware console.</p>
+</div>
+
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># Clean Quiet Boot</span>
+b<span class="hljs-attr">oot</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">kernelParams</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-string">&quot;quiet&quot;</span>
+    <span class="hljs-string">&quot;splash&quot;</span>
+    <span class="hljs-string">&quot;console=/dev/null&quot;</span>
+  ];
+  <span class="hljs-attr">plymouth.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+};
+
+<span class="hljs-attr">programs</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">gamescope</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">capSysNice</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  };
+  <span class="hljs-attr">steam.gamescopeSession.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+};
+
+<span class="hljs-comment"># Gamescope Auto Boot from TTY (example)</span>
+s<span class="hljs-attr">ervices</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">xserver.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>; <span class="hljs-comment"># Assuming no other Xserver needed</span>
+  <span class="hljs-attr">getty.autologinUser</span> <span class="hljs-operator">=</span> <span class="hljs-operator">&lt;</span><span class="hljs-string">&quot;USERNAME_HERE&quot;</span><span class="hljs-operator">&gt;</span>;
+  <span class="hljs-attr">greetd</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">default_session</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">command</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${lib.getExe pkgs.gamescope}</span> -W 1920 -H 1080 -f -e --xwayland-count 2 --hdr-enabled --hdr-itm-enabled -- steam -pipewire-dmabuf -gamepadui -steamdeck -steamos3 &gt; /dev/null 2&gt;&amp;1&quot;</span>;
+        <span class="hljs-attr">user</span> <span class="hljs-operator">=</span> <span class="hljs-operator">&lt;</span><span class="hljs-string">&quot;USERNAME HERE&quot;</span><span class="hljs-operator">&gt;</span>;
+      };
+    };
+  };
+};</code></pre>
+      </div><div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h3 id="gamescope-hdr">Gamescope HDR</h3></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>In order for HDR to work within gamescope, you need to separately install the <code>gamescope-wsi</code> package alongside enabling the <code>gamescope</code> program.</p>
+</div>
+
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">p<span class="hljs-attr">rograms.gamescope</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">capSysNice</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+};
+<span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+  gamescope-wsi <span class="hljs-comment"># HDR won&#x27;t work without this</span>
+];</code></pre>
+      </div><div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Additionally, it may be necessary to force HDR in gamescope with the argument <code>--hdr-debug-force-output</code> when configuring your game&#39;s launch options in steam (see the example below).</p>
+</div>
+
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">gamescope -W 3840 -H 2160 -r 120 -f --adaptive-sync --hdr-enabled --hdr-debug-force-output --mangoapp -- %<span class="hljs-built_in">command</span>%</code></pre>
+      </div><h3 id="steam-tui">steam-tui</h3><div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>If you want the steam-tui client, you&#39;ll have to install it. It relies on <code>steamcmd</code> being set up, so you&#39;ll need to run <code>steamcmd</code> once to generate the necessary configuration files. First, ensure <code>steamcmd</code> is available (e.g., via <code>nix-shell -p steamcmd</code> or by adding it to <code>environment.systemPackages</code>), then run:</p>
+</div>
+
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">steamcmd +quit <span class="hljs-comment"># This initializes steamcmd&#x27;s directory structure</span></code></pre>
+      </div><div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Then install and run <code>steam-tui</code>. You may need to log in within <code>steamcmd</code> first if <code>steam-tui</code> has issues:</p>
+</div>
+
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-comment"># (Inside steamcmd prompt, if needed for full login before steam-tui)</span>
+<span class="hljs-comment"># login &lt;username&gt; &lt;password&gt; &lt;steam_2fa_code&gt;</span>
+<span class="hljs-comment"># quit</span></code></pre>
+      </div><div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>After setup, <code>steam-tui</code> (if installed e.g. via <code>home.packages</code> or <code>environment.systemPackages</code>) should start fine.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h3 id="fhs-environment-only">FHS environment only</h3></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>To run proprietary games or software downloaded from the internet that expect a typical Linux Filesystem Hierarchy Standard (FHS), you can use <code>steam-run</code>. This provides an FHS-like environment without needing to patch the software. Note that this is not necessary for clients installed from Nixpkgs (like Minigalaxy or Itch), which already use the FHS environment as needed. There are two options to make <code>steam-run</code> available: 1. Install <code>steam-run</code> system-wide or user-specifically:</p>
+</div>
+
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># In /etc/nixos/configuration.nix</span>
+e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+  steam-run
+];</code></pre>
+      </div><div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>2. If you need more flexibility or want to use an overridden Steam package&#39;s FHS environment:</p>
+</div>
+
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># In /etc/nixos/configuration.nix</span>
+e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+  (steam.override { <span class="hljs-comment">/* Your overrides here */</span> }).run
+];</code></pre>
+      </div><h3 id="proton">Proton</h3><div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>You should be able to play most Windows games using Proton. If a game has a native Linux version that causes issues on NixOS, you can force the use of Proton by selecting a specific Proton version in the game&#39;s compatibility settings in Steam.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>By default, Steam also looks for custom Proton versions in <code>~/.steam/root/compatibilitytools.d</code>. The environment variable <code>STEAM_EXTRA_COMPAT_TOOLS_PATHS</code> can be set to add other search paths.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Declarative install of custom Proton versions (e.g. GE-Proton):</p>
+</div>
+
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">p<span class="hljs-attr">rograms.steam.extraCompatPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+  proton-ge-bin
+];</code></pre>
+      </div><div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Manual management of multiple Proton versions can be done with ProtonUp-Qt:</p>
+</div>
+
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+  protonup-qt
+];</code></pre>
+      </div><div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h3 id="overriding-the-steam-package">Overriding the Steam package</h3></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>In some cases, you may need to override the default Steam package to provide missing dependencies or modify its build. Use the <code>programs.steam.package</code> option for this. Steam on NixOS runs many games in an FHS environment, but the Steam client itself or certain tools might need extra libraries.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Example: Adding Bumblebee and Primus (for NVIDIA Optimus):</p>
+</div>
+
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">p<span class="hljs-attr">rograms.steam.package</span> <span class="hljs-operator">=</span> pkgs.steam.override {
+  <span class="hljs-attr">extraPkgs</span> <span class="hljs-operator">=</span> <span class="hljs-params">pkgs&#x27;:</span> <span class="hljs-keyword">with</span> pkgs&#x27;; [ bumblebee primus ];
+};
+
+<span class="hljs-comment"># For 32-bit applications with Steam, if using steamFull:</span>
+<span class="hljs-comment"># programs.steam.package = pkgs.steamFull.override { extraPkgs = pkgs&#x27;: with pkgs&#x27;; [ bumblebee primus ]; };</span></code></pre>
+      </div><div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Example: Adding Xorg libraries for Gamescope (when used within Steam):</p>
+</div>
+
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">p<span class="hljs-attr">rograms.steam.package</span> <span class="hljs-operator">=</span> pkgs.steam.override {
+  <span class="hljs-attr">extraPkgs</span> <span class="hljs-operator">=</span> <span class="hljs-params">pkgs&#x27;:</span> <span class="hljs-keyword">with</span> pkgs&#x27;; [
+    libXcursor
+    libXi
+    libXinerama
+    libXScrnSaver
+    libpng
+    libpulseaudio
+    libvorbis
+    stdenv.cc.cc.lib <span class="hljs-comment"># Provides libstdc++.so.6</span>
+    libkrb5
+    keyutils
+    <span class="hljs-comment"># Add other libraries as needed</span>
+  ];
+};</code></pre>
+      </div><div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h3 id="fix-missing-icons-for-games-in-gnome-dock-and-activities-overview">Fix missing icons for games in GNOME dock and activities overview</h3></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>GNOME uses the window class to determine the icon associated with a window. Steam currently doesn&#39;t set the required key for this in its .desktop files<sup><a id="footnote-ref-2" href="https://mirror.nixoscn.org/wiki/Steam/ru#footnote-2" data-footnote-ref aria-describedby="footnote-label">2</a></sup>, but you can fix this manually by editing the <code>StartupWMClass</code> key for each game&#39;s .desktop file, found under <code>~/.local/share/applications/</code>.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>For games running through Proton, the value should be <code>steam_app_</code><game_id> (where <game_id> matches the value after <a href="steam://rungameid/">steam://rungameid/</a> on the <code>Exec</code> line).</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>For games running natively, the value should match the game&#39;s main executable.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>For example, the modified .desktop file for Valheim looks like this:</p>
+</div>
+
+<div class="code-container">
+        
+        <pre><code class="language-desktop hljs">[Desktop Entry]
+Name=Valheim
+Comment=Play this game on Steam
+Exec=steam steam://rungameid/892970
+Icon=steam_icon_892970
+Terminal=false
+Type=Application
+Categories=Game;
+StartupWMClass=valheim.x86_64</code></pre>
+      </div><p><span id="Troubleshooting"></span></p>
+<h2 id="">Устранение неполадок</h2><div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>For all issues: first run <code>steam -dev -console</code> through the terminal and read the output.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h3 id="steam-fails-to-start-what-do-i-do">Steam fails to start. What do I do?</h3></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>One common issue preventing steam from being able to start, at least on <code>x86-64</code> platforms, is not having the following options enabled in your <code>/etc/nixos/hardware-configuration.nix</code>:</p>
+</div>
+
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"> {
+   <span class="hljs-attr">hardware.graphics.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+   <span class="hljs-attr">hardware.graphics.enable32Bit</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+ }</code></pre>
+      </div><div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>If you have those options set (or 32-bit isn&#39;t applicable to your system/platform) and still can&#39;t run steam, then run <code>strace steam -dev -console 2&gt; steam.logs</code> in the terminal. If <code>strace</code> is not installed, temporarily install it using <code>nix-shell -p strace</code> or <code>nix run nixpkgs#strace -- steam -dev -console 2&gt; steam.logs</code> (if using Flakes). After that, create a bug report.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h3 id="steam-is-not-updated">Steam is not updated</h3></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>When you restart <a href="special:MyLanguage/Steam" class="wikilink" title="Steam">Steam</a> after an update, it starts the old version. (<a href="https://github.com/NixOS/nixpkgs/issues/181904">#181904</a>) A workaround is to remove the user files in <code>/home/&lt;USER&gt;/.local/share/Steam/userdata</code>. This can be done with <code>rm -rf /home/&lt;USER&gt;/.local/share/Steam/userdata</code> in the terminal or with your file manager. After that, Steam can be set up again by restarting.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h3 id="game-fails-to-start">Game fails to start</h3></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Games may fail to start because they lack dependencies (this should be added to the script, for now), or because they cannot be patched. The steps to launch a game directly are:</p>
+<ul>
+<li>Patch the script/binary if you can</li>
+<li>Add a file named steam_appid.txt in the binary folder, with the appid as contents (it can be found in the stdout from steam)</li>
+<li>Using the LD_LIBRARY_PATH from the nix/store steam script, with some additions, launch the game binary</li>
+</ul>
+</div>
+
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">LD_LIBRARY_PATH=~/.steam/bin32:<span class="hljs-variable">$LD_LIBRARY_PATH</span>:/nix/store/pfsa... blabla ...curl-7.29.0/lib:. ./Osmos.bin32 (<span class="hljs-keyword">if</span> you could not patchelf the game, call ld.so directly with the binary as parameter)</code></pre>
+      </div><div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Note: If a game gets stuck on Installing scripts, check for a DXSETUP.EXE process and run it manually, then restart the game launch.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h4 id="changing-the-driver-on-amd-gpus">Changing the driver on AMD GPUs</h4></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Sometimes, changing the driver on AMD GPUs helps. To try this, first, install multiple drivers such as radv and amdvlk:</p>
+</div>
+
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">h<span class="hljs-attr">ardware.graphics</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-comment">## radv: an open-source Vulkan driver from freedesktop</span>
+  <span class="hljs-attr">enable32Bit</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+  <span class="hljs-comment">## amdvlk: an open-source Vulkan driver from AMD</span>
+  <span class="hljs-attr">extraPackages</span> <span class="hljs-operator">=</span> [ pkgs.amdvlk ];
+  <span class="hljs-attr">extraPackages32</span> <span class="hljs-operator">=</span> [ pkgs.driversi686Linux.amdvlk ];
+};</code></pre>
+      </div><div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>In the presence of both drivers, <a href="special:MyLanguage/Steam" class="wikilink" title="Steam">Steam</a> will default to amdvlk. The amdvlk driver can be considered more correct regarding Vulkan specification implementation, but less performant than radv. However, this tradeoff between correctness and performance can sometimes make or break the gaming experience.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>To &quot;reset&quot; your driver to radv when both radv and amdvlk are installed, set either <code>AMD_VULKAN_ICD = &quot;RADV&quot;</code> or <code>VK_ICD_FILENAMES = &quot;/run/opengl-driver/share/vulkan/icd.d/radeon_icd.x86_64.json&quot;</code> environment variable. For example, if you start <a href="special:MyLanguage/Steam" class="wikilink" title="Steam">Steam</a> from the shell, you can enable radv for the current session by running <code>AMD_VULKAN_ICD=&quot;RADV&quot; steam</code>. If you are unsure which driver you currently use, you can launch a game with <a href="https://github.com/flightlessmango/MangoHud">MangoHud</a> enabled, which has the capability to show what driver is currently in use.</p>
+</div>
+
+<h3 id="steamvr">SteamVR</h3><div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>The setcap issue at SteamVR start can be fixed with: <code>sudo setcap CAP_SYS_NICE+ep ~/.local/share/Steam/steamapps/common/SteamVR/bin/linux64/vrcompositor-launcher</code></p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h3 id="gamescope-fails-to-launch-when-used-within-steam">Gamescope fails to launch when used within Steam</h3></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Gamescope may fail to start due to missing Xorg libraries. (<a href="https://github.com/NixOS/nixpkgs/issues/214275">#214275</a>) To resolve this override the steam package to add them:</p>
+</div>
+
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">p<span class="hljs-attr">rograms.steam.package</span> <span class="hljs-operator">=</span> pkgs.steam.override {
+  <span class="hljs-attr">extraPkgs</span> <span class="hljs-operator">=</span> <span class="hljs-params">pkgs&#x27;:</span> <span class="hljs-keyword">with</span> pkgs&#x27;; [
+    libXcursor
+    libXi
+    libXinerama
+    libXScrnSaver
+    libpng
+    libpulseaudio
+    libvorbis
+    stdenv.cc.cc.lib <span class="hljs-comment"># Provides libstdc++.so.6</span>
+    libkrb5
+    keyutils
+    <span class="hljs-comment"># Add other libraries as needed</span>
+  ];
+};</code></pre>
+      </div><div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h3 id="udev-rules-for-additional-gamepads">Udev rules for additional Gamepads</h3></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>In specific scenarios gamepads, might require some additional configuration in order to function properly in the form of udev rules. This can be achieved with <code>services.udev.extraRules</code>.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>The following example is for the 8bitdo Ultimate Bluetooth controller, different controllers will require knowledge of the vendor and product ID for the device:</p>
+</div>
+
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">services.udev.extraRules</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    SUBSYSTEM==&quot;input&quot;, ATTRS{idVendor}==&quot;2dc8&quot;, ATTRS{idProduct}==&quot;3106&quot;, MODE=&quot;0660&quot;, GROUP=&quot;input&quot;
+  &#x27;&#x27;</span>;</code></pre>
+      </div><div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>To find the vendor and product ID of a device <a href="https://search.nixos.org/packages?channel=unstable&amp;show=usbutils&amp;from=0&amp;size=50&amp;sort=relevance&amp;type=packages&amp;query=usbutils">usbutils</a> might be useful</p>
+</div>
+
+<p><span id="Known_issues"></span></p>
+<h2 id="">Известные проблемы</h2><div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>&quot;Project Zomboid&quot; may report &quot;couldn&#39;t determine 32/64 bit of java&quot;. This is not related to java at all, it carries its own outdated java binary that refuses to start if path contains non-Latin characters. Check for errors by directly starting local java binary within <code>steam-run bash</code>.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Resetting your password through the <a href="special:MyLanguage/Steam" class="wikilink" title="Steam">Steam</a> app may fail at the CAPTCHA step repeatedly, with <a href="special:MyLanguage/Steam" class="wikilink" title="Steam">Steam</a> itself reporting that the CAPTCHA was not correct, even though the CAPTCHA UI shows success. Resetting password through the <a href="special:MyLanguage/Steam" class="wikilink" title="Steam">Steam</a> website should work around that.</p>
+</div>
+
+<p><span id="References"></span></p>
+<h2 id="">Ссылки</h2><p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="category:Gaming" class="wikilink" title="Category:Gaming">Category:Gaming</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p><a href="https://store.steampowered.com/">https://store.steampowered.com/</a> <a href="https://mirror.nixoscn.org/wiki/Steam/ru#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+<li id="footnote-2">
+<p><a href="https://github.com/ValveSoftware/steam-for-linux/issues/12207">https://github.com/ValveSoftware/steam-for-linux/issues/12207</a> <a href="https://mirror.nixoscn.org/wiki/Steam/ru#footnote-ref-2" data-footnote-backref aria-label="Back to reference 2">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

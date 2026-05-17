@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Thunderbolt</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Thunderbolt</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Thunderbolt -->
+
+<h2 id="plasma">Plasma</h2><p>To benefit from KDE Plasma&#39;s GUI for managing Thunderbolt devices, you may install the System Settings panel. Just add this to your packages: <code>kdePackages.plasma-thunderbolt</code>.</p>
+<h2 id="enable-the-bolt-daemon">Enable the Bolt daemon</h2><p>Even if you don&#39;t use Gnome, you may want to enable the Bolt daemon - just configure the following:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.hardware.bolt.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><p>This will enable the bolt daemon on your system.</p>
+<p>For the description of this option, <a href="https://search.nixos.org/options?type=packages&amp;query=services.hardware.bolt.enable">services.hardware.bolt.enable</a>.</p>
+<h2 id="enroll-thunderbolt-devices">Enroll Thunderbolt devices</h2><p>If your Thunderbolt device does not work, execute <code>boltctl</code> in a terminal. This will show you your connected devices, and their respective uuid. In color terminals, it will show you if your device is authorized (green light) or not (orange light).</p>
+<p><strong>For each device</strong> that is not authorized, execute <code>boltctl enroll --chain UUID_FROM_YOUR_DEVICE</code>. .</p>
+<p>Check with <code>boltctl</code> whether all your devices have been enrolled (green light everywhere).</p>
+<h2 id="dell-39-s-tb16-dock">Dell&#39;s TB16 dock</h2><p>On a Dell XPS 13&quot; 9360, the TB16 is not always authorised automatically, and you may have the impression that it does not work correctly (connected USB devices won&#39;t work while the DisplayPort may work...).</p>
+<p>When connecting a TB16, <code>boltctl</code> shows 2 devices: <em>Dell Thunderbolt Dock</em> and <em>Dell Thunderbolt Cable</em>.</p>
+<p>It is enough to enroll the <em>Dell Thunderbolt Dock</em> with the <code>--chain</code> parameter, as this will also automatically enroll the <em>Dell Thunderbolt Cable</em>.</p>
+<h2 id="usb-ports-not-working">USB ports not working</h2><p>If the USB ports are not working, you can try running `echo 1 &gt; /sys/bus/pci/rescan`. If this causes the error `No bus number available for hot-added bridge` to appear in `journalctl`, adding `pci=assign-busses,hpbussize=0x33,realloc,hpmemsize=128M,hpmemprefsize=1G` may fix your issue. (Thanks to <a href="https://old.reddit.com/r/XMG_gg/comments/ic7vt7/fusion15_linux_how_to_fix_thunderbolttb3_dock_usb/">https://old.reddit.com/r/XMG_gg/comments/ic7vt7/fusion15_linux_how_to_fix_thunderbolttb3_dock_usb/</a> for the hint)</p>
+<p><a href="category:_Hardware" class="wikilink" title="Category: Hardware">Category: Hardware</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

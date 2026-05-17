@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Zsh</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Zsh</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Zsh -->
+
+<p><a href="https://www.zsh.org/">Zsh</a> is a powerful Unix <a href="https://wiki.nixos.org/wiki/Command_Shell">shell</a> that functions both as an interactive shell and a scripting language interpreter. It extends the Bourne Shell (sh) with features from bash, ksh, and tcsh, offering <a href="http://zsh.sourceforge.net/Guide/zshguide06.html">advanced tab completion</a>, improved <a href="http://zsh.sourceforge.net/Doc/Release/Expansion.html">globbing</a>, and extensive customization options. Though not POSIX sh-compatible by default, it can be configured to be so with <code>emulate sh</code>.</p>
+<p>Key features include highly customizable prompts, enhanced command history, spelling correction, and robust job control. The Oh My Zsh framework simplifies managing plugins and themes. Zsh is cross-platform, available on Unix-like systems including Linux and macOS, and is popular among developers and system administrators for its advanced features and user-friendly enhancements.</p>
+<p>The <a href="http://zsh.sourceforge.net/FAQ/zshfaq01.html#l4">Zsh FAQ</a> offers more reasons to use Zsh.</p>
+<h2 id="installation">Installation</h2><h3 id="nixos-system-installation">NixOS system installation</h3><p>To install zsh for a user on a regular nixos system:</p>
+<p>Replace <code>myuser</code> with the appropriate username.</p>
+<p>See <a href="https://mirror.nixoscn.org/wiki/Zsh/Command_Shell" class="wikilink" title="Command Shell">Command Shell</a> for more information.</p>
+<h3 id="home-manager">Home Manager</h3><p>For a user-specific installation managed by <a href="https://mirror.nixoscn.org/wiki/Zsh/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a>, use the following configuration:</p>
+<p>Replace <code>myuser</code> with the appropriate username.</p>
+<p>You can enable the zsh shell and manage zsh configuration and plugins with Home Manager, but to enable vendor zsh completions provided by Nixpkgs you will also want to enable the zsh shell:</p>
+<h2 id="configuration">Configuration</h2><h3 id="nixos-system-configuration">NixOS system configuration</h3><p>The following example demonstrates how to configure zsh system-wide through the NixOS configuration:</p>
+<p>For a full list of zsh module options, refer to .</p>
+<h4 id="plugins">Plugins</h4><p>The most straightforward way to manage Zsh plugins on NixOS is by enabling the <code>ohMyZsh</code> plugin manager, as demonstrated in the example below:</p>
+<p>Alternatively, individual Zsh plugins are available as packages within Nixpkgs. When using this method, plugins must be manually sourced within the Zsh configuration file.</p>
+<h3 id="home-manager">Home Manager</h3><p>The configuration below is using <a href="https://mirror.nixoscn.org/wiki/Zsh/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a>, but a more limited version of it can be achieved if system-wide.</p>
+<p>The home manager options are defined in the following <a href="https://nix-community.github.io/home-manager/options.xhtml#opt-programs.zsh.enable">Home Manager Options Manual</a> or can be looked up at <a href="https://home-manager-options.extranix.com/?query=zsh&amp;release=master">Home Manager Option Search</a>.</p>
+<p>The system-wide options are listed on <a href="https://search.nixos.org/options?query=programs.zsh">programs.zsh.*</a>.</p>
+<h4 id="plugins">Plugins</h4><p>Home manager has four ways of managing plugins: <strong><a href="http://zplug.github.io/">Zplug</a></strong>, <strong><a href="https://ohmyz.sh/">Oh-My-Zsh</a>, <a href="https://getantidote.github.io/">Antidote</a></strong> and <strong>manually</strong>.</p>
+<p>An example of less verbatim approach to sourcing packaged plugins can be <a href="https://discourse.nixos.org/t/zsh-users-how-do-you-manage-plugins/9199/8">found here</a> and <a href="https://discourse.nixos.org/t/zsh-users-how-do-you-manage-plugins/9199/10">here</a>.</p>
+<h2 id="troubleshooting">Troubleshooting</h2><h4 id="zsh-autocomplete-not-working">Zsh-autocomplete not working</h4><p>You may have some issues with the plugin on NixOS. That&#39;s because the default NixOS configuration overrides keybinds for up and down arrow keys. To fix this issue, you need to add this somewhere in your .zshrc (either manually if your .zshrc is not managed by Nix, or with )</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">bindkey</span> <span class="hljs-string">&quot;&#x27;&#x27;<span class="hljs-variable">${key[Up]}</span>&quot;</span> up-line-or-search</code></pre>
+      </div><h4 id="sha-mismatch-during-manual-plugin-installation">SHA Mismatch during manual plugin installation</h4><p>If manual plugin installation fails with SHA mismatch, generating a valid hash as part of the error message can be achieved by temporarily switching to:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ha256</span> <span class="hljs-operator">=</span> lib.fakeSha256;</code></pre>
+      </div><p>This will print a valid SHA to the console and then can be used as final value for the sha256 field. Redoing this is mandatory if one wants to update to a newer commit of the targeted plugin repository.</p>
+<h4 id="gdm-does-not-show-user-when-zsh-is-the-default-shell">GDM does not show user when zsh is the default shell</h4><p>GDM only shows users that have their default shell set to a shell listed in /etc/shells. Setting the default shell using the following does not update /etc/shells.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">u<span class="hljs-attr">sers.defaultUserShell</span> <span class="hljs-operator">=</span> pkgs.zsh;</code></pre>
+      </div><p>To add the zsh package to /etc/shells you must update environment.shells.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.shells</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [ zsh ];</code></pre>
+      </div><h4 id="hide-configuration-for-new-users">Hide configuration for new users</h4><p>Meaning this message:</p>
+<div class="code-container">
+        
+        <pre><code class="language-zsh hljs">This is the Z Shell configuration <span class="hljs-keyword">function</span> <span class="hljs-keyword">for</span> new <span class="hljs-built_in">users</span>,
+zsh-newuser-install.
+You are seeing this message because you have no zsh startup files
+(the files .zshenv, .zprofile, .zshrc, .zlogin <span class="hljs-keyword">in</span> the directory
+~).  This <span class="hljs-keyword">function</span> can <span class="hljs-built_in">help</span> you with a few settings that should
+make your use of the shell easier.
+
+You can:
+
+(q)  Quit and <span class="hljs-keyword">do</span> nothing.  The <span class="hljs-keyword">function</span> will be run again next <span class="hljs-keyword">time</span>.
+
+(0)  Exit, creating the file ~/.zshrc containing just a comment.
+     That will prevent this <span class="hljs-keyword">function</span> being run again.
+
+(1)  Continue to the main menu.
+
+--- Type one of the keys <span class="hljs-keyword">in</span> parentheses --- </code></pre>
+      </div><p>You can hide this message by adding following line to the system configuration:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs"><span class="hljs-comment"># Prevent the new user dialog in zsh</span>
+s<span class="hljs-attr">ystem.userActivationScripts.zshrc</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;touch .zshrc&quot;</span>;</code></pre>
+      </div><h2 id="references">References</h2><ol>
+<li><a href="https://www.zsh.org/">https://www.zsh.org/</a></li>
+<li><a href="http://zsh.sourceforge.net/Guide/zshguide06.html">http://zsh.sourceforge.net/Guide/zshguide06.html</a></li>
+<li><a href="http://zsh.sourceforge.net/Doc/Release/Expansion.html">http://zsh.sourceforge.net/Doc/Release/Expansion.html</a></li>
+<li><a href="http://zsh.sourceforge.net/FAQ/zshfaq01.html#l4">http://zsh.sourceforge.net/FAQ/zshfaq01.html#l4</a></li>
+<li><a href="https://nix-community.github.io/home-manager/options.xhtml#opt-programs.zsh.enable">https://nix-community.github.io/home-manager/options.xhtml#opt-programs.zsh.enable</a></li>
+<li><a href="https://search.nixos.org/options?query=programs.zsh">https://search.nixos.org/options?query=programs.zsh</a></li>
+</ol>
+<p><a href="category:Shell" class="wikilink" title="Category:Shell">Category:Shell</a> <a href="category:NixOS_Manual" class="wikilink" title="Category:NixOS Manual">Category:NixOS Manual</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

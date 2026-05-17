@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NixOS on RISCV/VisionFive 2</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20RISCV">NixOS on RISCV</a><span aria-hidden="true"> / </span>VisionFive 2</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: NixOS on RISCV/VisionFive 2 -->
+
+<div class="infobox">
+
+<table>
+<thead>
+<tr>
+<th colspan="2" class="title"><p>VisionFive 2</p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td colspan="2"><figure>
+<img src="https://mirror.nixoscn.org/wiki/NixOS%20on%20RISCV/VisionFive%202/Riscv_visionfive2.jpg" title="A VisionFive 2." width="256" />
+<figcaption>A VisionFive 2.</figcaption>
+</figure></td>
+</tr>
+<tr>
+<td><p>Manufacturer</p></td>
+<td><p>StarFive</p></td>
+</tr>
+<tr>
+<td><p>Architecture</p></td>
+<td><p>RISC-V</p></td>
+</tr>
+<tr>
+<td><p>Bootloader</p></td>
+<td><p>Custom or UEFI</p></td>
+</tr>
+<tr>
+<td><p>Boot order</p></td>
+<td><p>Configurable; SD, USB, Netboot</p></td>
+</tr>
+<tr>
+<td><p>Maintainer</p></td>
+<td><p>onny</p></td>
+</tr>
+<tr>
+<td colspan="2" class="title"><p>VisionFive 2</p></td>
+</tr>
+<tr>
+<td><p>SoC</p></td>
+<td><p>JH7110</p></td>
+</tr>
+</tbody>
+</table>
+
+</div>
+
+<p>The <a href="https://github.com/starfive-tech/VisionFive2">VisionFive 2</a> is a single board computer (SBC) that uses a RISC-V processor with an integrated GPU. It supports Linux operating system and various multimedia features, such as 4K video decoding and OpenGL ES 3.212.</p>
+<h2 id="status">Status</h2><p>See <a href="https://rvspace.org/en/project/JH7110_Upstream_Plan">https://rvspace.org/en/project/JH7110_Upstream_Plan</a> for an overview of which features are already supported by the latest mainline kernel used by NixOS.</p>
+<p>Please note that HDMI display patches haven&#39;t been merged yet.</p>
+<h1 id="setup">Setup</h1><p>Precompiled SD-card images with unstable NixOS can be found <a href="https://hydra.ztier.in/job/nixos/nixos-unstable/sd-image-riscv64-new-kernel-no-zfs-installer-cross/latest">on misuzu&#39;s Hydra instance</a>. Before flashing the image, use <code>unzstd</code> to unpack the downloaded archive.</p>
+<h3 id="manually-build-a-sd-card-image">Manually build a SD-card image</h3><p>First create this <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20RISCV/VisionFive%202/Flake" class="wikilink" title="Flake">Flake</a> file</p>
+<p>If you want to use an alternative filesystem for system root, for example <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20RISCV/VisionFive%202/Btrfs" class="wikilink" title="Btrfs">Btrfs</a>, you could change the <code>sdImage</code>-part to this. Currently <a href="https://github.com/NixOS/nixpkgs/pull/434122">this patch</a> is required to produce a functioning btrfs image.</p>
+<p>It might be helpful to add <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20RISCV/VisionFive%202/RISC-V#Binary_cache" class="wikilink" title="third-party binary cache configuration">third-party binary cache configuration</a> to this system configuration.</p>
+<p>Run following command to build the SD-card image</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nix build .#</code></pre>
+      </div><h3 id="flashing-the-image">Flashing the image</h3><p>After successfull build or unpack, flash the resulting file (build file is in the directory <code>results/sd-image</code>) to the target device such as a NVME SSD or in this example the SD-card (<code>/dev/mmcblk*</code>). Note that everything on the target device gets erased.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">dd</span> <span class="hljs-keyword">if</span>=result/sd-image/nixos-sd-image-23.11pre-git-riscv64-linux-starfive-visionfive2.img of=/dev/mmcblk0 status=progress</code></pre>
+      </div><h1 id="usage">Usage</h1><p>The board has &quot;boot mode pins&quot;, from which we can control what device should be booted from.</p>
+<p>See official documentation <a href="https://doc-en.rvspace.org/VisionFive2/Quick_Start_Guide/VisionFive2_SDK_QSG/boot_mode_settings.html">https://doc-en.rvspace.org/VisionFive2/Quick_Start_Guide/VisionFive2_SDK_QSG/boot_mode_settings.html</a> .</p>
+<p>First enable booting from SD-card or NVME SSD by setting jumper 1 and 2 to &quot;FLASH/QSPI mode&quot; (both QSPI and SDIO mode support booting from an SD card):</p>
+<figure>
+<img src="https://mirror.nixoscn.org/wiki/NixOS%20on%20RISCV/VisionFive%202/Visionfive_2_jumper_config_sdcard_boot.jpg" title="Visionfive_2_jumper_config_sdcard_boot.jpg" width="803" height="803" />
+<figcaption>Visionfive_2_jumper_config_sdcard_boot.jpg</figcaption>
+</figure>
+
+<p>For UART access, wire GND (black), RX (blue) and TX (purple) to your adapter <img src="https://mirror.nixoscn.org/wiki/NixOS%20on%20RISCV/VisionFive%202/Visionfive2_uart_wiring.jpg" title="Visionfive2_uart_wiring.jpg" width="802" height="802" alt="Visionfive2_uart_wiring.jpg" />Update board firmware</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">sudo</span> visionfive2-firmware-update-flash</code></pre>
+      </div><p>Bootstrap NixOS system configuration at <code>/etc/nixos/configuration.nix</code></p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nixos-generate-config</code></pre>
+      </div><p>It is recommended to <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20RISCV/VisionFive%202/RISC-V#Binary_cache" class="wikilink" title="configure third-party binary caches">configure third-party binary caches</a> to speed up build times.</p>
+<h1 id="tips-and-tricks">Tips and tricks</h1><h2 id="using-the-visionfive-2-as-a-remote-builder-to-build-native-riscv-packages-for-e-g-the-visionfive-2">Using the Visionfive 2 as a remote builder to build native RISCV packages for e.g. the Visionfive 2</h2><p>Building an NixOS system image that can be flashed to an SD card or NVMe SSD requires to <strong>build RISCV binaries</strong>, more specifically for the <code>&quot;riscv64-linux&quot;</code>platform. From a typical Intel/AMD computer we can either</p>
+<ul>
+<li><strong>emulated native compile using QEMU</strong> virtualization by enabling the binfmt kernel feature on NixOS configuration setting <code>boot.binfmt.emulatedSystems = [ &quot;riscv64-linux&quot; ];</code>). This can be fast if everything is downloaded pre-compiled from the cache.nixos.org cache (not supported yet though) and only few packages really need local compilation. In reality it can be extremely slow, e.g. compiling a Linux kernel alone can take days.</li>
+<li><strong>cross-compile</strong> to RISCV from another (e.g. &quot;x86_64-linux) machine using the setup in the example above. However very few packages will be cached from cache.nixos.org as cross-compiled packages are less likely to be pre-build than native compiled. So the compile itself is fast but there will be a lot more to compile locally. In practice this can be quite fragile, because you may encounter packages that don&#39;t really support cross-compilation get stuck.</li>
+<li><strong>native compile on an remote builder</strong> like the Visionfive 2 itself running its custom Debian Linux at the beginning or later NixOS. This is quite simple to setup and reasonably fast as most packages can be pre-build and cached on cache.nixos.org, and building a remaining Linux kernel only takes 3h on the Visionfive 2.</li>
+</ul>
+<p><strong>Setting up the Visionfive 2 as a remote native builder</strong> can be done following the steps at <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20RISCV/VisionFive%202/Distributed_build" class="wikilink" title="https://wiki.nixos.org/wiki/Distributed_build"><span>https://wiki.nixos.org/wiki/Distributed_build</span></a>. The rough steps are as follows:</p>
+<ol>
+<li><strong>Install the Nix package manager</strong> on Visionfive 2 Debian OS the normal, multi-user way with <code>sh &lt;(curl -L https://nixos.org/nix/install) --daemon</code>. If you already have NixOS running on the Visionfive 2, then you can skip this step.</li>
+<li><strong>Setup a <code>ssh</code> connection</strong> from your local machine to the Visionfive 2, especially adding <code>SetEnv PATH=/nix/var/nix/profiles/default/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin</code> to the Pi&#39;s <code>/etc/ssh/sshd_config</code> file. If you already have NixOS running on the Visionfive 2, then you can skip this step.</li>
+<li><strong>Make the remote Visionfive 2 known to you local computer</strong> by adding it as a <code>nix.buildMachines</code> entry to your <code>/etc/nix/configuration.nix</code> file and use connection protocol <code>ssh-ng</code>(!).</li>
+<li>You can then <strong>build, e.g. an NixOS sd card image</strong> with a call similar to <code>nix build .\#nixosConfigurations.visionfive2.config.system.build.sdImage</code></li>
+<li><strong>flash that resulting image onto an SD card</strong> or NVMe SSD using a call similar to <code>zstdcat result/sd-image/nixos-sd-image-23.11.20230703.ea4c80b-riscv64-linux.img.zst | sudo dd of=/dev/mmcblk0 bs=100M status=progress</code> and place that card into the Visionfive 2.</li>
+</ol>
+<h2 id="deploy-and-update-the-visionfive-2-nixos-system-once-it-39-s-running-nixos">Deploy and Update the Visionfive 2 NixOS system once it&#39;s running NixOS</h2><p>Once the Visionfive 2 is running NixOS, you can update it with newer NixOS system configurations using e.g. the usual <code>nix-rebuild</code></p>
+<p>tool with a call similar to</p>
+<p><code>nixos-rebuild --flake .#visionfive2 --build-host user@visionfive2 --target-host user@visionfive2 --use-remote-sudo switch</code></p>
+<p>that uses the SSH connection from the remote builder section.</p>
+<p>See <a href="https://nixcademy.com/2023/08/10/nixos-rebuild-remote-deployment/">this guide</a> for a good explanation of this terminal call.</p>
+<h1 id="see-also">See also</h1><ul>
+<li>There&#39;s also a port of the UEFI reference implementation EDK2 available at <a href="https://github.com/starfive-tech/edk2">https://github.com/starfive-tech/edk2</a> to support a future generic RISCV Linux image that can be booted from any RISCV device.</li>
+</ul>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

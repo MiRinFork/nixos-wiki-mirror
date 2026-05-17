@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ollama</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Ollama</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Ollama -->
+
+<p><a href="https://ollama.ai/">Ollama</a> is an open-source framework designed to facilitate the deployment of large language models on local environments. It aims to simplify the complexities involved in running and managing these models, providing a seamless experience for users across different operating systems.</p>
+<h2 id="setup">Setup</h2><p>You can add Ollama in two ways to your system configuration.</p>
+<p>As a standalone package:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> [ pkgs.ollama ];</code></pre>
+      </div><p>As a systemd service:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.ollama</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-comment"># Optional: preload models, see https://ollama.com/library</span>
+  <span class="hljs-attr">loadModels</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;llama3.2:3b&quot;</span> <span class="hljs-string">&quot;deepseek-r1:1.5b&quot;</span>];
+};</code></pre>
+      </div><h2 id="configuration-of-gpu-acceleration">Configuration of GPU acceleration</h2><p>Acceleration is configured by selecting a package:</p>
+<ul>
+<li>ollama-cpu: disable GPU, only use CPU</li>
+<li>ollama-rocm: supported by most modern AMD GPUs</li>
+<li>ollama-cuda: supported by most modern NVIDIA GPUs</li>
+<li>ollama-vulkan: supported by most modern GPUs on Linux</li>
+</ul>
+<p>Example: Enable GPU acceleration for Nvidia graphic cards</p>
+<p>As a standalone package:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> [
+   (pkgs.ollama.override { 
+      <span class="hljs-attr">acceleration</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;cuda&quot;</span>;
+    })
+  ];</code></pre>
+      </div><p>As a systemd service:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.ollama</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">package</span> <span class="hljs-operator">=</span> pkgs.ollama-cuda;
+};</code></pre>
+      </div><p>To find out whether a model is running on CPU or GPU, you can either look at the logs of</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">$ ollama serve </code></pre>
+      </div><p>and search for &quot;looking for compatible GPUs&quot; and &quot;new model will fit in available VRAM in single GPU, loading&quot;</p>
+<p>or while a model is answering run in another terminal</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">$ ollama ps
+NAME         ID              SIZE      PROCESSOR    UNTIL
+gemma3:4b    c0494fe00251    4.7 GB    100% GPU     4 minutes from now</code></pre>
+      </div><p>In this example we see &quot;100% GPU&quot;.</p>
+<h2 id="usage-via-cli">Usage via CLI</h2><h3 id="download-a-model-and-run-interactive-prompt">Download a model and run interactive prompt</h3><p>Example: Download and run Mistral LLM model as an interactive prompt</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">$ ollama run mistral</code></pre>
+      </div><p>For other models see <a href="https://ollama.ai/library">Ollama library</a>.</p>
+<h3 id="send-a-prompt-to-ollama">Send a prompt to ollama</h3><p>Example: To download and run codellama with 13 billion parameters in the &quot;instruct&quot; variant and send a prompt:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">$ ollama run codellama:13b-instruct <span class="hljs-string">&quot;Write an extended Python program with a typical structure. It should print the numbers 1 to 10 to standard output.&quot;</span></code></pre>
+      </div><h3 id="see-usage-and-speed-statistics">See usage and speed statistics</h3><p>Add &quot;--verbose&quot; to see statistics after each prompt:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">$ ollama run codellama:13b-instruct --verbose <span class="hljs-string">&quot;Write an extended Python program...&quot;</span>
+...
+total duration:       50.302071991s
+load duration:        50.912267ms
+prompt <span class="hljs-built_in">eval</span> count:    49 token(s)
+prompt <span class="hljs-built_in">eval</span> duration: 4.654s
+prompt <span class="hljs-built_in">eval</span> rate:     10.53 tokens/s &lt;- how fast it processed your input prompt
+<span class="hljs-built_in">eval</span> count:           182 token(s)
+<span class="hljs-built_in">eval</span> duration:        45.595s
+<span class="hljs-built_in">eval</span> rate:            3.99 tokens/s  &lt;- how fast it printed a response</code></pre>
+      </div><h2 id="usage-via-web-api">Usage via web API</h2><p>Other software can use the web API (default at: <a href="http://localhost:11434/">http://localhost:11434</a> ) to query Ollama. This works well e.g. in Intellij-IDEs with the &quot;ProxyAI&quot; and the &quot;Ollama Commit Summarizer&quot; plugins.</p>
+<p>Alternatively, on enabling &quot;open-webui&quot;, a web portal is available at: <a href="http://localhost:8080/">http://localhost:8080/</a>:</p>
+<p><code>services.open-webui.enable = true;</code></p>
+<h2 id="troubleshooting">Troubleshooting</h2><h3 id="amd-gpu-with-open-source-driver">AMD GPU with open source driver</h3><p>Use the ollama-rocm nix package:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> [ pkgs.ollama-rocm ];</code></pre>
+      </div><p>And make sure the kernel loads the amdgpu driver:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">boot.initrd.kernelModules</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;amdgpu&quot;</span> ];</code></pre>
+      </div><p>In certain cases Ollama might not allow your system to use GPU acceleration if it cannot be sure your GPU/driver is compatible.</p>
+<p>However you can attempt to force-enable the usage of your GPU by overriding the LLVM target. <sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Ollama#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup></p>
+<p>You can get the version for your GPU from the logs or like so:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-comment"># classical</span>
+$ nix-shell -p <span class="hljs-string">&quot;rocmPackages.rocminfo&quot;</span> --run <span class="hljs-string">&quot;rocminfo&quot;</span> | grep <span class="hljs-string">&quot;gfx&quot;</span>
+Name:                    gfx1031
+
+<span class="hljs-comment"># flakes</span>
+$ nix run nixpkgs#<span class="hljs-string">&quot;rocmPackages.rocminfo&quot;</span> -- --run <span class="hljs-string">&quot;rocminfo&quot;</span> | grep <span class="hljs-string">&quot;gfx&quot;</span>
+Name:                    gfx1031</code></pre>
+      </div><p>In this example the LLVM target is &quot;gfx1031&quot;, that is, version &quot;10.3.1&quot;, you can then override that value for Ollama for the systemd service:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.ollama</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">package</span> <span class="hljs-operator">=</span> pkgs.ollama-rocm;
+  <span class="hljs-attr">environmentVariables</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">HCC_AMDGPU_TARGET</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;gfx1031&quot;</span>; <span class="hljs-comment"># used to be necessary, but doesn&#x27;t seem to anymore</span>
+  };
+  <span class="hljs-comment"># results in environment variable &quot;HSA_OVERRIDE_GFX_VERSION=10.3.0&quot;</span>
+  <span class="hljs-attr">rocmOverrideGfx</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;10.3.0&quot;</span>;
+};</code></pre>
+      </div><p>or via an environment variable in front of the standalone app</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">HSA_OVERRIDE_GFX_VERSION=10.3.0 ollama serve</code></pre>
+      </div><p>If there are still errors, you can attempt to set a similar value that is listed <a href="https://github.com/ollama/ollama/blob/main/docs/gpu.md#overrides">here</a>.</p>
+<p><a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="category:CLI_Applications" class="wikilink" title="Category:CLI Applications">Category:CLI Applications</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p><a href="https://github.com/ollama/ollama/blob/main/docs/gpu.mdx#overrides-on-linux">https://github.com/ollama/ollama/blob/main/docs/gpu.mdx#overrides-on-linux</a> <a href="https://mirror.nixoscn.org/wiki/Ollama#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

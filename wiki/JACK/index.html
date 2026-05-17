@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>JACK</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / JACK</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: JACK -->
+
+<p>One may use <a href="https://github.com/NixOS/nixpkgs/blob/nixos-unstable/nixos/modules/services/audio/jack.nix">JACK module</a>. It works both with and without PulseAudio. Enable it this way <strong>and reboot</strong>:</p>
+<p>Since the config above and below apparently does not work for several users, according to forum posts, here a solution that works:</p>
+<p>- Add musnix channel (<a href="https://github.com/musnix/musnix">https://github.com/musnix/musnix</a>)</p>
+<p>After a reboot, you can enable JACKD using &quot;pasuspender qjackctl&quot; and start jackd by pressing the start button.</p>
+<p>You can test, if your JACK works, using the command jack_simple_client, which produces a sound if JACK is running.</p>
+<p>Sources: <a href="https://discourse.nixos.org/t/declarative-audio-config-how-to-start-and-maybe-use-jack/5458">https://discourse.nixos.org/t/declarative-audio-config-how-to-start-and-maybe-use-jack/5458</a> <a href="https://github.com/NixOS/nixpkgs/issues/71283">https://github.com/NixOS/nixpkgs/issues/71283</a></p>
+<p><a href="http://jackaudio.org/">The Jack Audio Connection Kit</a> is used by most of the serious audio applications on Linux. It provides real-time, low latency connections for both audio and MIDI data between applications that implement its API. NixOS uses the dbus version of JACK2 (jackdbus). This can be used together with pulseaudio with a little configuration. The result is that you don&#39;t have to manually hunt down applications which are using the sound device and kill them before starting JACK. You can also continue to use non-JACK aware applications (e.g. flash) at the same time as using JACK applications (e.g. Ardour).</p>
+<ol>
+<li><p>Load the sequencer and midi kernel modules</p>
+<p>boot.kernelModules = [ &quot;snd-seq&quot; &quot;snd-rawmidi&quot; ];</p>
+</li>
+<li><p>Enable JACK support</p>
+<p>In your configuration file:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">h<span class="hljs-attr">ardware.pulseaudio.package</span> <span class="hljs-operator">=</span> pkgs.pulseaudio.override { <span class="hljs-attr">jackaudioSupport</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; };</code></pre>
+      </div></li>
+<li><p>Ensure that the JACK enabled pulseaudio is being used</p>
+<p>~/.config/pulse/client.conf</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">daemon-binary=/var/run/current-system/sw/bin/pulseaudio</code></pre>
+      </div></li>
+<li><p>Configure QjackCtl</p>
+<ol>
+<li><p>Enable jackdbus</p>
+<p>Setup -&gt; Settings -&gt; Server Path: jackdbus</p>
+<figure>
+<img src="https://mirror.nixoscn.org/wiki/JACK/qjackctl-settings.png" title="qjackctl-settings.png" />
+<figcaption>qjackctl-settings.png</figcaption>
+</figure>
+
+<p>Setup -&gt; Misc -&gt; Enable D-Bus interface: check</p>
+<figure>
+<img src="https://mirror.nixoscn.org/wiki/JACK/qjackctl-misc.png" title="qjackctl-misc.png" />
+<figcaption>qjackctl-misc.png</figcaption>
+</figure></li>
+<li><p>Load the jack modules for pulseaudio after starting jackdbus</p>
+<p>Setup -&gt; Settings -&gt; Options -&gt; Execute script after Startup: check</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">pactl load-module module-jack-sink channels=2; pactl load-module module-jack-source channels=2; pacmd set-default-sink jack_out</code></pre>
+      </div><p>Setup -&gt; Settings -&gt; Options -&gt; Execute script on Shutdown: check</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">pactl unload-module `pactl list|grep -A 3 jack-source|tail -1|awk '{ print $NF }'`;pactl unload-module `pactl list|grep -A 3 jack-sink|tail -1|awk '{ print $NF }'`</code></pre>
+      </div><figure>
+<img src="https://mirror.nixoscn.org/wiki/JACK/qjackctl-options.png" title="qjackctl-options.png" />
+<figcaption>qjackctl-options.png</figcaption>
+</figure></li>
+</ol>
+</li>
+</ol>
+<p>You should now be able to start JACK with QjackCtl, you will notice a new playback and capture device in your sound mixer along with your normal devices.</p>
+<figure>
+<img src="https://mirror.nixoscn.org/wiki/JACK/kmix-pulseaudio-with-jack.png" title="kmix-pulseaudio-with-jack.png" />
+<figcaption>kmix-pulseaudio-with-jack.png</figcaption>
+</figure>
+
+<h4 id="troubleshooting-jack-and-pulseaudio">Troubleshooting JACK and PulseAudio</h4><div class="code-container">
+        
+        <pre><code class="language- hljs">$ pactl load-module module-jack-sink channels=2
+Failure: Module initalization failed</code></pre>
+      </div><p>Check if you have previous settings in ~/.config/jack/conf.xml. Try renaming this file and running the pactl command again.</p>
+<p>You might need this setting so JACK_PROMISCUOUS_SERVER is defined when pulseaudio is started.</p>
+<p>Otherwise, you may get further info by disabling PulseAudio respawning (see above) and starting it in verbose mode:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">pulseaudio -vvv</span></code></pre>
+      </div><h3 id="system-optimizations-for-low-latency-audio-with-jack">System optimizations for low latency audio with JACK</h3><p>Some of the following settings, documented in <a href="http://wiki.linuxmusicians.com/doku.php?id=system_configuration">http://wiki.linuxmusicians.com/doku.php?id=system_configuration</a> and <a href="https://wiki.archlinux.org/index.php/Pro_Audio">https://wiki.archlinux.org/index.php/Pro_Audio</a> can be very helpful to reduce xruns and improve responsiveness and are required for certain programs to run at all e.g. Ardour. The kernelPackages section was taken from <a href="https://github.com/rockfabrik/deployment/blob/master/modules/profiles/dj.nix#L32">https://github.com/rockfabrik/deployment/blob/master/modules/profiles/dj.nix#L32</a></p>
+<p>An easy way of setting all of these, plus a true realtime kernel, is here: <a href="https://github.com/musnix/musnix">https://github.com/musnix/musnix</a></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">b<span class="hljs-attr">oot</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">kernelModules</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;snd-seq&quot;</span> <span class="hljs-string">&quot;snd-rawmidi&quot;</span> ];
+  <span class="hljs-attr">kernel.sysctl</span> <span class="hljs-operator">=</span> { <span class="hljs-string">&quot;vm.swappiness&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-number">10</span>; <span class="hljs-string">&quot;fs.inotify.max_user_watches&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-number">524288</span>; };
+  <span class="hljs-attr">kernelParams</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;threadirq&quot;</span> ];
+  <span class="hljs-attr">kernelPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">let</span> 
+    <span class="hljs-attr">rtKernel</span> <span class="hljs-operator">=</span> pkgs.linuxPackagesFor (pkgs.linux.override {
+      <span class="hljs-attr">extraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        PREEMPT_RT_FULL? y
+        PREEMPT y
+        IOSCHED_DEADLINE y
+        DEFAULT_DEADLINE y
+        DEFAULT_IOSCHED &quot;deadline&quot;
+        HPET_TIMER y
+        CPU_FREQ n
+        TREE_RCU_TRACE n
+      &#x27;&#x27;</span>;
+    }) pkgs.linuxPackages;
+  <span class="hljs-keyword">in</span> rtKernel;
+
+  <span class="hljs-attr">postBootCommands</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    echo 2048 &gt; /sys/class/rtc/rtc0/max_user_freq
+    echo 2048 &gt; /proc/sys/dev/hpet/max-user-freq
+    setpci -v -d *:* latency_timer=b0
+    setpci -v -s $00:1b.0 latency_timer=ff
+  &#x27;&#x27;</span>;
+  <span class="hljs-comment"># The SOUND_CARD_PCI_ID can be obtained like so:</span>
+  <span class="hljs-comment"># $ lspci ¦ grep -i audio</span>
+};
+
+<span class="hljs-attr">powerManagement.cpuFreqGovernor</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;performance&quot;</span>;
+
+fileSystems.<span class="hljs-string">&quot;/&quot;</span> <span class="hljs-operator">=</span> { <span class="hljs-attr">options</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;noatime errors=remount-ro&quot;</span>; };
+
+<span class="hljs-attr">security.pam.loginLimits</span> <span class="hljs-operator">=</span> [
+  { <span class="hljs-attr">domain</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;@audio&quot;</span>; <span class="hljs-attr">item</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;memlock&quot;</span>; <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;-&quot;</span>; <span class="hljs-attr">value</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;unlimited&quot;</span>; }
+  { <span class="hljs-attr">domain</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;@audio&quot;</span>; <span class="hljs-attr">item</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;rtprio&quot;</span>; <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;-&quot;</span>; <span class="hljs-attr">value</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;99&quot;</span>; }
+  { <span class="hljs-attr">domain</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;@audio&quot;</span>; <span class="hljs-attr">item</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nofile&quot;</span>; <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;soft&quot;</span>; <span class="hljs-attr">value</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;99999&quot;</span>; }
+  { <span class="hljs-attr">domain</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;@audio&quot;</span>; <span class="hljs-attr">item</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nofile&quot;</span>; <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;hard&quot;</span>; <span class="hljs-attr">value</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;99999&quot;</span>; }
+];
+
+<span class="hljs-attr">services</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">udev</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">packages</span> <span class="hljs-operator">=</span> [ pkgs.ffado ]; <span class="hljs-comment"># If you have a FireWire audio interface</span>
+    <span class="hljs-attr">extraRules</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+      KERNEL==&quot;rtc0&quot;, GROUP=&quot;audio&quot;
+      KERNEL==&quot;hpet&quot;, GROUP=&quot;audio&quot;
+    &#x27;&#x27;</span>;
+  };
+  <span class="hljs-attr">cron.enable</span> <span class="hljs-operator">=</span><span class="hljs-literal">false</span>;
+};
+
+<span class="hljs-attr">shellInit</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+  export VST_PATH=/nix/var/nix/profiles/default/lib/vst:/var/run/current-system/sw/lib/vst:~/.vst
+  export LXVST_PATH=/nix/var/nix/profiles/default/lib/lxvst:/var/run/current-system/sw/lib/lxvst:~/.lxvst
+  export LADSPA_PATH=/nix/var/nix/profiles/default/lib/ladspa:/var/run/current-system/sw/lib/ladspa:~/.ladspa
+  export LV2_PATH=/nix/var/nix/profiles/default/lib/lv2:/var/run/current-system/sw/lib/lv2:~/.lv2
+  export DSSI_PATH=/nix/var/nix/profiles/default/lib/dssi:/var/run/current-system/sw/lib/dssi:~/.dssi
+&#x27;&#x27;</span>;
+
+<span class="hljs-attr">users</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">extraUsers.yourname</span><span class="hljs-operator">=</span> {
+   <span class="hljs-attr">extraGroups</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;wheel&quot;</span> <span class="hljs-string">&quot;audio&quot;</span> ];
+  };
+};</code></pre>
+      </div><h2 id="connecting-nix-jack-clients-to-pipewire-installed-via-other-package-managers">Connecting nix JACK clients to Pipewire installed via other package managers</h2><p>Pipewire offers a JACK API, but applications installed via nix are not able to connect to it out of the box.</p>
+<p>Use the following command to make them work (using qsynth as an example):</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">LD_LIBRARY_PATH=<span class="hljs-string">&quot;<span class="hljs-subst">$(nix build nixpkgs#pipewire.jack --print-out-paths)</span>/lib&quot;</span> nix run nixpkgs#qsynth</code></pre>
+      </div><p>You can also wrap it in a script, for adding this to your home-manager config will allow using `nix-jack nix run nixpkgs#qsynth`</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">h<span class="hljs-attr">ome.packages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+    (writeShellScriptBin <span class="hljs-string">&quot;nix-jack&quot;</span> <span class="hljs-string">&#x27;&#x27;
+      exec /usr/bin/env \
+        LD_LIBRARY_PATH=<span class="hljs-subst">${pipewire.jack}</span>/lib<span class="hljs-char escape_">&#x27;&#x27;$</span>{LD_LIBRARY_PATH:+:<span class="hljs-char escape_">&#x27;&#x27;$</span>{LD_LIBRARY_PATH}} \
+        &quot;<span class="hljs-char escape_">&#x27;&#x27;$</span>@&quot;
+    &#x27;&#x27;</span>)
+]</code></pre>
+      </div><p>or</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-keyword">let</span>
+  <span class="hljs-attr">jackWrap</span> <span class="hljs-operator">=</span> <span class="hljs-params">drv:</span> pkgs.symlinkJoin {
+    <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${drv.name}</span>-jackwrapped&quot;</span>;
+    <span class="hljs-attr">paths</span> <span class="hljs-operator">=</span> [ drv ];
+    <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> [ pkgs.makeWrapper ];
+    <span class="hljs-attr">postBuild</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+      ls &quot;$out/bin&quot;
+      for b in &quot;$out/bin/&quot;*; do
+        wrapProgram &quot;$b&quot; \
+          --prefix LD_LIBRARY_PATH : &quot;<span class="hljs-subst">${pkgs.pipewire.jack}</span>/lib&quot;
+      done
+    &#x27;&#x27;</span>;
+  };
+<span class="hljs-keyword">in</span> [
+  (jackWrap pkgs.qsynth)
+]</code></pre>
+      </div><p>This is necessary because of the way the pipewire jack interface works. By using a pipewire-provided dynamically linked library, the connection attempt is translated to a pipewire connection inside the client process. Other distributions such as Arch Linux implement this by just placing the .so files in /usr/lib but since nix application don&#39;t include that directory we need this approach.</p>
+<p>(Tested on Arch Linux in May 2023)</p>
+<p>If you know of a way to do this without wrapping each individual package, please add it here.</p>
+<p><a href="category:Audio" class="wikilink" title="Category:Audio">Category:Audio</a> <a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

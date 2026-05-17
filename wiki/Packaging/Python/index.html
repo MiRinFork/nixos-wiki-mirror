@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Packaging/Python</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/Packaging">Packaging</a><span aria-hidden="true"> / </span>Python</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Packaging/Python -->
+
+<p>See <a href="https://mirror.nixoscn.org/wiki/Packaging/Python/Language-specific_package_helpers" class="wikilink" title="Language-specific package helpers">Language-specific package helpers</a> for a list of tools to package python packages.</p>
+<h2 id="prepare-packaging">Prepare Packaging</h2><p>When you want to package a new software from a local checkout with the inputs coming from nixpkgs (and not virtualenv+pip) you can use the following <code>shell.nix</code> <sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Packaging/Python#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-keyword">with</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> {};
+<span class="hljs-keyword">with</span> pkgs.python3Packages;
+
+buildPythonPackage <span class="hljs-keyword">rec</span> {
+  <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;mypackage&quot;</span>;
+  <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> <span class="hljs-symbol">./path/to/source</span>;
+  <span class="hljs-attr">propagatedBuildInputs</span> <span class="hljs-operator">=</span> [ pytest numpy pkgs.libsndfile ];
+}</code></pre>
+      </div><p>You can now run <code>nix-shell</code> and it will drop you in a shell similar to the <code>python setup.py develop</code> mode which uses the local code in <code>./path/to/source</code> as input. <code>propagatedBuildInputs</code> will contain the packages you need in your project. After you&#39;ve finished developing you can replace the relative path with <code>fetchFromGitHub { ... }</code> or <a href="https://github.com/NixOS/nixpkgs/blob/master/pkgs/build-support/fetchpypi/default.nix"><code>fetchPypi</code></a><code> { ... }</code>.</p>
+<h2 id="testing-out-a-module-in-a-python-shell">Testing out a module in a Python shell</h2><p>Once you have your derivation written, you can create a <a href="https://mirror.nixoscn.org/wiki/Packaging/Python/Flakes" class="wikilink" title="flake">flake</a> to give yourself a shell and easily test out the module you wrote the derivation for.</p>
+<p>Create a <code>flake.nix</code> next to your derivation:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Dev shell using external derivation&quot;</span>;
+
+  <span class="hljs-attr">inputs</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">nixpkgs.url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:NixOS/nixpkgs/nixos-24.05&quot;</span>;
+    <span class="hljs-attr">flake-utils.url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:numtide/flake-utils&quot;</span>;
+  };
+
+  <span class="hljs-attr">outputs</span> <span class="hljs-operator">=</span> { self, nixpkgs, flake-utils }:
+    flake-utils.lib.eachDefaultSystem (<span class="hljs-params">system:</span>
+      <span class="hljs-keyword">let</span>
+        <span class="hljs-attr">pkgs</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> nixpkgs { <span class="hljs-keyword">inherit</span> system; };
+        <span class="hljs-comment"># replace ./derivation.nix with the path (relative to this file) to your derivation</span>
+        <span class="hljs-attr">mypackage</span> <span class="hljs-operator">=</span> pkgs.python3Packages.callPackage <span class="hljs-symbol">./derivation.nix</span> {
+          <span class="hljs-attr">lib</span> <span class="hljs-operator">=</span> pkgs.lib;
+        };
+      <span class="hljs-keyword">in</span> {
+        <span class="hljs-attr">packages.default</span> <span class="hljs-operator">=</span> pkgs.python3.withPackages(<span class="hljs-params">_:</span> [ mypackage ]);
+      });
+}</code></pre>
+      </div><p>Replace &quot;mypackage&quot; with your package name. Then, run the flake to get into a python REPL with your package, ready to be imported:</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell-session hljs">$ nix run
+Python 3.11.10 (main, Sep  7 2024, 01:03:31) [GCC 13.2.0] on linux
+Type &quot;help&quot;, &quot;copyright&quot;, &quot;credits&quot; or &quot;license&quot; for more information.
+&gt;&gt;&gt; import mypackage
+&gt;&gt;&gt; # test things out...</code></pre>
+      </div><h2 id="pip-and-virtualenv-enabled-nix-shell">Pip and Virtualenv enabled nix-shell</h2><p>It might be the case that you simply need to prototype fast small projects with <code>pip</code> and <code>virtualenv</code> without the need for relying on the dependencies being already packaged in nixpkgs.</p>
+<p>For a local working python environment you can use the following <code>shell.nix</code><sup><a id="footnote-ref-2" href="https://mirror.nixoscn.org/wiki/Packaging/Python#footnote-2" data-footnote-ref aria-describedby="footnote-label">2</a></sup>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs <span class="hljs-operator">?</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> { } }:
+
+<span class="hljs-keyword">let</span>
+  <span class="hljs-attr">pythonEnv</span> <span class="hljs-operator">=</span> pkgs.python3.withPackages(<span class="hljs-params">ps:</span> [ ]);
+
+<span class="hljs-keyword">in</span>
+pkgs.mkShell {
+  <span class="hljs-attr">packages</span> <span class="hljs-operator">=</span> [
+    pythonEnv
+  ];
+}</code></pre>
+      </div><p>When invoked with nix-shell, this environment gives you a readline-enabled Python, plus virtualenv and pip, from which you can create a virtual environment and then proceed to fill it with pip-installed packages from requirements.txt or any other source of packages.</p>
+<p>And the only other thing you need to do is figure out which non-Python packages your pip-installable packages will need, and include them in buildInputs.</p>
+<h2 id="caveats">Caveats</h2><h3 id="modulenotfounderror-no-module-named-39-pkg_resources-39">ModuleNotFoundError: No module named &#39;pkg_resources&#39;</h3><p>If you see this runtime error</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">ModuleNotFoundError: No module named 'pkg_resources'</code></pre>
+      </div><p>add <code>setuptools</code> to your derivation</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">buildPythonPackage {
+  <span class="hljs-comment"># ...</span>
+  <span class="hljs-attr">propagatedBuildInputs</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-comment"># ...</span>
+    setuptools
+  ];
+}</code></pre>
+      </div><p>Please report such issues at <a href="https://github.com/NixOS/nixpkgs/issues">https://github.com/NixOS/nixpkgs/issues</a></p>
+<h3 id="http-404-with-fetchpypi">HTTP 404 with fetchPypi</h3><p>example error:</p>
+<blockquote>
+<p>curl: (22) The requested URL returned error: 404<br>error: cannot download stt-1.2.0.tar.gz from any mirror</p>
+</blockquote>
+<p>when we look at <a href="https://pypi.org/project/stt/#files">https://pypi.org/project/stt/#files</a> we see only <code>*.whl</code> files:</p>
+<ul>
+<li><code>stt-1.2.0-cp310-cp310-win_amd64.whl</code></li>
+<li><code>stt-1.2.0-cp310-cp310-manylinux_2_24_x86_64.whl</code></li>
+<li><code>stt-1.2.0-cp310-cp310-macosx_10_10_universal2.whl</code></li>
+<li>...</li>
+</ul>
+<p>this means, this is a binary release, so we have two options:</p>
+<ol>
+<li>build from source</li>
+<li>install binary release</li>
+</ol>
+<h4 id="build-from-source">build from source</h4><p>replace this</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">    buildPythonPackage {
+      <span class="hljs-attr">pname</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;TODO&quot;</span>;
+      <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;TODO&quot;</span>;
+      <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> fetchPypi {
+        <span class="hljs-keyword">inherit</span> pname version;
+        <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;</span>; <span class="hljs-comment"># TODO</span>
+      };</code></pre>
+      </div><p>with this</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">    buildPythonPackage {
+      <span class="hljs-attr">pname</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;TODO&quot;</span>;
+      <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;TODO&quot;</span>;
+      <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> fetchFromGitHub {
+        <span class="hljs-attr">owner</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;TODO&quot;</span>;
+        <span class="hljs-attr">repo</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;TODO&quot;</span>;
+        <span class="hljs-attr">rev</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;v<span class="hljs-subst">${version}</span>&quot;</span>;
+        <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;</span>; <span class="hljs-comment"># TODO</span>
+      };</code></pre>
+      </div><h4 id="install-binary-release">install binary release</h4><p>replace this</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">    buildPythonPackage {
+      <span class="hljs-attr">pname</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;TODO&quot;</span>;
+      <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;TODO&quot;</span>;
+      <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> fetchPypi {
+        <span class="hljs-keyword">inherit</span> pname version;
+        <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;</span>; <span class="hljs-comment"># TODO</span>
+      };</code></pre>
+      </div><p>with this</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">    buildPythonPackage {
+      <span class="hljs-attr">pname</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;TODO&quot;</span>;
+      <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;TODO&quot;</span>;
+      <span class="hljs-attr">format</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;wheel&quot;</span>;
+      <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> fetchPypi <span class="hljs-keyword">rec</span> {
+        <span class="hljs-keyword">inherit</span> pname version format;
+        <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;</span>; <span class="hljs-comment"># TODO</span>
+        <span class="hljs-attr">dist</span> <span class="hljs-operator">=</span> python;
+        <span class="hljs-attr">python</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;py3&quot;</span>;
+        <span class="hljs-comment">#abi = &quot;none&quot;;</span>
+        <span class="hljs-comment">#platform = &quot;any&quot;;</span>
+      };</code></pre>
+      </div><p>... or use <code>fetchurl</code> to download the <code>*.whl</code> file directly.<br>reference: <a href="https://github.com/NixOS/nixpkgs/blob/master/pkgs/build-support/fetchpypi/default.nix">fetchPypi implementation</a></p>
+<h2 id="fix-missing-setup-py">Fix Missing <code>setup.py</code></h2><p>The <code>setup.py</code> file is required for <code>buildPythonPackage</code>, but it&#39;s missing in some packages. If you get the following error, you need to one of the workarounds below.</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">FileNotFoundError: [Errno 2] No such file or directory: 'setup.py'</code></pre>
+      </div><p>If the package has a <code>pyproject.toml</code> file, set</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">buildPythonPackage {
+  <span class="hljs-attr">format</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;pyproject&quot;</span>;
+}</code></pre>
+      </div><p>If both <code>setup.py</code> and <code>pyproject.toml</code> are missing, you have to add one of these files.</p>
+<p><strong>Note:</strong> sometimes you will be able to find <code>pyproject.toml</code> in the source for a package despite it not being present in a <code>.whl</code> file. You can inspect the contents of a <code>.whl</code> file by downloading it from PyPi and then extracting it with <code>nix-shell -p python311Packages.wheel --command wheel unpack path/to/package.whl</code>.</p>
+<p>For example, you can create the <code>setup.py</code> in the <code>preBuild</code> phase.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">buildPythonPackage {
+  <span class="hljs-attr">preBuild</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    cat &gt; setup.py &lt;&lt; EOF
+from setuptools import setup
+
+with open(&#x27;requirements.txt&#x27;) as f:
+    install_requires = f.read().splitlines()
+
+setup(
+  name=&#x27;someprogram&#x27;,
+  #packages=[&#x27;someprogram&#x27;],
+  version=&#x27;0.1.0&#x27;,
+  #author=&#x27;...&#x27;,
+  #description=&#x27;...&#x27;,
+  install_requires=install_requires,
+  scripts=[
+    &#x27;someprogram.py&#x27;,
+  ],
+  entry_points={
+    # example: file some_module.py -&gt; function main
+    #&#x27;console_scripts&#x27;: [&#x27;someprogram=some_module:main&#x27;]
+  },
+)
+    EOF
+  &#x27;&#x27;</span>;
+}</code></pre>
+      </div><p>More info about the <code>setup.py</code> can be found <a href="https://docs.python.org/3.11/distutils/setupscript.html">here</a>. (<b>note:</b> from python 3.12 onwards, distutils is deprecated see <a href="https://docs.python.org/3.11/distutils/index.html">https://docs.python.org/3.11/distutils/index.html</a>)</p>
+<p><code>scripts</code> is useful for self-contained python scripts with no local imports.</p>
+<p>If a python script has local imports, for example <code>from .some_module import some_function</code>, either include all files in the <code>scripts</code> array, or add only the entry function to <code>entry_points</code>.</p>
+<p>In this example, <code>someprogram.py</code> would be installed as <code>$out/bin/someprogram.py</code>.<br>To rename the binary, for example to remove the <code>.py</code> file extension, you can use <code>postInstall</code></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">buildPythonPackage {
+  <span class="hljs-comment"># ...</span>
+  <span class="hljs-attr">postInstall</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    mv -v $out/bin/someprogram.py $out/bin/someprogram
+  &#x27;&#x27;</span>;
+}</code></pre>
+      </div><h3 id="requirements-txt">requirements.txt</h3><p><code>requirements.txt</code> in it&#39;s simplest form is a list of python packages</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">numpy
+Requests
+Pillow</code></pre>
+      </div><p><code>buildPythonPackage</code> will check these dependencies, but you still must declare the nix dependencies in <code>buildInputs</code>, <code>propagatedBuildInputs</code>, <code>checkInputs</code>, ...</p>
+<h2 id="automatic-packaging">Automatic packaging</h2><table>
+<thead>
+<tr>
+<th></th>
+<th>Project</th>
+<th>URL</th>
+<th>Stars</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>TODO</td>
+<td>poetry2nix</td>
+<td><a href="https://github.com/nix-community/poetry2nix">https://github.com/nix-community/poetry2nix</a></td>
+<td>884+</td>
+<td>unmaintained</td>
+</tr>
+<tr>
+<td>TODO</td>
+<td>uv2nix</td>
+<td><a href="https://github.com/pyproject-nix/uv2nix">https://github.com/pyproject-nix/uv2nix</a></td>
+<td>675+</td>
+<td></td>
+</tr>
+<tr>
+<td>TODO</td>
+<td>pip2nix</td>
+<td><a href="https://github.com/nix-community/pip2nix">https://github.com/nix-community/pip2nix</a></td>
+<td>175+</td>
+<td></td>
+</tr>
+<tr>
+<td>TODO</td>
+<td><s>pypi2nix</s></td>
+<td><a href="https://github.com/nix-community/pypi2nix">https://github.com/nix-community/pypi2nix</a></td>
+<td>194</td>
+<td>archived</td>
+</tr>
+</tbody></table>
+<h2 id="testing-via-this-command-is-deprecated">Testing via this command is deprecated</h2><p>In most cases, tests will pass anyway and you can ignore the warning.</p>
+<p>In some cases, tests will fail, for example:</p>
+<blockquote>
+<p>running test<br>WARNING: Testing via this command is deprecated and will be removed in a future version. Users looking for a generic test entry point independent of test runner are encouraged to use tox.<br>[ ... ]<br>TypeError: some_function() missing 1 required positional argument: &#39;some_argument&#39;</p>
+</blockquote>
+<p>quick fix: run tests with python&#39;s <a href="https://docs.python.org/3/library/unittest.html">unittest</a> module</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">checkPhase</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    runHook preCheck
+    <span class="hljs-subst">${python3.interpreter}</span> -m unittest
+    runHook postCheck
+  &#x27;&#x27;</span>;</code></pre>
+      </div><h2 id="see-also">See also</h2><ul>
+<li><a href="https://github.com/NixOS/nixpkgs/blob/master/pkgs/development/interpreters/python/mk-python-derivation.nix">buildPythonPackage implementation</a></li>
+<li><a href="https://nixos.org/manual/nixpkgs/#python">Python</a> in the nixpkgs manual</li>
+<li><a href="https://github.com/on-nix/python">Python on Nix</a> is an &quot;Extensive collection of Python projects from PyPI&quot;</li>
+<li><a href="https://nixos.org/manual/nixpkgs/stable/#examples">Rust section of Nixpkgs manual</a> - build Rust code in Python projects</li>
+</ul>
+<h2 id="references">References</h2><p><a href="category:Python" class="wikilink" title="Category:Python">Category:Python</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p><a href="https://nixos.org/nixpkgs/manual/#develop-local-package">nixpkgs manual</a> <a href="https://mirror.nixoscn.org/wiki/Packaging/Python#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+<li id="footnote-2">
+<p><a href="https://groups.google.com/forum/#!topic/nix-devel/3qPfwCAV3GE">https://groups.google.com/forum/#!topic/nix-devel/3qPfwCAV3GE</a> <a href="https://mirror.nixoscn.org/wiki/Packaging/Python#footnote-ref-2" data-footnote-backref aria-label="Back to reference 2">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

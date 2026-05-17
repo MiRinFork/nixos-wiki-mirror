@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Maintainers-Fastly</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Maintainers-Fastly</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Maintainers:Fastly -->
+
+<p><a href="https://www.fastly.com/">Fastly</a> is a global CDN provider that powers <a href="https://cache.nixos.org/"><a href="https://cache.nixos.org/">https://cache.nixos.org</a></a>, one of our mission-critical services, through their <a href="https://www.fastly.com/open-source">Open Source and Non-Profit Program</a>.</p>
+<p>This page gives some basic details about what the configuration for our services looks like. In the future, we hope to integrate more <a href="https://nixos.org/"><a href="https://nixos.org/">https://nixos.org</a></a> services with Fastly, such as <a href="https://hydra.nixos.org/">Hydra</a>, and the main homepage.</p>
+<h2 id="configuration-details">Configuration details</h2><p>The core configuration details for our services are located in <a href="https://github.com/nixos/infra">infra</a>, which you can quickly clone with git:</p>
+<p>Check the <code>README.md</code> for details about the structure of the project, how to make and contribute changes, etc. It also describes the rough architecture of the integration(s).</p>
+<h3 id="cache-v2-plans">Cache v2 plans</h3><p>There are currently plans underway to do some nice user-visible upgrades on the main binary cache. See the beta notes below if you want to try. The first-cut goals are:</p>
+<ul>
+<li>Improved <abbr title="Time To First Byte">TTFB</abbr> and overall tail latency for all objects. (<strong>STATUS:</strong> <span style="color:#009000"><strong>DONE</strong></span>)<ul>
+<li>Better backbone routing: inter-POP network thanks to <a href="https://docs.fastly.com/guides/performance-tuning/shielding">shielding</a>.</li>
+<li>Improved support for large NARs, by streaming results directly from S3 rather than &quot;buffering&quot; them in the POP first. This improves TTFB dramatically.</li>
+</ul>
+</li>
+<li>Aggressive 404 caching, helping reduce the cost of misses on S3, which will be very common, especially if users have low TTLs or Hydra is lagging. (<strong>STATUS:</strong> <span style="color:#800080"><strong>MOSTLY DONE</strong></span>)<ul>
+<li>Mapping 403s to proper 404s and caching them (<strong>STATUS:</strong> <span style="color:#009000"><strong>DONE</strong></span>)</li>
+<li>Cache aggressive: ~1 month. (<strong>STATUS:</strong> <span style="color:#ff0000"><strong>NOT DONE</strong></span> -- requires upstream Hydra tooling changes, so cache uploads have their potential 404s purged in a timely manner.)</li>
+</ul>
+</li>
+<li>Rudimentary logging that can be ingested into some OLAP/timeseries database. (<strong>STATUS:</strong> <span style="color:#ff0000"><strong>NOT STARTED</strong></span>)<ul>
+<li>Some logging is configured upstream already, but we don&#39;t know how it&#39;s being used (Logstream?)</li>
+<li>We might want to just go as far as emitting raw JSON records into S3, on some schedule (easily done with Fastly logging.)</li>
+<li><strong>Example use</strong>: Glean insights from nar requests, correlated with evaluations producing those paths: better insight into how users use packages and track release channels.</li>
+<li><strong>Example use</strong>: Look at and optimize effective TTL times.</li>
+</ul>
+</li>
+</ul>
+<h4 id="beta-try-cache-v2">BETA: Try cache v2!</h4><p><a href="https://github.com/thoughtpolice">Austin</a> currently has a Fastly service configured implementing some of the above. To use it, you can change your <code>substituters</code> setting. <strong>This uses the real upstream S3 bucket</strong>, so you do not need to trust any new signatures. For NixOS users:</p>
+<p>Nix users:</p>
+<p>You should be set. This uses the real upstream nixos.org binary cache as a backend, so it should basically be up to date with <code>cache.nixos.org</code>.</p>
+<h4 id="changelog">Changelog</h4><p>We&#39;ll also have a changelog recording any major upgrades made to the service. You can view the current one here: <a href="https://aseipp.notion.site/07c3be3df9f24d829471c6f8208a8570?v=41a80a849bb646d6a184bd1ce770edc4">https://aseipp.notion.site/07c3be3df9f24d829471c6f8208a8570?v=41a80a849bb646d6a184bd1ce770edc4</a></p>
+<h4 id="beta-ipv6-http-2">Beta + IPv6 + HTTP/2</h4><p>The above domain in the prior section <strong>is IPv4 only</strong>. There have seemingly been various frustrations around IPv6 support (see <a href="https://mirror.nixoscn.org/wiki/Maintainers-Fastly#IPv6_shenanigans" class="wikilink" title="#IPv6 shenanigans">#IPv6 shenanigans</a> below), so the beta currently uses IPv4 only as a default. Instead of the above domain, you can use the following domain if you want to enable IPv4/IPv6 dual stack support. <strong>This also enables HTTP/2 support</strong>.</p>
+<p>Note the difference in the DNS name: <code>global.ssl</code> vs <code>freetls</code>.</p>
+<h4 id="beta-issues">Beta Issues</h4><p>There are some known deficiencies with the beta, listed below:</p>
+<ul>
+<li><strong>Any user can purge cache objects with no authentication</strong>. Use <code>curl -v -X PURGE </code><a href="https://"><code>https://</code></a><SOME URL> in order to do so. This is useful for debugging user issues, but during final deployment, we&#39;ll want to turn this off.</li>
+<li><strong>Overly-conservative URL blocking</strong>. <s>The current implementation will only allow you to download <code>.narinfo</code>, <code>.ls</code>, and <code>.nar.xz</code> files -- this is to eliminate spurious/invalid requests to S3 for objects which could never possibly exist. If you see a 403 error returned from the server, then this is why. This should mean &quot;recent&quot; (few year old) evaluations should work fine -- ever since we&#39;ve been using LZMA. This will be rectified in the future, but should only be noticeable to users on old channels.</s> <span style="color:#009000"><strong>FIXED</strong></span>: This is now taken care of, and several other paths were fixed as well.<ul>
+<li>We&#39;ll be sure to check the S3 metadata so that all filetypes in the cache can be downloaded properly, before final deployment.</li>
+</ul>
+</li>
+<li><strong>Origin connections do not use TLS</strong>. When connecting to a Fastly POP, you use TLS. When Fastly POPs talk to each other, they also use TLS. When a POP talks to S3, <strong>the beta service does not use TLS</strong> -- it talks to S3 over HTTP. This is due to a limitation in a feature we use called <strong><a href="https://docs.fastly.com/guides/performance-tuning/streaming-miss">Streaming Miss</a></strong>, which is vital in reducing <abbr title="Time To First Byte">TTFB</abbr> for large, uncached objects. (Without it, a POP must download an entire, possibly multi-hundred-MB NAR file before it can begin serving you. Streaming miss allows your download to start instantly.) Support for streaming miss with TLS origins is currently deployed in &quot;Limited Availability&quot; for Fastly customers. <s>We&#39;ll be applying to the LA program for TLS Origin support before deploying to production, and testing it carefully.</s> <span style="color:#009000"><strong>FIXED</strong></span>: This is now taken care of -- the final, live deployment will use TLS Origins! The beta currently does not.</li>
+</ul>
+<h2 id="known-issues">Known issues</h2><p>There are some known deficiencies with the cache <strong>that is currently deployed upstream for all users, on</strong> <code>cache.nixos.org</code>. These are listed below:</p>
+<h3 id="possible-nix-bugs">Possible Nix bugs</h3><p>See <a href="https://github.com/NixOS/nix/issues/3025">1</a> and <a href="https://discourse.nixos.org/t/nixos-cache-fetching-issue/3575/19">2</a>. Root cause is unclear, but it may be causing issues with cache downloads.</p>
+<h3 id="ipv6-shenanigans">IPv6 shenanigans</h3><p>See <a href="https://github.com/NixOS/nixpkgs/issues/65015">3</a>. Some users report that turning off IPv6 helps download things from <code>cache.nixos.org</code>. See also on the Fastly support forums: <a href="https://web.archive.org/web/20221208122000/https://support.fastly.com/hc/en-us/community/posts/360040169531-I-often-can-t-access-Fastly-servers-using-HTTPS-IPv6-RST-packets-received">I (often) can&#39;t access Fastly servers using HTTPS+IPv6: RST packets received</a>. It is unclear how widespread this issue might be. Using an IPv4 only DNS CNAME may mitigate this in the long run.</p>
+<h2 id="future-plans">Future plans</h2><p>The primary goal is to reduce user friction and significantly smooth out our infrastructure for the binary cache. Afterwords, we can look at integrating other services and other projects.</p>
+<h3 id="hydra-integration">Hydra integration</h3><p>After <a href="https://mirror.nixoscn.org/wiki/Maintainers-Fastly#Cache_v2_plans" class="wikilink" title="#Cache v2 plans">#Cache v2 plans</a> are completed and we&#39;re satisfied with the results, we could also look at integrating Hydra into our Fastly configuration. Hydra is notoriously slow due to almost zero caching for its dynamic content, such as evaluation or search listings.</p>
+<p>It is traditionally considered difficult to cache highly dynamic content, but Fastly has extremely low (<del>100ms) purge times, extremely low (</del>1-5s) configuration change rollout, as well as advanced content-caching capabilities with <a href="https://docs.fastly.com/guides/purging/getting-started-with-surrogate-keys">surrogate keys</a>. This is fast enough to where, providing your integration is deep enough, you can even cache your APIs, and purging strategies are normally pretty simple.</p>
+<p>The range of this integration could be simple or complex, however. It&#39;s also worth investigating whether or not Hydra&#39;s <em>database queries</em> are slow, and also optimizing that. But caching search, result, logs, etc should all be possible and some of it is probably easy.</p>
+<h3 id="lower-negative-ttl-times">Lower negative TTL times</h3><p>Negative TTLs are currently 1 hour: in other words, if something isn&#39;t available in an upstream cache, Nix will not check for it again when you evaluate, for up to 1 hour. (&quot;Positive&quot; TTLs are currently 1 month.)</p>
+<p>However, with aggressive 404 caching, we could investigate lowering the default negative TTL setting: redundant fetches for 404s will be handled <em>without</em> talking to S3, which is already a significant improvement. This means users won&#39;t have to wait as long for binaries to appear in the cache if they had tried previously. On the other hand, too small a negative TTL will result in a significant amount of wasted time on the users part. There may be a better tradeoff on this curve than we currently default to.</p>
+<p>Users can also start using lower negative TTLs to experiment as well, by setting the <code>narinfo-cache-negative-ttl</code> option.</p>
+<h3 id="secure-s3-fetches">Secure S3 fetches</h3><p>In the long run, we might want to look into securing the upstream S3 backend with authentication keys, and use VCL to authenticate HTTP requests to the origin. That will ensure the cache itself does not waste bandwidth from users who directly access it. (This also helps prevent gaps in logs, etc)</p>
+<h3 id="tarballs-nixos-org">tarballs.nixos.org</h3><p><a href="https://tarballs.nixos.org/"><a href="https://tarballs.nixos.org/">https://tarballs.nixos.org</a></a> needs to be handled in the same way as <code>cache.nixos.org</code> as well. This is not yet done.</p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

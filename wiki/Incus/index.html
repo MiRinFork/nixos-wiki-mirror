@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Incus</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Incus</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Incus -->
+
+<p><a href="https://linuxcontainers.org/incus/"></a> (<s><a href="wikipedia:en:LXC#LXD" class="wikilink" title="wikipedia:en:LXC#LXD">wikipedia:en:LXC#LXD</a></s>) is a next generation system container and virtual machine manager. It is a community driven alternative to Canonical&#39;s <a href="https://mirror.nixoscn.org/wiki/Incus/LXD" class="wikilink" title="LXD">LXD</a>, keeping the Apache-2.0 license.</p>
+<p>This document aims to provide NixOS specific information related to Incus. For non-NixOS specific documentation, please see the upstream documentation: <a href="https://linuxcontainers.org/incus/docs/main/">https://linuxcontainers.org/incus/docs/main/</a></p>
+<h2 id="installation">Installation</h2><p>The service can be enabled and started by adding the service to your NixOS configuration. It must still be initialized.</p>
+<p><code>virtualisation.incus.enable = true;</code><br><code>networking.nftables.enable = true;</code></p>
+<p>See <a href="https://mirror.nixoscn.org/wiki/Incus#Networking/Firewall" class="wikilink" title="#Networking/Firewall">#Networking/Firewall</a> for more information on the latter option.</p>
+<p>To provide non-root access to the Incus server, you will want to add your user to the incus-admin group. Don&#39;t forget to reboot.</p>
+<p><code>users.users.YOUR_USERNAME.extraGroups = [&quot;incus-admin&quot;];</code></p>
+<p>You should now be able to use the incus client to talk to the server.</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell-session hljs">[root@nixos:/etc/nixos]# incus version
+If this is your first time running Incus on this machine, you should also run: incus admin init
+To start your first container, try: incus launch images:ubuntu/22.04
+Or for a virtual machine: incus launch images:ubuntu/22.04 --vm
+
+Client version: 6.0.0
+Server version: 6.0.0</code></pre>
+      </div><h2 id="initialization">Initialization</h2><p>As you can see in the above code block, adding the Incus service will provide a working instance of the server, but is not sufficient on its own to have a complete setup.</p>
+<p>For more complex setups, please refer to <a href="https://linuxcontainers.org/incus/docs/main/howto/initialize/">https://linuxcontainers.org/incus/docs/main/howto/initialize/</a></p>
+<h3 id="minimal">Minimal</h3><p>The simplest way to initialize, Incus will provide a basic directory backed storage pool and a bridged NAT network with DHCP.</p>
+<p><code>incus admin init --minimal</code></p>
+<h3 id="preseed">Preseed</h3><p>NixOS has an option for providing a preseed to Incus, as documented in the initialize link above. This is a declarative initialization, with the caveat that Incus preseed will never remove a resource created. Here is an example that is similar to the Minimal initialization option.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">v<span class="hljs-attr">irtualisation.incus.preseed</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">networks</span> <span class="hljs-operator">=</span> [
+    {
+      <span class="hljs-attr">config</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-string">&quot;ipv4.address&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;10.0.100.1/24&quot;</span>;
+        <span class="hljs-string">&quot;ipv4.nat&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;true&quot;</span>;
+      };
+      <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;incusbr0&quot;</span>;
+      <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;bridge&quot;</span>;
+    }
+  ];
+  <span class="hljs-attr">profiles</span> <span class="hljs-operator">=</span> [
+    {
+      <span class="hljs-attr">devices</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">eth0</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;eth0&quot;</span>;
+          <span class="hljs-attr">network</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;incusbr0&quot;</span>;
+          <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nic&quot;</span>;
+        };
+        <span class="hljs-attr">root</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">path</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/&quot;</span>;
+          <span class="hljs-attr">pool</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;default&quot;</span>;
+          <span class="hljs-attr">size</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;35GiB&quot;</span>;
+          <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;disk&quot;</span>;
+        };
+      };
+      <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;default&quot;</span>;
+    }
+  ];
+  <span class="hljs-attr">storage_pools</span> <span class="hljs-operator">=</span> [
+    {
+      <span class="hljs-attr">config</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">source</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/var/lib/incus/storage-pools/default&quot;</span>;
+      };
+      <span class="hljs-attr">driver</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;dir&quot;</span>;
+      <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;default&quot;</span>;
+    }
+  ];
+};</code></pre>
+      </div><h2 id="networking-firewall">Networking/Firewall</h2><p>When using Incus on NixOS, nftables is required to ensure broadest compatibility with other services that manage firewall rules. Trying to use iptables will fail eval, and this can be fixed by switching to nftables and for simple firewalls should be a drop-in replacement for iptables.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">etworking.nftables.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><p>By default the NixOS firewall will block DHCP requests to the Incus network, meaning instances will not get an IPv4 address. Ensure you allow 53 for DNS and 67 for DHCPv4 on any Incus bridge network interfaces. This interface name should match the name given during initialization or configured through the incus interfaces.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">etworking.firewall.interfaces.incusbr0.allowedTCPPorts</span> <span class="hljs-operator">=</span> [
+  <span class="hljs-number">53</span>
+  <span class="hljs-number">67</span>
+];
+<span class="hljs-attr">networking.firewall.interfaces.incusbr0.allowedUDPPorts</span> <span class="hljs-operator">=</span> [
+  <span class="hljs-number">53</span>
+  <span class="hljs-number">67</span>
+];</code></pre>
+      </div><p>OR, the entire interface can be trusted.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">etworking.firewall.trustedInterfaces</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;incusbr0&quot;</span> ];</code></pre>
+      </div><p>Prior to version <a href="https://nixos.org/blog/announcements/2023/nixos-2311/">NixOS 23.11 &quot;Tapir&quot;</a> the default behavior of the NixOS nftables <a href="https://mirror.nixoscn.org/wiki/Incus/Firewall" class="wikilink" title="Firewall">Firewall</a> implementation was to flush the full ruleset at any change to the nftables rules. This behavior has since been changed; however, for back-portability, it still persists in configurations with a value set prior to <code>&quot;23.11&quot;</code>. This often results in the Incus ruleset table (named &quot;incus&quot;) being wiped, resulting in loss of connectivity across VMs and containers. To prevent this from occurring on affected NixOS instances, the new implementation has to be enabled manually.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">etworking.nftables.flushRuleset</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;</code></pre>
+      </div><h2 id="nixos-instances">NixOS Instances</h2><p>To launch a new NixOS container use the following command.</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">incus launch images:nixos/unstable nixos -c security.nesting=true</code></pre>
+      </div><p>A NixOS virtual machine is launched with the following.</p>
+<p><code>incus launch --vm images:nixos/unstable nixos -c security.secureboot=false</code></p>
+<h2 id="nixos-images">NixOS Images</h2><h3 id="pre-built-images">Pre-built Images</h3><p>NixOS images are available at <a href="https://images.linuxcontainers.org/">https://images.linuxcontainers.org/</a> providing VM and Container images for both stable and unstable NixOS.</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell-session hljs">[root@nixos:/etc/nixos]# incus image list images:nixos
++-------------------------------+--------------+--------+---------------------------------------+--------------+-----------------+-----------+----------------------+
+|             ALIAS             | FINGERPRINT  | PUBLIC |              DESCRIPTION              | ARCHITECTURE |      TYPE       |   SIZE    |     UPLOAD DATE      |
++-------------------------------+--------------+--------+---------------------------------------+--------------+-----------------+-----------+----------------------+
+| nixos/23.11 (3 more)          | 1e606df4d91a | yes    | Nixos 23.11 amd64 (20240521_01:02)    | x86_64       | CONTAINER       | 124.84MiB | 2024/05/21 00:00 UTC |
++-------------------------------+--------------+--------+---------------------------------------+--------------+-----------------+-----------+----------------------+
+| nixos/23.11 (3 more)          | a96494ff3c46 | yes    | Nixos 23.11 amd64 (20240521_01:02)    | x86_64       | VIRTUAL-MACHINE | 452.43MiB | 2024/05/21 00:00 UTC |</code></pre>
+      </div><h4 id="creation">Creation</h4><p>Container and VM images are built by Hydra as part of the <a href="https://github.com/NixOS/nixpkgs/blob/master/nixos/release.nix">NixOS release</a>.</p>
+<p><a href="https://hydra.nixos.org/job/nixos/trunk-combined/nixos.incusContainerImage.x86_64-linux">https://hydra.nixos.org/job/nixos/trunk-combined/nixos.incusContainerImage.x86_64-linux</a></p>
+<p><a href="https://hydra.nixos.org/job/nixos/trunk-combined/nixos.incusVirtualMachineImage.x86_64-linux">https://hydra.nixos.org/job/nixos/trunk-combined/nixos.incusVirtualMachineImage.x86_64-linux</a></p>
+<p>The LXC Image Server then consumes them and repackages them using their CI.</p>
+<p>Definition: <a href="https://github.com/lxc/lxc-ci/blob/main/jenkins/jobs/image-nixos.yaml">https://github.com/lxc/lxc-ci/blob/main/jenkins/jobs/image-nixos.yaml</a></p>
+<p>CI: <a href="https://jenkins.linuxcontainers.org/job/image-nixos/">https://jenkins.linuxcontainers.org/job/image-nixos/</a></p>
+<h2 id="custom-images">Custom Images</h2><h3 id="vms">VMs</h3><p>All the necessary build infrastructure exists in nixpkgs to build custom images.</p>
+<p>Define some NixOS systems.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">ixosConfigurations</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">container</span> <span class="hljs-operator">=</span> inputs.nixpkgs.lib.nixosSystem {
+    <span class="hljs-attr">system</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;x86_64-linux&quot;</span>;
+    <span class="hljs-attr">modules</span> <span class="hljs-operator">=</span> [
+      <span class="hljs-string">&quot;<span class="hljs-subst">${inputs.nixpkgs}</span>/nixos/modules/virtualisation/lxc-container.nix&quot;</span>
+      (
+        { pkgs, ... }:
+        {
+          <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> [ pkgs.vim ];
+        }
+      )
+    ];
+  };
+
+  <span class="hljs-attr">vm</span> <span class="hljs-operator">=</span> inputs.nixpkgs.lib.nixosSystem {
+    <span class="hljs-attr">system</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;x86_64-linux&quot;</span>;
+    <span class="hljs-attr">modules</span> <span class="hljs-operator">=</span> [
+      <span class="hljs-string">&quot;<span class="hljs-subst">${inputs.nixpkgs}</span>/nixos/modules/virtualisation/incus-virtual-machine.nix&quot;</span>
+      (
+        { pkgs, ... }:
+        {
+          <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> [ pkgs.vim ];
+        }
+      )
+    ];
+  };
+};</code></pre>
+      </div><p>Then you can build the image and associated metadata.</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell-session hljs">$ nix build .#nixosConfigurations.vm.config.system.build.qemuImage --print-out-paths
+/nix/store/znk28bp34bycb3h5k0byb61bwda23q5l-nixos-disk-image
+
+$ nix build .#nixosConfigurations.vm.config.system.build.metadata --print-out-paths
+/nix/store/2snjw9y8brfh5gia44jv6bhdhmmdydva-tarball</code></pre>
+      </div><p>Finally, you can manually import into an Incus storage pool and used to launch instances.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">$ incus image import --<span class="hljs-built_in">alias</span> nixos-gen/custom/jellyfin /nix/store/2snjw9y8brfh5gia44jv6bhdhmmdydva-tarball/tarball/nixos-system-x86_64-linux.tar.xz /nix/store/znk28bp34bycb3h5k0byb61bwda23q5l-nixos-disk-image/nixos.qcow2</code></pre>
+      </div><p>To build and import the VM in one command, follow the steps below.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">$ incus image import --<span class="hljs-built_in">alias</span> nixos-gen/custom/jellyfin $(nix build .#nixosConfigurations.vm.config.system.build.metadata --print-out-paths)/tarball/nixos-system-x86_64-linux.tar.xz $(nix build .#nixosConfigurations.vm.config.system.build.qemuImage --print-out-paths)/nixos.qcow2
+
+<span class="hljs-comment"># Image imported with fingerprint: ***</span></code></pre>
+      </div><p>You can verify the import with the commands below.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">$ incus image list nixos/custom/vm
++------------------------+--------------+--------+--------------------------------------------------+--------------+-----------+-----------+----------------------+
+|         ALIAS          | FINGERPRINT  | PUBLIC |                   DESCRIPTION                    | ARCHITECTURE |   TYPE    |   SIZE    |     UPLOAD DATE      |
++------------------------+--------------+--------+--------------------------------------------------+--------------+-----------+-----------+----------------------+
+| nixos/custom/vm | 9d0d6f3df0cc | no     | NixOS Uakari 24.05.20240513.a39a12a x86_64-linux | x86_64       | CONTAINER | 170.31MiB | 2024/05/21 09:21 EDT |
++------------------------+--------------+--------+--------------------------------------------------+--------------+-----------+-----------+----------------------+
+
+$ incus launch nixos/custom/vm
+Launching the instance
+Instance name is: square-heron
+
+$ incus shell square-heron
+
+[root@nixos:~]# <span class="hljs-built_in">which</span> vim
+/run/current-system/sw/bin/vim</code></pre>
+      </div><h3 id="containers">Containers</h3><div class="code-container">
+        
+        <pre><code class="language-bash hljs">$ nix build .#nixosConfigurations.container.config.system.build.squashfs --print-out-paths
+/nix/store/24djf2qlpkyh29va8z6pxrqp8x5z6xyv-nixos-lxc-image-x86_64-linux.img
+
+$ nix build .#nixosConfigurations.container.config.system.build.metadata --print-out-paths
+/nix/store/2snjw9y8brfh5gia44jv6bhdhmmdydva-tarball</code></pre>
+      </div><div class="code-container">
+        
+        <pre><code class="language-shell-session hljs">$ incus image import --alias nixos/custom/container /nix/store/2snjw9y8brfh5gia44jv6bhdhmmdydva-tarball/tarball/nixos-system-x86_64-linux.tar.xz /nix/store/24djf2qlpkyh29va8z6pxrqp8x5z6xyv-nixos-lxc-image-x86_64-linux.img
+Image imported with fingerprint: 9d0d6f3df0cccec4da7ce4f69952bd389b6dd655fd9070e498f591aaffbb2cda
+
+$ incus image list nixos/custom/container
++------------------------+--------------+--------+--------------------------------------------------+--------------+-----------+-----------+----------------------+
+|         ALIAS          | FINGERPRINT  | PUBLIC |                   DESCRIPTION                    | ARCHITECTURE |   TYPE    |   SIZE    |     UPLOAD DATE      |
++------------------------+--------------+--------+--------------------------------------------------+--------------+-----------+-----------+----------------------+
+| nixos/custom/container | 9d0d6f3df0cc | no     | NixOS Uakari 24.05.20240513.a39a12a x86_64-linux | x86_64       | CONTAINER | 170.31MiB | 2024/05/21 09:21 EDT |
++------------------------+--------------+--------+--------------------------------------------------+--------------+-----------+-----------+----------------------+
+
+$ incus launch nixos/custom/container -c security.nesting=true
+Launching the instance
+Instance name is: square-heron
+
+$ incus shell square-heron
+
+[root@nixos:~] which vim
+/run/current-system/sw/bin/vim</code></pre>
+      </div><p>Or, the all in one command:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">incus image import --<span class="hljs-built_in">alias</span> nixos/custom/vm $(nix build .#nixosConfigurations.vm.config.system.build.metadata --print-out-paths)/tarball/nixos-system-x86_64-linux.tar.xz $(nix build .#nixosConfigurations.vm.config.system.build.qemuImage --print-out-paths)/nixos.qcow2</code></pre>
+      </div><p><a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="category:Container" class="wikilink" title="Category:Container">Category:Container</a> <a href="category:Virtualization" class="wikilink" title="Category:Virtualization">Category:Virtualization</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

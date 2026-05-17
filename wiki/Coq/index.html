@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Coq</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Coq</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Coq -->
+
+<h2 id="installation">Installation</h2><p>The <a href="https://coq.inria.fr/">Coq proof assistant</a> and associated tools (coqtop, coqc, coq_makefile, …) may be installed globally, by a user, in its profile:</p>
+<p><code>nix-env -iA nixpkgs.coq</code></p>
+<p>If you want CoqIDE:</p>
+<p><code>nix-env -iA nixpkgs.coqPackages.coqide</code></p>
+<p>Coq can also be run in a local, ephemeral, environment. For instance, the following command will launch coqtop or CoqIDE without installing it in the user profile:</p>
+<p><code>nix-shell -p coq -c coqtop</code></p>
+<p><code>nix-shell -p coqPackages.coqide -c coqide</code></p>
+<h2 id="proofgeneral">ProofGeneral</h2><p><a href="https://proofgeneral.github.io/">ProofGeneral</a> is a “generic <a href="https://mirror.nixoscn.org/wiki/Coq/Emacs" class="wikilink" title="Emacs">Emacs</a> interface for proof assistants”. A working <a href="https://mirror.nixoscn.org/wiki/Coq/Emacs" class="wikilink" title="Emacs">Emacs</a> is needed.</p>
+<p>To install ProofGeneral, you can use the corresponding attribute:</p>
+<p><code>nix-env -iA nixpkgs.emacsPackages.proofgeneral_HEAD</code></p>
+<p>Then, the following line should be added to Emacs configuration (aka <em>.emacs</em>):</p>
+<p><code>(require &#39;proof-site &quot;~/.nix-profile/share/emacs/site-lisp/ProofGeneral/generic/proof-site&quot;)</code></p>
+<p>The ProofGeneral mode automatically sets the <em>electric-indent-mode</em> (recomputes the indentation of a line when leaving it), that some find extremely annoying. To disable it, the following line may be added to the <em>.emacs</em> file:</p>
+<p><code>(when (fboundp &#39;electric-indent-mode) (electric-indent-mode 0))</code></p>
+<p>There is an additional annoyance with evil-mode; see <a href="https://github.com/syl20bnr/spacemacs/issues/8853#issuecomment-302706114">two</a> <a href="https://github.com/ProofGeneral/PG/issues/174#issuecomment-293719295">discussions</a> describing a work-around, namely to include the following before loading evil-mode:</p>
+<p><code>(setq evil-want-abbrev-expand-on-insert-exit nil)</code></p>
+<h2 id="using-libraries">Using libraries</h2><p>A few third-party libraries are available under the <em>coqPackages</em> attribute set.</p>
+<p>A simple way to use such a library is within a temporary shell, e.g.,</p>
+<p><code>nix-shell --packages coq coqPackages.mathcomp</code></p>
+<p>This will open a shell in which both Coq and the <a href="https://math-comp.github.io/math-comp/">Mathematical Components library</a> are available. Notice that even if Coq is globally installed, it is required to list it as an input of the shell.</p>
+<h3 id="using-non-default-versions-of-packaged-libraries">Using non-default versions of packaged libraries</h3><p>For some libraries, several versions are available in nixpkgs. However, there is a default one and accessing non-default versions is non trivial. For instance, at the time of writing (February 2024, nixos 23.11) <code>coqPackages.mathcomp</code> refers to the mathcomp library at version 1.18.0 (for Coq 8.18). An other version of this library may be accessed by overriding its <code>version</code> argument, as follows: <code>coqPackages.mathcomp.override { version = &quot;2.1.0&quot;; }</code>.</p>
+<p>In more complex situations, it may be necessary to override several packages, or to use an overridden package as input to an other one. In order to get a consistent set of Coq libraries, one can use the <code>overrideScope&#39;</code> function; for instance <code>coqPackages.overrideScope&#39; (self: super: { mathcomp = super.mathcomp.override { version = &quot;2.1.0&quot;; }; })</code> is a set of Coq packages in which mathcomp is at version 2.1.0 (i.e., any package in this set that uses mathcomp will use that version).</p>
+<h3 id="global-installation-of-libraries">Global installation of libraries</h3><p>It is possible to globally install a Coq library as any other Nix package. Notice however that it will not be automatically visible to Coq. Coq search for libraries in the directories that are listed in the <em>COQPATH</em> environment variable. When using Coq in a Nix shell (as described above), this variable is automatically populated with paths to the Coq libraries that are provided by the shell inputs. You may manually define this variable to point to your profile, e.g.,</p>
+<p><code>export COQPATH=$HOME/.nix-profile/lib/coq/8.7/user-contrib</code></p>
+<h2 id="see-also">See also…</h2><p>Related blog post: <a href="https://yannherklotz.com/nix-for-coq/">https://yannherklotz.com/nix-for-coq/</a></p>
+<p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

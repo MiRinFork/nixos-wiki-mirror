@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Secret Service</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Secret Service</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Secret Service -->
+
+<p><strong><a href="https://specifications.freedesktop.org/secret-service-spec/latest/">Secret Service</a></strong> is an API on D-Bus to allow applications to store secrets securely.</p>
+<h2 id="providers">Providers</h2><p>Secret Service has many providers. Here&#39;s a list of a few of them.</p>
+<ul>
+<li>GNOME Keyring: GNOME-integrated daemon that stores credentials</li>
+<li>KDE Wallet (KWallet): KDE-integrated application that stores credentials</li>
+<li>KeePassXC (): A password manager with optional Secret Service integration</li>
+<li>pass-secret-service: D-Bus service to expose <a href="https://www.passwordstore.org/">pass</a> to Secret Service</li>
+</ul>
+<p>At least GNOME Keyring provides a special collection named <code>session</code>, which is not persisted on disk and is deleted when the user logs out.</p>
+<h3 id="gnome-keyring">GNOME Keyring</h3><p>Add the following to your <a href="https://mirror.nixoscn.org/wiki/Secret%20Service/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> configuration: OR</p>
+<p>Add the following to your NixOS configuration:</p>
+<p>The NixOS module sets up <code>gnome-keyring-daemon</code> to run as root <a href="https://github.com/NixOS/nixpkgs/blob/10343b095a3f870e6a03f867a6bfb6d12e08e589/nixos/modules/services/desktops/gnome/gnome-keyring.nix#L40">1</a>, which allows GNOME Keyring to use secure memory (e.g. not <a href="https://mirror.nixoscn.org/wiki/Secret%20Service/swap" class="wikilink" title="swap">swap</a>), however this is easily mitigated by not using swap or using encrypted swap.</p>
+<p>The NixOS module also adds the appropriate D-Bus service definitions to the session bus.</p>
+<p>To manage credentials, you can use the Seahorse () application.</p>
+<h3 id="kde-wallet">KDE Wallet</h3><p>When using <a href="https://mirror.nixoscn.org/wiki/Secret%20Service/KDE" class="wikilink" title="KDE">KDE</a> via , KDE Wallet is enabled automatically.</p>
+<h3 id="keepassxc">KeePassXC</h3><p>KeePassXC&#39;s Secret Service integration can be enabled by going into the <strong>Tools &gt; Settings</strong>, opening the <em>Secret Service Integration</em> tab and enabling it.</p>
+<p>This can be configured automatically by <a href="https://mirror.nixoscn.org/wiki/Secret%20Service/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> configuration:</p>
+<p>If not using the one needs to configure for Secret Service integration by opening their settings <strong>Database &gt; Database Settings...</strong>, opening the <em>Secret Service Integration</em> tab and selecting a group for Secret Service entries.</p>
+<p>If you see a warning like above, you need to find out which other service is currently registered:</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs">busctl --user status org.freedesktop.secrets</code></pre>
+      </div><p>If it&#39;s the Gnome Keyring Daemon, then it can be disabled by this configuration below:</p>
+<h3 id="pass-secret-service">pass-secret-service</h3><p>Add the following to your <a href="https://mirror.nixoscn.org/wiki/Secret%20Service/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> configuration:</p>
+<p>OR</p>
+<p>Add the following to your NixOS configuration:</p>
+<h2 id="secret-portal">Secret portal</h2><p><strong><a href="https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.Secret.html">Secret portals</a></strong> are portals in the XDG Desktop Portal specification, which allows applications to get a per-application master secret. I (<a href="user:Axka" class="wikilink" title="axka">axka</a>) don&#39;t know of any applications requiring this, and to my knowledge the only provider is GNOME Keyring, which can be added to <code>xdg.portal.extraPortals</code> in Home Manager. NixOS enables this automatically when GNOME Keyring is enabled. Adding <code>gnome-keyring</code> will also add XDG autostart definitions, but unless you have <code>gnome-keyring</code> installed on NixOS, they won&#39;t be enabled (i.e. <code>/run/wrappers/bin/gnome-keyring-daemon</code> won&#39;t work).</p>
+<h2 id="auto-decrypt-on-login">Auto-decrypt on login</h2><p>The NixOS module for GNOME Keyring enables its PAM module automatically via , however the Home Manager module does not and as such you should add the following code to your NixOS configuration:</p>
+<p>The equivalent for KDE Wallet is .</p>
+<p>Usually you want to configure the <code>login</code> service, but <code>greetd</code>, <code>su</code> and <code>sshd</code> are also available. GDM and LightDM can be configured with <code>login</code>, while greetd cannot ().</p>
+<p>The login password is used to decrypt the wallet/keyring.</p>
+<h2 id="troubleshooting">Troubleshooting</h2><h3 id="gkr-pam-couldn-39-t-unlock-the-login-keyring"><code>gkr-pam: couldn&#39;t unlock the login keyring.</code></h3><p>This error happens when the PAM module, for some reason, can&#39;t unlock the login keyring. This may be for example because it can&#39;t connect to the daemon, which should have been started by the PAM module with the message <code>gkr-pam: gnome-keyring-daemon started properly</code>. Try logging out and back in or restarting.</p>
+<h3 id="gkr-pam-unable-to-locate-daemon-control-file"><code>gkr-pam: unable to locate daemon control file</code></h3><p>This error happens when the PAM module can&#39;t find the daemon&#39;s control socket. Very likely it will start a daemon and retry the action which requires a daemon, and stop the daemon when the PAM session closes.</p>
+<h3 id="gnome-keyring-daemon-couldn-39-t-create-system-prompt-gdbus-error-org-freedesktop-dbus-error-spawn-childexited-process-org-gnome-keyring-systemprompter-exited-with-status-1"><code>gnome-keyring-daemon: couldn&#39;t create system prompt: GDBus.Error:org.freedesktop.DBus.Error.Spawn.ChildExited: Process org.gnome.keyring.SystemPrompter exited with status 1</code></h3><p>This error occurs when the GNOME Keyring daemon fails to spawn the SystemPrompter process (provided by the gcr package). This usually occurs due to D-Bus not having knowledge of the user&#39;s display environment. To fix this we must update the D-Bus environment once display is available.</p>
+<p>On X11 this can be fixed by setting the following option:</p>
+<p>OR</p>
+<p>Alternatively the following command can be run on display startup:</p>
+<h3 id="discover_other_daemon-0-with---start"><code>discover_other_daemon: 0</code> with <code>--start</code></h3><p>This error happens when a <code>gnome-keyring-daemon</code> process with the <code>--start</code> flag either could not send <code>GKD_CONTROL_OP_INITIALIZE</code> to a control socket or got a failing result.</p>
+<h3 id="discover_other_daemon-1-with---start"><code>discover_other_daemon: 1</code> with <code>--start</code></h3><p>This log message gets printed when a <code>gnome-keyring-daemon</code> process with the <code>--start</code> flag successfully sent <code>GKD_CONTROL_OP_INITIALIZE</code> to a control socket.</p>
+<p><a href="category:Desktop" class="wikilink" title="Category:Desktop">Category:Desktop</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

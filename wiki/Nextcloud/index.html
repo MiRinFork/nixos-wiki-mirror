@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nextcloud</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Nextcloud</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Nextcloud -->
+
+<p><a href="https://nextcloud.com/"></a> (<a href="wikipedia:en:```{{PAGENAME}}```" class="wikilink" title="wikipedia:en:```
+{{PAGENAME}}
+```">wikipedia:en:```
+{{PAGENAME}}</p>
+<div class="code-container">
+        <div class="code-header"><span class="code-filename">is a self-hosted web groupware and cloud software, offering collaboration on files, managing calendar events, contacts and tasks.</span></div>
+        <pre><code class="language-</a>) hljs">
+This article extends the documentation in the [NixOS manual](https://nixos.org/manual/nixos/stable/#module-services-nextcloud).
+
+## Setup
+
+A minimal example to get the latest Nextcloud version (for your specific NixOS release) running on localhost should look like this, replacing `PWD` with a 10+ char password that meets [Nextcloud's default password policy](https://docs.nextcloud.com/server/latest/admin_manual/configuration_user/user_password_policy.html).
+
+After that you will be able to login into your Nextcloud instance at `http://localhost` with user `root` and password `PWD` as configured above.
+
+## Configuration
+
+Be sure to read the [Nextcloud module's documentation](https://nixos.org/manual/nixos/stable/index.html#module-services-nextcloud-basic-usage) in the [NixOS Manual](https://nixos.org/manual/nixos/stable/index.html).
+
+### Apps
+
+[Some apps](https://github.com/NixOS/nixpkgs/blob/2852f35f477e0f55e68b5f5e6d5a92242c215efc/pkgs/servers/nextcloud/packages/31.json) (use the file named &lt;version&gt;`.json`, where version is the installed Nextcloud version), which are already packaged on NixOS, can be installed directly with the following example configuration:
+
+The apps mail, news and contacts will be installed and enabled in your instance automatically. Note that the Nextcloud version specified in `package` and `extraApps` need to match one of the stable Nextcloud versions available in the NixOS repository.
+
+To manually fetch and install packages, you need to add them via the helper script `fetchNextcloudApp` by specifing the release tarball as url, the correct checksum and the license. Additional apps can be found via [Nextcloud app store](https://apps.nextcloud.com), while the [nc4nix](https://github.com/helsinki-systems/nc4nix) provides an easy reference for the required variables. Note that the declarative specification of apps via this approach requires manual updating of package version (url) and checksum for a new release.
+
+It is even possible to fetch and build an app from source, in this example the development app [hmr_enabler](https://github.com/nextcloud/hmr_enabler).
+
+Alternatively apps can be manually installed via the app store integrated in your Nextcloud instance by navigating in the profile menu to the site &quot;Apps&quot;.
+
+### TLS
+
+If you would like to setup Nextcloud with Let's Encrypt TLS certificates (or certs from any other certificate authority) make sure to set `services.nextcloud.https = true;` and to enable it in the nginx-VirtualHost.
+
+### Data storage
+
+Nextcloud stores metadata in the database and files either on a local filesystem, external storage, or in an object storage.
+
+#### Local filesystem
+
+Using a filesystem with snapshot support, such as btrfs or zfs, may be useful for backup purposes
+
+#### External storage
+
+&lt;https://docs.nextcloud.com/server/stable/admin_manual/configuration_files/external_storage_configuration_gui.html&gt;
+
+#### Object store
+
+In this example we'll configure a local S3-compatible object store using Minio and connect it to Nextcloud
+
+We'll need to run two commands to create the bucket `nextcloud` by using the access key `nextcloud` and the secret key `test12345`.
+
+``` bash
+mc alias set minio http://localhost:9000 ${accessKey} ${secretKey} --api s3v4
+mc mb minio/nextcloud</code></pre>
+      </div><h3 id="mail-delivery">Mail delivery</h3><p>Besides various mail delivery options and settings, mail clients like <a href="https://mirror.nixoscn.org/wiki/Nextcloud/Msmtp" class="wikilink" title="Msmtp">Msmtp</a> can be used to configure mail delivery for Nextcloud. This can be useful for sending registration mails or system notifications etc. To configure Nextcloud to use a local mail delivery daemon, we configure <code>mail_smtpmode</code> to <code>sendmail</code> and a further sending mode.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.nextcloud</span> <span class="hljs-operator">=</span> {
+  [...]
+  <span class="hljs-attr">extraOptions</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">mail_smtpmode</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sendmail&quot;</span>;
+    <span class="hljs-attr">mail_sendmailmode</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;pipe&quot;</span>;
+  };
+};</code></pre>
+      </div><p>Test mails can be send via administration interface in the menu section &quot;Basic settings&quot;.</p>
+<h3 id="max-upload-file-size">Max upload file size</h3><p>To increase the maximum upload file size, for example to 1 GB, add following option</p>
+<h3 id="secrets-management">Secrets management</h3><p>Do not suply passwords, hashes or keys via the settings option, since they will be copied into the world-readable Nix store. Instead reference a JSON file containing secrets using the <code>secretFile</code> option.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.nextcloud</span> <span class="hljs-operator">=</span> {
+  [...]
+  <span class="hljs-attr">secretFile</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/etc/nextcloud-secrets.json&quot;</span>;
+};</code></pre>
+      </div><p>Consider using a <a href="https://mirror.nixoscn.org/wiki/Nextcloud/Comparison_of_secret_managing_schemes" class="wikilink" title="secret management tool">secret management tool</a> instead of referencing an unencrypted local secrets file.</p>
+<h3 id="dynamic-configuration">Dynamic configuration</h3><p>Unfortunately, some options can only be set &#39;interactively&#39; in the database (either through the nextcloud-occ command line tool or the web UI), and not via the configuration file. One way to manage them &quot;semi-declaratively&quot; is to register a systemd script to reset the options on each redeploy:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">systemd.services.nextcloud-custom-config</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">path</span> <span class="hljs-operator">=</span> [
+      config.services.nextcloud.occ
+    ];
+    <span class="hljs-attr">script</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+      nextcloud-occ theming:config name &quot;My Cloud&quot;
+      nextcloud-occ theming:config url &quot;https://cloud.mine.com&quot;;
+      nextcloud-occ theming:config privacyUrl &quot;https://www.mine.com/privacy&quot;;
+      nextcloud-occ theming:config color &quot;#3253a5&quot;;
+      nextcloud-occ theming:config logo <span class="hljs-subst">${.<span class="hljs-operator">/</span>logo.png}</span>
+    &#x27;&#x27;</span>;
+    <span class="hljs-attr">after</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;nextcloud-setup.service&quot;</span> ];
+    <span class="hljs-attr">wantedBy</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;multi-user.target&quot;</span> ];
+  };</code></pre>
+      </div><p>Of course this is not ideal: changes through the web interface or occ client are still possible but will be overwritten the next redeploy, and removing a line from the script will not remove it from the configuration.</p>
+<h2 id="maintenance">Maintenance</h2><h3 id="upgrade">Upgrade</h3><p>As you can see on <a href="https://search.nixos.org/packages?channel=unstable&amp;from=0&amp;size=50&amp;sort=relevance&amp;type=packages&amp;query=nextcloud">the package search</a>, there is no default nextcloud package. Instead you have to set the current version in <a href="https://search.nixos.org/options?channel=unstable&amp;show=services.nextcloud.package&amp;from=0&amp;size=50&amp;sort=relevance&amp;type=packages&amp;query=nextcloud"><code>services.nextcloud.package</code></a>. As soon a major version of Nextcloud gets unsupported, it will be removed from nixpkgs as well.</p>
+<p>Upgrading then consists of these steps:</p>
+<ol>
+<li>Increment the version of <code>services.nextcloud.package</code> in your config by 1 (leaving out a major version is not supported)</li>
+<li><code>nixos-rebuild switch</code></li>
+</ol>
+<p>In theory, your nextcloud has now been upgraded by one version. NixOS attempts <code>nextcloud-occ upgrade</code>, if this succeeds without problems you don&#39;t need to do anything. Check <code>journalctl</code> to make sure nothing horrible happened. Go to the <code>/settings/admin/overview</code> page in your nextcloud to see whether it recommends further processing, such as database reindexing or conversion.</p>
+<h3 id="database">Database</h3><p>You can access the mysql database, for backup/restore, etc. like this:</p>
+<p><code>sudo -u nextcloud -- mysql -u nextcloud </code><options></p>
+<p>No password is required.</p>
+<h3 id="migration">Migration</h3><p>If you want to migrate your Nextcloud instance from one place to another, keep in mind:</p>
+<ul>
+<li>Distribution-agnostic instructions are at <a href="https://docs.nextcloud.com/server/stable/admin_manual/maintenance/migrating.html">https://docs.nextcloud.com/server/stable/admin_manual/maintenance/migrating.html</a></li>
+<li>You can use the <a href="https://search.nixos.org/options?show=services.nextcloud.secretFile">services.nextcloud.secretFile</a> option to set secrets. Notably you&#39;ll likely want to inherit the following values from your old to your new instance:<ul>
+<li><a href="https://docs.nextcloud.com/server/stable/admin_manual/configuration_server/config_sample_php_parameters.html#instanceid">instanceid</a></li>
+<li><a href="https://docs.nextcloud.com/server/stable/admin_manual/configuration_server/config_sample_php_parameters.html#passwordsalt">passwordsalt</a></li>
+<li><a href="https://docs.nextcloud.com/server/stable/admin_manual/configuration_server/config_sample_php_parameters.html#secret">secret</a></li>
+</ul>
+</li>
+<li>To be able to configure TLS for your new instance before you&#39;ve updated your DNS record, you can use <a href="https://mirror.nixoscn.org/wiki/Nextcloud/ACME#DNS_challenge" class="wikilink" title="ACME DNS Challenge">ACME DNS Challenge</a>. Don&#39;t forget to clear <code>acmeRoot</code>:</li>
+</ul>
+<h3 id="backups">Backups</h3><p>You should make backups of both the database and your storage.</p>
+<p>For the database, <a href="https://search.nixos.org/options?show=services.mysqlBackup">services.mysqlBackup</a> or <a href="https://search.nixos.org/options?show=services.postgresqlBackup">services.postgresqlBackup</a> may come in handy. For local storage backups, periodically taking a snapshot of a snapshot-enabled filesystem such as btrfs or zfs may be a good first step. Remember to also make off-site copies.</p>
+<h2 id="clients">Clients</h2><h3 id="nextcloudcmd">Nextcloudcmd</h3><p><em>nextcloudcmd</em> is a terminal client performing only a single sync run and then exits. The following example command will synchronize the local folder <code>/home/myuser/music</code> with the remote folder <code>/music</code> of the Nextcloud server <code>https://nextcloud.example.org</code>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">nix shell nixpkgs#nextcloud-client -h --user example --password test123 --path /music /home/myuser/music https://nextcloud.example.org</span></code></pre>
+      </div><p>The argument <code>-h</code> will enable syncing hidden files. For demonstration purpose username and password are supplied as an argument. This is a security risk and shouldn&#39;t be used in production.</p>
+<p>Using <a href="https://mirror.nixoscn.org/wiki/Nextcloud/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> we can create a systemd-timer which automatically runs the sync command every hour for the user <code>myuser</code>.</p>
+<p>The login credentials will be written to a file called <code>.netrc</code> used <em>nextcloudcmd</em> for authentication to the Nextcloud server.</p>
+<h3 id="nextcloud-desktop">Nextcloud Desktop</h3><p>&quot;nextcloud-client&quot; is a nextcloud themed desktop client. It requires a keyring to store its login token. Without an active keyring, the user will be asked to login on every application startup.</p>
+<h2 id="tips-and-tricks">Tips and tricks</h2><h3 id="change-default-listening-port">Change default listening port</h3><p>In case port 80 is already used by a different application or you&#39;re using a different web server than <a href="https://mirror.nixoscn.org/wiki/Nextcloud/Nginx" class="wikilink" title="Nginx">Nginx</a>, which is used by the Nextcloud module, you can change the listening port with the following option:</p>
+<h3 id="enable-two-factor-authentication">Enable Two-factor authentication</h3><p>Two-factor authentication can be enabled for your server via the administration interface in your browser. There is no way to declare this setting via nix configuration, so you should follow the <a href="https://docs.nextcloud.com/server/latest/admin_manual/configuration_user/two_factor-auth.html">official documentation</a> to set up Two-factor authentication.</p>
+<h3 id="enable-heic-image-preview">Enable HEIC image preview</h3><p>HEIC image preview needs to be explicitly enabled. This is done by adjusting the <code>enabledPreviewProviders</code> option. Beside the default list of supported formats, add an additional line <code>&quot;OC\\Preview\\HEIC&quot;</code> for HEIC image support. See also <a href="https://docs.nextcloud.com/server/latest/admin_manual/configuration_server/config_sample_php_parameters.html#enabledpreviewproviders">this list of preview providers</a> for additional file types.</p>
+<h3 id="run-nextcloud-in-a-sub-directory">Run Nextcloud in a sub-directory</h3><p>Say, you don&#39;t want to run nextcloud at <code>your.site/</code> but in a sub-directory <code>your.site/nextcloud/</code>. To do so, we are going to add more configurations to nextcloud and to nginx to <a href="https://mirror.nixoscn.org/wiki/Nextcloud/Nginx#TLS_reverse_proxy" class="wikilink" title="make">make</a> it a <a href="https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/">reverse-proxy</a>.</p>
+<p>First, define some overwritings. Nextcloud uses them to write out all URLs as if it runs in a sub-directory (which it is not.)</p>
+<p>Make sure your nginx doesn&#39;t host nextcloud on your exposed port:</p>
+<p>Redirect some well-known URLs which have to be found at your.site/.well-known towards your new nextcloud URL:</p>
+<p>Finally, forward <code>your.site/nextcloud/</code> (exposed port 80 or 443) to your unexposed nextcloud port 8080 (defined earlier):</p>
+<p>Note: If you have TLS (https) enabled, make sure nginx forwards to the correct port and nextcloud overwrites for the correct protocol.</p>
+<h3 id="use-caddy-as-webserver">Use Caddy as webserver</h3><p>Using a third-party module extension, the webserver <a href="https://mirror.nixoscn.org/wiki/Nextcloud/Caddy" class="wikilink" title="Caddy">Caddy</a> can be used as an alternative by adding following options</p>
+<p>/nextcloud-extras.nix&quot; ];</p>
+<p>services.nextcloud = {</p>
+<p><code> webserver = &quot;caddy&quot;;</code></p>
+<p>}; </nowiki>}}</p>
+<h3 id="add-users-declaratively">Add users declaratively</h3><p>Using a third-party module extension, additional users can be automatically configured using the <code>ensureUsers</code> option</p>
+<p>/nextcloud-extras.nix&quot; ];</p>
+<p>environment.etc.&quot;nextcloud-user-pass&quot;.text = &quot;PWD&quot;;</p>
+<p>services.nextcloud = {</p>
+<p><code> ensureUsers = {</code><br><code>   user1 = {</code><br><code>     email = &quot;user1@localhost&quot;;</code><br><code>     passwordFile = &quot;/etc/nextcloud-user-pass&quot;;</code><br><code>   };</code><br><code>   user2 = {</code><br><code>     email = &quot;user2@localhost&quot;;</code><br><code>     passwordFile = &quot;/etc/nextcloud-user-pass&quot;;</code><br><code>   };</code><br><code> };</code></p>
+<p>}; </nowiki>}}</p>
+<h2 id="troubleshooting">Troubleshooting</h2><h3 id="reading-php-logs">Reading php logs</h3><p>The <a href="https://docs.nextcloud.com/server/latest/admin_manual/configuration_server/logging_configuration.html">default Nextcloud setting</a> is to log to <em>syslog</em>. To read php logs simply run</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">journalctl -t Nextcloud</span></code></pre>
+      </div><h2 id="app-specific-configuration">App specific configuration</h2><h3 id="whiteboard">Whiteboard</h3><p>The <a href="https://github.com/nextcloud/whiteboard">Whiteboard app</a> requires a running backend server which is also packaged in NixOS.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">environment.etc.<span class="hljs-string">&quot;nextcloud-whiteboard-secret&quot;</span>.text <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+  JWT_SECRET_KEY=test123
+&#x27;&#x27;</span>;
+
+<span class="hljs-attr">services.nextcloud-whiteboard-server</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">settings.NEXTCLOUD_URL</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;http://localhost&quot;</span>;
+  <span class="hljs-attr">secrets</span> <span class="hljs-operator">=</span> [ <span class="hljs-symbol">/etc/nextcloud-whiteboard-secret</span> ];
+};
+
+<span class="hljs-comment"># Expose whiteboard server in case you don’t operate your Nextcloud on localhost</span>
+services.nginx.virtualHosts.${config.services.nextcloud.hostName}.locations.<span class="hljs-string">&quot;/whiteboard/&quot;</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">proxyPass</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;http://localhost:3002/&quot;</span>;
+  <span class="hljs-attr">proxyWebsockets</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+};</code></pre>
+      </div><p>After applying the configuration configure the Nextcloud app to use it</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nextcloud-occ config:app:<span class="hljs-built_in">set</span> whiteboard collabBackendUrl --value=<span class="hljs-string">&quot;http://localhost:3002&quot;</span> <span class="hljs-comment"># localhost only</span>
+nextcloud-occ config:app:<span class="hljs-built_in">set</span> whiteboard collabBackendUrl --value=<span class="hljs-string">&quot;http://cloud.example.com/whiteboard&quot;</span> <span class="hljs-comment"># Public (The domain is your Nextcloud hostname) </span>
+nextcloud-occ config:app:<span class="hljs-built_in">set</span> whiteboard jwt_secret_key --value=<span class="hljs-string">&quot;test123&quot;</span></code></pre>
+      </div><h3 id="nextcloud-office">NextCloud Office</h3><p>The <a href="https://nextcloud.com/office/">NextCloud Office app</a> provides a Google Docs like online office suite integrated into NextCloud. For this to work it requires a document server that provides the editing functionality as a <a href="wikipedia:Web_Application_Open_Platform_Interface" class="wikilink" title="WOPI">WOPI</a> client.</p>
+<p>The main options to use as WOPI client are <a href="https://www.onlyoffice.com/">ONLYOFFICE</a> and <a href="https://www.collaboraonline.com/">Collabora Online</a>. Although the documentation makes it look like Collabora Online is the only option, any document server with WOPI capabilities can be used.</p>
+<p>To enable the NextCloud Office app, add the following to your configuration:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs">s<span class="hljs-attr">ervices.nextcloud</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">extraApps</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-keyword">inherit</span> (config.services.nextcloud.package.packages.apps) richdocuments;
+  };
+}</code></pre>
+      </div><h3 id="onlyoffice">ONLYOFFICE</h3><p>You need to install both a document server and the <a href="https://apps.nextcloud.com/apps/onlyoffice">ONLYOFFICE Nextcloud plug-in</a>. There are several ways to install onlyoffice:</p>
+<h5 id="services-onlyoffice">services.onlyoffice</h5><p>Install the onlyoffice documentserver as described in <a href="https://mirror.nixoscn.org/wiki/Nextcloud/ONLYOFFICE_DocumentServer" class="wikilink" title="ONLYOFFICE_DocumentServer">ONLYOFFICE_DocumentServer</a>.</p>
+<p>Point the app to the document server from within the Nextcloud UI (&quot;Administration Settings&quot; -&gt; Administration -&gt; ONLYOFFICE), and make sure the &#39;services.onlyoffice.jwtSecretFile points to a file containing the same key as entered in the configuration of the Nextcloud app.</p>
+<h5 id="the-documentserver_community-nextcloud-app">the documentserver_community Nextcloud app</h5><p>(not tested)</p>
+<h5 id="in-a-docker-podman-container">in a docker/podman container</h5><p>(not tested)</p>
+<h4 id="collabora-online">Collabora Online</h4><p>Collabora comes in two flavors:</p>
+<ul>
+<li>Collabora Online For Business / For Enterprise</li>
+<li>Collabora Online Development Edition (aka CODE)</li>
+</ul>
+<p>As the name indicates the former two require a license, while the latter is free for evaluation and personal use.</p>
+<p>For easy deployment, there&#39;s the <a href="https://apps.nextcloud.com/apps/richdocumentscode">richdocumentscode app</a> which bundles the CODE server. While being less performant than a standalone deployment of the CODE server, this solution does not require an additional service to be deployed and managed externally from NextCloud. Unfortunately the richdocumentscode app bundles the CODE server as an AppImage and therefore does not work out of the box on NixOS. Follow <a href="https://github.com/NixOS/nixpkgs/issues/339798">https://github.com/NixOS/nixpkgs/issues/339798</a> if you want to get informed about packaging progress. Also CODE standalone is currently not packaged in nixpkgs (<a href="https://github.com/NixOS/nixpkgs/issues/218878">https://github.com/NixOS/nixpkgs/issues/218878</a>).</p>
+<p><a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="category:Web_Applications" class="wikilink" title="Category:Web Applications">Category:Web Applications</a> <a href="category:NixOS_Manual" class="wikilink" title="Category:NixOS Manual">Category:NixOS Manual</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

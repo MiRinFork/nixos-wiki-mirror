@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fish</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Fish</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Fish -->
+
+<p>fish, the <a href="https://fishshell.com/">Friendly Interactive Shell</a>, is a <a href="https://mirror.nixoscn.org/wiki/Fish/Command_Shell" class="wikilink" title="command shell">command shell</a> designed around user-friendliness.</p>
+<h2 id="installation">Installation</h2><h3 id="nixos-system-installation">NixOS System Installation</h3><p>To install fish for a user on a regular nixos system:</p>
+<p>Replace <code>myuser</code> with the appropriate username.</p>
+<h3 id="home-manager">Home Manager</h3><p>For a user-specific installation managed by <a href="https://mirror.nixoscn.org/wiki/Fish/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a>, use the following configuration:</p>
+<p>Replace <code>myuser</code> with the appropriate username.</p>
+<p>You can enable the fish shell and manage fish configuration and plugins with Home Manager, but to enable vendor fish completions provided by Nixpkgs you will also want to enable the fish shell:</p>
+<h2 id="configuration">Configuration</h2><p>Available fish plugins packaged in Nixpkgs can be found via the <a href="https://search.nixos.org/packages?query=fishPlugins">fishPlugins package set</a>.</p>
+<h3 id="nixos-system-configuration">NixOS System Configuration</h3><p>To enable fish plugins system-wide, add your preferred plugins to `environment.systemPackages`:</p>
+<p>Example of a file containing the definition of a fish plugin.</p>
+<p>For a full list of fish module options, refer to <a href="https://search.nixos.org/options?query=programs.fish">programs.fish</a>.</p>
+<h3 id="home-manager">Home Manager</h3><p>An example configuration in Home Manager for adding plugins and changing options could look like this:</p>
+<p>For the full list of available home-manager options for fish, refer to the <a href="https://github.com/nix-community/home-manager/blob/master/modules/programs/fish.nix">module source</a>.</p>
+<h2 id="tips-and-tricks">Tips and tricks</h2><h3 id="setting-fish-as-default-shell">Setting fish as default shell</h3><p>Using fish as the the login shell can cause compatibility issues. For example, certain recovery environments such as systemd&#39;s emergency mode to be completely broken when fish was set as the login shell. ArchWiki presents an <a href="https://wiki.archlinux.org/title/Fish#Modify_.bashrc_to_drop_into_fish">alternative solution</a>, keeping bash as the system shell but having it exec fish when run interactively.</p>
+<p>Here is one solution, which launches fish unless the parent process is already fish:</p>
+<p>For a more detailed explanation, please see the <a href="https://wiki.archlinux.org/title/Fish#Modify_.bashrc_to_drop_into_fish">aforementioned ArchWiki page</a>.</p>
+<p><strong>Setting fish as default for Gnome Console</strong></p>
+<p>It is possible to set fish as the interactive non-login shell for Gnome Console without setting fish as the login shell (the login shell in /etc/passwd for your user will not be fish).</p>
+<p>If you still want to set fish as the login shell, see <a href="https://mirror.nixoscn.org/wiki/Fish/Command_Shell#Changing_the_default_shell" class="wikilink" title="Command Shell#Changing the default shell">Command Shell#Changing the default shell</a>.</p>
+<h4 id="disable-man-page-generation">Disable man page generation</h4><p>Some users suffer from slow build due to fish enabling `documentation.man.generateCaches`. You may force false.</p>
+<p><code>documentation.man.generateCaches = false</code><em><code>;</code></em></p>
+<p>For home-manager users, man cache need to be disabled in programs</p>
+<p><code>programs.man.generateCaches = false</code><em><code>;</code></em></p>
+<h4 id="running-fish-interactively-with-zsh-as-system-shell-on-darwin">Running fish interactively with zsh as system shell on darwin</h4><p>Zsh users on darwin will need to use a modified version of the above snippet. As written, it presents two incompatibilities. First, being BSD-derived, MacOS&#39;s <code>ps</code> command accepts different options. Second, this is a script intended for bash, not zsh. MacOS uses zsh as its default shell.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">p<span class="hljs-attr">rograms.zsh</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">initExtra</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    if [[ $(ps -o command= -p &quot;$PPID&quot; | awk &#x27;{print $1}&#x27;) != &#x27;fish&#x27; ]]
+    then
+        exec fish -l
+    fi
+  &#x27;&#x27;</span>
+};</code></pre>
+      </div><h3 id="show-that-you-are-in-a-nix-shell">Show that you are in a nix-shell</h3><p>Add this to the <code>fish_prompt</code> function (usually placed in <code>~/.config/fish/functions/fish_prompt.fish</code>):</p>
+<div class="code-container">
+        
+        <pre><code class="language-fish hljs">set -l nix_shell_info (
+  if test -n &quot;$IN_NIX_SHELL&quot;
+    echo -n &quot;&lt;nix-shell&gt; &quot;
+  end
+)</code></pre>
+      </div><p>and <code>$nix_shell_info</code> to the echo in that function, e.g.:</p>
+<div class="code-container">
+        
+        <pre><code class="language-fish hljs">echo -n -s &quot;$nix_shell_info ~&gt;&quot;</code></pre>
+      </div><p>Now your prompt looks like this:</p>
+<ul>
+<li>outside: <code>~&gt;</code></li>
+<li>inside: <nix-shell><code> ~&gt;</code></li>
+</ul>
+<p>You can directly start nix-shell in fish with <code>nix-shell --run fish</code>.</p>
+<h3 id="environments">Environments</h3><p>Here are some examples of helper functions that put you in a nix-shell with the given packages installed.</p>
+<p>You can either put these in <code>programs.fish.functions</code> with home-manager or in <code>~/.config/fish/functions/fish_prompt.fish</code> without.</p>
+<h4 id="haskellenv">haskellEnv</h4><div class="code-container">
+        
+        <pre><code class="language-fish hljs">function haskellEnv
+  nix-shell -p &quot;haskellPackages.ghcWithPackages (pkgs: with pkgs; [ $argv ])&quot;
+end</code></pre>
+      </div><p><code># Invocation: haskellEnv package1 packages2 .. packageN</code></p>
+<h4 id="pythonenv">pythonEnv</h4><div class="code-container">
+        
+        <pre><code class="language-fish hljs">function pythonEnv --description 'start a nix-shell with the given python packages' --argument pythonVersion
+  if set -q argv[2]
+    set argv $argv[2..-1]
+  end
+ 
+  for el in $argv
+    set ppkgs $ppkgs &quot;python&quot;$pythonVersion&quot;Packages.$el&quot;
+  end
+ 
+  nix-shell -p $ppkgs
+end
+
+# Invocation: pythonEnv 3 package1 package2 .. packageN
+# or:         pythonEnv 2 ..</code></pre>
+      </div><h2 id="see-also">See also</h2><ul>
+<li><a href="https://mirror.nixoscn.org/wiki/Fish/Command_Shell" class="wikilink" title="Command Shell">Command Shell</a></li>
+</ul>
+<p><a href="category:Shell" class="wikilink" title="Category:Shell">Category:Shell</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

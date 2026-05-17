@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Binary Cache</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Binary Cache</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Binary Cache -->
+
+<p>A binary cache builds Nix packages and caches the result for other machines. Any machine with Nix installed can be a binary cache for another one, no matter the operating system.</p>
+<h2 id="setting-up-a-binary-cache-with-attic-and-caddy">Setting up a binary cache with attic and caddy</h2><p>Here&#39;s a snippet enabling <a href="https://github.com/zhaofengli/attic">Attic</a> and <a href="https://caddyserver.com/">Caddy</a>.</p>
+<p>Please refer to the <a href="https://docs.attic.rs/">Attic documentation</a> to set it up correctly. The goal here is to show how those two services can be used together to provide a solid solution.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">networking.firewall</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">allowedTCPPorts</span> <span class="hljs-operator">=</span> [ <span class="hljs-number">8080</span> ];
+  };
+
+  <span class="hljs-attr">services</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">atticd</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">listen</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;127.0.0.1:8081&quot;</span>;
+      };
+      <span class="hljs-comment"># Path to an EnvironmentFile containing required environment variables:</span>
+      <span class="hljs-comment"># ATTIC_SERVER_TOKEN_RS256_SECRET_BASE64: The base64-encoded RSA PEM PKCS1 of the RS256 JWT secret. Generate it with openssl genrsa -traditional 4096 | base64 -w0.</span>
+      <span class="hljs-attr">environmentFile</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/root/.attic-env-file&quot;</span>;
+    };
+
+    <span class="hljs-comment"># Inspired from:</span>
+    <span class="hljs-comment"># 1. https://github.com/phanirithvij/system/blob/main/nixos/applications/nix/selfhosted/proxy-cache.nix</span>
+    <span class="hljs-comment"># 2. https://github.com/rnl-dei/nixrnl/blob/master/profiles/proxy-cache.nix</span>
+    <span class="hljs-attr">caddy</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+      <span class="hljs-attr">package</span> <span class="hljs-operator">=</span> pkgs.caddy.withPlugins {
+        <span class="hljs-attr">plugins</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;github.com/caddyserver/cache-handler@v0.16.0&quot;</span> ];
+        <span class="hljs-attr">hash</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sha256-CecAx6KelOHEDiOKDTKLlDcnWtRNnDzBw1AzgN5JaFw=&quot;</span>;
+      };
+
+      <span class="hljs-attr">globalConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        order cache before rewrite
+        cache {
+          # Global default cache duration (if not overridden below)
+          ttl 1h
+          log_level debug
+        }
+      &#x27;&#x27;</span>;
+
+      virtualHosts.<span class="hljs-string">&quot;:8080&quot;</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">extraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+          log {
+            format console
+          }
+
+          # Nix cache info endpoint
+          @nix_cache_info path /nix-cache-info
+          handle @nix_cache_info {
+            header Cache-Control &quot;public, max-age=300&quot;
+
+            # 2. Tell Caddy&#x27;s internal cache to hold this for 5 minutes
+            cache {
+              ttl 300s
+            }
+
+            reverse_proxy https://cache.nixos.org {
+              header_up Host cache.nixos.org
+            }
+          }
+
+          # NAR files (the actual packages)
+          @nar path /nar/*
+          handle @nar {
+            header Cache-Control &quot;public, max-age=31536000, immutable&quot;
+
+            # Cache the actual nar packages for a year
+            cache {
+              ttl 8760h
+            }
+
+            reverse_proxy https://cache.nixos.org {
+              header_up Host cache.nixos.org
+            }
+          }
+
+          # Narinfo files (metadata about packages)
+          @narinfo path_regexp ^/[^/]+<span class="hljs-char escape_">\.</span>narinfo$
+          handle @narinfo {
+            header Cache-Control &quot;public, max-age=86400&quot;
+
+            # Narinfo can change, so cache them locally for 24 hours
+            cache {
+              ttl 24h
+            }
+
+            reverse_proxy https://cache.nixos.org {
+              header_up Host cache.nixos.org
+            }
+          }
+
+          # Fallback for other requests
+          handle {
+            # We omit the `cache` directive here so Caddy doesn&#x27;t interfere
+            # with Attic&#x27;s API operations or package pushing (PUT/POST requests).
+            reverse_proxy 127.0.0.1:8081
+          }
+        &#x27;&#x27;</span>;
+      };
+    };
+  };
+};</code></pre>
+      </div><h2 id="setting-up-a-binary-cache-with-nix-serve-and-nginx">Setting up a binary cache with nix-serve and nginx</h2><p>This tutorial explains how to setup a machine as a binary cache for other machines, serving the nix store on TCP port 80 with signing turned on. It assumes that an service is already running, that port 80 is open,<sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Binary%20Cache#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup> and that the hostname resolves to the server.<sup><a id="footnote-ref-2" href="https://mirror.nixoscn.org/wiki/Binary%20Cache#footnote-2" data-footnote-ref aria-describedby="footnote-label">2</a></sup></p>
+<h3 id="1-generating-a-private-public-keypair">1. Generating a private/public keypair</h3><p>A keypair is necessary to sign Nix packages. Replace <code>binarycache.example.com</code> with your domain.</p>
+<p>The packages can be signed before adding them to the binary cache, or on the fly as they are served. In this tutorial we&#39;ll set up to sign packages on the fly when it serves them. In this case it is important that only can access the private key. The location is just an example.</p>
+<h3 id="2-activating">2. Activating</h3><p>is the service that speaks the binary cache protocol via HTTP.</p>
+<p>To start it on NixOS:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.nix-serve</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">secretKeyFile</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/var/cache-priv-key.pem&quot;</span>;
+};</code></pre>
+      </div><p>To start it on a non-NixOS machine at boot, add to :</p>
+<div class="code-container">
+        
+        <pre><code class="language-crontab hljs">NIX_SECRET_KEY_FILE=/var/cache-priv-key.pem
+@reboot /home/USER/.nix-profile/bin/nix-serve --listen :5000 --error-log /var/log/nix-serve.log --pid /var/run/nix-serve.pid --user USER --daemonize</code></pre>
+      </div><p>will by default serve on port 5000. We are not going to open a firewall port for it, because we will let redirect to it.</p>
+<h3 id="3-creating-a-virtual-hostname-in">3. Creating a virtual hostname in</h3><p>We redirect the HTTP(s) traffic from port 80 to . As is capable of serving only on IPv4, redirecting is also useful to make the binary cache available on IPv6.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.nginx</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">recommendedProxySettings</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">virtualHosts</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-comment"># ... existing hosts config etc. ...</span>
+    <span class="hljs-string">&quot;binarycache.example.com&quot;</span> <span class="hljs-operator">=</span> {
+      locations.<span class="hljs-string">&quot;/&quot;</span>.proxyPass <span class="hljs-operator">=</span> <span class="hljs-string">&quot;http://<span class="hljs-subst">${config.services.nix-serve.bindAddress}</span>:<span class="hljs-subst">${<span class="hljs-built_in">toString</span> config.services.nix-serve.port}</span>&quot;</span>;
+    };
+  };
+};</code></pre>
+      </div><p>Add HTTPS settings to this config if possible.<sup><a id="footnote-ref-3" href="https://mirror.nixoscn.org/wiki/Binary%20Cache#footnote-3" data-footnote-ref aria-describedby="footnote-label">3</a></sup> This tutorial will simply continue with insecure HTTP.</p>
+<p>To set up Nginx on a non-NixOS machine, create for example :</p>
+<div class="code-container">
+        
+        <pre><code class="language-nginx hljs"><span class="hljs-section">server</span> {
+    <span class="hljs-attribute">listen</span>      <span class="hljs-number">80</span> default_server;
+    <span class="hljs-attribute">listen</span>      [::]:<span class="hljs-number">80</span> default_server;
+            
+    <span class="hljs-section">location</span> / {
+        <span class="hljs-attribute">proxy_pass</span>  http://127.0.0.1:5000;
+    }
+}</code></pre>
+      </div><h3 id="4-testing">4. Testing</h3><p>To apply the previous settings to your NixOS machine, run:</p>
+<p>Check the general availability:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">$ curl http://binarycache.example.com/nix-cache-info
+StoreDir: /nix/store
+WantMassQuery: 1
+Priority: 30</code></pre>
+      </div><p>On the binary cache server, build some package:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">$ nix-build <span class="hljs-string">&#x27;&lt;nixpkgs&gt;&#x27;</span> -A pkgs.hello
+/nix/store/gdh8165b7rg4y53v64chjys7mbbw89f9-hello-2.10</code></pre>
+      </div><p>To verify the signing on the fly, make sure the following request contains a line:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">$ curl http://binarycache.example.com/gdh8165b7rg4y53v64chjys7mbbw89f9.narinfo
+StorePath: /nix/store/gdh8165b7rg4y53v64chjys7mbbw89f9-hello-2.10
+URL: nar/gdh8165b7rg4y53v64chjys7mbbw89f9.nar
+Compression: none
+NarHash: sha256:0mkfk4iad66xkld3b7x34n9kxri9lrpkgk8m17p97alacx54h5c7
+NarSize: 205920
+References: 6yaj6n8l925xxfbcd65gzqx3dz7idrnn-glibc-2.27 gdh8165b7rg4y53v64chjys7mbbw89f9-hello-2.10
+Deriver: r6h5b3wy0kwx38rn6s6qmmfq0svcnf86-hello-2.10.drv
+Sig: binarycache.example.com:EmAANryZ1FFHGmz5P+HXLSDbc0KckkBEAkHsht7gEIOUXZk9yhhZSBV+eSX9Kj+db/b36qmYmffgiOZbAe21Ag==</code></pre>
+      </div><p>Next, with the public key that was generated to , setup a client machine to use the binary cache, and see if Nix successfully fetches the cached package.</p>
+<h2 id="using-a-binary-cache">Using a binary cache</h2><p>To configure Nix to use a certain binary cache, refer to the Nix manual.<sup><a id="footnote-ref-4" href="https://mirror.nixoscn.org/wiki/Binary%20Cache#footnote-4" data-footnote-ref aria-describedby="footnote-label">4</a></sup> Add the binary cache as substituter (see the option ) and the public key to the trusted keys (see ).</p>
+<p>Permanent use of binary cache:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># /etc/nixos/configuration.nix</span>
+
+  <span class="hljs-attr">nix</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">substituters</span> <span class="hljs-operator">=</span> [
+        <span class="hljs-string">&quot;http://binarycache.example.com&quot;</span>
+        <span class="hljs-string">&quot;https://nix-community.cachix.org&quot;</span>
+        <span class="hljs-string">&quot;https://cache.nixos.org/&quot;</span>
+      ];
+      <span class="hljs-attr">trusted-public-keys</span> <span class="hljs-operator">=</span> [
+        <span class="hljs-string">&quot;binarycache.example.com-1:dsafdafDFW123fdasfa123124FADSAD&quot;</span>
+        <span class="hljs-string">&quot;nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=&quot;</span>
+      ];
+    };
+  };</code></pre>
+      </div><p>As described on <a href="https://search.nixos.org/options?show=nix.settings.substituters&amp;type=packages&amp;query=substituters">search.nixos.org</a> by default <a href="https://cache.nixos.org/">https://cache.nixos.org/</a> is added to the substituters. You may need to use lib.mkForce to override this and ensure your substituter is the primary choice.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># /etc/nixos/configuration.nix</span>
+
+
+{ config, lib, pkgs, ... }:
+
+{
+  <span class="hljs-attr">nix</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">substituters</span> <span class="hljs-operator">=</span> lib.mkForce [
+        <span class="hljs-string">&quot;http://binarycache.example.com&quot;</span>
+      ];
+      <span class="hljs-attr">trusted-public-keys</span> <span class="hljs-operator">=</span> [
+        <span class="hljs-string">&quot;binarycache.example.com-1:dsafdafDFW123fdasfa123124FADSAD&quot;</span>
+      ];
+    };
+  };
+}</code></pre>
+      </div><p>Temporary use of binary cache:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">$ nix-store -r /nix/store/gdh8165b7rg4y53v64chjys7mbbw89f9-hello-2.10 --option substituters http://binarycache.example.com --option trusted-public-keys binarycache.example.com:dsafdafDFW123fdasfa123124FADSAD
+these paths will be fetched (0.00 MiB download, 24.04 MiB unpacked):
+  /nix/store/7gx4kiv5m0i7d7qkixq2cwzbr10lvxwc-glibc-2.27
+  /nix/store/gdh8165b7rg4y53v64chjys7mbbw89f9-hello-2.10
+copying path <span class="hljs-string">&#x27;/nix/store/7gx4kiv5m0i7d7qkixq2cwzbr10lvxwc-glibc-2.27&#x27;</span> from <span class="hljs-string">&#x27;http://binarycache.example.com&#x27;</span>...
+copying path <span class="hljs-string">&#x27;/nix/store/gdh8165b7rg4y53v64chjys7mbbw89f9-hello-2.10&#x27;</span> from <span class="hljs-string">&#x27;http://binarycache.example.com&#x27;</span>...
+warning: you did not specify <span class="hljs-string">&#x27;--add-root&#x27;</span>; the result might be removed by the garbage collector
+/nix/store/gdh8165b7rg4y53v64chjys7mbbw89f9-hello-2.10</code></pre>
+      </div><h3 id="using-a-binary-cache-on-non-nixos-installations">Using a binary cache on non-NixOS installations</h3><p>To use a binary cache with a Nix that has been installed on an operating system other than NixOS (e.g. Ubuntu or macOS) will need to be edited manually. This can be done by adding something similar to the following lines to :</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">trusted-public-keys = nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
+trusted-substituters = https://nix-community.cachix.org https://cache.nixos.org
+trusted-users = root @wheel</code></pre>
+      </div><p>Note that not all of that information is needed, see the manual for the respective options (<a href="https://nixos.org/manual/nix/stable/command-ref/conf-file.html#conf-trusted-public-keys">trusted-public-keys</a>, <a href="https://nixos.org/manual/nix/stable/command-ref/conf-file.html#conf-trusted-substituters">trusted-substituters</a>, <a href="https://nixos.org/manual/nix/stable/command-ref/conf-file.html#conf-trusted-users">trusted-users</a>).</p>
+<p>With the options set correctly, a user can benefit permanently from a substituter by add the following to their</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">substituters = https://nix-community.cachix.org https://cache.nixos.org</code></pre>
+      </div><p>or temporarily as explained above.</p>
+<h3 id="binary-cache-hint-in-flakes">Binary cache hint in Flakes</h3><p>You can place a hint to your binary cache in your Flake so when someone builds an output of your Flake, the nix command will ask interactively to trust the specified binary cache.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">nixConfig</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">extra-substituters</span> <span class="hljs-operator">=</span> [
+      <span class="hljs-string">&quot;https://colmena.cachix.org&quot;</span>
+    ];
+    <span class="hljs-attr">extra-trusted-public-keys</span> <span class="hljs-operator">=</span> [
+      <span class="hljs-string">&quot;colmena.cachix.org-1:7BzpDnjjH8ki2CT3f6GdOk7QAzPOl+1t3LvTLXqYcSg=&quot;</span>
+    ];
+  };
+  <span class="hljs-attr">outputs</span> <span class="hljs-operator">=</span> { ... }: {
+    ...
+  };
+}</code></pre>
+      </div><h3 id="binary-cache-priority">Binary cache priority</h3><p>Each binary cache has a priority field. A lower number indicates a higher priority.</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell-session hljs">
+$curl https://cache.nixos.org/nix-cache-info
+StoreDir: /nix/store
+WantMassQuery: 1
+Priority: 40</code></pre>
+      </div><p>You may want to override this value by appending <code>?priority=n</code> at the end of the cache url.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ubstituters</span> <span class="hljs-operator">=</span> https:<span class="hljs-operator">//</span>nix-community.cachix.org<span class="hljs-operator">?</span>priority<span class="hljs-operator">=</span><span class="hljs-number">1</span> https:<span class="hljs-operator">//</span>cache.nixos.org<span class="hljs-operator">?</span>priority<span class="hljs-operator">=</span><span class="hljs-number">2</span></code></pre>
+      </div><h2 id="populating-a-binary-cache">Populating a binary cache</h2><p>As the cache is served from the nix store of the machine serving the binary cache, one option is to build the packages directly on that machine.</p>
+<p>Another option is to build the packages on a separate machine and push them only when all the checks pass using :</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">$ nix copy --to ssh://binarycache.example.com PACKAGE</code></pre>
+      </div><p>For details see the <a href="https://nixos.org/manual/nix/stable/package-management/sharing-packages.html">Sharing Packages Between Machines</a> in the Nix manual.</p>
+<h2 id="signing-existing-packages">Signing Existing Packages</h2><p>It is also possible to sign all the packages that already exist in the nix store of the machine serving the binary cache to make them immediately available.</p>
+<p><code>$ nix store sign --extra-experimental-features nix-command --all --key-file /var/cache-priv-key.pem</code></p>
+<p>Note : As of NixOS 24.11 is required for if this is not in your configuration.nix.</p>
+<h2 id="hosted-binary-cache">Hosted binary cache</h2><p><a href="https://cachix.org/">https://cachix.org</a> provides hosted binary caches starting with a free plan for public caches.</p>
+<h2 id="how-to-check-if-content-is-on-a-binary-cache">How to check if content is on a binary cache</h2><p>We can use <strong>curl</strong> to check if a binary cache contains a given derivation. <em>curl <a href="https://cache/store_hash.narinfo">https://cache/store_hash.narinfo</a></em></p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">$ curl https://fzakaria.cachix.org/949dxjmz632id67hjic04x6f3ljldzxh.narinfo
+
+StorePath: /nix/store/949dxjmz632id67hjic04x6f3ljldzxh-mvn2nix-0.1
+URL: nar/4026897ef85219b5b697c1c4ef30d50275423857cb7a81e138c4b1025f550935.nar.xz
+Compression: xz
+FileHash: sha256:4026897ef85219b5b697c1c4ef30d50275423857cb7a81e138c4b1025f550935
+FileSize: 24392
+NarHash: sha256:0kk3d8rk82ynqwg8isk83hvq8vszh4354fqg4hhaz40kd49rmm9n
+NarSize: 29208
+References: 2hhmmj0vbb5d181nfx2mx3p7k54q44ij-apache-maven-3.6.3 6737cq9nvp4k5r70qcgf61004r0l2g3v-bash-4.4-p23 949dxjmz632id67hjic04x6f3ljldzxh-mvn2nix-0.1 hrlxlk768vy5rgl6hc4xiba6gxg6s0yz-mvn2nix-0.1-dependencies qybd7j6v7kb7yhizc7gklgg3lyrxf38y-openjdk-headless-11.0.8+10
+Deriver: 585w6p8rclbvz97fwgixvfgnh5493ia2-mvn2nix-0.1.drv
+Sig: fzakaria.cachix.org-1:MkOrZCa9qdxHFdE2mtFRsbEzmLUgWGgSrqD3advKfdHLW+SKxj/V2n6+4a/qy6dhCoR+gWQfGzda/jNkER10CQ==</code></pre>
+      </div><p>Or use <em>nix path-info</em>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">$ nix path-info -r /nix/store/sb7nbfcc1ca6j0d0v18f7qzwlsyvi8fz-ocaml-4.10.0 --store https://cache.nixos.org/
+[0.0 MiB DL] querying libunistring-0.9.10 on https://cache.nixos.org/nix/store/0gc9dr71ldp79cla2qbl3kwdd4ig46pi-linux-headers-5.5
+/nix/store/2jysm3dfsgby5sw5jgj43qjrb5v79ms9-bash-4.4-p23
+/nix/store/4wy9j24psf9ny4di3anjs7yk2fvfb0gq-glibc-2.31-dev
+/nix/store/4z79ipgxqn80ns7mpax25zmb77i3ndfw-gawk-5.1.0
+/nix/store/9df65igwjmf2wbw0gbrrgair6piqjgmi-glibc-2.31
+/nix/store/czc3c1apx55s37qx4vadqhn3fhikchxi-libunistring-0.9.10
+/nix/store/fgn3sih5vi7543jcw389a7qqax8nwkhz-glibc-2.31-bin
+/nix/store/sb7nbfcc1ca6j0d0v18f7qzwlsyvi8fz-ocaml-4.10.0
+/nix/store/xim9l8hym4iga6d4azam4m0k0p1nw2rm-libidn2-2.3.0</code></pre>
+      </div><p>Example: Fetch metadata of <code>bash</code></p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">curl https://cache.nixos.org/$(readlink -f $(which bash) | cut -c12-43).narinfo</code></pre>
+      </div><h2 id="command-line-options">Command Line Options</h2><p>It is also possible to pass and on the command line if they are not in or you want to use a particular binary cache server.</p>
+<p><code>$ nix-build --option substituters &quot;http://binarycache.example.com&quot; --option trusted-public-keys &quot;binarycache.example.com-1:dsafdafDFW123fdasfa123124FADSAD&quot; &#39;</code><nixpkgs><code>&#39; -A pkgs.PACKAGE</code></p>
+<p><code>$ nixos-rebuild --option substituters &quot;http://binarycache.example.com&quot; --option trusted-public-keys &quot;binarycache.example.com-1:dsafdafDFW123fdasfa123124FADSAD&quot; switch</code></p>
+<p>To do an offline install (providing your binary cache contains all the packages required);</p>
+<p><code>$ nixos-install --option substituters &quot;http://binarycache.example.com&quot; --option trusted-public-keys &quot;binarycache.example.com-1:dsafdafDFW123fdasfa123124FADSAD&quot;</code></p>
+<h2 id="see-also">See also</h2><references group="cf."/>
+
+<ul>
+<li><a href="https://discourse.nixos.org/t/how-to-use-binary-cache-in-nixos/5202/4">How to use binary cache in NixOS</a></li>
+</ul>
+<!-- -->
+
+<ul>
+<li><a href="https://github.com/zhaofengli/attic">attic: Multi-tenant Nix Binary Cache</a></li>
+</ul>
+<!-- -->
+
+<ul>
+<li><a href="https://discourse.nixos.org/t/nix-binary-cache-for-macos-nix-darwin-with-attic/40118">Nix Binary Cache for MacOS/Nix-Darwin with Attic</a></li>
+</ul>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+ <a href="https://mirror.nixoscn.org/wiki/Binary%20Cache#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a>
+</li>
+<li id="footnote-2">
+ <a href="https://mirror.nixoscn.org/wiki/Binary%20Cache#footnote-ref-2" data-footnote-backref aria-label="Back to reference 2">↩</a>
+</li>
+<li id="footnote-3">
+ <a href="https://mirror.nixoscn.org/wiki/Binary%20Cache#footnote-ref-3" data-footnote-backref aria-label="Back to reference 3">↩</a>
+</li>
+<li id="footnote-4">
+<p><a href="https://nixos.org/nix/manual/#ch-files">Nix Manual, 21. Files</a> <a href="https://mirror.nixoscn.org/wiki/Binary%20Cache#footnote-ref-4" data-footnote-backref aria-label="Back to reference 4">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

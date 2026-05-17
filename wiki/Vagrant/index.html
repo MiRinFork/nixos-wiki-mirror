@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vagrant</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Vagrant</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Vagrant -->
+
+<h2 id="nixos-as-host">NixOS as Host</h2><h3 id="using-nfs-mounts">Using NFS mounts</h3><p>Add to your <code>Vagrantfile</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-Ruby hljs">  <span class="hljs-comment"># Mount a folder inside the VM.</span>
+  config.vm.synced_folder <span class="hljs-string">&quot;myfolder/&quot;</span>, <span class="hljs-string">&quot;/mnt/myfolder&quot;</span>, <span class="hljs-symbol">type:</span> <span class="hljs-string">&quot;nfs&quot;</span>, <span class="hljs-symbol">nfs_version:</span> <span class="hljs-number">4</span></code></pre>
+      </div><p>Add to your <code>configuration.nix</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-comment"># Minimal configuration for NFS support with Vagrant.</span>
+  <span class="hljs-attr">services.nfs.server.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  
+  <span class="hljs-comment"># Add firewall exception for VirtualBox provider </span>
+  <span class="hljs-attr">networking.firewall.extraCommands</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    ip46tables -I INPUT 1 -i vboxnet+ -p tcp -m tcp --dport 2049 -j ACCEPT
+  &#x27;&#x27;</span>;
+
+  <span class="hljs-comment"># Add firewall exception for libvirt provider when using NFSv4 </span>
+  networking.firewall.interfaces.<span class="hljs-string">&quot;virbr1&quot;</span> <span class="hljs-operator">=</span> {                                   
+    <span class="hljs-attr">allowedTCPPorts</span> <span class="hljs-operator">=</span> [ <span class="hljs-number">2049</span> ];                                               
+    <span class="hljs-attr">allowedUDPPorts</span> <span class="hljs-operator">=</span> [ <span class="hljs-number">2049</span> ];                                               
+  };     
+}</code></pre>
+      </div><p>This should make NFS mounts work.</p>
+<h2 id="plugins">Plugins</h2><h3 id="nixos-plugin">NixOS Plugin</h3><p>See <a href="https://mirror.nixoscn.org/wiki/Vagrant/Vagrant_Box#NixOS_Plugin" class="wikilink" title="the NixOS vagrant box page">the NixOS vagrant box page</a>, which as information about the <code>vagrant-nixos-plugin</code> project.</p>
+<h2 id="troubleshooting-conflicting-dependencies-bundler-when-installing-vagrant-plugins">Troubleshooting: conflicting dependencies bundler when installing vagrant plugins</h2><p>As of 18.03 vagrant plugins are broken:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash"> vagrant plugin update</span>
+Updating installed plugins...
+Bundler, the underlying system Vagrant uses to install plugins,
+reported an error. The error is shown below. These errors are usually
+caused by misconfigured plugin installations or transient network
+issues. The error from Bundler is:
+conflicting dependencies bundler (= 1.14.6) and bundler (= 1.16.1)
+  Activated bundler-1.16.1
+  which does not match conflicting dependency (= 1.14.6)
+  Conflicting dependency chains:
+    bundler (= 1.16.1), 1.16.1 activated
+  versus:
+    bundler (= 1.14.6)
+  Gems matching bundler (= 1.14.6):
+    bundler-1.14.6</code></pre>
+      </div><p>using the following nix expression fixes the problems:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">(<span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> {
+    <span class="hljs-attr">overlays</span> <span class="hljs-operator">=</span> [
+      (<span class="hljs-params">self:</span> <span class="hljs-params">super:</span> {
+        <span class="hljs-attr">bundler</span> <span class="hljs-operator">=</span> super.bundler.overrideAttrs (<span class="hljs-params">old:</span> {
+          <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;bundler-1.16.1&quot;</span>;
+          <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> super.fetchurl {
+            <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://rubygems.org/gems/bundler-1.16.1.gem&quot;</span>;
+            <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;1s2nq4qnffxg3kwrk7cnwxcvfihlhxm9absl2l6d3qckf3sy1f22&quot;</span>;
+          };
+        });
+      })
+    ];
+  }).vagrant</code></pre>
+      </div><p>More information in this <a href="https://github.com/NixOS/nixpkgs/issues/36880">issue</a></p>
+<h2 id="troubleshooting-vm-failing-to-receive-ip-address">Troubleshooting: VM failing to receive IP address</h2><p>If you run <code>vagrant up</code> and your VM is stalling with the message <code>Waiting for domain to get an IP address</code>, your networking firewall may be blocking vagrants DHCP requests. You can allow the requests with the following changes to your configuration.nix file:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># Trust libvirt bridge interfaces for VM networking (required for Vagrant DHCP)</span>
+n<span class="hljs-attr">etworking.firewall.trustedInterfaces</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;virbr0&quot;</span> <span class="hljs-string">&quot;virbr1&quot;</span> <span class="hljs-string">&quot;virbr2&quot;</span> ];
+<span class="hljs-comment"># Don&#x27;t let NetworkManager manage libvirt bridges (prevents conflicts)</span>
+n<span class="hljs-attr">etworking.networkmanager.unmanaged</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;virbr0&quot;</span> <span class="hljs-string">&quot;virbr1&quot;</span> <span class="hljs-string">&quot;virbr2&quot;</span> ];</code></pre>
+      </div>
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

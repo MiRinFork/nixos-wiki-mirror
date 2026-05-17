@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nix Installation Guide</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Nix Installation Guide</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Nix Installation Guide -->
+
+<p>This guide describes various <strong>more advanced</strong> methods for installing <a href="https://mirror.nixoscn.org/wiki/Nix%20Installation%20Guide/Nix" class="wikilink" title="Nix">Nix</a> on an <em>existing</em> operating system. For installation of <a href="https://mirror.nixoscn.org/wiki/Nix%20Installation%20Guide/NixOS" class="wikilink" title="NixOS">NixOS</a>, see <a href="https://mirror.nixoscn.org/wiki/Nix%20Installation%20Guide/NixOS_Installation_Guide" class="wikilink" title="NixOS Installation Guide">NixOS Installation Guide</a>.</p>
+<p>Please take a look at <a href="https://nixos.org/download.html">https://nixos.org/download.html</a> first for basic installation instructions and read the relevant section in the Nix manual if you want to know more about how the install process works: <a href="https://nixos.org/manual/nix/stable/#ch-installing-binary">https://nixos.org/manual/nix/stable/#ch-installing-binary</a>.</p>
+<h2 id="installation">Installation</h2><p>Nix package manager can be installed as either:</p>
+<ul>
+<li>Multi User Installation (recommended)</li>
+<li>Single User Installation</li>
+</ul>
+<h3 id="multi-user-installation">Multi User Installation</h3><div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">bash &lt;(curl -L https://nixos.org/nix/install) --daemon</span></code></pre>
+      </div><h3 id="single-user-installation">Single User Installation</h3><div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">bash &lt;(curl -L https://nixos.org/nix/install) --no-daemon</span></code></pre>
+      </div><h3 id="stable-nix">Stable Nix</h3><p>By default, the rolling Nix package manager will be installed using one of the above commands and thus the <code>nixpkgs-unstable</code> <a href="https://mirror.nixoscn.org/wiki/Nix%20Installation%20Guide/Channel_Branches" class="wikilink" title="channel">channel</a> will be used.</p>
+<p>Follow the below to switch to the stable channel:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">sudo</span> su</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-channel --remove nixpkgs</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-channel --add https://nixos.org/channel/nixos-25.11 nixpkgs</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-channel --update</span></code></pre>
+      </div><p>Then run the following command to verify that you are using the stable channel:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-shell -p nix-info --run <span class="hljs-string">&quot;nix-info -m&quot;</span></span></code></pre>
+      </div><h4 id="troubleshooting">Troubleshooting</h4><h5 id="user-namespaces">User namespaces</h5><p>If the installation fails with the following error:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">installing 'nix-2.2.2'
+error: cloning builder process: Invalid argument
+error: unable to start build process</code></pre>
+      </div><p>it is possible that user namepaces are disabled by your distribution. Since Nix 2.2, the sandbox is enabled by default on Linux which requires user namespaces. If possible enable them; the procedure depends on the distribution. In last resort, you can disable the sandbox: create the file <code>~/.config/nix/nix.conf</code> and include the line <code>sandbox = false</code>.</p>
+<h2 id="nix-store-on-an-unusual-filesystem">Nix store on an unusual filesystem</h2><h3 id="case-insensitive-filesystem-on-linux">Case insensitive filesystem on Linux</h3><p>Most Linux filesystems are case sensitive. If your nix store is on a case insensitive filesystem like CIFS on Linux, derivation outputs cannot contain two files differing only in case in the same directory. Nix can work around this by adding <code>use-case-hack = true</code> to your nix configuration (<code>/etc/nix/nix.conf</code> for a multi-user-install or <code>~/.config/nix/nix.conf</code> otherwise). Unfortunately, this will change the hash of some derivations and thus make the binary cache useless.</p>
+<h3 id="nfs">NFS</h3><p>With a Nix store residing on an NFS filesystem, concurrent use of Nix may corrupt Nix&#39;s sqlite database. To prevent this, set <code>use-sqlite-wal = false</code>. Since <a href="https://github.com/NixOS/nix/pull/5475">nix/pull/5475 nix/pull/5475</a> and it&#39;s backports to the stable branches, a patch that was previously described in this wiki is no longer needed for using Nix on WSL (Windows&#39; Subsystem for Linux) and NFS filesystems.</p>
+<h2 id="installing-without-root-permissions">Installing without root permissions</h2><p>By using <a href="https://github.com/nix-community/nix-user-chroot">nix-user-chroot</a> or <a href="https://github.com/proot-me/PRoot">PRoot</a>, you can use Nix on systems where you have no permission to create the `/nix` directory. nix-user-chroot is the preferred option. However, it might not run on older Linux kernels, or kernels without user namespace support. With the following command, you can test whether your system supports user namespaces for unprivileged users:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">unshare --user --pid <span class="hljs-built_in">echo</span> YES</span>
+YES</code></pre>
+      </div><p>The output should be <code>YES</code>. If the command is absent, an alternative is to check the kernel compile options:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">zgrep CONFIG_USER_NS /proc/config.gz</span>
+CONFIG_USER_NS=y</code></pre>
+      </div><p>On some systems, like Debian or Ubuntu, the kernel configuration is in a different place, so instead use:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">grep CONFIG_USER_NS /boot/config-$(<span class="hljs-built_in">uname</span> -r)</span>
+CONFIG_USER_NS=y</code></pre>
+      </div><p>If the output of this command is <code>CONFIG_USER_NS=y</code>, then your system supports user namespaces.</p>
+<h3 id="nix-user-chroot">nix-user-chroot</h3><p><a href="https://github.com/nix-community/nix-user-chroot">nix-user-chroot</a> is the preferred method to install use nix on systems without <code>/nix</code>. It also requires user namespaces to be enabled on the system. <code>nix-user-chroot</code> will create an environment in which you can bind mount a directory to <code>/nix</code>. The mountpoint will be only visible within this environment.</p>
+<p>There are <a href="https://github.com/nix-community/nix-user-chroot/releases">pre-build static binaries</a> and the readme also contains the instructions to build from <a href="https://github.com/nix-community/nix-user-chroot#build-from-source">source</a> (assuming rustc and cargo to be installed).</p>
+<p>In this example, the Nix store will be installed to <code>~/.nix</code>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">mkdir</span> -m 0755 ~/.nix</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-user-chroot ~/.nix bash -c <span class="hljs-string">&#x27;curl -L https://nixos.org/nix/install | sh&#x27;</span></span></code></pre>
+      </div><p>Note that you can only use Nix and the installed programs within the shell started by <code>nix-user-chroot</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-user-chroot ~/.nix bash</span></code></pre>
+      </div><h3 id="proot">PRoot</h3><h4 id="obtaining-proot">Obtaining PRoot</h4><p>Precompiled PRoot binaries for every commit can be downloaded from <a href="https://gitlab.com/proot/proot/pipelines">here</a> under the job artifacts. Make sure you set the executable bit of binaries you download.</p>
+<p>Alternatively, if you have another machine with nix installed, you can build static binaries as follows:</p>
+<ul>
+<li>create a file <code>proot.nix</code>:</li>
+</ul>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-keyword">with</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> {}; 
+pkgsStatic.proot.override { <span class="hljs-attr">enablePython</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>; }</code></pre>
+      </div><ul>
+<li>build it:</li>
+</ul>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-build proot.nix</span></code></pre>
+      </div><p>The executable is to be found in <code>result/bin/proot</code>.</p>
+<p>If nix builds within proot fail with something like &quot;no such file or directory&quot; while the files referenced do exist, you can set <code>PROOT_NO_SECCOMP=1</code> in your environment or try termux&#39;s <a href="https://github.com/termux/proot">fork</a> of PRoot.</p>
+<h4 id="installing-nix">Installing nix</h4><ul>
+<li>If you have user namespaces enabled, you should prefer using nix-user-choot to PRoot. So we can safely assume that if you got to this point in the page, you don&#39;t have user namespaces. Therefore you must disable the sandbox. Add the line</li>
+</ul>
+<p>to <code>~/.config/nix/nix.conf</code>.</p>
+<ul>
+<li>Create the folder where the nix store is to be located: in this example <code>~/.nix</code>:</li>
+</ul>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">mkdir</span> ~/.nix</span></code></pre>
+      </div><ul>
+<li>Make sure PRoot is in PATH and use is to obtain a shell where <code>/nix</code> exists:</li>
+</ul>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">proot -b ~/.nix:/nix</span></code></pre>
+      </div><ul>
+<li>In this new shell, Nix can be installed:</li>
+</ul>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">curl -L https://nixos.org/nix/install | sh</span></code></pre>
+      </div><p>Note that you can only use Nix and the installed programs within the shell started by PRoot.</p>
+<h4 id="troubleshooting">Troubleshooting</h4><p>PRoot uses ptrace to capture and modify system calls. It happens that new system calls are created which proot does not shim yet. If you run into issues, check if:</p>
+<ul>
+<li>you have the latest proot</li>
+</ul>
+<!-- -->
+
+<ul>
+<li>the system calls being used are supported by proot (TODO: how to list and diff with sysnums.list?)</li>
+</ul>
+<p>Since ptrace only allows one tracer to attach to a process at a time, you cant strace your process while in proot. One suggestion is to strace your application outside of proot to find what system calls are used. Alternatives may be tracing with bpftrace or trace-cmd/ftrace. (This is not elaborated on here because the author doesn&#39;t know how to do it.)</p>
+<p>A table of system calls supported by proot-rs, which is not the same as proot, can be found at <a href="https://github.com/proot-me/proot-rs/wiki/Translation-of-system-calls">https://github.com/proot-me/proot-rs/wiki/Translation-of-system-calls</a> .</p>
+<p>As of PRoot 5.3.1 and 2022-Oct-24, PRoot doesn&#39;t support faccess2, which is invoked in glibc by bash through coreutils test. This makes the `[ -w /nix ]` expression fail incorrectly in the nix installer script. This can be worked around with this patch: <a href="https://github.com/proot-me/proot/pull/338">https://github.com/proot-me/proot/pull/338</a> or <code>nix-shell -I nixpkgs=channel:nixos-unstable -p &#39;(proot.overrideAttrs (o: { patches = [ (builtins.fetchurl &quot;</code><a href="https://patch-diff.githubusercontent.com/raw/proot-me/proot/pull/338.patch"><code>https://patch-diff.githubusercontent.com/raw/proot-me/proot/pull/338.patch</code></a><code>&quot; ) ]; }))&#39;</code></p>
+<h3 id="nix-2-0-39-s-native-method">nix 2.0&#39;s native method</h3><p>If nix is already installed on the system i.e. a self-compiled nix itself can also create a nix store in an alternative user-writable locations. The following command will create a nix store in <code>~/my-nix</code> and spawn a shell, where <code>~/my-nix</code> be mounted to <code>/nix</code>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix run --store ~/my-nix nixpkgs.nix nixpkgs.bashInteractive</span></code></pre>
+      </div><p>You can make all nix commands use the alternate store by specifying it in `~/.config/nix/nix.conf` as <code>store = /home/USERNAME/my-nix</code>.</p>
+<h2 id="installing-on-debian-using-apt">Installing on Debian Using APT</h2><p>If you are using Debian (or a Debian-based distro) you can install Nix with the APT package manager. Some users may prefer using APT when modifying their system. The package named <code>nix-setup-systemd</code> will set up a multi-user Nix installation and run <code>nix-daemon</code> via <code>systemd</code>. To install:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">sudo</span> apt install nix-setup-systemd</span></code></pre>
+      </div><p>After installing, you should read <code>/usr/share/doc/nix-bin/README.Debian</code>. In particular, you will need to add your user to the <code>nix-users</code> group in order to use the daemon:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">sudo</span> /sbin/adduser <span class="hljs-variable">$USER</span> nix-users</span></code></pre>
+      </div><p>Note that in Debian <a href="https://packages.debian.org/bookworm/nix-setup-systemd">Bookworm</a> <code>/etc/nix/nix.conf</code> will contain <code>sandbox = false</code>, but in Debian <a href="https://packages.debian.org/trixie/nix-setup-systemd">Trixie</a>, sandbox mode is enabled by default. (See the Changelog for details.)</p>
+<h3 id="configure-user-and-or-desktop">Configure user and/or desktop</h3><p>To start installed nix applications from the command line, add the <code>~/.nix-profile/bin</code> to <code>PATH</code>. To give the Desktop access the nix application data add the <code>~/.nix-profile/share</code> to <code>XDG_DATA_DIRS</code>.</p>
+<p>For example include the following snippet in <code>~/.profile</code> of the user:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">#</span><span class="language-bash"><span class="hljs-comment">## set PATH so it includes user&#x27;s nix bin if it exists</span></span>
+if [ -d &quot;$HOME/.nix-profile/bin&quot; ] ; then
+    PATH=&quot;$HOME/.nix-profile/bin:$PATH&quot;
+fi
+<span class="hljs-meta prompt_">
+#</span><span class="language-bash"><span class="hljs-comment">## set XDG_DATA_DIR so it includes user&#x27;s nix share if it exists</span></span>
+if [ -d &quot;$HOME/.nix-profile/share&quot; ] ; then
+    XDG_DATA_DIRS=&quot;$HOME/.nix-profile/share:$XDG_DATA_DIRS&quot;
+fi</code></pre>
+      </div><p>Used source: <a href="https://imranmustafa.net/nix-on-debian/">https://imranmustafa.net/nix-on-debian/</a></p>
+<h3 id="troubleshooting">Troubleshooting</h3><p>During the <code>nix-build</code> command following the <a href="https://nix.dev/tutorials/nixos/nixos-configuration-on-vm#creating-a-qemu-based-virtual-machine-from-a-nixos-configuration">https://nix.dev/tutorials/nixos/nixos-configuration-on-vm#creating-a-qemu-based-virtual-machine-from-a-nixos-configuration</a> an error could occur like:</p>
+<p><code>...linux-6.12.39-modules-shrunk/lib&#39; is not in the Nix store</code> whilst the directory is present in the <code>/nix/store/</code> directory.</p>
+<p>A possible solution is to upgrade nix and nix-daemon applications because the distributed nix version is older, quite older with Debian <a href="https://packages.debian.org/bookworm/nix-setup-systemd">Bookworm</a>, than the current nix version:</p>
+<p>1) Define the config at <code>~/.config/nixpkgs/config.nix</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs">with (import &lt;nixpkgs&gt; {});
+{
+  packageOverrides = pkgs: with pkgs; {
+    userPackages = buildEnv {
+      extraOutputsToInstall = [ &quot;doc&quot; &quot;info&quot; &quot;man&quot; ];
+      name = &quot;user-packages&quot;;
+      paths = [
+        nix
+      ];
+    };
+  };
+}</code></pre>
+      </div><p>To upgrade nix:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs">nix-env --install --attr nixpkgs.userPackages --remove-all</code></pre>
+      </div><p>Logout and login the user to see the effects.</p>
+<p>2) To use the upgraded <code>nix-daemon</code> application from the previous step in the <code>nix-daemon.service</code>, add a drop-in config file <code>override.conf</code> in <code>/etc/systemd/system/nix-daemon.service.d/</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs">[Service]
+ExecStart=
+ExecStart=@/home/myuser/.nix-profile/bin/nix-daemon nix-daemon --daemon</code></pre>
+      </div><p>Restart the <code>nix-daemon.service</code> Used source: <a href="https://blog.koch.ro/posts/2024-01-16-using-nix-package-manager-in-debian.html">https://blog.koch.ro/posts/2024-01-16-using-nix-package-manager-in-debian.html</a></p>
+<h2 id="windows-subsystem-for-linux-wsl">Windows Subsystem for Linux (WSL)</h2><p>As of Windows 10, Microsoft supports running Linux and Linux programs on the Windows OS. Installation instructions can be found at <a href="https://docs.microsoft.com/en-us/windows/wsl/install-win10">https://docs.microsoft.com/en-us/windows/wsl/install-win10</a>. If you follow those instructions for using WSL2 (post-Windows 10 2004 build 19041), you can install Nix normally as described in <a href="https://mirror.nixoscn.org/wiki/Nix%20Installation%20Guide/Nix_Installation_Guide#Single-user_install" class="wikilink" title="Single-user install">Single-user install</a>. You can check what version of WSL you are using by running <code>wsl --list --verbose</code> from the Windows command line.</p>
+<h3 id="wsl1-pre-windows-10-2004-build-19041">WSL1 (pre-Windows 10 2004 build 19041)</h3><p>Running Nix is much simpler on WSL2, so we recommend that if at all possible. If WSL2 is not available, then Nix can be installed and run from WSL1 with a few workarounds.</p>
+<p>If you perform no workarounds, you will see that <code>busybox</code> doesn&#39;t work in Nix due to WSL1 not handling 32-bit binaries. This can be remedied by following the solution laid out in <a href="https://github.com/NixOS/nixpkgs/issues/24954#issuecomment-399614154">nixpkgs issue#24954</a>:</p>
+<ul>
+<li>Install and configure QEMU and binfmt-support</li>
+</ul>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">sudo</span> apt install qemu-user-static</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">sudo</span> update-binfmts --install i386 /usr/bin/qemu-i386-static --magic <span class="hljs-string">&#x27;\x7fELF\x01\x01\x01\x03\x00\x00\x00\x00\x00\x00\x00\x00\x03\x00\x03\x00\x01\x00\x00\x00&#x27;</span> --mask <span class="hljs-string">&#x27;\xff\xff\xff\xff\xff\xff\xff\xfc\xff\xff\xff\xff\xff\xff\xff\xff\xf8\xff\xff\xff\xff\xff\xff\xff&#x27;</span></span></code></pre>
+      </div><ul>
+<li>Start the <code>binfmt-support</code> service every WSL1 login:</li>
+</ul>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">sudo</span> service binfmt-support start</span></code></pre>
+      </div><ul>
+<li>Continue installing Nix as described in <a href="https://mirror.nixoscn.org/wiki/Nix%20Installation%20Guide/Nix_Installation_Guide#Single-user_install" class="wikilink" title="Single-user install">Single-user install</a></li>
+</ul>
+<h2 id="armv7l">ARMv7l</h2><p>Because there is no officially produced ARMv7l installer, this page describes how to build your own: <a href="https://mirror.nixoscn.org/wiki/Nix%20Installation%20Guide/Nix_on_ARM" class="wikilink" title="Nix_on_ARM">Nix_on_ARM</a>.</p>
+<h2 id="further-reading">Further reading</h2><ul>
+<li><a href="https://nixcademy.com/posts/nix-on-macos/">Setting up Nix on macOS, Nixcademy</a></li>
+</ul>
+<p><a href="category:nix" class="wikilink" title="Category:nix">Category:nix</a> <a href="category:Cookbook" class="wikilink" title="Category:Cookbook">Category:Cookbook</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

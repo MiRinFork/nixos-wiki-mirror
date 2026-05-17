@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tt-rss</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Tt-rss</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Tt-rss -->
+
+<p><a href="https://tt-rss.org/">Tiny Tiny RSS</a> is a free and open source web-based news feed (RSS/Atom) reader and aggregator.</p>
+<p>__TOC__</p>
+<h2 id="install">Install</h2><p>&lt;syntaxhighlight lang=&quot;nix&gt; services.tt-rss = {</p>
+<p><code> enable = true;</code><br><code> # to configure a nginx virtual host directly:</code><br><code> virtualHost = &quot;tt-rss.example.com&quot;;</code><br><code> selfUrlPath = &quot;</code><a href="https://tt-rss.example.com/"><code>https://tt-rss.example.com</code></a><code>&quot;;</code><br><code> # or for hosting on sub-path:</code><br><code> selfUrlPath = &quot;</code><a href="https://example.com/tt-rss"><code>https://example.com/tt-rss</code></a><code>&quot;;</code></p>
+<p>};</p>
+</syntaxhighlight>
+
+<h3 id="using-caddy-as-web-server-instead-of-nginx">Using Caddy as web server instead of nginx</h3><p>As of NixOS 24.11 the following configuration works, future versions of NixOS may expose this as native Caddy support for Tiny Tiny RSS instead:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ config, pkgs, lib, ... }:
+
+<span class="hljs-keyword">let</span>
+    <span class="hljs-attr">hostNames</span> <span class="hljs-operator">=</span> [
+        <span class="hljs-string">&quot;tt-rss.example.com&quot;</span>
+    ];
+<span class="hljs-keyword">in</span> {
+    <span class="hljs-attr">services.tt-rss</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+        <span class="hljs-comment"># Address at which Tiny Tiny RSS is publically exposed</span>
+        <span class="hljs-attr">selfUrlPath</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://<span class="hljs-subst">${lib.lists.head hostNames}</span>/&quot;</span>;
+
+        <span class="hljs-comment"># Disable nginx integration as it will conflict with Caddy</span>
+        <span class="hljs-attr">virtualHost</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;
+    };
+
+    <span class="hljs-comment"># Caddy reverse proxy configuration</span>
+    <span class="hljs-attr">services.caddy.virtualHosts.tt-rss</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">hostName</span> <span class="hljs-operator">=</span> lib.lists.head hostNames;
+        <span class="hljs-attr">serverAliases</span> <span class="hljs-operator">=</span> lib.lists.tail hostNames;
+
+        <span class="hljs-attr">extraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+            root * <span class="hljs-subst">${config.services.tt-rss.root}</span>/www
+
+            php_fastcgi * unix/<span class="hljs-subst">${config.services.phpfpm.pools.${config.services.tt-rss.pool}</span>.socket} {
+                capture_stderr
+            }
+
+            file_server {
+                browse
+            }
+        &#x27;&#x27;</span>;
+    };
+
+    <span class="hljs-comment"># Workaround: Create PHP-FPM socket with Caddy user instead of non-existing nginx</span>
+    services.phpfpm.pools.<span class="hljs-string">&quot;<span class="hljs-subst">${config.services.tt-rss.pool}</span>&quot;</span>.settings <span class="hljs-operator">=</span> {
+        <span class="hljs-string">&quot;listen.owner&quot;</span> <span class="hljs-operator">=</span> config.services.caddy.user;
+        <span class="hljs-string">&quot;listen.group&quot;</span> <span class="hljs-operator">=</span> config.services.caddy.group;
+    };
+}</code></pre>
+      </div><h2 id="configuration">Configuration</h2><p>By default tt-rss creates an <strong>admin</strong> user with password <strong>password</strong>. After logging in for the first time, do not forget to <strong>change it</strong>!</p>
+<h3 id="disabling-the-admin-user-completely">Disabling the <em>admin</em> user completely</h3><p>After installing and creating a new user, you can disable the <em>admin</em> by setting its access level to -2 <a href="https://srv.tt-rss.org/ttrss-docs/classes/UserHelper.html#constant_ACCESS_LEVEL_DISABLED">1</a>.</p>
+<p>Either manually by running:</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs">sudo -u tt_rss nix-shell -p php \
+  --run &#x27;php /var/lib/tt-rss/www/update.php --user-set-access-level &quot;admin:-2&quot;&#x27;</code></pre>
+      </div><p>You can even automate this to ensure it is always set to -2 by e.g. utilising a <em>PreStart</em> snippet:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ystemd.services.tt-rss.preStart</span> <span class="hljs-operator">=</span> lib.mkAfter <span class="hljs-string">&#x27;&#x27;
+  <span class="hljs-subst">${pkgs.php}</span>/bin/php <span class="hljs-subst">${config.services.tt-rss.root}</span>/www/update.php \
+    --user-set-access-level &quot;admin:-2&quot;
+&#x27;&#x27;</span>;</code></pre>
+      </div><h3 id="enabling-tls-for-nginx-virtual-host">Enabling TLS for nginx virtual host</h3><p>Assuming you have ACME set-up for <em>example.com</em>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">services.nginx.virtualHosts.<span class="hljs-string">&quot;<span class="hljs-subst">${config.services.tt-rss.virtualHost}</span>&quot;</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">forceSSL</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">useACMEHost</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;example.com&quot;</span>
+};</code></pre>
+      </div><p><a href="category:Guide" class="wikilink" title="Category:Guide">Category:Guide</a> <a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="category:Web_Applications" class="wikilink" title="Category:Web Applications">Category:Web Applications</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

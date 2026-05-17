@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kodi</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Kodi</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Kodi -->
+
+<p><a href="https://kodi.tv/">Kodi</a> (formerly known as XBMC) is an award-winning free and open source (GPL) software media player and entertainment hub that can be installed on Linux, OSX, Windows, iOS and Android, featuring a 10-foot user interface for use with televisions and remote controls.</p>
+<h2 id="basic-module-usage">Basic module usage</h2><p>The NixOS module for Kodi sets Kodi up as a desktop session. With this configuration Kodi will run automatically on boot:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">services.xserver.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">services.xserver.desktopManager.kodi.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">services.xserver.displayManager.autoLogin.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">services.xserver.displayManager.autoLogin.user</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;kodi&quot;</span>;
+
+  <span class="hljs-attr">services.xserver.displayManager.lightdm.greeter.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+
+  <span class="hljs-comment"># Define a user account</span>
+  <span class="hljs-attr">users.extraUsers.kodi.isNormalUser</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+}</code></pre>
+      </div><h2 id="access-from-other-machines">Access from other machines</h2><p>For this to work Kodi&#39;s remote interface must be enabled in the Kodi configuration. Kodi uses by default udp/tcp port 8080, which must be allowed in the firewall:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">networking.firewall</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">allowedTCPPorts</span> <span class="hljs-operator">=</span> [ <span class="hljs-number">8080</span> ];
+    <span class="hljs-attr">allowedUDPPorts</span> <span class="hljs-operator">=</span> [ <span class="hljs-number">8080</span> ];
+  };
+}</code></pre>
+      </div><h2 id="autostart-kodi-gbm-with-hdmi-audio-passthrough">Autostart kodi-gbm, with HDMI audio passthrough</h2><p>From ArchWiki: currently the most feature rich. It is the only one of the three options (x11, wayland, gbm) able to display HDR content, may be a good choice for standalone operations since it runs directly on the GPU without the need for the added X11 layer. A complete list of features lacking compared to other back-ends can be found in Kodi issue 14876.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs, ... }:
+{
+  <span class="hljs-comment"># use alsa; which supports hdmi passthrough</span>
+  <span class="hljs-attr">services.pulseaudio.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+  <span class="hljs-attr">services.pipewire.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+
+  <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+    kodi-gbm
+  ];
+
+  <span class="hljs-attr">users.users</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">kodi</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">initialHashedPassword</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;passwordHash&quot;</span>;
+      <span class="hljs-attr">extraGroups</span> <span class="hljs-operator">=</span> [
+        <span class="hljs-comment"># allow kodi access to keyboards</span>
+        <span class="hljs-string">&quot;input&quot;</span>
+      ];
+      <span class="hljs-attr">isNormalUser</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    };
+  };
+
+
+  <span class="hljs-comment"># auto-login and launch kodi</span>
+  <span class="hljs-attr">services.getty.autologinUser</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;kodi&quot;</span>;
+  <span class="hljs-attr">services.greetd</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">initial_session</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">command</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.kodi-gbm}</span>/bin/kodi-standalone&quot;</span>;
+        <span class="hljs-attr">user</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;kodi&quot;</span>;
+      };
+      <span class="hljs-attr">default_session</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">command</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.greetd.greetd}</span>/bin/agreety --cmd sway&quot;</span>;
+      };
+    };
+  };
+
+  <span class="hljs-attr">programs.sway</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">xwayland.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+  };
+}</code></pre>
+      </div><h2 id="with-wayland">With Wayland</h2><p>Especially on less-powerful ARM boards the wayland variant is faster. In this example cage, kiosk compositor for Wayland, will run Kodi as its only application:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs, ... }: {
+  <span class="hljs-comment"># Define a user account</span>
+  <span class="hljs-attr">users.extraUsers.kodi.isNormalUser</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">services.cage.user</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;kodi&quot;</span>;
+  <span class="hljs-attr">services.cage.program</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.kodi-wayland}</span>/bin/kodi-standalone&quot;</span>;
+  <span class="hljs-attr">services.cage.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+}</code></pre>
+      </div><h2 id="plugins">Plugins</h2><p>There are two different ways to install plugins.</p>
+<p>You can either set the relevant option (search pkgs/top-level/all-packages.nix for &quot;wrapKodi&quot; for a list) through NixOS or home-manager:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">ixpkgs.config.kodi.enableAdvancedLauncher</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><p>Or you can override Kodi to include the plugins (see pkgs/applications/video/kodi/plugins.nix for a list or search in the <code>kodiPackages</code> namespace):</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> [
+    (pkgs.kodi.withPackages (<span class="hljs-params">kodiPkgs:</span> <span class="hljs-keyword">with</span> kodiPkgs; [
+        jellyfin
+    ]))
+];</code></pre>
+      </div><p>When using the setup from the <a href="https://mirror.nixoscn.org/wiki/Kodi/Kodi#Autostart_kodi-gbm,_with_HDMI_audio_passthrough" class="wikilink" title="kodi-gbm section above">kodi-gbm section above</a>, the plugins will not be available unless you use the same definition in the greetd command section. To make this easier, you can define the set as a variable like this and reference it later:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ config, pkgs, ... }:
+
+<span class="hljs-keyword">let</span>
+    <span class="hljs-attr">myKodi</span> <span class="hljs-operator">=</span> (<span class="hljs-keyword">with</span> pkgs; (kodi-gbm.withPackages (<span class="hljs-params">p:</span> <span class="hljs-keyword">with</span> p; [
+        jellycon 
+        ])));
+<span class="hljs-keyword">in</span>
+{
+    <span class="hljs-comment"># Replace occurences of kodi-gbm with myKodi,</span>
+    <span class="hljs-comment"># specifically:</span>
+    <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+        myKodi
+    ];
+    <span class="hljs-comment"># and</span>
+    <span class="hljs-attr">services.greetd.settings.initial_session.command</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${myKodi}</span>/bin/kodi-standalone&quot;</span>;
+}</code></pre>
+      </div><p>Or if using as the startup desktop service:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">services.xserver.desktopManager.kodi.package</span> <span class="hljs-operator">=</span>
+    pkgs.kodi.withPackages (<span class="hljs-params">pkgs:</span> <span class="hljs-keyword">with</span> pkgs; [
+    jellycon
+    ]))
+];</code></pre>
+      </div><p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Install NixOS on Scaleway X86 Virtual Cloud Server</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Install NixOS on Scaleway X86 Virtual Cloud Server</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Install NixOS on Scaleway X86 Virtual Cloud Server -->
+
+<h1 id="new-method">New method</h1><p>As of November 2020, it is easy to get a NixOS VM running on Scaleway by using nixos-infect and Scaleway&#39;s support for cloud init.</p>
+<p>All that is needed is to follow the nixos-infect recipe for Digital Ocean, removing the Digital Ocean-specific stuff.</p>
+<p>Pragmatically, start an Ubuntu 20.04 Focal Fossa or Fedora VM and use the following as your cloud-init startup script:</p>
+<div class="code-container">
+        
+        <pre><code class="language-cloud-init hljs">#cloud-config
+write_files:
+- path: /etc/nixos/host.nix
+  permissions: '0644'
+  content: |
+    {pkgs, ...}:
+    {
+      environment.systemPackages = with pkgs; [ macchina vim ];
+    }
+runcmd:
+  - curl https://raw.githubusercontent.com/elitak/nixos-infect/master/nixos-infect |  NIXOS_IMPORT=./host.nix NIX_CHANNEL=nixos-25.11 bash 2&gt;&amp;1 | tee /tmp/infect.log</code></pre>
+      </div><p>You can change the packages you&#39;d like preinstalled by modiffying the list with pkgs.</p>
+<p>On login, you will be in NixOS 25.11.</p>
+<h2 id="using-the-scaleway-virtual-console">Using the scaleway virtual console</h2><p>Just add:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">b<span class="hljs-attr">oot.kernelParams</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;console=ttyS0&quot;</span> ];</code></pre>
+      </div><p>to the configuration.nix</p>
+<h1 id="old-method">Old method</h1><h2 id="create-scaleway-instance">Create Scaleway Instance</h2><p>If you know the Scaleway API you can do equivalent steps via API instead of using the webinterface.</p>
+<ul>
+<li><p>Open Scaleway &quot;Create a server&quot; page</p>
+</li>
+<li><p>Enter name</p>
+</li>
+<li><p>Select region</p>
+</li>
+<li><p>Select server type</p>
+<ul>
+<li>This will only work for the V and X types of servers (e.g. VC1M or X64-15GB)</li>
+</ul>
+</li>
+<li><p>Select &quot;Debian Stretch&quot; or &quot;Debian Mini Stretch&quot; from the distributions tab</p>
+</li>
+<li><p>Create server</p>
+</li>
+<li><p>Wait until server has been provisioned and is done booting</p>
+<ul>
+<li>The status of the system can be checked on by looking at the console in the web interface</li>
+</ul>
+</li>
+</ul>
+<h2 id="build-nixos-kexec-tarball">Build NixOS kexec Tarball</h2><h3 id="remote-build">remote build</h3><p>First you will need to build a NixOS kexec tarball. To do this follow the steps outlined below:</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs">git clone https://github.com/cleverca22/nix-tests.git
+cd nix-tests/kexec/
+<span class="hljs-meta prompt_"># </span><span class="language-bash">Edit configuration.nix according to your needs. An example can be found below:</span>
+nix-build &#x27;&lt;nixpkgs/nixos&gt;&#x27; -A config.system.build.kexec_tarball -I nixos-config=./configuration.nix -Q -j 4</code></pre>
+      </div><h4 id="copy-the-nixos-tarball">copy the NixOS tarball</h4><ul>
+<li>Copy the prepared NixOS kexec tarball to the server</li>
+</ul>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs">scp result/tarball/nixos-system-x86_64-linux.tar.xz root@51.YY.XX.93:</code></pre>
+      </div><ul>
+<li>Use ssh to access the server<ul>
+<li>Use the corrensponding SSH key you configured at Scaleway before</li>
+</ul>
+</li>
+<li>Extract the tarball into /</li>
+</ul>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs">cd /; tar -xf /root/nixos-system-x86_64-linux.tar.xz</code></pre>
+      </div><h3 id="local-scaleway-instance-build">local (Scaleway instance) build</h3><p>We need to start from 17.09 because that comes with Linux kernel 4.9 which can be Kexec&#39;d into from the Scaleway Debian Stretch. The system to be installed later be any version since it uses the regular boot procedure.</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs">apt-get update
+apt-get install -y git
+sysctl kernel.unprivileged_userns_clone=1
+adduser nix
+addgroup sudo nix
+su nix # nix installer only runs as non-root
+cd
+curl https://nixos.org/nix/install | sh
+source ~/.nix-profile/etc/profile.d/nix.sh
+git clone https://github.com/cleverca22/nix-tests.git
+cd nix-tests/kexec/
+vim configuration.nix</code></pre>
+      </div><p>remove autoreboot.nix, comment out boot.supportedFilesystems = [ &quot;zfs&quot; ]; (as in the sample config below)</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs">NIX_PATH=nixpkgs=https://github.com/NixOS/nixpkgs/archive/release-17.09.tar.gz nix-build &#x27;&lt;nixpkgs/nixos&gt;&#x27; -A config.system.build.kexec_tarball -I nixos-config=./configuration.nix -Q -j 4
+exit # back to root
+cp /home/nix/nix-tests/kexec/result/tarball/nixos-system-x86_64-linux.tar.xz /nixos.tar.xz
+cd /
+tar -xf nixos.tar.xz</code></pre>
+      </div><h4 id="example-configuration-nix">Example configuration.nix</h4><p>(removed autoreboot.nix from imports, added SSH key)</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># new cmd: nix-build &#x27;&lt;nixpkgs/nixos&gt;&#x27; -A config.system.build.kexec_tarball -I nixos-config=./configuration.nix -Q -j 4</span>
+
+{ lib, pkgs, config, ... }:
+
+<span class="hljs-keyword">with</span> lib;
+
+{
+  <span class="hljs-attr">imports</span> <span class="hljs-operator">=</span> [ <span class="hljs-operator">&lt;</span>nixpkgs<span class="hljs-operator">/</span>nixos<span class="hljs-operator">/</span>modules<span class="hljs-operator">/</span>installer<span class="hljs-operator">/</span>netboot<span class="hljs-operator">/</span>netboot-minimal.nix<span class="hljs-operator">&gt;</span> <span class="hljs-symbol">./kexec.nix</span> <span class="hljs-symbol">./justdoit.nix</span> ];
+
+  <span class="hljs-comment">#boot.supportedFilesystems = [ &quot;zfs&quot; ];</span>
+  <span class="hljs-attr">boot.loader.grub.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+  <span class="hljs-attr">boot.kernelParams</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-string">&quot;console=ttyS0,115200&quot;</span>          <span class="hljs-comment"># allows certain forms of remote access, if the hardware is setup right</span>
+    <span class="hljs-string">&quot;panic=30&quot;</span> <span class="hljs-string">&quot;boot.panic_on_fail&quot;</span> <span class="hljs-comment"># reboot the machine upon fatal boot issues</span>
+  ];
+  <span class="hljs-attr">systemd.services.sshd.wantedBy</span> <span class="hljs-operator">=</span> mkForce [ <span class="hljs-string">&quot;multi-user.target&quot;</span> ];
+  <span class="hljs-attr">networking.hostName</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;kexec&quot;</span>;
+  <span class="hljs-comment"># example way to embed an ssh pubkey into the tar</span>
+  <span class="hljs-attr">users.users.root.openssh.authorizedKeys.keys</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;ssh-rsa AAAAB3.... Your-SSH-key&quot;</span> ];
+}</code></pre>
+      </div><h2 id="start-nixos-kexec-system">Start NixOS kexec System</h2><ul>
+<li>Execute the kexec_nixos script</li>
+</ul>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs">./kexec_nixos</code></pre>
+      </div><ul>
+<li>The output should look something like this:</li>
+</ul>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs">root@scalenix:/# ./kexec_nixos 
+++ mktemp -d
++ cd /tmp/tmp.iDXuzu8Ec4
++ pwd
+/tmp/tmp.iDXuzu8Ec4
++ mkdir initrd
++ pushd initrd
+/tmp/tmp.iDXuzu8Ec4/initrd /tmp/tmp.iDXuzu8Ec4
++ cat /ssh_pubkey
+cat: /ssh_pubkey: No such file or directory
++ find -type f
++ cpio -o -H newc
++ gzip -9
+1 block
++ popd
+/tmp/tmp.iDXuzu8Ec4
++ cat /nix/store/2lmw78k2ralvpn6fa270b53nz1xgqk8b-image/initrd extra.gz
++ kexec -l /nix/store/2lmw78k2ralvpn6fa270b53nz1xgqk8b-image/kernel --initrd=final.gz &#x27;--append=init=/nix/store/sv9hndbkrdxr1psi2jr82hkm1ba0j8bx-nixos-system-kexec-17.09.git.f3841ab/init loglevel=4 console=ttyS0,115200 panic=30 boot.panic_on_fail&#x27;
++ sync
++ echo &#x27;executing kernel, filesystems will be improperly umounted&#x27;
+executing kernel, filesystems will be improperly umounted
++ kexec -e
+packet_write_wait: Connection to 51.XX.XX.93 port 22: Broken pipe</code></pre>
+      </div><ul>
+<li>Once the ssh connection is broken take a look at the servers console in the webinterface. After a while you should see a NixOS root session:</li>
+</ul>
+<figure>
+<img src="https://mirror.nixoscn.org/wiki/Install%20NixOS%20on%20Scaleway%20X86%20Virtual%20Cloud%20Server/scaleway1.png" title="Screenshot of console showing root session" />
+<figcaption>Screenshot of console showing root session</figcaption>
+</figure>
+
+<h2 id="installing-nixos">Installing NixOS</h2><h3 id="scaleway-peculiarities">Scaleway peculiarities</h3><p>Scaleway used to start up VMs differently than other providers but new instances are configured for &quot;local boot&quot; which means they can just boot from EFI.</p>
+<h4 id="scaleway-aarch64-peculiarities">Scaleway Aarch64 peculiarities</h4><p>If your server is aarch64, there is no working kexec on initrd image provided by Scaleway. So KEXEC_KERNEL tag won&#39;t work. This can be worked around by compiling static kexec and copying in to /boot and also by providing fake /sbin/init (a file which Scaleway&#39;s initrd launches at the end)</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ystem.build.installBootLoader</span> <span class="hljs-operator">=</span> pkgs.writeScript <span class="hljs-string">&quot;installBootLoader.sh&quot;</span> <span class="hljs-string">&#x27;&#x27;
+  #!/bin/sh
+
+  export TOPLEVEL=&quot;$1&quot;
+  export PATH=<span class="hljs-subst">${pkgs.coreutils}</span>/bin
+
+  cp -f $TOPLEVEL/kernel /boot/kernel
+  cp -f $TOPLEVEL/initrd /boot/initrd
+  cp -f <span class="hljs-subst">${pkgs.pkgsMusl.kexectools.overrideDerivation(<span class="hljs-params">old:</span> {<span class="hljs-attr">configureFlags</span> <span class="hljs-operator">=</span> old.configureFlags <span class="hljs-operator">++</span> [<span class="hljs-string">&quot;LDFLAGS=-static&quot;</span>]; }</span>) }/bin/kexec /boot/kexec
+  cp -f <span class="hljs-subst">${pkgs.pkgsMusl.busybox.override {<span class="hljs-attr">enableStatic</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;}</span>}/bin/busybox /boot/sh
+
+  mkdir -p /sbin
+  cat &gt; /sbin/init &lt;&lt;EOF
+  #!/boot/sh
+  /boot/kexec -d -l /boot/kernel --initrd=/boot/initrd --append=&quot;init=$TOPLEVEL/init systemConfig=$TOPLEVEL $(cat $TOPLEVEL/kernel-params)&quot;
+  /boot/kexec -d -e
+  EOF
+  chmod 0777 /sbin/init
+&#x27;&#x27;</span>;
+<span class="hljs-attr">boot.loader.grub.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;</code></pre>
+      </div><h3 id="step-by-step-guide">Step by Step Guide</h3><ul>
+<li><p>Mount root volume</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">mount /dev/vda1 /mnt/</code></pre>
+      </div></li>
+<li><p>Delete all existing data from the previous Debian system</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">rm</span> -rf /mnt/*</code></pre>
+      </div></li>
+<li><p>Create mountpoint for /nix on the 2nd volume (I want to use it for the nix store)</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">mkdir</span> /mnt/nix</code></pre>
+      </div></li>
+<li><p>Create filesystem on the 2nd volume</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">mkfs.ext4 /dev/vdb -L nixstore</code></pre>
+      </div></li>
+<li><p>Mount 2nd volume</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">mount /dev/vdb /mnt/nix/</code></pre>
+      </div></li>
+<li><p>Create mountpoint for /boot to set up EFI (I want to use it for the nix store)</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">mkdir</span> /mnt/boot</code></pre>
+      </div></li>
+<li><p>Mount EFI boot partition</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">mount /dev/vda15 /mnt/boot</code></pre>
+      </div></li>
+<li><p>Generate NixOS config (make sure after mounting /mnt/boot so it recognizes it)</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nixos-generate-config --root /mnt</code></pre>
+      </div></li>
+<li><p>Edit /mnt/etc/nixos/configuration.nix</p>
+<ul>
+<li>Make sure to add users/keys to access the system later via SSH</li>
+</ul>
+</li>
+<li><p>Install NixOS</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nixos-install --root /mnt</code></pre>
+      </div><ul>
+<li>This might take some time</li>
+<li>Set root password at the end of it</li>
+</ul>
+</li>
+<li><p>reboot</p>
+</li>
+</ul>
+<p><a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="category:Deployment" class="wikilink" title="Category:Deployment">Category:Deployment</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

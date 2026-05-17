@@ -1,0 +1,621 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FAQ</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / FAQ</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: FAQ -->
+
+<p><languages/> <translate> Frequently asked questions and common newcomer trouble should be put here so that we can point to this page instead of answering the same question over and over again.</p>
+<p><a href="http://unix.stackexchange.com/questions/tagged/nixos">http://unix.stackexchange.com/questions/tagged/nixos</a> can also be used for questions.</p>
+<h3 id="why-is-there-a-new-wiki-what-is-with-nixos-wiki">Why is there a new wiki? What is with nixos.wiki?</h3><p>The old wiki at nixos.wiki has several problems:</p>
+<ul>
+<li>Many components (mediawiki, php, icu) are severely outdated.<ul>
+<li>MediaWiki 1.29 (EOL 2018), now 1.35 (EOL 2023-12)</li>
+<li>PHP 7.3.33 (EOL 2021-12)</li>
+<li>ICU 64.2</li>
+</ul>
+</li>
+<li>Cloudflare DDOS protection makes wiki edits fail sometimes.</li>
+<li>There is no WYSIWYG editor.</li>
+<li>The wiki infrastructure, which was supposed to be made public after launch, never ended-up being made public.</li>
+</ul>
+<p>We tried to address these issues multiple times over multiple years across multiple channels (email, matrix). We never got a direct answer. The last point of contact was made through zimbatm representing the <a href="https://mirror.nixoscn.org/wiki/FAQ/NixOS_Foundation" class="wikilink" title="NixOS Foundation">NixOS Foundation</a>, asking the maintainer about possible cooperation on a new wiki. The answer was no. With the old wiki deteriorating and the maintainer unresponsive, forking the content into a new wiki remained the only way forward.</p>
+<p>Also see:</p>
+<ul>
+<li><a href="https://wiki.nixos.org/wiki/User:Winny/WikiRisks">https://wiki.nixos.org/wiki/User:Winny/WikiRisks</a></li>
+<li><a href="https://greasyfork.org/en/scripts/560152-redirect-to-wiki-nixos-org">https://greasyfork.org/en/scripts/560152-redirect-to-wiki-nixos-org</a> (trivial userscript to redirect nixos.wiki links here)</li>
+</ul>
+<h3 id="why-is-nix-written-in-c-rather-than-a-functional-language-like-haskell">Why is Nix written in C++ rather than a functional language like Haskell?</h3><p>Mainly because Nix is intended to be lightweight, easy to learn, and portable (zero dependencies).</p>
+<h3 id="how-to-keep-build-time-dependencies-around-be-able-to-rebuild-while-being-offline">How to keep build-time dependencies around / be able to rebuild while being offline?</h3></translate>
+
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># /etc/nixos/configuration.nix</span>
+{ config, pkgs, lib, ... }:
+{
+  <span class="hljs-attr">nix.settings</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">keep-outputs</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">keep-derivations</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-comment"># See https://nixos.org/manual/nix/stable/command-ref/conf-file.html</span>
+    <span class="hljs-comment"># for a complete list of Nix configuration options.</span>
+  };
+}</code></pre>
+      </div><p><translate> Check &#39;man configuration.nix&#39; for these options. Rebuild for these options to take effect: </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nixos-rebuild switch</code></pre>
+      </div><p><translate> List all store paths that form the system closure and realise them: </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nix-store -qR $(nix-instantiate <span class="hljs-string">&#x27;&lt;nixpkgs/nixos&gt;&#x27;</span> -A system) | xargs nix-store -r
+warning: you did not specify `--add-root<span class="hljs-string">&#x27;; the result might be removed by the garbage collector
+
+&lt;build output and list of successfully realised paths&gt;</span></code></pre>
+      </div><p><translate> Repeat for your user and further profiles: </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nix-store -qR ~/.nix-profile | xargs nix-store -r</code></pre>
+      </div><p><translate> The warning can be ignored for profiles that are listed/linked in <em>/nix/var/nix/profiles/</em> or one of its subdirectories.</p>
+<p>Consult man pages of nix-store and nix-instantiate for further information.</p>
+<h3 id="why---instead-of">Why <hash>-<name> instead of <name>-<hash>?</h3><p>For the rare cases where we have to dig into the /nix/store it is more practical to keep in mind the first few letters at the beginning than finding a package by name. Ie, you can uniquely identify almost any storepath with just the first 4-5 characters of the hash. (Rather than having to type out the full package name, then 4-5 characters of the hash.)</p>
+<p>Also, since the initial part is all of the same length, visually parsing a list of packages is easier.</p>
+<p>If you still wonder why, run <code>ls -1 /nix/store | sort -R -t - -k 2 | less</code> in your shell. <em>(? unclear)</em></p>
+<p>This is what might happen if you don&#39;t garbage collect frequently, or if you are testing compilation variants: </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">q0yi2nr8i60gm2zap46ryysydd2nhzhp-automake-1.11.1/
+vbi4vwwidvd6kklq2kc0kx3nniwa3acl-automake-1.11.1/
+wjgzir57hcbzrq3mcgxiwkyiqss3r4aq-automake-1.11.1/
+1ch5549xnck37gg2w5fh1jgk6lkpq5mc-nixos-build-vms/
+4cmjlxknzlvcdmfwj0ih0ggqsj5q73hb-nixos-build-vms/
+7fv4kwi5wwwzd11ili3qwg28xrj8rxw2-nixos-build-vms/
+8jij13smq9kdlqv96hm7y8xmbh2c54iy-nixos-build-vms/
+j714mv53xi2j4ab4g2i08knqr137fd6l-nixos-build-vms/
+xvs7y09jf7j48p6l0p87iypgpq470jqw-nixos-build-vms/</code></pre>
+      </div><translate>
+
+<h3 id="i-39-ve-updated-my-channel-and-something-is-broken-how-can-i-rollback-to-an-earlier-channel">I&#39;ve updated my channel and something is broken, how can I rollback to an earlier channel?</h3><p>View the available generations of your channel: </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nix-env --list-generations -p /nix/var/nix/profiles/per-user/root/channels
+18   2014-04-17 09:16:28
+19   2014-06-13 10:31:24 
+20   2014-08-12 19:09:20   (current)</code></pre>
+      </div><p><translate> To rollback to the previous generation: </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nix-env --rollback -p /nix/var/nix/profiles/per-user/root/channels
+switching from generation 20 to 19</code></pre>
+      </div><p><translate> To switch to a particular generation: </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nix-env --switch-generation 18 -p /nix/var/nix/profiles/per-user/root/channels
+switching from generation 20 to 18</code></pre>
+      </div><translate>
+
+<h3 id="i-39-m-working-on-a-new-package-how-can-i-build-it-without-adding-it-to-nixpkgs">I&#39;m working on a new package, how can I build it without adding it to nixpkgs?</h3></translate>
+
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nix-build -E <span class="hljs-string">&#x27;with import &lt;nixpkgs&gt; { }; callPackage ./mypackage.nix { }&#x27;</span></code></pre>
+      </div><p><translate> You can replace callPackage with callPackage_i686 to build the 32-bit version of your package on a 64-bit system if you want to test that.</p>
+<h3 id="how-can-i-compile-a-package-with-debugging-symbols-included">How can I compile a package with debugging symbols included?</h3><p>To build a package with -Og and -g, and without stripping debug symbols use: </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nix-build -E <span class="hljs-string">&#x27;with import &lt;nixpkgs&gt; { }; enableDebugging fooPackage&#x27;</span></code></pre>
+      </div><p><translate> See also <a href="https://mirror.nixoscn.org/wiki/FAQ/Debug_Symbols" class="wikilink" title="Debug Symbols">Debug Symbols</a></p>
+<h3 id="how-can-i-force-a-rebuild-from-source-even-without-modifying-the-nix-expression">How can I force a rebuild from source even without modifying the nix expression?</h3><p>As root you can run nix-build with the --check flag: </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">sudo</span> nix-build --check -A ncdu</code></pre>
+      </div><translate>
+
+<h3 id="how-can-i-manage-software-with-nix-env-like-with-configuration-nix">How can I manage software with nix-env like with configuration.nix?</h3><p>There are many ways, one is the following: </translate></p>
+<ol>
+<li><translate> Create a meta package called <em>userPackages</em> your <em>~/.config/nixpkgs/config.nix</em> file with the packages you would like to have in your environment:</translate><div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-keyword">with</span> (<span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> {});
+{
+  <span class="hljs-attr">packageOverrides</span> <span class="hljs-operator">=</span> <span class="hljs-params">pkgs:</span> <span class="hljs-keyword">with</span> pkgs; {
+    <span class="hljs-attr">userPackages</span> <span class="hljs-operator">=</span> buildEnv {
+      <span class="hljs-keyword">inherit</span> ((<span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs/nixos&gt;</span> {}).config.system.path)
+      pathsToLink ignoreCollisions postBuild;
+      <span class="hljs-attr">extraOutputsToInstall</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;man&quot;</span> ];
+      <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;user-packages&quot;</span>;
+      <span class="hljs-attr">paths</span> <span class="hljs-operator">=</span> [ vim git wget ];
+    };
+  };
+}</code></pre>
+      </div></li>
+<li><translate> Install all specified packages using this command:</translate><div class="code-container">
+        
+        <pre><code class="language-bash hljs">nix-env -iA userPackages -f <span class="hljs-string">&#x27;&lt;nixpkgs&gt;&#x27;</span></code></pre>
+      </div></li>
+</ol>
+<p><translate> Now you can add and remove packages from the paths list and rerun nix-env to update your user local packages.</p>
+<p>Another way is using <a href="https://mirror.nixoscn.org/wiki/FAQ/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a>.</p>
+<h3 id="i-39-ve-downloaded-a-binary-but-i-can-39-t-run-it-what-can-i-do">I&#39;ve downloaded a binary, but I can&#39;t run it, what can I do?</h3><p>Binaries normally do not work out of the box when you download them because they normally just assume that libraries can be found in hardcoded paths such as <code>/lib</code>. However this assumption is incorrect on NixOS systems due to the inner workings of <code>nix</code> - there is no default path, everything gets set to the corresponding version on compile time.</p>
+<p>If you are new to packaging proprietary software you should check out the <a href="https://mirror.nixoscn.org/wiki/FAQ/Packaging_Binaries" class="wikilink" title="Packaging Binaries Tutorial">Packaging Binaries Tutorial</a>.</p>
+<p>If you are in a hurry and just want to get shit running, continue reading:<br>You can use <a href="https://github.com/Mic92/nix-ld">nix-ld</a> to run compiled binaries. For example, if your binary needs zlib and openssl: </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">p<span class="hljs-attr">rograms.nix-ld</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">libraries</span> <span class="hljs-operator">=</span> [ pkgs.zlib pkgs.openssl ];
+};</code></pre>
+      </div><p><translate> Log out and back in to apply the environment variables it sets, and you can then directly run the binary.</p>
+<p>If you don&#39;t want to configure the list of libraries manually, a quick and dirty way to run nearly any precompiled binary is the following: </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">p<span class="hljs-attr">rograms.nix-ld</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">libraries</span> <span class="hljs-operator">=</span> pkgs.steam-run.args.multiPkgs pkgs;
+};</code></pre>
+      </div><p><translate> This uses the libraries that are used by <a href="https://mirror.nixoscn.org/wiki/FAQ/Steam" class="wikilink" title="Steam">Steam</a> to simulate a traditional Linux FHS environment to run games in. It&#39;s a <a href="https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/by-name/st/steam/package.nix">big list</a> that usually contains all the libraries your binary needs to run.</p>
+<p>Another possibility is to use <a href="https://nixos.org/patchelf.html">patchelf</a> to set the library path and dynamic linker appropriately, since compiled binaries have hard-coded interpreter and require certain dynamic libraries. </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># mybinaryprogram.nix</span>
+<span class="hljs-keyword">with</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> {}; 
+stdenv.mkDerivation <span class="hljs-keyword">rec</span> {
+  <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;somename&quot;</span>;
+  <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> [ makeWrapper ];
+  <span class="hljs-attr">buildPhase</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;true&quot;</span>;
+  <span class="hljs-attr">libPath</span> <span class="hljs-operator">=</span> lib.makeLibraryPath <span class="hljs-keyword">with</span> xlibs;[ libXrandr libXinerama libXcursor ];
+  <span class="hljs-attr">unpackPhase</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;true&quot;</span>;
+  <span class="hljs-attr">installPhase</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    mkdir -p $out/bin
+    cp <span class="hljs-subst">${.<span class="hljs-operator">/</span>mybinaryprogram}</span> $out/bin/mybinaryprogram
+  &#x27;&#x27;</span>;
+  <span class="hljs-attr">postFixup</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    patchelf \
+      --set-interpreter &quot;$(cat $NIX_CC/nix-support/dynamic-linker)&quot; \
+      --set-rpath &quot;<span class="hljs-subst">${libPath}</span>&quot; \
+      $out/bin/mybinaryprogram
+  &#x27;&#x27;</span>;
+}</code></pre>
+      </div><p><translate> This can be built with: </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nix-build mybinaryprogram.nix</code></pre>
+      </div><p><translate> And run with: </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">./result/bin/mybinaryprogram</code></pre>
+      </div><p><translate> Another possibility is using a FHS-compatible Sandbox with <a href="https://nixos.org/nixpkgs/manual/#sec-fhs-environments">buildFHSUserEnv</a> </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># fhsUser.nix</span>
+{ pkgs <span class="hljs-operator">?</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> {} }:
+(pkgs.buildFHSUserEnv {
+  <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;example-env&quot;</span>;
+  <span class="hljs-attr">targetPkgs</span> <span class="hljs-operator">=</span> <span class="hljs-params">pkgs:</span> <span class="hljs-keyword">with</span> pkgs; [
+    coreutils
+  ];
+  <span class="hljs-attr">multiPkgs</span> <span class="hljs-operator">=</span> <span class="hljs-params">pkgs:</span> <span class="hljs-keyword">with</span> pkgs; [
+    zlib
+    xorg.libXxf86vm
+    curl
+    openal
+    openssl_1_0_2
+    xorg.libXext
+    xorg.libX11
+    xorg.libXrandr
+    mesa_glu
+  ];
+  <span class="hljs-attr">runScript</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;bash&quot;</span>;
+}).env</code></pre>
+      </div><p><translate> the sandbox can be entered with </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nix-shell fhsUser.nix</code></pre>
+      </div><p><translate> If your target application can&#39;t find shared libraries inside buildFHSUserEnv, you may run <a href="https://github.com/lexleogryfon/de-generate">nix-de-generate</a> for target application inside FHS, which will generate newenv.nix file, an nix-expression of buildFHSUserEnv with resolved dependencies for shared libraries.</p>
+<h3 id="what-are-channels-and-how-do-they-get-updated">What are channels and how do they get updated?</h3></translate>
+
+<p><translate> <a href="https://github.com/NixOS/nixpkgs">Nixpkgs</a> is the git repository containing all packages and NixOS modules/expressions. Installing packages directly from Nixpkgs master branch is possible but a bit risky as git commits are merged into master before being heavily tested. That&#39;s where channels are useful.</p>
+<p>A &quot;channel&quot; is a name for the latest &quot;verified&quot; git commits in Nixpkgs. Each channel has a different definition of what &quot;verified&quot; means. Each time a new git commit is verified, the channel declaring this verification gets updated. Contrary to an user of the git master branch, a channel user will benefit both from verified commits and binary packages from the binary cache.</p>
+<p>Channels are reified as git branches in the <a href="https://github.com/NixOS/nixpkgs">nixpkgs repository</a> and as disk images in the <a href="https://nixos.org/channels/">channels webpage</a>. There are several channels, each with its own use case and verification phase:</p>
+<ul>
+<li><strong>nixos-unstable</strong><ul>
+<li><strong>description</strong> Use this when you want the latest package and module versions while still benefiting from the binary cache. You can use this channel on non-NixOS systems. This channel corresponds to NixOS’s main development branch, and may thus see radical changes between channel updates. This channel is not recommended for production systems.</li>
+<li><strong>definition</strong> this channel is updated depending on <a href="https://github.com/NixOS/nixpkgs/blob/master/pkgs/top-level/release.nix">release.nix</a> and <a href="https://github.com/NixOS/nixpkgs/blob/master/pkgs/top-level/release-lib.nix">release-lib.nix</a></li>
+</ul>
+</li>
+<li><strong>nixos-unstable-small</strong><ul>
+<li><strong>description</strong> This channel is identical to <code>nixos-unstable</code> described above, except that this channel contains fewer binary packages. This means the channel gets updated faster than <code>nixos-unstable</code> (for instance, when a critical security patch is committed to NixOS’s source tree). However, the binary cache may contain less binary packages and thus using this channel may require building more packages from source than <code>nixos-unstable</code>. This channel is mostly intended for server environments and as such contains few GUI applications.</li>
+<li><strong>definition</strong> this channel is updated depending on <a href="https://github.com/NixOS/nixpkgs/blob/master/pkgs/top-level/release-small.nix">release-small.nix</a> and <a href="https://github.com/NixOS/nixpkgs/blob/master/pkgs/top-level/release-lib.nix">release-lib.nix</a></li>
+</ul>
+</li>
+<li><strong>nixos-YY.MM</strong> (where <strong>YY</strong> is a 2-digit year and <strong>MM</strong> is a 2-digit month, such as <a href="https://nixos.org/channels/nixos-15.09/"><em>nixos-17.03</em></a>)<ul>
+<li><strong>description</strong> These channels are called <strong>stable</strong> and only get conservative bug fixes and package upgrades. For instance, a channel update may cause the Linux kernel on your system to be upgraded from 3.4.66 to 3.4.67 (a minor bug fix), but not from 3.4.x to 3.11.x (a major change that has the potential to break things). Stable channels are generally maintained until the next stable branch is created.</li>
+<li><strong>definition</strong> this channel is updated depending on <a href="https://github.com/NixOS/nixpkgs/blob/master/pkgs/top-level/release.nix">release.nix</a> and <a href="https://github.com/NixOS/nixpkgs/blob/master/pkgs/top-level/release-lib.nix">release-lib.nix</a></li>
+</ul>
+</li>
+<li><strong>nixos-YY.MM-small</strong> (where <strong>YY</strong> is a 2-digit year and <strong>MM</strong> is a 2-digit month, such as <a href="https://nixos.org/channels/nixos-15.09-small/">nixos-15.09-small</a>)<ul>
+<li><strong>description</strong> The difference between <code>nixos-YY.MM-small</code> and <code>nixos-YY.MM</code> is the same as the one between <code>nixos-unstable-small</code> and <code>nixos-unstable</code> (see above)</li>
+</ul>
+</li>
+</ul>
+<p>Channel update works as follows:</p>
+<ol>
+<li>Each channel has a particular job at <strong>hydra.nixos.org</strong> which must succeed:</li>
+</ol>
+<ul>
+<li>For NixOS: the trunk-combined <a href="http://hydra.nixos.org/job/nixos/trunk-combined/tested">tested</a> job, which contains some automated NixOS tests.</li>
+<li>For nixos-small: the unstable-small <a href="http://hydra.nixos.org/job/nixos/unstable-small/tested">tested</a> job.</li>
+<li>For nixpkgs: the trunk <a href="http://hydra.nixos.org/job/nixpkgs/trunk/unstable">unstable</a> job, which contains some critical release packages.</li>
+</ul>
+</translate>
+
+<ol start="2">
+<li><translate> Once the job succeeds at a particular nixpkgs commit, <strong>cache.nixos.org</strong> will download binaries from <strong>hydra.nixos.org</strong>.</translate></li>
+<li><translate> Once the above download completes, the channel updates.</translate></li>
+</ol>
+<p><translate> You can checkout the nixpkgs git and reset it to a particular commit of a channel. This will not affect your access to the binary cache.</p>
+<h3 id="how-do-i-know-where-39-s-nixpkgs-channel-located-and-at-which-commit">How do I know where&#39;s nixpkgs channel located and at which commit?</h3><p>First <code>echo $NIX_PATH</code> to see where nix looks for the expressions. Note that nix-env uses <em>~/.nix-defexpr</em> regardless of <em>$NIX_PATH</em>.</p>
+<p>If you want to know where <nixpkgs> is located: </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nix-instantiate --find-file nixpkgs</code></pre>
+      </div><p><translate> To know the commit, open the .version-suffix file in the nixpkgs location. The hash after the dot is the git commit.</p>
+<h3 id="nixpkgs-branches">Nixpkgs branches</h3><p>Branches on the nixpkgs repo have a relationship with channels, but that relationship is not 1:1.</p>
+<p>Some branches are reified as channels (e.g. the <code>nixos-XX.YY</code> branches, or <code>nix(os|pkgs)-unstable</code>), whereas others are the starting point for those branches (e.g. the <code>master</code> or <code>release-XX.YY</code> branches). For example:</p>
+<ul>
+<li>When a change in master needs to be backported to the current NixOS release, it is cherry-picked into the current <code>release-XX.YY</code> branch</li>
+<li><a href="https://mirror.nixoscn.org/wiki/FAQ/Channel_branches#Channel_update_process" class="wikilink" title="Hydra">Hydra</a> picks up this change, runs tests, and if those tests pass, updates the corresponding <code>nixos-XX.YY</code> branch, which is then reified as a channel.</li>
+</ul>
+<p>So in short, the <code>release-XX.YY</code> branches have not been run through Hydra yet, whereas the <code>nixos-XX.YY</code> ones have.</p>
+<h3 id="there-39-s-an-updated-version-for-software-on-nixpkgs-but-not-in-channels-how-can-i-use-it">There&#39;s an updated version for $software on nixpkgs but not in channels, how can I use it?</h3><p>You can jump the queue and use <code>nix-shell</code> with a <code>NIX_PATH</code> pointing to a tarball of the channel to get a shell for that software. Some building may occur. This will not work for system services. </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-command hljs">NIX_PATH=nixpkgs=https://github.com/NixOS/nixpkgs/archive/release-17.09.tar.gz nix-shell -p $software</code></pre>
+      </div><translate>
+
+<h3 id="there-39-s-an-updated-version-for-software-on-the-unstable-branch-but-i-use-stable-how-can-i-use-it">There&#39;s an updated version for $software on the unstable branch, but I use stable, how can I use it?</h3><p>Before going ahead with this, note that firstly, this likely means that the package you intend to update has had a major version change. If you have used it previously, there is a chance that your existing data either will not work with the new version or will need to be migrated; If in doubt, consult the upstream documentation of the package.</p>
+<p>Secondly, while you&#39;re less likely to run into issues on NixOS than on, for example, Debian when installing packages from different releases, it&#39;s not impossible.</p>
+<p>Nix ensures that libraries and (usually) runtime dependencies of packages are kept separate, so that you can trivially have many versions of those dependencies installed, without affecting the versions of said dependencies used by important system components. This ensures that you cannot accidentally break your package manager by, say, updating Python, as is quite common on other distros.</p>
+<p>Nix cannot however ensure that there will be no incompatibilities with services of which there can inherently be only one running instance. As an example, if you try to use a package from unstable on a stable system that requires a feature in systemd that is not yet present in the systemd version on stable, this package will not work; it&#39;s simply not possible to run two different versions of systemd simultaneously.</p>
+<p>Nonetheless, it&#39;s quite uncommon that end-user facing applications rely on such singleton services, or at the very least they will typically have internal backwards compatibility. As such, mixing channels is usually unproblematic in practice, and even if not, NixOS&#39; rollback features make it trivial to recover from problems should they occur.</p>
+<h4 id="using-channels">Using channels</h4><p>First we need to add the unstable channel to our system channels:</p>
+</translate>
+
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">sudo</span> nix-channel --add https://nixos.org/channels/nixos-unstable nixos-unstable</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">sudo</span> nix-channel --update</span></code></pre>
+      </div><p><translate> Then we can import this channel using the angle-bracket notation to refer to it: </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs"><span class="hljs-comment"># configuration.nix</span>
+{ 
+  config,
+  pkgsUnstable,
+  ...
+}: {
+  <span class="hljs-comment"># We add a new `pkgsUnstable` to the module arguments; this allows</span>
+  <span class="hljs-comment"># us to easily use `pkgsUnstable` in other modules as well, without</span>
+  <span class="hljs-comment"># having to evaluate it again.</span>
+  <span class="hljs-attr">_module.args.pkgsUnstable</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixos-unstable&gt;</span> { <span class="hljs-keyword">inherit</span> (config.nixpkgs) config; };
+
+  <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-comment"># Once we have created our `pkgsUnstable`, we can easily use</span>
+    <span class="hljs-comment"># packages from it wherever NixOS modules expect derivations</span>
+    pkgsUnstable.hello
+  ];
+}</code></pre>
+      </div><translate>
+
+<h4 id="using-flakes">Using flakes</h4><p>We simply add the unstable branch to our flake inputs, and pass them into the NixOS module system using <code>specialArgs</code>: </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># flake.nix</span>
+{
+  <span class="hljs-attr">inputs</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">nixpkgs.url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://channels.nixos.org/nixos-25.05/nixexprs.tar.xz&quot;</span>;
+    <span class="hljs-attr">nixpkgs-unstable.url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://channels.nixos.org/nixos-unstable/nixexprs.tar.xz&quot;</span>;
+  };
+
+  <span class="hljs-attr">outputs</span> <span class="hljs-operator">=</span> { nixpkgs, ... } @ <span class="hljs-params">inputs:</span> {
+    <span class="hljs-comment"># Note that the hostname &quot;nixos&quot; and the system tuple used here are</span>
+    <span class="hljs-comment"># examples.</span>
+    nixosConfigurations.<span class="hljs-string">&quot;nixos&quot;</span> <span class="hljs-operator">=</span> nixpkgs.lib.nixosSystem {
+      <span class="hljs-attr">system</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;x86_64-linux&quot;</span>;
+
+      <span class="hljs-attr">modules</span> <span class="hljs-operator">=</span> [
+        <span class="hljs-symbol">./configuration.nix</span>
+      ];
+
+      <span class="hljs-comment"># Any attributes of `specialArgs` will be added to our NixOS module</span>
+      <span class="hljs-comment"># arguments.</span>
+      <span class="hljs-comment">#</span>
+      <span class="hljs-comment"># We&#x27;ve bound `nixpkgs-unstable` to the `inputs` variable using the `@`</span>
+      <span class="hljs-comment"># syntax; if we add any other flake inputs in the future those will also</span>
+      <span class="hljs-comment"># be added to our module arguments.</span>
+      <span class="hljs-attr">specialArgs.flake-inputs</span> <span class="hljs-operator">=</span> inputs;
+    };
+  };
+}</code></pre>
+      </div><p><translate> Using this in <code>configuration.nix</code> then looks as follows: </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs"><span class="hljs-comment"># configuration.nix</span>
+{
+  pkgs,
+  flake-inputs,
+  ...
+}: {
+  <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> [
+    flake-inputs.nixpkgs-unstable.legacyPackages.${pkgs.system}.hello
+  ];
+}</code></pre>
+      </div><translate>
+
+<h3 id="how-do-i-install-a-specific-version-of-a-package-for-build-reproducibility-etc">How do I install a specific version of a package for build reproducibility etc.?</h3><p>See <a href="https://mirror.nixoscn.org/wiki/FAQ/FAQ/Pinning_Nixpkgs" class="wikilink" title="FAQ/Pinning Nixpkgs">FAQ/Pinning Nixpkgs</a> and <a href="https://mirror.nixoscn.org/wiki/FAQ/How_to_fetch_Nixpkgs_with_an_empty_NIX_PATH" class="wikilink" title="How to fetch Nixpkgs with an empty NIX PATH">How to fetch Nixpkgs with an empty NIX PATH</a>. Find the version of nixpkgs with the package version you want and pin nixpkgs to that. However, be aware that the pinning of a package of another nixpkgs version results in a much larger package size as not only the package itself but all dependencies (down to libc) have older versions.</p>
+<p>if you just want the old version of the single package but with new dependencies it is often easier to copy the package description into your scope and add it to your <code>configuration.nix</code> via: <code>mypackage-old = pkgs.callPackage ./mypackage-old.nix {};</code>.You can try to build the package as described in <a href="https://mirror.nixoscn.org/wiki/FAQ/FAQ#I.27m_working_on_a_new_package.2C_how_can_I_build_it_without_adding_it_to_nixpkgs.3F" class="wikilink" title="the FAQ: building a single derivation">the FAQ: building a single derivation</a>.</p>
+<h3 id="an-error-occurs-while-fetching-sources-from-an-url-how-do-i-fix-it">An error occurs while fetching sources from an url, how do I fix it?</h3><p>First try to update the local nixpkgs expressions with <code>nix-channel --update</code> (these describe where to download sources from and how to build them). Try your build again and the url might have already been correctly updated for the package in question. You can also subscribe the unstable channel (which includes the most up-to-date expressions) with <code>nix-channel --add </code><a href="http://nixos.org/channels/nixpkgs-unstable"><code>http://nixos.org/channels/nixpkgs-unstable</code></a>, update and try the build again.</p>
+<p>If that fails you can update the url in the nix expression yourself. <a href="https://mirror.nixoscn.org/wiki/FAQ#How_do_I_know_where's_nixpkgs_channel_located_and_at_which_commit?" class="wikilink" title="Navigate to your channel&#39;s expressions">Navigate to your channel&#39;s expressions</a> and find the package in one of the subdirectories. Edit the respective <em>default.nix</em> file by altering the <em>url</em> and <em>sha256</em>. You can use <code>nix-prefetch-url url</code> to get the SHA-256 hash of source distributions.</p>
+<p>If the shell complains that you do not have write privileges for the file system, you will have to enable them.</p>
+<p>start a new shell with a private mount namespace (Linux-only) </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">sudo</span> unshare -m bash</code></pre>
+      </div><p><translate> remount the filesystem with write privileges (as root) </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">mount -o remount,rw /nix/store</code></pre>
+      </div><p><translate> update the file </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nano &lt;PATH_TO_PACKAGE&gt;/default.nix</code></pre>
+      </div><p><translate> exit to shell where /nix/store is still mounted read-only </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">exit</span></code></pre>
+      </div><p><translate> Be sure to <a href="https://github.com/NixOS/nixpkgs/issues">report the incorrect url</a> or <a href="https://github.com/NixOS/nixpkgs/pulls">fix it yourself</a>.</p>
+<h3 id="how-do-i-know-the-sha256-to-use-with-fetchgit-fetchsvn-fetchbzr-or-fetchcvs">How do I know the sha256 to use with fetchgit, fetchsvn, fetchbzr or fetchcvs?</h3><p>Install <code>nix-prefetch-scripts</code> and use the corresponding nix prefetch helper.</p>
+<p>For instance to get the checksum of a git repository use: </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nix-prefetch-git https://git.zx2c4.com/password-store</code></pre>
+      </div><p><translate> Or, use <code>lib.fakeHash</code> as the fetcher&#39;s hash argument, and attempt to build; Nix will tell you the actual and expected hash&#39;s mismatch, and you may copy the actual hash.</p>
+<h3 id="should-i-use-http-hydra-nixos-org-as-a-binary-cache">Should I use <a href="http://hydra.nixos.org/">http://hydra.nixos.org/</a> as a binary cache?</h3><p>No. As of 2017, all build artifacts are directly pushed to <a href="http://cache.nixos.org/">http://cache.nixos.org/</a> and are available there, therefore setting <a href="http://hydra.nixos.org/">http://hydra.nixos.org/</a> as a binary cache no longer serves any function.</p>
+<h3 id="i-39-m-trying-to-install-nixos-but-my-wifi-isn-39-t-working-and-i-don-39-t-have-an-ethernet-port">I&#39;m trying to install NixOS but my WiFi isn&#39;t working and I don&#39;t have an ethernet port</h3><p>Most phones will allow you to share your WiFi connection over USB. On Android you can enable this setting via <em>Settings</em> &gt; <em>Wireless &amp; Networks</em> / More ... &gt; <em>Tethering &amp; portable hotspot</em> &gt; <em>USB tethering</em>. This should be enough to allow you to install NixOS, and then fix your WiFi. iPhones only let you tether using your data connection rather than WiFi.</p>
+<p>It is also possible to build a custom NixOS installation ISO containing all the dependencies needed for an offline installation, but the default installation ISOs require internet connectivity.</p>
+<p>For connecting to your WiFi, see <a href="https://mirror.nixoscn.org/wiki/FAQ/NixOS_Installation_Guide#Wireless" class="wikilink" title="NixOS_Installation_Guide#Wireless">NixOS_Installation_Guide#Wireless</a></p>
+<h3 id="how-can-i-disable-the-binary-cache-and-build-everything-locally">How can I disable the binary cache and build everything locally?</h3><p>Set the binary caches to an empty list: <code>nix.binaryCaches = [];</code> in <code>configuration.nix</code> or pass ad-hoc <code>--option binary-caches &#39;&#39;</code> as parameter to nix-build or its wrappers.</p>
+<p>This is also useful to make simple configuration changes in NixOS (ex.: network related), when no network connectivity is available: </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nixos-rebuild switch --option binary-caches <span class="hljs-string">&#x27;&#x27;</span></code></pre>
+      </div><translate>
+
+<h3 id="how-do-i-enable-sandboxed-builds-on-non-nixos">How do I enable sandboxed builds on non-NixOS?</h3><p>Two options have to be added to make sandboxed builds work on Nix, <em>build-use-sandbox</em> and <em>build-sandbox-paths</em>: </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># /etc/nix/nix.conf</span>
+b<span class="hljs-attr">uild-use-sandbox</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>
+b<span class="hljs-attr">uild-sandbox-paths</span> <span class="hljs-operator">=</span> $(nix-store <span class="hljs-operator">-</span>qR $(nix-build &#x27;<span class="hljs-symbol">&lt;nixpkgs&gt;</span>&#x27; <span class="hljs-operator">-</span>A bash) | xargs echo <span class="hljs-operator">/</span>bin<span class="hljs-operator">/</span>sh<span class="hljs-operator">=</span>$(nix-build &#x27;<span class="hljs-symbol">&lt;nixpkgs&gt;</span>&#x27; <span class="hljs-operator">-</span>A bash)<span class="hljs-operator">/</span>bin<span class="hljs-operator">/</span>bash)</code></pre>
+      </div><p><translate> On NixOS set the following in <em>configuration.nix</em>: </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">ix.settings.sandbox</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><p><translate> See <a href="https://mirror.nixoscn.org/wiki/FAQ/Nix_package_manager#Sandbox_builds" class="wikilink" title="Nix package manager#Sandbox_builds">Nix package manager#Sandbox_builds</a> for more details.</p>
+<h3 id="how-can-i-install-a-package-from-unstable-while-remaining-on-the-stable-channel">How can I install a package from unstable while remaining on the stable channel?</h3><p>If you simply want to run a <em>nix-shell</em> with a package from unstable, you can run a command like the following: </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nix-shell -I nixpkgs=channel:nixpkgs-unstable -p somepackage</code></pre>
+      </div><p><translate> It is possible to have multiple nix-channels simultaneously. To add the unstable channel with the specifier <em>unstable</em>, </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">sudo</span> nix-channel --add https://nixos.org/channels/nixos-unstable nixos-unstable</code></pre>
+      </div><p><translate> After updating the channel </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">sudo</span> nix-channel --update nixos-unstable</code></pre>
+      </div><p><translate> queries via <code>nix-env</code> will show packages from both <em>stable</em> and <em>unstable</em>. Use this to install unstable packages into your user environment. The following snippet shows how this can be done in <em>configuration.nix</em>. </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ config, pkgs, ... }:
+<span class="hljs-keyword">let</span>
+  <span class="hljs-attr">unstable</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixos-unstable&gt;</span> {};
+<span class="hljs-keyword">in</span> {
+  <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> [ unstable.PACKAGE_NAME ];
+}</code></pre>
+      </div><p><translate> This only changes what version of <code>PACKAGE_NAME</code> is available on <code>$PATH</code>. If the package you want to take from unstable is installed through a NixOS module, you must use <a href="https://mirror.nixoscn.org/wiki/FAQ/overlays" class="wikilink" title="overlays">overlays</a>: </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ config, pkgs, ... }:
+<span class="hljs-keyword">let</span>
+  <span class="hljs-attr">unstable</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixos-unstable&gt;</span> {};
+<span class="hljs-keyword">in</span> {
+  <span class="hljs-attr">nixpkgs.overlays</span> <span class="hljs-operator">=</span> [
+    (<span class="hljs-params">self:</span> <span class="hljs-params">super:</span> {
+       <span class="hljs-attr">PACKAGE_NAME</span> <span class="hljs-operator">=</span> unstable.PACKAGE_NAME;
+    })
+  ];
+}</code></pre>
+      </div><p><translate> Note that this will rebuild all packages depending on the overlaid package, which may be a lot. Some modules offer a <code>services.foo.package</code> to change the actual derivation used by the module without and overlay, and without recompiling dependencies (<a href="https://nixos.org/manual/nixos/stable/options.html#opt-services.gvfs.package">example</a>).</p>
+<p>If you want to install unfree packages from unstable you need to also set allowUnfree by replacing the import statment above with: </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixos-unstable&gt;</span> { <span class="hljs-attr">config</span> <span class="hljs-operator">=</span> { <span class="hljs-attr">allowUnfree</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; }; }</code></pre>
+      </div><translate>
+
+<h3 id="i-39-m-unable-to-connect-my-usb-hdd-external-hdd-is-failing-to-mount-automatically">I&#39;m unable to connect my USB HDD | External HDD is failing to mount automatically</h3><p><strong>Note:</strong> If you&#39;re using a kernel with at least version 5.6, you don&#39;t need to explicitly add this.</p>
+<p>exfat is not supported in NixOS by default - since there are legality issues still with exFAT filesystem. </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">su nano /etc/nixos/configuration.nix</code></pre>
+      </div><p><translate> Add this line to your configuration file. </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">boot.extraModulePackages = [ config.boot.kernelPackages.exfat-nofuse ];</code></pre>
+      </div><p><translate> After saving the file rebuild NixOS: </translate></p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nixos-rebuild switch</code></pre>
+      </div><p><translate> Restart NixOS.</p>
+<h3 id="what-is-the-origin-of-the-name-quot-nix-quot">What is the origin of the name &quot;Nix&quot;</h3><p>The name <code>Nix</code> comes from the Dutch word <a href="https://en.wiktionary.org/wiki/nix">niks</a> which means <em>nothing</em>. It reflects the fact that Nix derivations do not have access to anything that has not been explicitly declared as an input.<sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/FAQ#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup></p>
+<h3 id="what-does-it-mean-to-say-that-nixos-is-quot-immutable-quot">What does it mean to say that NixOS is &quot;immutable&quot;</h3><p>Immutability is a property of data, in general, which means that the data cannot be modified after it is created. In the context of an operating system, it really means that certain parts of the system have this property. In the case of Nix and NixOS, that includes the Nix store, where files can be created but not modified after the time they are created. It does not apply to every part of the operating system, in that users can still modify their own files in their home directory, for example.</p>
+<h3 id="i-39-m-getting-infinite-recursion-errors-when-trying-to-do-something-clever-with-imports">I&#39;m getting ‘infinite recursion’ errors when trying to do something clever with <code>imports</code></h3><p>Evaluating the <code>imports</code> attribute of a NixOS module (such as configuration.nix) is a prerequisite for evaluating just about everything else, so trying anything clever with <code>imports</code> is a common source of infinite recursion (because the evaluator can&#39;t determine the values of packages and options without knowing what is imported, and can&#39;t determine what is imported without knowing the values of packages or options).</p>
+<p>You should not try to conditionally import other modules based on other values. Make your imports unconditional, and make the modules that you&#39;re importing have conditional <em>behavior</em> based on the values of options.</p>
+<p>If it helps, think of <code>imports</code> as akin to an <code>#include</code> directive in C.</p>
+<p>(Note that none of this applies to the <a href="https://nix.dev/manual/nix/stable/language/builtins#builtins-import"><code>import</code> built-in Nix language function</a>, which is its own thing.) </translate></p>
+<translate>
+
+<h2 id="references">References</h2></translate>
+
+<p><a href="category:Cookbook" class="wikilink" title="Category:Cookbook">Category:Cookbook</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p>Eelco Dolstra et al. “Nix: A Safe and Policy-Free System for Software Deployment.” LiSA (2004), <a href="https://pdfs.semanticscholar.org/5fd8/8f89bd8738816e62808a1b7fb12d3ab14a2f.pdf">https://pdfs.semanticscholar.org/5fd8/8f89bd8738816e62808a1b7fb12d3ab14a2f.pdf</a> <a href="https://mirror.nixoscn.org/wiki/FAQ#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

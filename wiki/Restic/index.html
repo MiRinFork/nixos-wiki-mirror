@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Restic</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Restic</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Restic -->
+
+<p><a href="https://restic.net/">Restic</a> is a fast and secure backup program. NixOS packages both <code>restic</code> client (program used to make backups) and <code>restic-rest-server</code> (one of the backends to store the backups remotely, &quot;repositories&quot; in restic parlance).</p>
+<h2 id="installing">Installing</h2><p>If you want to manually create restic backups, add <code>restic</code> to <code>environment.systemPackages</code> like so:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+  restic
+];</code></pre>
+      </div><h2 id="configuring">Configuring</h2><h3 id="restic">Restic</h3><p>NixOS provides options to create a systemd timer and a service that will create the backups. See <a href="https://search.nixos.org/options?channel=unstable&amp;from=0&amp;size=50&amp;sort=relevance&amp;type=packages&amp;query=services.restic.backups">services.restic.backups options</a> and &quot;<a href="https://restic.readthedocs.io/en/stable/040_backup.html">Backing up</a>&quot; in the restic documentation.</p>
+<p>Note that NixOS includes an option to automatically create the repository by specifying    <code>services.restic.backups.</code><name><code>.initialize = true;</code>, as well as a wrapper to run restic in the same environment as the systemd jobs in <code>services.restic.backups.</code><name><code>.createWrapper</code></p>
+<h3 id="restic-rest-server">Restic Rest Server</h3><p>Restic Rest Server is one of the options for a remote repository<sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Restic#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup>. It can be installed by enabling the <code>services.restic.server.enable</code> option. By default the server requires either providing it with <code>htpasswd</code> file or running it without authentication. If provided, the username and password pairs <code>htpassd</code> file will be used to authenticate the restic clients connecting to the server. To run the server without authentication, you can pass the flag using the <code>extraFlags</code> option like this: <code>services.restic.server.extraFlags = [ &quot;--no-auth&quot; ];</code></p>
+<h4 id="using-a-htpasswd-file">Using a htpasswd file</h4><p>A htpasswd file must be created using the <code>apacheHttpd</code> package. Assuming that you do not already have this package, you may run the following to generate the file using nix shell. Note that the file will be hidden due to the &quot;.&quot; at the start of the file.</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix shell nixpkgs#apacheHttpd -c htpasswd -B -c .htpasswd YOUR_USER</span></code></pre>
+      </div><p>To declaratively use the <code>htpasswd</code> file you will need to use a <a href="https://mirror.nixoscn.org/wiki/Restic/Comparison_of_secret_managing_schemes" class="wikilink" title="secret management method">secret management method</a>. The following example uses <a href="https://github.com/Mic92/sops-nix">sops-nix</a>.</p>
+<h4 id="connecting-a-client">Connecting a client</h4><p>If using a <code>htpasswd</code> file, you will need to pass the URL to the configuration in this format:</p>
+<p><code>rest:https://user:pass@host:port/</code></p>
+<p>The user will need to be the same user as used when you created the <code>htpasswd</code> file. If your password includes special characters you will need to <a href="wikipedia:Percent-encoding" class="wikilink" title="percent-encode">percent-encode</a> the characters within the URL. See additional information in the <a href="https://restic.readthedocs.io/en/stable/030_preparing_a_new_repo.html#rest-server">restic docs REST server section</a>.</p>
+<p>Below is an example of a configuration that connects to a remote repository using sops-nix for secrets.</p>
+<h2 id="security-wrapper">Security Wrapper</h2><p>If you want to back up your system <a href="https://restic.readthedocs.io/en/latest/080_examples.html#backing-up-your-system-without-running-restic-as-root">without running restic as root</a>, you can create a user and security wrapper to give restic the capability to read anything on the filesystem as if it were running as root. The following will create the wrapper at <code>/run/wrappers/bin/restic</code>:</p>
+<p>Note that you will have to set your Restic configuration to use the wrapper using the <a href="https://search.nixos.org/options?channel=unstable&amp;show=services.restic.backups.%3Cname%3E.package&amp;from=0&amp;size=50&amp;sort=relevance&amp;type=packages&amp;query=services.restic.backups">services.restic.backups.<name>.package</a> option, for example <sup><a id="footnote-ref-2" href="https://mirror.nixoscn.org/wiki/Restic#footnote-2" data-footnote-ref aria-describedby="footnote-label">2</a></sup>:</p>
+<p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="category:Backup" class="wikilink" title="Category:Backup">Category:Backup</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p><a href="https://restic.readthedocs.io/en/latest/030_preparing_a_new_repo.html#rest-server">https://restic.readthedocs.io/en/latest/030_preparing_a_new_repo.html#rest-server</a> <a href="https://mirror.nixoscn.org/wiki/Restic#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+<li id="footnote-2">
+<p><a href="https://github.com/NixOS/nixpkgs/issues/341999#issuecomment-2558504576">https://github.com/NixOS/nixpkgs/issues/341999#issuecomment-2558504576</a> <a href="https://mirror.nixoscn.org/wiki/Restic#footnote-ref-2" data-footnote-backref aria-label="Back to reference 2">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Audio production</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Audio production</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Audio production -->
+
+<p><a href="https://github.com/musnix/musnix">Musnix</a> provides a set of simple, high-level configuration options for doing real-time audio work in NixOS, including optimizing the kernel, applying the CONFIG_PREEMPT_RT patch to it, and adjusting various low-level system settings, eg. setting up ulimit values automatically.</p>
+<h2 id="plugins-not-found">Plugins not found</h2><p>Due to NixOS not using FHS paths, many DAWs will not know where to look for VSTs and other plugins. Musnix fixes this; if you don&#39;t want to use it, you can solve this by setting</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">    <span class="hljs-attr">environment.variables</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">let</span>
+      <span class="hljs-attr">makePluginPath</span> <span class="hljs-operator">=</span> <span class="hljs-params">format:</span>
+        (makeSearchPath format [
+          <span class="hljs-string">&quot;$HOME/.nix-profile/lib&quot;</span>
+          <span class="hljs-string">&quot;/run/current-system/sw/lib&quot;</span>
+          <span class="hljs-string">&quot;/etc/profiles/per-user/$USER/lib&quot;</span>
+        ])
+        <span class="hljs-operator">+</span> <span class="hljs-string">&quot;:$HOME/.<span class="hljs-subst">${format}</span>&quot;</span>;
+    <span class="hljs-keyword">in</span> {
+      <span class="hljs-attr">DSSI_PATH</span>   <span class="hljs-operator">=</span> makePluginPath <span class="hljs-string">&quot;dssi&quot;</span>;
+      <span class="hljs-attr">LADSPA_PATH</span> <span class="hljs-operator">=</span> makePluginPath <span class="hljs-string">&quot;ladspa&quot;</span>;
+      <span class="hljs-attr">LV2_PATH</span>    <span class="hljs-operator">=</span> makePluginPath <span class="hljs-string">&quot;lv2&quot;</span>;
+      <span class="hljs-attr">LXVST_PATH</span>  <span class="hljs-operator">=</span> makePluginPath <span class="hljs-string">&quot;lxvst&quot;</span>;
+      <span class="hljs-attr">VST_PATH</span>    <span class="hljs-operator">=</span> makePluginPath <span class="hljs-string">&quot;vst&quot;</span>;
+      <span class="hljs-attr">VST3_PATH</span>   <span class="hljs-operator">=</span> makePluginPath <span class="hljs-string">&quot;vst3&quot;</span>;
+    };</code></pre>
+      </div><p>Some programs may not support those and may require other means of setting VST paths.</p>
+<h2 id="packaging-plugins">Packaging plugins</h2><p>Source-available plugins can be packaged like any other library; note that the files should be in a subdirectory according to the plugin type e.g. <code>$out/lib/vst3</code>.</p>
+<p>If the plugin is only available as a binary, you may need to use <a href="https://mirror.nixoscn.org/wiki/Audio%20production/Packaging/Binaries" class="wikilink" title="the advice on packaging binaries">the advice on packaging binaries</a> to help. Since many plugins will not be accessible via the standard fetchers, you can always fall back on including the plugin using <code>src = ./plugin.zip</code>; note that if you&#39;re using flakes and don&#39;t want to commit the plugin to Git (an especially bad idea if your config is public!), you can use requireFile and manually add files to the store. To do this, run <code>nix-hash --flat --type sha256 plugin.zip</code>, take the output, and use it in a derivation like so:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">      <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> requireFile {
+        <span class="hljs-attr">message</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;run nix-store add-file&quot;</span>;
+        <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;plugin.zip&quot;</span>;
+        <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span>
+          <span class="hljs-string">&quot;68f3c7e845f3d7a5b44a83adeb6e34ef221503df00e7964f7d5a1f132a252d13&quot;</span>;
+      };</code></pre>
+      </div><p>Then run <code>nix-store add-file plugin.zip</code>.</p>
+<p>As an example, a working package for Vital looks like</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">stdenv.mkDerivation <span class="hljs-keyword">rec</span> {
+  <span class="hljs-attr">pname</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;vital&quot;</span>;
+  <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;1.5.5&quot;</span>;
+  <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> requireFile {
+    <span class="hljs-attr">message</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;run nix-store add-file VitalInstaller.zip&quot;</span>;
+    <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;VitalInstaller.zip&quot;</span>;
+    <span class="hljs-comment"># this may be different for you!</span>
+    <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span>
+      <span class="hljs-string">&quot;68f3c7e845f3d7a5b44a83adeb6e34ef221503df00e7964f7d5a1f132a252d13&quot;</span>;
+  };
+  <span class="hljs-attr">nativeBuildInputs</span> <span class="hljs-operator">=</span> [ makeWrapper unzip ];
+  <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> [
+    alsa-lib
+    freetype
+    libglvnd
+    stdenv.cc.cc.lib
+    xorg.libICE
+    xorg.libSM
+    xorg.libX11
+    xorg.libXext
+  ];
+
+  <span class="hljs-attr">unpackPhase</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    unzip $src
+  &#x27;&#x27;</span>;
+
+  <span class="hljs-attr">installPhase</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    mkdir -p $out
+    cp -r VitalInstaller/lib $out/lib 
+  &#x27;&#x27;</span>;
+  <span class="hljs-attr">postFixup</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    for file in \
+      $out/lib/clap/Vital.clap \
+      $out/lib/vst/Vital.so \
+      $out/lib/vst3/Vital.vst3/Contents/x86_64-linux/Vital.so
+    do
+      patchelf --set-rpath &quot;<span class="hljs-subst">${lib.makeLibraryPath buildInputs}</span>&quot; $file
+    done
+  &#x27;&#x27;</span>;
+};</code></pre>
+      </div><p><a href="category:Audio" class="wikilink" title="Category:Audio">Category:Audio</a> <a href="category:NixOS" class="wikilink" title="Category:NixOS">Category:NixOS</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

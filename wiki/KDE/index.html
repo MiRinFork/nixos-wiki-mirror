@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>KDE</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / KDE</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: KDE -->
+
+<p><a href="https://kde.org/plasma-desktop/">KDE Plasma</a> is a desktop environment that aims to be simple by default, powerful when needed.</p>
+<h2 id="installation">Installation</h2><p>To use KDE Plasma, add this to your configuration.nix:</p>
+<h2 id="configuration">Configuration</h2><h3 id="excluding-applications-from-the-default-install">Excluding applications from the default install</h3><p>Some optional packages can be excluded if they are not needed at the cost of functionality.</p>
+<p>Optional packages: <a href="https://github.com/NixOS/nixpkgs/blob/7e495b747b51f95ae15e74377c5ce1fe69c1765f/nixos/modules/services/desktop-managers/plasma6.nix#L150-L170">1</a></p>
+<h3 id="default-wayland-x11-session">Default Wayland/X11 session</h3><p>Plasma 6 runs on Wayland by default. To launch an X11 session by default:</p>
+<h3 id="unlock-kde-wallet-with-luks-password">Unlock KDE Wallet with LUKS password</h3><p>When using LUKS disk encryption and autologin in your display manager, it is possible to unlock KDE Wallet with the LUKS password. Set the LUKS password, login password, and KWallet keyring password all to the same string, and for NixOS 25.11 and below use the following configuration:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">boot.initrd.systemd.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">systemd.services.display-manager.serviceConfig.KeyringMode</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;inherit&quot;</span>;
+  <span class="hljs-attr">security.pam.services.sddm-autologin.text</span> <span class="hljs-operator">=</span> pkgs.lib.mkBefore <span class="hljs-string">&#x27;&#x27;
+    auth optional <span class="hljs-subst">${pkgs.systemd}</span>/lib/security/pam_systemd_loadkey.so
+    auth include sddm
+  &#x27;&#x27;</span>;
+}</code></pre>
+      </div><p>For Plasma Login Manager in NixOS 26.05 or above, use:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">boot.initrd.systemd.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">systemd.services.plasmalogin.serviceConfig.KeyringMode</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;inherit&quot;</span>;
+  <span class="hljs-attr">security.pam.services.plasmalogin-autologin.rules.auth</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">systemd_loadkey</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">order</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>;
+      <span class="hljs-attr">control</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;optional&quot;</span>;
+      <span class="hljs-attr">modulePath</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.systemd}</span>/lib/security/pam_systemd_loadkey.so&quot;</span>;
+    };
+    <span class="hljs-attr">plasmalogin</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">order</span> <span class="hljs-operator">=</span> <span class="hljs-number">1</span>;
+      <span class="hljs-attr">control</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;include&quot;</span>;
+      <span class="hljs-attr">modulePath</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;plasmalogin&quot;</span>;
+    };
+  };
+}</code></pre>
+      </div><h2 id="troubleshooting">Troubleshooting</h2><h3 id="qt-kde-applications-segfault-on-start">Qt/KDE applications segfault on start</h3><p>This is caused by a stale QML cache <a href="https://github.com/NixOS/nixpkgs/issues/177720">(see this issue)</a>. A dirty way to fix this is by running on a terminal the following command:</p>
+<div class="code-container">
+        
+        <pre><code class="language-sh hljs">find <span class="hljs-variable">${XDG_CACHE_HOME:-<span class="hljs-variable">$HOME</span>/.cache}</span>/**/qmlcache -<span class="hljs-built_in">type</span> f -delete</code></pre>
+      </div><h3 id="gtk-themes-are-not-applied-in-wayland-applications-window-decorations-missing-cursor-looks-different">GTK themes are not applied in Wayland applications / Window Decorations missing / Cursor looks different</h3><p>This affects GTK applications including Firefox and Thunderbird.</p>
+<p>You may need to set a GTK theme <em>Breeze</em> imitating the KDE theme with the same name in <em>System Settings -&gt; Application Style --&gt;Configure GNOME/GTK Application Style</em>.</p>
+<p><a href="https://github.com/NixOS/nixpkgs/issues/180720">(See this issue)</a></p>
+<h3 id="after-update-to-plasma-6-signal-desktop-complains-about-a-database-error-involving-kwallet5">After Update to Plasma 6 Signal-Desktop complains about a Database Error involving kwallet5</h3><ol>
+<li>Close Signal</li>
+<li>Open ~/.config/Signal/config.json</li>
+<li>Replace <code>&quot;safeStorageBackend&quot;: &quot;kwallet5&quot;</code> with <code>&quot;safeStorageBackend&quot;: &quot;kwallet6&quot;</code> (change 5 to 6)</li>
+<li>Start Signal</li>
+</ol>
+<h3 id="bluetooth-configuration-not-available">Bluetooth configuration not available</h3><p>Add the following configuration (generally in hardware-configuration.nix):</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"> <span class="hljs-attr">hardware.bluetooth.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><p>This will add the following packages:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">[
+ bluedevil
+ bluez-qt
+ pkgs.openobex
+ pkgs.obexftp
+]</code></pre>
+      </div><h3 id="brightness-and-color-brightness-control-sets-gamma-instead-of-brightness-on-external-monitors">Brightness and Color brightness control sets gamma instead of brightness on external monitors</h3><p>To allow <code>powerdevil</code> (and by extension the &quot;Brightness and Color&quot; status tray menu) to control brightness on supported monitors directly instead of adjusting gamma, <a href="https://mirror.nixoscn.org/wiki/KDE/Backlight#Via_ddcutil" class="wikilink" title="configure your system to enable ddcutil">configure your system to enable ddcutil</a>, and allow your user to use DDC/CI without root. Note that you do not need to add <code>ddcutil</code> to your system packages because PowerDevil uses libddcutil.</p>
+<h3 id="plasma-wallpaper-reverts-back-to-default-after-a-nix-gc">Plasma wallpaper reverts back to default after a Nix GC</h3><p>When setting a wallpaper, Plasma may save the path as a <code>/nix/store/*/share/wallpapers</code> path instead of <code>/run/current-system/sw/share/wallpapers/</code>. To fix this, open <code>$XDG_CONFIG_HOME/plasma-org.kde.plasma.desktop-appletsrc</code> and manually change the paths.</p>
+<h3 id="no-available-locale-settings-in-the-plasma-system-settings">No available locale settings in the Plasma system settings</h3><p>The &quot;Region &amp; Language&quot; page in the Plasma system settings is somewhat broken on NixOS. Instead, edit the <code>$XDG_CONFIG_HOME/plasma-localerc</code> file.</p>
+<h2 id="tips-and-tricks">Tips and tricks</h2><h3 id="plasma-manager">Plasma-Manager</h3><p>By default, the Plasma configuration can be handled like on <a href="https://wiki.archlinux.org/title/KDE">traditional systems</a>. With <a href="https://github.com/nix-community/plasma-manager">plasma-manager</a>, it is possible to make Plasma configurations via nix by providing <a href="https://github.com/nix-community/home-manager">home-manager</a> modules.</p>
+<h3 id="user-icon-avatar">User icon (avatar)</h3><p>You can add a profile picture to your user by using a png file in <code>~/.face.icon</code>.</p>
+<h2 id="hacking">Hacking</h2><p>There are many reasons to modify the KDE packages, such as testing patches from other KDE developers, applying a fix before it is officially released and finds its way into <em>nixpkgs</em> or developing contributions for the KDE project.</p>
+<h3 id="customizing-nixpkgs">Customizing <em>nixpkgs</em></h3><p>To override KDE packages, the common way using <code>overrideAttrs</code> won&#39;t work, since they are part of the <code>kdePackages</code>scope, which requires the usage of <code>overrideScope</code> first:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">ixpkgs-overlay</span> <span class="hljs-operator">=</span> <span class="hljs-params">final:</span> <span class="hljs-params">prev:</span> {
+  <span class="hljs-attr">kdePackages</span> <span class="hljs-operator">=</span> prev.kdePackages.overrideScope(<span class="hljs-params">kdeFinal:</span> <span class="hljs-params">kdePrev:</span> {
+    <span class="hljs-attr">somepackage</span> <span class="hljs-operator">=</span> kdePrev.somepackage.overrideAttrs(<span class="hljs-params">prevPkgAttrs:</span> {
+      <span class="hljs-attr">someattribute</span> <span class="hljs-operator">=</span> …;
+    };
+  };
+};</code></pre>
+      </div><p>The following examples will demonstrate various ways how to achieve the customization of the KDE package <code>powerdevil</code> in different scenarios:</p>
+<h4 id="using-a-single-diff-from-a-remote-url">Using a single diff from a remote URL</h4><p>A KDE developer might have provided a diff that one wants to utilize locally to test it or to make use of it until it&#39;s included in an upcoming release.</p>
+<ol>
+<li>Generate the SRI hash of the file: <code>nix store prefetch-file https://invent.kde.org/plasma/powerdevil/-/commit/f731c18e377b87c57f7205d9c1812a34f588c577.diff --json --name toggle-nightlight.diff</code></li>
+<li>Override the <code>patches</code> attribute of the <code>powerdevil</code>package:</li>
+</ol>
+<p>kdePackages = prev.kdePackages.overrideScope(kdeFinal: kdePrev: {</p>
+<p><code> powerdevil = kdePrev.powerdevil.overrideAttrs (prevPdAttrs: {</code><br><code>   patches = prevPdAttrs.patches or [] ++ [</code><br><code>     (prev.fetchpatch {</code><br><code>       name = &quot;toggle-nightlight.diff&quot;;</code><br><code>       url = &quot;</code><a href="https://invent.kde.org/plasma/powerdevil/-/commit/f731c18e377b87c57f7205d9c1812a34f588c577.diff"><code>https://invent.kde.org/plasma/powerdevil/-/commit/f731c18e377b87c57f7205d9c1812a34f588c577.diff</code></a><code>&quot;;</code><br><code>       sha256 = &quot;sha256-X0ZHSRnSLqmp2fcLGx9DUTn7F9BFh5puh9Q4YAj6/5o=&quot;;</code><br><code>     })</code><br><code>   ];</code><br><code> });</code></p>
+<p>});</p>
+</syntaxhighlight>
+
+<h4 id="using-commits-of-a-repository">Using commits of a repository</h4><p>Either a local clone or remote repository might provide the code that should be used to build the package in question instead.</p>
+<h5 id="remote-repository">Remote repository</h5><div class="code-container">
+        
+        <pre><code class="language-nix hljs">k<span class="hljs-attr">dePackages</span> <span class="hljs-operator">=</span> prev.kdePackages.overrideScope(<span class="hljs-params">kdeFinal:</span> <span class="hljs-params">kdePrev:</span> {
+  <span class="hljs-attr">powerdevil</span> <span class="hljs-operator">=</span> kdePrev.powerdevil.overrideAttrs (<span class="hljs-params">prevPdAttrs:</span> {
+    <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">builtins.fetchGit</span> {
+      <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://invent.kde.org/plasma/powerdevil&quot;</span>;
+      <span class="hljs-attr">rev</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;f731c18e377b87c57f7205d9c1812a34f588c577&quot;</span>;
+    };
+  });
+});</code></pre>
+      </div><h5 id="local-repository">Local repository</h5><div class="code-container">
+        
+        <pre><code class="language-nix hljs">k<span class="hljs-attr">dePackages</span> <span class="hljs-operator">=</span> prev.kdePackages.overrideScope(<span class="hljs-params">kdeFinal:</span> <span class="hljs-params">kdePrev:</span> {
+  <span class="hljs-attr">powerdevil</span> <span class="hljs-operator">=</span> kdePrev.powerdevil.overrideAttrs (<span class="hljs-params">prevPdAttrs:</span> {
+    <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">builtins.fetchGit</span> {
+      <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;file:///home/eliasp/code-repositories/public/KDE/plasma/powerdevil&quot;</span>;
+      <span class="hljs-attr">rev</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;f731c18e377b87c57f7205d9c1812a34f588c577&quot;</span>;
+    };
+  });
+});</code></pre>
+      </div><h4 id="using-the-worktree-of-a-local-repository">Using the worktree of a local repository</h4><p>Now one might not want to commit each and every change during development to iterate more quickly, but to just rebuild after having saved the latest changes.</p>
+<p>By just redirecting <code>src</code>to the path of the working directory, where the required code resides, quick &amp; dirty rebuilds are possible:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">k<span class="hljs-attr">dePackages</span> <span class="hljs-operator">=</span> prev.kdePackages.overrideScope(<span class="hljs-params">kdeFinal:</span> <span class="hljs-params">kdePrev:</span> {
+  <span class="hljs-attr">powerdevil</span> <span class="hljs-operator">=</span> kdePrev.powerdevil.overrideAttrs (<span class="hljs-params">prevPdAttrs:</span> {
+    <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> <span class="hljs-symbol">/home/eliasp/code-repositories/public/KDE/plasma/powerdevil</span>;
+  });
+});</code></pre>
+      </div><p><a href="category:Desktop_environment" class="wikilink" title="Category:Desktop environment">Category:Desktop environment</a> <a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="category:KDE" class="wikilink" title="Category:KDE">Category:KDE</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

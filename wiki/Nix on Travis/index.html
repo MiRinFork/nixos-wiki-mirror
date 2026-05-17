@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nix on Travis</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Nix on Travis</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Nix on Travis -->
+
+<p>Travis-CI provides a <code>language: nix</code> setting (to put in a <em>.travis.yml</em> file) to run continuous integration scripts on a machine with Nix installed.</p>
+<p>See <a href="https://docs.travis-ci.com/user/languages/nix">Travis-CI documentation for Nix</a>, <a href="https://github.com/travis-ci/travis-build/blob/master/lib/travis/build/script/nix.rb">Travis source code for Nix</a>.</p>
+<h2 id="caching-dependencies">Caching dependencies</h2><p>Build dependencies are usually downloaded from some online public binary cache; but some dependencies are not available on such a cache and must be built on the CI machine on every run. It is however possible to reuse the result of such local builds from one run of the CI script to the next one by means of <a href="https://docs.travis-ci.com/user/caching/">Travis CI caching feature</a>.</p>
+<p>A Nix binary cache can be set up in a local directory (say <em>~/nix.store</em>) which will be preserved between CI runs:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">cache:
+  directories:
+  - $HOME/nix.store</code></pre>
+      </div><p>Nix must then be configured to read from this local binary cache:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">before_install:
+- sudo mkdir -p /etc/nix
+- echo &quot;substituters = https://cache.nixos.org/ file://$HOME/nix.store&quot; | sudo tee -a /etc/nix/nix.conf &gt; /dev/null
+- echo 'require-sigs = false' | sudo tee -a /etc/nix/nix.conf &gt; /dev/null</code></pre>
+      </div><p>The first line ensures the directory holding Nix’s configuration files exists. The second line declares two binary cache: the main only hydra cache and the locally cached directory. The third line declares that cached closures need not be signed; indeed the local directory will not be signed.</p>
+<p>Finally, actual data must be stored in the cache:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">before_cache:
+- mkdir -p $HOME/nix.store
+- nix copy --to file://$HOME/nix.store -f default.nix buildInputs</code></pre>
+      </div><p>In this example, the <em>buildInputs</em> from <em>default.nix</em> are added to the binary cache.</p>
+<p>NB: in this setting, the cache only grows. It might be manually deleted when it becomes too bloated but smarter eviction strategies can be implemented too!</p>
+<h2 id="enable-sandboxed-builds">Enable sandboxed builds</h2><p>At the moment travis does not have a sandbox enabled by default. This can lead to non-trivial to reproduce errors, when files from the travis image interfere with the build. Enabling however is straight-forward by using the following little snippet:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-params">before_script:</span>
+  <span class="hljs-operator">-</span> sudo mkdir <span class="hljs-operator">-</span>p <span class="hljs-symbol">/etc/nix</span> <span class="hljs-operator">&amp;&amp;</span> echo &#x27;sandbox <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>&#x27; | sudo tee <span class="hljs-operator">/</span>etc<span class="hljs-operator">/</span>nix<span class="hljs-operator">/</span>nix.conf</code></pre>
+      </div>
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

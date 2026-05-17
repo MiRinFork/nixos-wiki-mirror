@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>I3</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / I3</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: I3 -->
+
+<p><a href="https://i3wm.org/">i3</a> is a tiling window manager for <a href="https://mirror.nixoscn.org/wiki/I3/Xorg" class="wikilink" title="X Window System">X Window System</a>.</p>
+<h2 id="enabling">Enabling</h2><p>To use i3 set to <code>true</code>. For example:</p>
+<p>By default, the path to the i3 configuration file is <code>$HOME/.i3/config</code>. For a full list of i3 options, refer to the module options.</p>
+<h3 id="using-home-manager">Using home-manager</h3><p>See also: <a href="https://github.com/srid/nix-config/blob/705a70c094da53aa50cf560179b973529617eb31/nix/home/i3.nix">srid/nix-config/nix/home/i3.nix</a></p>
+<h3 id="with-a-desktop-manager">With a desktop manager</h3><p>i3 is a window manager and does not provide &quot;cosmetic&quot; services like managing multiple monitor configuration or media keys. This is what is usually delegated to a desktop manager. To use xfce as a desktop manager on top of i3, see <a href="https://mirror.nixoscn.org/wiki/I3/Xfce#Using_as_a_desktop_manager_and_not_a_window_manager" class="wikilink" title="Xfce#Using_as_a_desktop_manager_and_not_a_window_manager">Xfce#Using_as_a_desktop_manager_and_not_a_window_manager</a>.</p>
+<h2 id="common-issues">Common issues</h2><h3 id="i3lock-doesn-39-t-recognize-my-password">i3lock doesn&#39;t recognize my password</h3><p>As of nixos 25.05, i3lock is no longer automatically configured to be able to use PAM to check passwords. If you installed i3 through nixos options, this is handled for you, but if you installed it elsewhere, such as through home-manager, then at minimum, you need to set:</p>
+<h2 id="tips-amp-tricks">Tips &amp; tricks</h2><h3 id="i3blocks">i3blocks</h3><p>After installing and enabling i3blocks, you may find that i3block does not work. This issue occurs because i3blocks reads its contents from a hardcoded path in <code>/etc</code> by default.</p>
+<p>Since in nixos however, these contents are located within the Nix store at a path similar to:</p>
+<p>Since i3blocks cannot locate this path, you have to create a link to this path by adding this line to configuration.nix file:</p>
+<p>After rebuilding the system, you may configure your block like the following:</p>
+<h3 id="dconf">DConf</h3><p>If your settings aren&#39;t being saved for some applications (gtk3 applications, firefox), like the size of file selection windows, or the size of the save dialog, you will need to enable dconf:</p>
+<h3 id="lxappearance">Lxappearance</h3><p>To change the icon and themes you can install lxappearance:</p>
+<h3 id="solve-inconsistency-between-gtk2-and-gtk3-themes">Solve inconsistency between gtk2 and gtk3 themes</h3><p>If enabling <strong>dconf</strong> or installing <strong>Lxappearance</strong> but still see inconsistency between themes, you have to manually edit their configurations. In fact, It is possible to install some gtk3 themes but when you start another gtk2 application, your theme not effected properly. It&#39;s because there is no .gtkrc-2.0 in your home directory. First create it and paste these lines to it:</p>
+<p>Change the options based on your installed themes and icon packs.</p>
+<h3 id="wallpaper">Wallpaper</h3><p>If <code>~/.background-image</code> exists then it will be displayed as a wallpaper. Options <code>services.xserver.desktopManager.wallpaper.combineScreens</code> and <code>.mode</code> control exactly how it is displayed.</p>
+<h3 id="i3status-with-home-manager">i3status with home-manager</h3><p>Same as in i3status-rust. Notice: home-manager will not override your existing config, i.e. if the file/folder <code>~/.config/i3status/config</code> is present on your system, there won&#39;t be any changes after rebuilding.</p>
+<p>External resources that can help you with your setup: <a href="https://home-manager-options.extranix.com/?query=xsession.windowManager.i3.config"><a href="https://home-manager-options.extranix.com/?query=xsession.windowManager.i3.config">https://home-manager-options.extranix.com/?query=xsession.windowManager.i3.config</a></a></p>
+<h4 id="to-enable-i3status-in-home-manager-and-change-some-basic-options">To enable i3status in home-manager and change some basic options:</h4><h4 id="adding-various-modules">Adding various modules:</h4><h5 id="disabling-default-i3status-modules">Disabling default i3status modules</h5><p>After setting up i3status, you may notice it shows two eth- and wifi&#39;s. To disable <code>ethernet _first_</code> and <code>wireless _first_</code>, add the following:</p>
+<h3 id="i3status-rust-with-home-manager">i3status-rust with home-manager</h3><p>i3status-rust can be configured through home-manager, but that configuration does not autoamatically update i3 to invoke i3status-rust. Instead <code>xsession.windowManager.i3.config.bars</code> needs to be updated to reference i3status-rust and the config files that the home-manager config produces. Consider the following setup:</p>
+<p><a href="category:Window_managers" class="wikilink" title="Category:Window managers">Category:Window managers</a> <a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="category:Desktop" class="wikilink" title="Category:Desktop">Category:Desktop</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

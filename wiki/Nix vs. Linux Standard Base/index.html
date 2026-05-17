@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nix vs. Linux Standard Base</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Nix vs. Linux Standard Base</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Nix vs. Linux Standard Base -->
+
+<p>This article is a comparison between the <a href="https://mirror.nixoscn.org/wiki/Nix%20vs.%20Linux%20Standard%20Base/Nix_package_manager" class="wikilink" title="Nix package manager">Nix package manager</a> and the <a href="https://en.wikipedia.org/wiki/Linux_Standard_Base">Linux Standard Base</a> (LSB) standard that the package managers of most conventional Linux distributions follow.</p>
+<h2 id="package-installation">Package Installation</h2><p>In most distributions, files of an installed package are stored under <code>/{,usr}/{bin,etc,lib,...}</code>.</p>
+<p>With Nix, the files of a package go into a <em>profile</em> (as if it was a rootfs), and users can have as many profiles as they want.</p>
+<p>By default, the only part of the system made aware of the contents of the user profile is the <code>PATH</code> environment variable. The user <code>PATH</code> is set through bashrc to include <code>~/.nix-profile/bin</code>. So, by default, installing a Nix package means &quot;having it in the PATH&quot;. A simple operation like <code>nix-env -i firefox</code> is meant to update the nix store, then generate a new profile in the store having all the programs <em>installed</em> plus the new one, and updating the symlink <code>~/.nix-profile</code>, so <code>~/.nix-profile/bin</code> will contain a symlink to the executable of firefox. Then a user can type <code>firefox</code> and have it running.</p>
+<p>If other kind of files are to be found by programs looking at the usual <code>/{,usr}/{bin,etc,lib,sbin,...}</code> locations, other variables may be of help. For example, gcc would welcome <code>CPATH</code> and <code>LIBRARY_PATH</code>. And the dynamic loader will welcome <code>LD_LIBRARY_PATH</code>.</p>
+<h2 id="build-and-install-from-source">Build and install from Source</h2><p>In most LSB distributions, you ask for the development tools to be installed into the system. And then you also install dependencies of the package you want to build, and then go on building the source you downloaded. The dependencies are found, and your program builds fine.</p>
+<p>With Nix, you can install the needed development tools into your profile (gcc-wrapper, gnumake), and the dependencies for the source you want to build (libpng, qt, ...). Once that done, set the environment variables (for gcc):</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">CPATH=~/.nix-profile/include; LIBRARY_PATH=~/.nix-profile/lib; QTDIR=~/nix-profile</code></pre>
+      </div><p>... And then you should get your build running. In most LSB distributions, you proceed like the section above to build the program, and then run <code>make install</code> to get it into /usr/local, overwritting any files you had there.</p>
+<p>Using Nix, if you built your program like the section above, you may end up having /usr/local files depending on dynamic libraries only present in your profile. That situation may require a <code>LD_LIBRARY_PATH</code> variable, or your ld.so.conf pointing to your profile, but this situation can end in your programs not working if you remove those dependencies from your profile. This would be also a problem in your LSB distribution, if you remove uninstall packages required by programs you put manually in <code>/usr/local</code>.</p>
+<p>Therefore, it is advisable to use Nix not only for acquiring dependencies, but also for managing the build of your package. In fact, creating an ad-hoc Nix package for the software is often easier, because the standard environment in NixPkgs automatically takes care of issues that could arise because of the differences between the Nix and LSB approaches. For example, a well packaged autotools-based project usually builds successfully after specifying its dependencies in Nix, whereas if you would install the dependencies and try to build it yourself, you will have a hard time.</p>
+<h2 id="workflow">Workflow</h2><p>A common situation is that LSB distribution users want to keep their habits, but they additionally want the advantages claimed by nix, to mention some:</p>
+<ol>
+<li>rollback</li>
+<li>disable any possibility of removing dependencies of an installed program</li>
+<li>no side effects to other users (if desired), when installing programs</li>
+<li>no effects for the own user (have the program installed in the store, but not referenced in the profile)</li>
+</ol>
+<p>That can be achieved only following the nix style. So, letting nix build your program from source, instead of doing that on your own in your interactive shell through profiles. Nix will provide a common build system, with whatever stated dependencies available at build time, and will also provide a target installation directory. This requires knowing how to write <a href="http://hydra.nixos.org/job/nix/trunk/tarball/latest/download-by-type/doc/manual/#id460419">simple stdenv derivations</a>, and knowing <a href="https://nixos.org/nix/manual/#chap-quick-start">where to write them</a>.</p>
+<h2 id="modifying-a-package">Modifying a Package</h2><p>In LSB distributions, files installed under can be edited by the user as needed.</p>
+<p>Files in the Nix store () are meant to be read-only and changes are only done using the commands. can be used to ensure integrity of the store data.</p>
+<p>To make changes to Nix packages properly, see <a href="https://mirror.nixoscn.org/wiki/Nix%20vs.%20Linux%20Standard%20Base/Modifying_a_Package" class="wikilink" title="Modifying a Package">Modifying a Package</a>.</p>
+<h2 id="see-also">See also</h2><ul>
+<li><a href="https://ostreedev.github.io/ostree/related-projects/#nixos--nix">libostree comparison to NixOS</a> — libostree, a project to offer <a href="https://en.wikipedia.org/wiki/Filesystem_Hierarchy_Standard">FHS</a>-compatible &quot;stores&quot;, was in large part inspired by NixOS.</li>
+</ul>
+<p><a href="category:Pedias" class="wikilink" title="Category:Pedias">Category:Pedias</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

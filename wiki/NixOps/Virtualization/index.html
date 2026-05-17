@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NixOps/Virtualization</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/NixOps">NixOps</a><span aria-hidden="true"> / </span>Virtualization</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: NixOps/Virtualization -->
+
+<h2 id="disclaimer">Disclaimer</h2><p>I don&#39;t do ops for a living and my cluster only has 2 nodes. I&#39;m not saying that this is <strong>the</strong> correct approach, just that it has worked okay for me, so far.</p>
+<h2 id="a-tale-of-two-use-cases">A Tale of Two Use-Cases</h2><p>As a developer I have two primary uses for virtual machines: testing my code in an isolated environment, and then deploying it to my server(s). These have very different requirements; while testing I only want to run the VMs that I care about, and only while working on the project. On the other hand, when deploying I want to manage all guests declaratively, run everything on boot, I don&#39;t want any GUI, and preferably I&#39;d like good support for remote console access.</p>
+<p><a href="https://nixos.org/nixops/manual/#idm140737318606112">NixOps</a>&#39;s built-in VirtualBox support satisfies the testing requirements pretty well for me, so I&#39;m going to focus on deployment in this blog post.</p>
+<h2 id="requirements">Requirements</h2><p>As with any good project, it&#39;s vital to start out with a solid set of requirements! In my case, I wanted an a server VM environment (see above), where both the hosts and guests are managed using the awesome NixOps deployment tool. I also wanted it to be trivial to create new VMs as needed, without having to install anything manually.</p>
+<h2 id="the-usual-nixops-boilerplate">The Usual NixOps Boilerplate</h2><p>Before we get into virtualization we need to create a physical network description, so that NixOps can find all our hosts. We&#39;ll also create a definition of the guests we plan to run:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-keyword">let</span>
+  <span class="hljs-attr">machine</span> <span class="hljs-operator">=</span> {host, port <span class="hljs-operator">?</span> <span class="hljs-number">22</span>, name, hostNic, guests <span class="hljs-operator">?</span> {}}: {pkgs, lib, ...}@<span class="hljs-params">args:</span>
+    {
+      <span class="hljs-attr">imports</span> <span class="hljs-operator">=</span> [ <span class="hljs-symbol">./baseline.nix</span> ];
+
+      <span class="hljs-comment"># We still want to be able to boot, adjust as needed based on your setup</span>
+      <span class="hljs-attr">boot</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">loader</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">systemd-boot.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+          <span class="hljs-attr">efi.canTouchEfiVariables</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+        };
+        <span class="hljs-attr">kernelParams</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;nomodeset&quot;</span> ];
+      };
+      <span class="hljs-attr">fileSystems</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-string">&quot;/&quot;</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">device</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/dev/disk/by-label/<span class="hljs-subst">${name}</span>-root&quot;</span>;
+        };
+        <span class="hljs-string">&quot;/boot&quot;</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">device</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/dev/disk/by-label/<span class="hljs-subst">${name}</span>-boot&quot;</span>;
+        };
+      };
+      <span class="hljs-attr">boot.initrd.availableKernelModules</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;xhci_pci&quot;</span> <span class="hljs-string">&quot;ehci_pci&quot;</span> <span class="hljs-string">&quot;ahci&quot;</span> <span class="hljs-string">&quot;usbhid&quot;</span> <span class="hljs-string">&quot;usb_storage&quot;</span> <span class="hljs-string">&quot;sd_mod&quot;</span> ];
+
+      <span class="hljs-comment"># Tell NixOps how to find the machine</span>
+      <span class="hljs-attr">deployment.targetEnv</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;none&quot;</span>;
+      <span class="hljs-attr">deployment.targetHost</span> <span class="hljs-operator">=</span> host;
+      <span class="hljs-attr">deployment.targetPort</span> <span class="hljs-operator">=</span> port;
+      <span class="hljs-attr">networking.privateIPv4</span> <span class="hljs-operator">=</span> host;
+    };
+<span class="hljs-keyword">in</span>
+  {
+    <span class="hljs-comment"># Tell NixOps about the hosts it should manage</span>
+    <span class="hljs-attr">athens</span> <span class="hljs-operator">=</span> machine {
+      <span class="hljs-attr">host</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;192.168.0.2&quot;</span>;
+      <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;athens&quot;</span>;
+      <span class="hljs-attr">hostNic</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;enp30s0&quot;</span>;
+      <span class="hljs-attr">guests</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">some-athens-guest</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">memory</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;4&quot;</span>; <span class="hljs-comment"># GB</span>
+          <span class="hljs-attr">diskSize</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;50&quot;</span>; <span class="hljs-comment"># GB</span>
+          <span class="hljs-attr">mac</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;D2:91:69:C0:14:9A&quot;</span>;
+          <span class="hljs-attr">ip</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;192.168.0.101&quot;</span>; <span class="hljs-comment"># Ignored, only for personal reference</span>
+        };
+    };
+    <span class="hljs-attr">rome</span> <span class="hljs-operator">=</span> machine {
+      <span class="hljs-attr">host</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;192.168.0.3&quot;</span>;
+      <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;rome&quot;</span>;
+      <span class="hljs-attr">hostNic</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;enp3s0&quot;</span>;
+    };
+  }</code></pre>
+      </div><p>We&#39;ll also declare a common baseline that we&#39;d like to share with all VMs as well. This mostly boils down to making sure that we always have SSH access to the machines. Let&#39;s call this file <code>baseline.nix</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-comment"># Make sure that we still have admin access to the machine</span>
+  <span class="hljs-attr">services.openssh.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">networking.firewall.allowedTCPPorts</span> <span class="hljs-operator">=</span> [ <span class="hljs-number">22</span> ];
+  <span class="hljs-attr">users</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">mutableUsers</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+    <span class="hljs-attr">users.root.openssh.authorizedKeys.keyFiles</span> <span class="hljs-operator">=</span> [ <span class="hljs-symbol">./teozkr_id_rsa.pub</span> ];
+  };
+}</code></pre>
+      </div><p>Then tell NixOps about the new network, and make sure that it deploys correctly:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">NIXOPS_DEPLOYMENT=vm-test-hosts nixops create network-hosts.nix</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">NIXOPS_DEPLOYMENT=vm-test-hosts nixops deploy</span></code></pre>
+      </div><h2 id="picking-a-hypervisor">Picking a Hypervisor</h2><p>NixOS supports three different hypervisors out of the box: VirtualBox, Xen, and libvirt (backed by QEMU/KVM). I chose libvirt, because KVM is an upstream kernel project where VirtualBox requires custom kernel modules and NixOS doesn&#39;t currently support running Xen when booting in UEFI mode.</p>
+<p>Also, as far as I can tell, libvirt&#39;s <a href="https://virt-manager.org/">virt-manager</a> is the only relevant graphical management utility that supports remote management out of the box. This is pretty much a hard requirement, since I&#39;m also running a few non-NixOS VMs on the server.</p>
+<h2 id="installing-the-hypervisor">Installing the Hypervisor</h2><p>Thankfully, NixOS makes this step very simple: simply enable the relevant NixOS module and activate your new configuration.</p>
+<p>In our case, we want to enable the libvirtd service, as well as the relevant KVM kernel module. This means adding two new attrs to <code>machine</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">b<span class="hljs-attr">oot.kernelModules</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;kvm-amd&quot;</span> <span class="hljs-string">&quot;kvm-intel&quot;</span> ];
+<span class="hljs-attr">virtualisation.libvirtd.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><p>You can skip enabling kvm-amd if you&#39;re running a pure Intel cluster, and vice versa. But keeping both enabled won&#39;t hurt either.</p>
+<p>Afterwards, deploy again and check that everything still works.</p>
+<h2 id="setting-up-the-guests">Setting Up the Guests</h2><h3 id="surely-nixops-will-handle-this">Surely NixOps Will Handle This?</h3><p>NixOps actually has a libvirt back-end. However, it turns out that this only works for deploying to a local libvirtd install, so we&#39;ll have to do things manually.</p>
+<h3 id="surely-nixos-will-handle-this">Surely NixOS Will Handle This?</h3><p>NixOS only has modules for managing the hypervisors, not for managing their guests declaratively. We&#39;ll have to set this up ourselves.</p>
+<h3 id="okay-okay-i-39-ll-do-it-myself">Okay, Okay, I&#39;ll Do It Myself</h3><p>I chose to make a systemd unit per guest, which automatically configures and starts the VM. This means that NixOS will automatically restart the VM when the configuration changes.</p>
+<p>To do this, we map over the <code>guests</code> argument that we previously ignored to create the services:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ystemd.services</span> <span class="hljs-operator">=</span> lib.mapAttrs&#x27; (<span class="hljs-params">name:</span> <span class="hljs-params">guest:</span> lib.nameValuePair <span class="hljs-string">&quot;libvirtd-guest-<span class="hljs-subst">${name}</span>&quot;</span> {
+  <span class="hljs-attr">after</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;libvirtd.service&quot;</span> ];
+  <span class="hljs-attr">requires</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;libvirtd.service&quot;</span> ];
+  <span class="hljs-attr">wantedBy</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;multi-user.target&quot;</span> ];
+  <span class="hljs-attr">serviceConfig</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">Type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;oneshot&quot;</span>;
+    <span class="hljs-attr">RemainAfterExit</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;yes&quot;</span>;
+  };
+  <span class="hljs-attr">script</span> <span class="hljs-operator">=</span>
+    <span class="hljs-keyword">let</span>
+      <span class="hljs-attr">xml</span> <span class="hljs-operator">=</span> pkgs.writeText <span class="hljs-string">&quot;libvirt-guest-<span class="hljs-subst">${name}</span>.xml&quot;</span>
+        <span class="hljs-string">&#x27;&#x27;
+          &lt;domain type=&quot;kvm&quot;&gt;
+            &lt;name&gt;<span class="hljs-subst">${name}</span>&lt;/name&gt;
+            &lt;uuid&gt;UUID&lt;/uuid&gt;
+            &lt;os&gt;
+              &lt;type&gt;hvm&lt;/type&gt;
+            &lt;/os&gt;
+            &lt;memory unit=&quot;GiB&quot;&gt;<span class="hljs-subst">${guest.memory}</span>&lt;/memory&gt;
+            &lt;devices&gt;
+              &lt;disk type=&quot;volume&quot;&gt;
+                &lt;source volume=&quot;guest-<span class="hljs-subst">${name}</span>&quot;/&gt;
+                &lt;target dev=&quot;vda&quot; bus=&quot;virtio&quot;/&gt;
+              &lt;/disk&gt;
+              &lt;graphics type=&quot;spice&quot; autoport=&quot;yes&quot;/&gt;
+              &lt;input type=&quot;keyboard&quot; bus=&quot;usb&quot;/&gt;
+              &lt;interface type=&quot;direct&quot;&gt;
+                &lt;source dev=&quot;<span class="hljs-subst">${hostNic}</span>&quot; mode=&quot;bridge&quot;/&gt;
+                &lt;mac address=&quot;<span class="hljs-subst">${guest.mac}</span>&quot;/&gt;
+                &lt;model type=&quot;virtio&quot;/&gt;
+              &lt;/interface&gt;
+            &lt;/devices&gt;
+            &lt;features&gt;
+              &lt;acpi/&gt;
+            &lt;/features&gt;
+          &lt;/domain&gt;
+        &#x27;&#x27;</span>;
+    <span class="hljs-keyword">in</span>
+      <span class="hljs-string">&#x27;&#x27;
+        uuid=&quot;$(<span class="hljs-subst">${pkgs.libvirt}</span>/bin/virsh domuuid &#x27;<span class="hljs-subst">${name}</span>&#x27; || true)&quot;
+        <span class="hljs-subst">${pkgs.libvirt}</span>/bin/virsh define &lt;(sed &quot;s/UUID/$uuid/&quot; &#x27;<span class="hljs-subst">${xml}</span>&#x27;)
+        <span class="hljs-subst">${pkgs.libvirt}</span>/bin/virsh start &#x27;<span class="hljs-subst">${name}</span>&#x27;
+      &#x27;&#x27;</span>;
+  <span class="hljs-attr">preStop</span> <span class="hljs-operator">=</span>
+    <span class="hljs-string">&#x27;&#x27;
+      <span class="hljs-subst">${pkgs.libvirt}</span>/bin/virsh shutdown &#x27;<span class="hljs-subst">${name}</span>&#x27;
+      let &quot;timeout = $(date +%s) + 10&quot;
+      while [ &quot;$(<span class="hljs-subst">${pkgs.libvirt}</span>/bin/virsh list --name | grep --count &#x27;^<span class="hljs-subst">${name}</span>{{content}}#x27;)&quot; -gt 0 ]; do
+        if [ &quot;$(date +%s)&quot; -ge &quot;$timeout&quot; ]; then
+          # Meh, we warned it...
+          <span class="hljs-subst">${pkgs.libvirt}</span>/bin/virsh destroy &#x27;<span class="hljs-subst">${name}</span>&#x27;
+        else
+          # The machine is still running, let&#x27;s give it some time to shut down
+          sleep 0.5
+        fi
+      done
+    &#x27;&#x27;</span>;
+}) guests;</code></pre>
+      </div><p>The UUID trickery is required because <code>virsh define</code> will overwrite based on the UUID, but we only care about the human-readable names. So we lock in on the first UUID and then reuse it each time we start the VM.</p>
+<p>We could call it a day here, and just create the disks manually. But this is NixOS, dammit: this should be declarative! Which gets us to...</p>
+<h2 id="building-a-nixos-base-image">Building a NixOS base image</h2><p>We&#39;d like to have a common base image that VMs should be based on, which should contain just enough so that we can then deploy our actual setup using NixOps. Let&#39;s start with defining a baseline image <code>baseline-qemu.nix</code> for our guests, which sets up the appropriate kernel modules, and which has a common partition layout:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">imports</span> <span class="hljs-operator">=</span> [ <span class="hljs-symbol">./baseline.nix</span> ];
+  fileSystems.<span class="hljs-string">&quot;/&quot;</span>.device <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/dev/disk/by-label/nixos&quot;</span>;
+  <span class="hljs-attr">boot.initrd.availableKernelModules</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;xhci_pci&quot;</span> <span class="hljs-string">&quot;ehci_pci&quot;</span> <span class="hljs-string">&quot;ahci&quot;</span> <span class="hljs-string">&quot;usbhid&quot;</span> <span class="hljs-string">&quot;usb_storage&quot;</span> <span class="hljs-string">&quot;sd_mod&quot;</span> <span class="hljs-string">&quot;virtio_balloon&quot;</span> <span class="hljs-string">&quot;virtio_blk&quot;</span> <span class="hljs-string">&quot;virtio_pci&quot;</span> <span class="hljs-string">&quot;virtio_ring&quot;</span> ];
+  <span class="hljs-attr">boot.loader</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">grub</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-number">2</span>;
+      <span class="hljs-attr">device</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/dev/vda&quot;</span>;
+    };
+    <span class="hljs-attr">timeout</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>;
+  };
+}</code></pre>
+      </div><p>Then we can build an image, let&#39;s call it <code>image.nix</code>. We need to build our image in a VM since Nix builders don&#39;t usually have root access, but thankfully Nixpkgs has a convenient utility for that. This bit is very much inspired by <a href="https://github.com/NixOS/nixops/blob/master/nix/libvirtd-image.nix">NixOps&#39; libvirt image</a>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs <span class="hljs-operator">?</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> {}, system <span class="hljs-operator">?</span> <span class="hljs-built_in">builtins.currentSystem</span>, ... }:
+<span class="hljs-keyword">let</span>
+  <span class="hljs-attr">config</span> <span class="hljs-operator">=</span> (<span class="hljs-built_in">import</span> <span class="hljs-operator">&lt;</span>nixpkgs<span class="hljs-operator">/</span>nixos<span class="hljs-operator">/</span>lib<span class="hljs-operator">/</span>eval-config.nix<span class="hljs-operator">&gt;</span> {
+    <span class="hljs-keyword">inherit</span> system;
+    <span class="hljs-attr">modules</span> <span class="hljs-operator">=</span> [ {
+      <span class="hljs-attr">imports</span> <span class="hljs-operator">=</span> [ <span class="hljs-symbol">./baseline-qemu.nix</span> ];
+
+      <span class="hljs-comment"># We want our template image to be as small as possible, but the deployed image should be able to be</span>
+      <span class="hljs-comment"># of any size. Hence we resize on the first boot.</span>
+      <span class="hljs-attr">systemd.services.resize-main-fs</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">wantedBy</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;multi-user.target&quot;</span> ];
+        <span class="hljs-attr">serviceConfig.Type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;oneshot&quot;</span>;
+        <span class="hljs-attr">script</span> <span class="hljs-operator">=</span>
+          <span class="hljs-string">&#x27;&#x27;
+            # Resize main partition to fill whole disk
+            echo &quot;, +&quot; | <span class="hljs-subst">${pkgs.utillinux}</span>/bin/sfdisk /dev/vda --no-reread -N 1
+            <span class="hljs-subst">${pkgs.parted}</span>/bin/partprobe
+            # Resize filesystem
+            <span class="hljs-subst">${pkgs.e2fsprogs}</span>/bin/resize2fs /dev/vda1
+          &#x27;&#x27;</span>;
+      };
+    } ];
+  }).config;
+<span class="hljs-keyword">in</span> pkgs.vmTools.runInLinuxVM (
+  pkgs.runCommand <span class="hljs-string">&quot;nixos-sun-baseline-image&quot;</span>
+    {
+      <span class="hljs-attr">memSize</span> <span class="hljs-operator">=</span> <span class="hljs-number">768</span>;
+      <span class="hljs-attr">preVM</span> <span class="hljs-operator">=</span>
+        <span class="hljs-string">&#x27;&#x27;
+          mkdir $out
+          diskImage=image.qcow2
+          <span class="hljs-subst">${pkgs.vmTools.qemu}</span>/bin/qemu-img create -f qcow2 $diskImage 1G
+          mv closure xchg/
+        &#x27;&#x27;</span>;
+      <span class="hljs-attr">postVM</span> <span class="hljs-operator">=</span>
+        <span class="hljs-string">&#x27;&#x27;
+          echo compressing VM image...
+          <span class="hljs-subst">${pkgs.vmTools.qemu}</span>/bin/qemu-img convert -c $diskImage -O qcow2 $out/baseline.qcow2
+        &#x27;&#x27;</span>;
+      <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> [ pkgs.utillinux pkgs.perl pkgs.parted pkgs.e2fsprogs ];
+      <span class="hljs-attr">exportReferencesGraph</span> <span class="hljs-operator">=</span>
+        [ <span class="hljs-string">&quot;closure&quot;</span> config.system.build.toplevel ];
+    }
+    <span class="hljs-string">&#x27;&#x27;
+      # Create the partition
+      parted /dev/vda mklabel msdos
+      parted /dev/vda -- mkpart primary ext4 1M -1s
+      . /sys/class/block/vda1/uevent
+      mknod /dev/vda1 b $MAJOR $MINOR
+
+      # Format the partition
+      mkfs.ext4 -L nixos /dev/vda1
+      mkdir /mnt
+      mount /dev/vda1 /mnt
+
+      for dir in dev proc sys; do
+        mkdir /mnt/$dir
+        mount --bind /$dir /mnt/$dir
+      done
+
+      storePaths=$(perl <span class="hljs-subst">${pkgs.pathsFromGraph}</span> /tmp/xchg/closure)
+      echo filling Nix store...
+      mkdir -p /mnt/nix/store
+      set -f
+      cp -prd $storePaths /mnt/nix/store
+      # The permissions will be set up incorrectly if the host machine is not running NixOS
+      chown -R 0:30000 /mnt/nix/store
+
+      mkdir -p /mnt/etc/nix
+      echo &#x27;build-users-group = &#x27; &gt; /mnt/etc/nix/nix.conf
+
+     # at least since nix-2.3.16 we need a root user in the chroot 
+     # or else `nix-store --load-db` will fail with &quot;cannot figure out user name&quot;
+     chroot /mnt <span class="hljs-subst">${pkgs.shadow}</span>/bin/useradd -u 0 root
+
+      # Register the paths in the Nix database.
+      printRegistration=1 perl <span class="hljs-subst">${pkgs.pathsFromGraph}</span> /tmp/xchg/closure | \
+          chroot /mnt <span class="hljs-subst">${config.nix.package.out}</span>/bin/nix-store --load-db
+
+      # Create the system profile to allow nixos-rebuild to work.
+      chroot /mnt <span class="hljs-subst">${config.nix.package.out}</span>/bin/nix-env \
+          -p /nix/var/nix/profiles/system --set <span class="hljs-subst">${config.system.build.toplevel}</span>
+
+      # `nixos-rebuild&#x27; requires an /etc/NIXOS.
+      mkdir -p /mnt/etc/nixos
+      touch /mnt/etc/NIXOS
+
+      # `switch-to-configuration&#x27; requires a /bin/sh
+      mkdir -p /mnt/bin
+      ln -s <span class="hljs-subst">${config.system.build.binsh}</span>/bin/sh /mnt/bin/sh
+
+      # Generate the GRUB menu.
+      chroot /mnt <span class="hljs-subst">${config.system.build.toplevel}</span>/bin/switch-to-configuration boot
+
+      umount /mnt/{proc,dev,sys}
+      umount /mnt
+    &#x27;&#x27;</span>
+)</code></pre>
+      </div><p>Then we want to use this image whenever a disk does not exist, so we need to send it to each host. We can do this by adding the following attr to <code>machine</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">environment.etc.<span class="hljs-string">&quot;virt/base-images/baseline.qcow2&quot;</span>.source <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${<span class="hljs-built_in">import</span> <span class="hljs-symbol">./image.nix</span> args}</span>/baseline.qcow2&quot;</span>;</code></pre>
+      </div><p>Then we want to make the VM services create the disk images, by prepending the following to the unit <code>script</code> attribute:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-keyword">if</span> ! <span class="hljs-variable">${pkgs.libvirt}</span>/bin/virsh vol-key <span class="hljs-string">&#x27;guest-${name}&#x27;</span> --pool guests &amp;&gt; /dev/null; <span class="hljs-keyword">then</span>
+  <span class="hljs-variable">${pkgs.libvirt}</span>/bin/virsh vol-create-as guests <span class="hljs-string">&#x27;guest-${name}&#x27;</span> <span class="hljs-string">&#x27;${guest.diskSize}GiB&#x27;</span>
+  <span class="hljs-variable">${pkgs.qemu}</span>/bin/qemu-img convert /etc/virt/base-images/baseline.qcow2 <span class="hljs-string">&#x27;/dev/${hostName}/guest-${name}&#x27;</span>
+<span class="hljs-keyword">fi</span></code></pre>
+      </div><p>Now try deploying it again, and the VMs should be up and running, congratulations! You can confirm this by connecting with either virt-manager or virsh.</p>
+<p>Why did we add a symlink to the base image, rather than use it directly in the service? Because this means that modifying the base image won&#39;t cause NixOS to restart the services. That would have been pointless since the base image is only used on the first boot anyway. Afterwards updates will be handled by regular NixOps deployments to the guests.</p>
+<h2 id="deploying-the-guests">Deploying the guests</h2><p>Now you can finally define a physical network for our guests! You&#39;ll want to use the <del>&quot;none&quot;</del> <code>targetEnv</code> again, since you already manage it declaratively. Also, you&#39;ll want to import the <code>baseline-qemu.nix</code> file for each VM, to teach it about the file system layout layout, and to make sure that all the relevant drivers are loaded.</p>
+<p>Have fun! :D</p>
+<h2 id="drawbacks">Drawbacks</h2><p>Of course, this approach has a few drawbacks too. If any of these are a dealbreaker for you then it&#39;s probably not a good fit for you.</p>
+<ul>
+<li>Every rebuild of the template image will cause a ~1GB file to be transmitted to each host. This could be a problem if you&#39;re using a metered internet connection, or if you&#39;re on a low-bandwidth connection.</li>
+<li>Removed VMs are shut down, but not removed automatically. I personally like this since I don&#39;t want content to delete itself silently, but it could be a problem if you have a large number of stateless VMs.</li>
+<li>Each VM has its own disk image. In theory multiple identical stateless VMs could run from the same read-only disk, but that would take some refactoring.</li>
+<li>systemd can&#39;t tell if an outside source has shut down the VM, so it can get confused if a VM shuts itself down, or if you do it yourself from virsh/virt-manager.</li>
+</ul>
+<p><a href="category:NixOps" class="wikilink" title="Category:NixOps">Category:NixOps</a> <a href="category:Virtualization" class="wikilink" title="Category:Virtualization">Category:Virtualization</a> <a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

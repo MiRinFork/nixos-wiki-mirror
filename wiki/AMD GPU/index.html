@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AMD GPU</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / AMD GPU</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: AMD GPU -->
+
+<p><a href="https://en.wikipedia.org/wiki/AMDgpu_(Linux_kernel_module)">AMDGPU</a> is an open source graphics driver for AMD Radeon graphics cards. It supports AMD GPUs based on the <a href="https://en.wikipedia.org/wiki/Graphics_Core_Next">GCN architecture Graphics Core Next (GCN)</a> architecture and later, covering hardware released from approximately 2012 onward. This guide is about configuration of NixOS to correctly use AMD GPUs supported by the AMDGPU driver.</p>
+<h2 id="basic-setup">Basic Setup</h2><p>For ordinary desktop / gaming usage, AMD GPUs are expected to work out of the box. As with any desktop configuration though, graphics acceleration does need to be enabled.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">h<span class="hljs-attr">ardware.graphics</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">enable32Bit</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+};</code></pre>
+      </div><p>There is also the <a href="https://search.nixos.org/options?channel=unstable&amp;query=hardware.amdgpu">amdgpu nixos module available for common configuration options</a>, such as enabling opencl, legacy support, overdrive/overclocking and loading during initrd.</p>
+<h2 id="special-configuration">Special Configuration</h2><p>The following configurations are only required if you have a specific reason for needing them. They are not expected to be necessary for a typical desktop / gaming setup.</p>
+<h3 id="amd-igpu-with-high-amount-of-ram-usecase-large-language-models">AMD iGPU with high amount of RAM (usecase: large language models)</h3><p>The iGPU uses system RAM and has no dedicated VRAM. It can use up to the full available system RAM for example for large LLM models. On many systems its possible to set the amount of VRAM in BIOS: „Auto“ or the lowest amount is enough. The driver knows, to expand with GTT.</p>
+<p>Documentation:</p>
+<ul>
+<li><a href="https://docs.kernel.org/gpu/amdgpu/module-parameters.html">amdgpu gttsize</a></li>
+<li><a href="https://www.kernel.org/doc/html/v4.14/gpu/drm-mm.html#the-translation-table-manager-ttm">ttm pages_limit and ttm pages_pool</a></li>
+</ul>
+<p>Example for 128GB system RAM, in this example the LLM can use 120 GB „VRAM/GTT“:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">b<span class="hljs-attr">oot.kernelParams</span> <span class="hljs-operator">=</span> [
+  <span class="hljs-comment"># The kernel module parameter gttsize is a is deprecated and will be removed in the future.</span>
+  options amdgpu gttsize<span class="hljs-operator">=</span><span class="hljs-number">120000</span>
+
+  <span class="hljs-comment"># specified as 4KiB pages: 120 GB GTT</span>
+  options ttm pages_limit<span class="hljs-operator">=</span><span class="hljs-number">31457280</span>
+  <span class="hljs-comment"># specified as 4KiB pages: 60 GB pre-allocated</span>
+  options ttm page_pool_size<span class="hljs-operator">=</span><span class="hljs-number">15728640</span>
+];</code></pre>
+      </div><h3 id="enable-southern-islands-si-and-sea-islands-cik-support-eg-hd-7000-8000">Enable Southern Islands (SI) and Sea Islands (CIK) support (eg. HD 7000/8000)</h3><p>The oldest architectures that AMDGPU supports are <a href="wikipedia:Radeon_HD_7000_series" class="wikilink" title="Southern Islands (SI, i.e. GCN 1)">Southern Islands (SI, i.e. GCN 1)</a> and <a href="wikipedia:Radeon_HD_8000_series" class="wikilink" title="Sea Islands (CIK, i.e. GCN 2)">Sea Islands (CIK, i.e. GCN 2)</a>, but support for them is disabled by default. To use AMDGPU instead of the <code>radeon</code> driver, you can set the legacySupport option in the amdgpu module.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">h<span class="hljs-attr">ardware.amdgpu.legacySupport.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><p>This will set the kernel parameters as follows (this is redundant if you set the above option)</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">b<span class="hljs-attr">oot.kernelParams</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-comment"># For Southern Islands (SI i.e. GCN 1) cards</span>
+    <span class="hljs-string">&quot;amdgpu.si_support=1&quot;</span>
+    <span class="hljs-string">&quot;radeon.si_support=0&quot;</span>
+    <span class="hljs-comment"># For Sea Islands (CIK i.e. GCN 2) cards</span>
+    <span class="hljs-string">&quot;amdgpu.cik_support=1&quot;</span>
+    <span class="hljs-string">&quot;radeon.cik_support=0&quot;</span>
+];</code></pre>
+      </div><p>Doing this is required to use <a href="https://mirror.nixoscn.org/wiki/AMD%20GPU#Vulkan" class="wikilink" title="Vulkan">Vulkan</a> on these cards, as the <code>radeon</code> driver doesn&#39;t support it.</p>
+<p>Please note this also removes support for analog video outputs, which is only available with the <code>radeon</code> driver.</p>
+<h3 id="hip">HIP</h3><p>Most software has the HIP libraries hard-coded. You can work around it on NixOS by using:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">systemd.tmpfiles.rules</span> <span class="hljs-operator">=</span> 
+  <span class="hljs-keyword">let</span>
+    <span class="hljs-attr">rocmEnv</span> <span class="hljs-operator">=</span> pkgs.symlinkJoin {
+      <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;rocm-combined&quot;</span>;
+      <span class="hljs-attr">paths</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs.rocmPackages; [
+        rocblas
+        hipblas
+        clr
+      ];
+    };
+  <span class="hljs-keyword">in</span> [
+    <span class="hljs-string">&quot;L+    /opt/rocm   -    -    -     -    <span class="hljs-subst">${rocmEnv}</span>&quot;</span>
+  ];</code></pre>
+      </div><h3 id="enabling-rocm-amp-hip-for-packages">Enabling ROCm &amp; HIP For Packages</h3><p>Whether or not a package is built with ROCm support is controlled by the <code>rocmSupport</code> nixpkgs config variable. As HIP is a component of ROCm, anything that needs HIP support (e.g. Blender) gets that enabled through <code>rocmSupport</code> too.</p>
+<p>You can set it globally with this line</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">ixpkgs.config.rocmSupport</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><p>Or override specific packages</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+(ffmpeg-full.override {<span class="hljs-attr">config.rocmSupport</span><span class="hljs-operator">=</span><span class="hljs-literal">true</span>;})
+pkgsRocm.ffmpeg-full <span class="hljs-comment"># equivalent to (ffmpeg-full.override {config.rocmSupport=true;}) for packages in ROCm Release attrPaths</span>
+];</code></pre>
+      </div><p>While most if not all packages that support ROCm should be in the <a href="https://github.com/NixOS/nixpkgs/blob/master/pkgs/development/rocm-modules/release-attrPaths.json">ROCm Release attrPaths</a>, and therefore built by Hydra and cached in cache.nixos.org with <code>rocmSupport</code>, enabling it globally still has a slight chance of pointless compiling on your machine.</p>
+<p>For Blender-specific information on setting up HIP support, see: <a href="https://mirror.nixoscn.org/wiki/AMD%20GPU/Blender#HIP" class="wikilink" title="Blender#HIP">Blender#HIP</a>.</p>
+<h3 id="opencl">OpenCL</h3><p>OpenCL support using the ROCM runtime library can be enabled via the amdgpu module.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">h<span class="hljs-attr">ardware.amdgpu.opencl.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><p>You should also install the <code>clinfo</code> package to verify that OpenCL is correctly setup (or check in the program you use to see if it is now available, such as in Darktable).</p>
+<h4 id="radeon-500-series-aka-polaris">Radeon 500 series (aka Polaris)</h4><p>As of <a href="https://github.com/ROCm/ROCm/issues/1659">ROCm 4.5</a>, AMD has disabled OpenCL on Polaris-based cards. This can be re-enabled by setting the environment variable <code>ROC_ENABLE_PRE_VEGA=1</code></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.variables</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">ROC_ENABLE_PRE_VEGA</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;1&quot;</span>;
+};</code></pre>
+      </div><h4 id="older-gpus-terascale">Older GPUs (TeraScale)</h4><p>For graphics cards older than GCN 1 — or for any GCN using the &quot;radeon&quot; driver — enable OpenCL by adding Clover <em>instead of</em> the ROCm ICD:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">h<span class="hljs-attr">ardware.opengl.extraPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+  <span class="hljs-comment"># OpenCL support for the older Radeon R300, R400, R500,</span>
+  <span class="hljs-comment"># R600, R700, Evergreen, Northern Islands,</span>
+  <span class="hljs-comment"># Southern Islands (radeon), and Sea Islands (radeon)</span>
+  <span class="hljs-comment"># GPU families</span>
+  mesa.opencl
+  <span class="hljs-comment"># <span class="hljs-doctag">NOTE:</span> at some point GPUs in the R600 family and newer</span>
+  <span class="hljs-comment"># may need to replace this with the &quot;rusticl&quot; ICD;</span>
+  <span class="hljs-comment"># and GPUs in the R500-family and older may need to</span>
+  <span class="hljs-comment"># pin the package version or backport Clover</span>
+  <span class="hljs-comment"># - https://www.phoronix.com/news/Mesa-Delete-Clover-Discussion</span>
+  <span class="hljs-comment"># - https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/19385</span>
+];</code></pre>
+      </div><p>Merely installing <code>mesa.opencl</code> with <code>nix-shell -p</code> will not work; it needs to be present at build-time for the OpenCL ICD loader, which only searches static paths.</p>
+<h3 id="vulkan">Vulkan</h3><p>Vulkan is already enabled by default (using Mesa RADV) on 64 bit applications. The settings to control it are now the same as those shown in the basic setup:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">h<span class="hljs-attr">ardware.graphics.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+<span class="hljs-attr">hardware.graphics.enable32Bit</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; <span class="hljs-comment"># Replaced &#x27;driSupport32Bit&#x27;</span></code></pre>
+      </div><h4 id="amdvlk">AMDVLK</h4><p>The AMDVLK drivers can be used in addition to the Mesa RADV drivers. The program will choose which one to use (mostly defaulting to AMDVLK):</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">h<span class="hljs-attr">ardware.graphics.extraPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+  amdvlk
+];
+<span class="hljs-comment"># For 32 bit applications </span>
+h<span class="hljs-attr">ardware.graphics.extraPackages32</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+  driversi686Linux.amdvlk
+];</code></pre>
+      </div><p>More information can be found here: <a href="https://nixos.org/manual/nixos/unstable/index.html#sec-gpu-accel-vulkan">https://nixos.org/manual/nixos/unstable/index.html#sec-gpu-accel-vulkan</a></p>
+<p>One way to avoid installing it system-wide, is creating a wrapper like this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-keyword">with</span> pkgs; writeShellScriptBin <span class="hljs-string">&quot;amdvlk-run&quot;</span> <span class="hljs-string">&#x27;&#x27;
+  export VK_DRIVER_FILES=&quot;<span class="hljs-subst">${amdvlk}</span>/share/vulkan/icd.d/amd_icd64.json:<span class="hljs-subst">${pkgsi686Linux.amdvlk}</span>/share/vulkan/icd.d/amd_icd32.json&quot;
+  exec &quot;$@&quot;
+&#x27;&#x27;</span>;</code></pre>
+      </div><p>This wrapper can be used per-game inside Steam (</p>
+<div class="code-container">
+        
+        <pre><code class="language-sh hljs">amdvlk-run %<span class="hljs-built_in">command</span>%</code></pre>
+      </div><p>) and lets RADV to be the system&#39;s default.</p>
+<h5 id="performance-issues-with-amdvlk">Performance Issues with AMDVLK</h5><p>Some games choose AMDVLK over RADV, which can cause noticeable performance issues (e.g. &lt;50% less FPS in games)</p>
+<p>To force RADV</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.variables.AMD_VULKAN_ICD</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;RADV&quot;</span>;</code></pre>
+      </div><h3 id="gui-tools">GUI tools</h3><h4 id="lact---linux-amdgpu-controller">LACT - Linux AMDGPU Controller</h4><p>This application allows you to overclock, undervolt, set fans curves of AMD GPUs on a Linux system.</p>
+<p>In order to install the daemon service you need to add the package to <code>systemd.packages</code>. Also the <code>wantedBy</code> field should be set to <code>multi-user.target</code> to start the service during boot.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [ lact ];
+<span class="hljs-attr">systemd.packages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [ lact ];
+<span class="hljs-attr">systemd.services.lactd.wantedBy</span> <span class="hljs-operator">=</span> [<span class="hljs-string">&quot;multi-user.target&quot;</span>];</code></pre>
+      </div><p>Simple version is:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.lact.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+<span class="hljs-comment"># https://github.com/NixOS/nixpkgs/blob/nixos-unstable/nixos/modules/services/hardware/lact.nix</span></code></pre>
+      </div><h2 id="troubleshooting">Troubleshooting</h2><h3 id="low-resolution-during-initramfs-phase">Low resolution during initramfs phase</h3><p>If you encounter a low resolution output during early boot phases, you can load the amdgpu module in the initial ramdisk</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">h<span class="hljs-attr">ardware.amdgpu.initrd.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; <span class="hljs-comment"># sets boot.initrd.kernelModules = [&quot;amdgpu&quot;];</span></code></pre>
+      </div><h3 id="dual-monitors">Dual Monitors</h3><p>If you encounter problems having multiple monitors connected to your GPU, adding `video` parameters for each connector to the kernel command line sometimes helps.</p>
+<p>For example:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">b<span class="hljs-attr">oot.kernelParams</span> <span class="hljs-operator">=</span> [
+  <span class="hljs-string">&quot;video=DP-1:2560x1440@144&quot;</span>
+  <span class="hljs-string">&quot;video=DP-2:2560x1440@144&quot;</span>
+];</code></pre>
+      </div><p>With the connector names (like `DP-1`), the resolution and frame rate adjusted accordingly.</p>
+<p>To figure out the connector names, execute the following command while your monitors are connected:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">head</span> /sys/class/drm/*/status</code></pre>
+      </div><h3 id="system-hang-with-vega-graphics-and-select-gpus">System Hang with Vega Graphics (and select GPUs)</h3><p>Currently on the latest kernel/mesa (currently 6.13 and 24.3.4 respectively), Vega integrated graphics (and other GPUs like the RX 6600<sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/AMD%20GPU#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup>) will have a possibility to hang due to context-switching between Graphics and Compute.<sup><a id="footnote-ref-2" href="https://mirror.nixoscn.org/wiki/AMD%20GPU#footnote-2" data-footnote-ref aria-describedby="footnote-label">2</a></sup> There are currently two sets of patches to choose between stability or speed that can be applied: <a href="https://github.com/SeryogaBrigada/linux/commits/v6.13-amdgpu">amdgpu-stable</a> and <a href="https://github.com/SeryogaBrigada/linux/commits/v6.13-amdgpu-testing">amdgpu-testing</a>.</p>
+<p>See <a href="https://mirror.nixoscn.org/wiki/AMD%20GPU/Linux_Kernel#Patching_a_single_In-tree_kernel_module" class="wikilink" title="Linux Kernel#Patching a single In-tree kernel module">Linux Kernel#Patching a single In-tree kernel module</a>, keep in mind how to make <a href="https://stackoverflow.com/a/23525893">patch diffs from commits from GitHub</a>, and consider this example configuration:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ config, pkgs, ... }:
+<span class="hljs-keyword">let</span>
+  <span class="hljs-attr">amdgpu-kernel-module</span> <span class="hljs-operator">=</span> pkgs.callPackage <span class="hljs-symbol">./packages/amdgpu-kernel-module.nix</span> {
+    <span class="hljs-comment"># Make sure the module targets the same kernel as your system is using.</span>
+    <span class="hljs-attr">kernel</span> <span class="hljs-operator">=</span> config.boot.kernelPackages.kernel;
+  };
+  <span class="hljs-comment"># linuxPackages_latest 6.13 (or linuxPackages_zen 6.13)</span>
+  <span class="hljs-attr">amdgpu-stability-patch</span> <span class="hljs-operator">=</span> pkgs.fetchpatch {
+    <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;amdgpu-stability-patch&quot;</span>;
+    <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://github.com/torvalds/linux/compare/ffd294d346d185b70e28b1a28abe367bbfe53c04...SeryogaBrigada:linux:4c55a12d64d769f925ef049dd6a92166f7841453.diff&quot;</span>;
+    <span class="hljs-attr">hash</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sha256-q/gWUPmKHFBHp7V15BW4ixfUn1kaeJhgDs0okeOGG9c=&quot;</span>;
+  };
+  <span class="hljs-comment">/*
+  # linuxPackages_zen 6.12
+  amdgpu-stability-patch = pkgs.fetchpatch {
+    name = &quot;amdgpu-stability-patch-zen&quot;;
+    url = &quot;https://github.com/zen-kernel/zen-kernel/compare/fd00d197bb0a82b25e28d26d4937f917969012aa...WhiteHusky:zen-kernel:f4c32ca166ad55d7e2bbf9adf121113500f3b42b.diff&quot;;
+    hash = &quot;sha256-bMT5OqBCyILwspWJyZk0j0c8gbxtcsEI53cQMbhbkL8=&quot;;
+  };
+  */</span>
+<span class="hljs-keyword">in</span>
+{
+  <span class="hljs-comment"># amdgpu instability with context switching between compute and graphics</span>
+  <span class="hljs-comment"># https://bbs.archlinux.org/viewtopic.php?id=301798</span>
+  <span class="hljs-comment"># side-effects: plymouth fails to show at boot, but does not interfere with booting</span>
+  <span class="hljs-attr">boot.extraModulePackages</span> <span class="hljs-operator">=</span> [
+    (amdgpu-kernel-module.overrideAttrs (<span class="hljs-params">_:</span> {
+      <span class="hljs-attr">patches</span> <span class="hljs-operator">=</span> [
+        amdgpu-stability-patch
+      ];
+    }))
+  ];
+}</code></pre>
+      </div><h3 id="sporadic-crashes">Sporadic Crashes</h3><p>If getting error messages in <code>dmesg</code> with <code>page fault</code> or <code>GCVM_L2_PROTECTION_FAULT_STATUS</code> it might be from AMD GPU boosting too high without enough voltage</p>
+<p>Use a tool like LACT to increase power usage limit to 15%, undervolt by moderate amount (e.g. -50mV for 7900 XTX) and optionally decrease maximum GPU clock.</p>
+<ul>
+<li><a href="https://wiki.gentoo.org/wiki/AMDGPU#Frequent_and_Sporadic_Crashes">https://wiki.gentoo.org/wiki/AMDGPU#Frequent_and_Sporadic_Crashes</a></li>
+<li><a href="https://gitlab.freedesktop.org/mesa/mesa/-/issues/11532">https://gitlab.freedesktop.org/mesa/mesa/-/issues/11532</a></li>
+<li><a href="https://gitlab.freedesktop.org/drm/amd/-/issues/3067">https://gitlab.freedesktop.org/drm/amd/-/issues/3067</a></li>
+</ul>
+<h3 id="error-amdgpu-failed-to-get-gpu_info-firmware">Error: <code>amdgpu: Failed to get gpu_info firmware</code></h3><p>Solution:</p>
+<p><code>hardware.firmware = [ pkgs.linux-firmware ];</code></p>
+<h2 id="see-also">See Also</h2><ul>
+<li><a href="https://wiki.archlinux.org/title/AMDGPU">https://wiki.archlinux.org/title/AMDGPU</a></li>
+<li><a href="https://wiki.gentoo.org/wiki/AMDGPU">https://wiki.gentoo.org/wiki/AMDGPU</a></li>
+</ul>
+<h2 id="references">References</h2><p><a href="category:Video" class="wikilink" title="Category:Video">Category:Video</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p><a href="https://bbs.archlinux.org/viewtopic.php?pid=2224147#p2224147">https://bbs.archlinux.org/viewtopic.php?pid=2224147#p2224147</a> <a href="https://mirror.nixoscn.org/wiki/AMD%20GPU#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+<li id="footnote-2">
+<p><a href="https://bbs.archlinux.org/viewtopic.php?id=301798">https://bbs.archlinux.org/viewtopic.php?id=301798</a> <a href="https://mirror.nixoscn.org/wiki/AMD%20GPU#footnote-ref-2" data-footnote-backref aria-label="Back to reference 2">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RetroArch</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / RetroArch</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: RetroArch -->
+
+<p><a href="https://www.retroarch.com/">RetroArch</a> is a all-in-one front-end for emulators, game engines and media players. Nix allows for installing RetroArch cores in a declarative and customizable way.</p>
+<h2 id="installation">Installation</h2><p>A RetroArch installation can be customized via different packages:</p>
+<ul>
+<li><code>retroarch-full</code>, contains all libretro cores.</li>
+<li><code>retroarch-free</code>, excludes unfree cores.</li>
+<li><code>retroarch.withCores</code>, a helper function for generating a retroarch package with a custom list of cores.</li>
+</ul>
+<h3 id="installing-only-certain-cores">Installing only certain cores</h3><p>Using <code>retroarch.withCores</code>:</p>
+<p>One can browse the available cores <a href="https://github.com/NixOS/nixpkgs/tree/master/pkgs/applications/emulators/libretro">here</a></p>
+<h2 id="troubleshooting">Troubleshooting</h2><h3 id="graphics">Graphics</h3><p>Not all the graphics settings are in the same place. You&#39;ll want to look under the top-level Settings (in the left column under Main Menu) and also under <code>Main Menu -&gt; Quick Menu -&gt; Options</code></p>
+<h3 id="mapping">Mapping</h3><p>The following way to remap a controller or map a new controller is convoluted, but works and allows you to upstream your changes.</p>
+<ol>
+<li>Fork the <a href="https://github.com/libretro/retroarch-joypad-autoconfig">retroarch-joypad-autoconfig</a> project and clone it in a folder of your choosing.</li>
+<li>With Retroarch open, go to Settings &gt; Directory and change Controller Profiles to point to the same folder. Note: Do not attempt to modify the directory in <code>retroarch.cfg</code> directly because it will be overwritten on startup.</li>
+<li>Now, saving the mapping will work but this will be ignored on next startup of Retroarch.</li>
+<li>After you are happy with the mapping, commit the changes in the folder where you cloned the retroarch-joypad-autoconfig project and push them to your fork.</li>
+<li>To use what you just pushed in your configuration right away, add the following overlay to your nix config by replacing the various fields with those corresponding to your fork:</li>
+</ol>
+<p>(final: prev: {</p>
+<p><code> retroarch-joypad-autoconfig = prev.retroarch-joypad-autoconfig.overrideAttrs {</code><br><code>   src = prev.fetchFromGitHub {</code><br><code>     owner = &quot;ibizaman&quot;;</code><br><code>     repo = &quot;retroarch-joypad-autoconfig&quot;;</code><br><code>     rev = &quot;420a8fa4dc7b12f7c176fa0e704e9f987f6ceabd&quot;;</code><br><code>     hash = &quot;sha256-yIvW9UTgc+/hhwx+93FgzrDBEBD35xFdBiVdJCKUYBc=&quot;;</code><br><code>   };</code><br><code> };</code></p>
+<p>})</p>
+</syntaxhighlight>
+
+<ol>
+<li>After switching over to the new configuration and restarting Retroarch, you will see the mappings got updated.</li>
+<li>Now you can create a pull request from your fork to the retroarch-joypad-autoconfig project to upstream your changes.</li>
+</ol>
+<h3 id="input-reset">Input Reset</h3><p>beetle-psx-hw input (by keyboard anyway) only works if you go to <code>Settings -&gt; Input -&gt; Port 1 Controls -&gt; Device Type</code> and set it to PlayStation Controller <strong>every time you run the emulator</strong>.</p>
+<h3 id="missing-icons">Missing Icons</h3><p>No icons show in the GUI, including the mouse cursor. You need to go to <code>Online Updater &gt; Update Assets</code> to download the icons. You can navigate the GUI with only the keyboard. Press enter to open sections/pages, backspace to go back out, arrow keys to choose between options (left/right change some values).</p>
+<h3 id="error-save-controller-profile">Error save controller profile</h3><p>This is because the location of the controller profile is in the nix store, making it read-only. To actually remap a controller, see the <a href="https://mirror.nixoscn.org/wiki/RetroArch/RetroArch#Mapping" class="wikilink" title="Mapping">Mapping</a> section.</p>
+<p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="category:Gaming" class="wikilink" title="Category:Gaming">Category:Gaming</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

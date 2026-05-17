@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mosh</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Mosh</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Mosh -->
+
+<p><a href="https://mosh.org/">Mosh</a> is an alternative SSH terminal. It has support for roaming, local echo and uses UDP for transport. It also aims to improve responsiveness on intermittent, and high latency connections.</p>
+<p>See the <a href="https://search.nixos.org/packages?show=mosh&amp;query=mosh">mosh Package</a> and <a href="https://search.nixos.org/options?query=programs.mosh">mosh Options</a></p>
+<h2 id="installation">Installation</h2><h3 id="client">Client</h3><p>Install the <a href="https://search.nixos.org/packages?show=mosh&amp;query=mosh"><code>mosh</code></a> package.</p>
+<h3 id="server">Server</h3><p>Enable the <a href="https://search.nixos.org/options?query=programs.mosh"><code>programs.mosh</code></a> module. You can simply add the following into your <code>/etc/nixos/configuration.nix</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># Enable mosh, the ssh alternative when client has bad connection</span>
+<span class="hljs-comment"># Opens UDP ports 60000 ... 61000</span>
+p<span class="hljs-attr">rograms.mosh.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><h2 id="usage">Usage</h2><p>With mosh installed on both the client and server, connect by running:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">mosh user@server</span></code></pre>
+      </div><p>Note that mosh uses SSH for authentication and initialization, so it will respect aliases and other options in <code>.ssh/config</code>. You can also specify SSH options using the <code>--ssh</code> argument. For example, to use port 1122 instead of 22, you can either use <code>Port 1122</code> in SSH config, or use mosh with the <code>--ssh</code> argument:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">mosh --ssh=<span class="hljs-string">&#x27;ssh -p 1122&#x27;</span> user@server</span></code></pre>
+      </div><p>More information is available at <a href="https://mosh.org/#usage">mosh.org</a> or using <a href="https://manpages.debian.org/bullseye/mosh/mosh.1.en.html"><code>man mosh</code></a></p>
+<h2 id="troubleshooting">Troubleshooting</h2><h3 id="missing-run-user-1000">Missing <code>/run/user/1000</code></h3><p>Using a mosh session, <code>$XDG_RUNTIME_DIR</code> (/run/user/1000) doesn&#39;t exist and causes issues such as:</p>
+<ul>
+<li>nix-shell failing with <code>Error in tempdir() using /run/user/1000/nix-shell.XXXXX</code></li>
+</ul>
+<p>This is caused by the way <code>mosh</code> handles logging-in to the system, the login is actually handled by a short <code>ssh</code> session, which ends immediately. <code>logind</code>, as it is used, closes the user&#39;s session and cleans up behind, since there is no lingering configured by default.</p>
+<p>To enable lingering use:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">loginctl enable-linger <span class="hljs-variable">$USER</span></span></code></pre>
+      </div><p>Then reconnect with mosh. Note that lingering is enabled by default in NixOS &gt;= 16.09.</p>
+<p>As a workaround, it is also possible to set an alias in the user&#39;s shell on the server wrapping <code>mosh-server</code> to keep the session around. <sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Mosh#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup></p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">alias</span> mosh-server = <span class="hljs-string">&quot;systemd-run --user --scope mosh-server&quot;</span></code></pre>
+      </div><p>See also <a href="https://github.com/NixOS/nixpkgs/issues/3702#issue-40762878">https://github.com/NixOS/nixpkgs/issues/3702#issue-40762878</a></p>
+<p>=== The locale requested by LANG=*** isn&#39;t available here. ===</p>
+<p>This error occurs when trying to connect to a linux server (non-NixOS distribution) on which mosh-server has been installed via nix. The easy solution is to set LOCALE_ARCHIVE to your OS locale-archive in your .profile or .zshenv:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">export</span> LOCALE_ARCHIVE=/usr/lib/locale/locale-archive</code></pre>
+      </div><hr />
+
+<h2 id="references">References</h2><references />
+
+<p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p><a href="https://github.com/NixOS/nixpkgs/issues/29234">issue#29234</a> <a href="https://mirror.nixoscn.org/wiki/Mosh#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

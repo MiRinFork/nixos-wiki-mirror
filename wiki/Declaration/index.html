@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Declaration</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Declaration</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Declaration -->
+
+<p>NixOS module has declarations to provide an interface for other modules. Option declarations are used to make NixOS aware of configuration possibilities or to hide the complexity of configuration. Option declarations are used to provide an interface over the inherent complexity of configuring the system.</p>
+<p>See also <a href="https://nixos.org/nixos/manual/index.html#sec-option-declarations">the manual</a>.</p>
+<h1 id="option-attributes">Option attributes</h1><p>Options are declared with the <code>mkOption</code> function which is provided by the Nix package collection library (<code>pkgs.lib</code> attribute set). An option declaration may contain the following attributes:</p>
+<ul>
+<li><code>name</code> <code>(string)</code>: This attribute is by default set to the location of the option. The name is used in error messages and in the generated manual.</li>
+<li><code>default</code> <code>(&#39;t)</code>: The value used when no definitions are provided.</li>
+<li><code>example</code> <code>(&#39;t)</code>: The value used as example to show a possible configuration.</li>
+<li><code>description</code> <code>(string)</code>: A multi-line text which describe in a few sentences what is achieved by the option.</li>
+<li><code>type</code> <code>(/&#39;t/)</code>: The expected type of the default value and the option definitions. The type may provide default code for <code>merge</code> and <code>check</code> attribute.</li>
+<li><code>merge</code> <code>(&#39;t list -&gt; &#39;t)</code>: A function used to merge all definitions into one result which has the same type.</li>
+<li><code>apply</code> <code>(&#39;t -&gt; any)</code>: A function used to provide an abstraction over the merged result. This function is mostly used when an usual transformation is made of the result.</li>
+<li><code>options</code> <code>(module list)</code>: This attribute contains a list of modules when the type allow to have embedded modules.</li>
+</ul>
+<p>An option can be declared in multiple modules, with one condition which is that no attribute collisions exists between the declarations except for the <code>options</code> attribute.</p>
+<h2 id="evaluation">Evaluation</h2><p>The evaluation is done with the following piece of code where <code>opt</code> is the option declaration. You can find this piece of code inside <a href="https://github.com/NixOS/nixpkgs/blob/eb7a17a1cfc158b87e6d349f1fcc550761d122b9/lib/modules.nix#L154-L186"><code>lib/modules.nix</code></a>.</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">      merged =
+        if defsFinal == [] then
+          throw &quot;The option `${showOption loc}' is used but not defined.&quot;
+        else
+          fold (def: res:
+            if opt.type.check def.value then res
+            else throw &quot;The option value `${showOption loc}' in `${def.file}' is not a ${opt.type.name}.&quot;)
+            (opt.type.merge loc defsFinal) defsFinal;
+      value = (opt.apply or id) merged; </code></pre>
+      </div><p>The <code>apply</code> function is replaced by the identity function and the <code>merge</code> function is replaced by the <a href="https://github.com/NixOS/nixpkgs/blob/785eaf2cea3c57daef96bb209f44589e3f48a7ff/lib/options.nix#L34-L43"><code>mergeDefaultOption</code></a> function if they are not defined.</p>
+<h1 id="types">Types</h1><p>Types are used to ensure the correctness of definitions and to provide a way to merge the definitions. All common types are available in <a href="https://github.com/NixOS/nixpkgs/blob/master/lib/types.nix"><code>lib/types.nix</code></a>. To declare a type you have to write something like:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">with lib;
+services.fooBar.option = mkOption {
+  type = with types; uniq str;
+  description = &quot;
+    ...
+  &quot;;
+};</code></pre>
+      </div><p>The <code>check</code> function provided by the type can be a source of strictness, but this is rare because most of the time checked option definitions are fully used by the merge function.</p>
+<h2 id="simple-types">Simple Types</h2><ul>
+<li><code>anything</code>: Useful when it is used under a meta-type.</li>
+<li><code>bool</code>: A Boolean useful for enable flags. The merge function is a logical OR between all definitions.</li>
+<li><code>int</code>: An Integer.</li>
+<li><code>str</code>: A string where all definitions are concatenated.</li>
+<li><code>envVar</code>: A string where all definitions are concatenated with a colon between all definitions.</li>
+<li><code>attrs</code>: An attribute set. (you should prefer <code>attrsOf inferred</code>)</li>
+<li><code>package</code>: A derivation.</li>
+</ul>
+<h2 id="meta-types">Meta Types</h2><p>Data meta-types:</p>
+<ul>
+<li><code>listOf t</code>: A list of elements with the type <code>t</code>.</li>
+<li><code>attrsOf t</code>: An attribute set of elements with the type <code>t</code>. The merge function zip all attribute sets into one. Attribute values of the resulting attribute set are merged with the merge function of the type <code>t</code>.</li>
+</ul>
+<p>Definition meta-types:</p>
+<ul>
+<li><code>uniq t</code>: This type define raise an error if more than one definitions exists. All other properties are inherited from the type <code>t</code>. This is useful to avoid ambiguous definitions.</li>
+<li><code>none t</code>: This type define raise an error if at least one definitions exists. All other properties are inherited from the type <code>t</code>. This is useful to provide a computation result to other modules. See also the <code>apply</code> function of option declarations.</li>
+<li><code>nullOr t</code>: This type allows an option to be null or type <code>t</code>.</li>
+</ul>
+<h2 id="module-type">Module Type</h2><ul>
+<li><code>optionSet</code>: <strong>DEPRECATED, probably use submodule instead</strong> This type is used to benefit from the modular system used by NixOS inside an option. When this type is enabled, it merge the <code>options</code> attribute of option declarations with each definition. The result is the fixed configuration of each module. This option is often see in conjunction with <code>attrsOf</code> or <code>listOf</code>. Modules declared in option declaration appear in the generated manual with a prefix representing the container type, respectively &quot;<code>.</code><name>&quot; and &quot;<code>.*</code>&quot;. Reference to definition files do not appears in the generated manual because the system cannot track them.</li>
+</ul>
+<p><a href="category:NixOS" class="wikilink" title="Category:NixOS">Category:NixOS</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

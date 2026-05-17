@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Discord</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Discord</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Discord -->
+
+<p>Discord is an instant messaging and VoIP application with lots of functionality. It provides a web interface, though most users would prefer to use a client for interoperability with their system.</p>
+<h2 id="installation">Installation</h2><h3 id="official-clients">Official Clients</h3><p>Nixpkgs provides all three of Discord&#39;s release channels, accessible as <code>pkgs.discord</code>, <code>pkgs.discord-ptb</code>, and <code>pkgs.discord-canary</code> respectively. Add any of the previous derivations to your package&#39;s configuration. For <a href="https://mirror.nixoscn.org/wiki/Discord/NixOS" class="wikilink" title="NixOS">NixOS</a> this will be in <code>environment.systemPackages</code> or <code>users.users.</code><name><code>.packages</code>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs"><span class="hljs-comment"># configuration.nix</span>
+{ config, lib, pkgs, ... }: {
+  <span class="hljs-comment"># This will install Discord PTB for all users of the system</span>
+  <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+    discord-ptb
+  ];
+
+  <span class="hljs-comment"># This installs Discord PTB only for the user &quot;alice&quot;</span>
+  <span class="hljs-attr">users.users.alice.packages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+    discord-ptb
+  ];
+}</code></pre>
+      </div><h3 id="unofficial-clients">Unofficial Clients</h3><p>Nixpkgs also provides a vast variety of community developed/modded Discord clients, which can usually serve as drop-in replacements for the official discord client with an extended set of features.</p>
+<h4 id="footnote-ref-1">Legcord (formerly ArmCord)<sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Discord#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup></h4><p>Lightweight, alternative desktop client with built-in modding extensibility. Nixpkgs provides this client via <code>pkgs.legcord</code>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs">{ config, lib, pkgs, ... }: {
+  <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+    legcord
+  ];
+}</code></pre>
+      </div><h4 id="footnote-ref-2">BetterDiscord<sup><a id="footnote-ref-2" href="https://mirror.nixoscn.org/wiki/Discord#footnote-2" data-footnote-ref aria-describedby="footnote-label">2</a></sup></h4><p>Enhances Discord desktop app with new features. Nixpkgs provides the installer via <code>pkgs.betterdiscordctl</code>. This can be added to your configuration, though users may prefer to instead run it one-off via the <a href="https://mirror.nixoscn.org/wiki/Discord/Nix" class="wikilink" title="Nix">Nix</a> cli.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">$ nix-shell -p betterdiscordctl --<span class="hljs-built_in">command</span> <span class="hljs-string">&#x27;betterdiscordctl install&#x27;</span> <span class="hljs-comment"># nix-legacy</span>
+$ nix run nixpkgs#betterdiscordctl -- install <span class="hljs-comment"># nix3</span>
+
+$ nix-shell -p betterdiscordctl --<span class="hljs-built_in">command</span> <span class="hljs-string">&#x27;betterdiscordctl self-upgrade&#x27;</span> <span class="hljs-comment"># nix-legacy</span>
+$ nix run nixpkgs#betterdiscordctl -- self-upgrade <span class="hljs-comment"># nix3</span></code></pre>
+      </div><h4 id="footnote-ref-3">OpenAsar<sup><a id="footnote-ref-3" href="https://mirror.nixoscn.org/wiki/Discord#footnote-3" data-footnote-ref aria-describedby="footnote-label">3</a></sup></h4><p>Open-source alternative to Discord&#39;s <code>app.asar</code>. Nixpkgs provides this via <code>pkgs.openasar</code>, though this doesn&#39;t provide a usable client. Users should instead prefer overriding the official discord package and add <code>withOpenASAR = true</code>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs">{ config, lib, pkgs, ... }: {
+  <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+    (discord.override {
+      <span class="hljs-attr">withOpenASAR</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-comment"># withVencord = true; # can do this here too</span>
+    })
+  ];
+}</code></pre>
+      </div><h4 id="footnote-ref-4">Vencord<sup><a id="footnote-ref-4" href="https://mirror.nixoscn.org/wiki/Discord#footnote-4" data-footnote-ref aria-describedby="footnote-label">4</a></sup></h4><p>The cutest Discord client mod. The standalone Vencord client can be installed by overriding the official Discord package via <code>withVencord = true</code>.</p>
+<h4 id="footnote-ref-5">Vesktop<sup><a id="footnote-ref-5" href="https://mirror.nixoscn.org/wiki/Discord#footnote-5" data-footnote-ref aria-describedby="footnote-label">5</a></sup></h4><p>As opposed to just Vencord, the same developers also offer an integrated solution which aims to make the Linux experience better.</p>
+<p>It can be neatly managed via <a href="https://mirror.nixoscn.org/wiki/Discord/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a>, or just installed as a regular package via <code>pkgs.vesktop</code>.</p>
+<h4 id="footnote-ref-6">Webcord<sup><a id="footnote-ref-6" href="https://mirror.nixoscn.org/wiki/Discord#footnote-6" data-footnote-ref aria-describedby="footnote-label">6</a></sup></h4><p>Discord and <a href="https://spacebar.chat/">Spacebar</a> client implemented without using the official Discord API. Nixpkgs provides this client via <code>pkgs.webcord</code>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs">{ config, lib, pkgs, ... }: {
+  <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+    webcord
+  ];
+}</code></pre>
+      </div><h2 id="troubleshooting">Troubleshooting</h2><h3 id="screen-sharing-on-wayland">Screen sharing on Wayland</h3><p>Since December 2024, Discord Canary supports screen sharing on Wayland. Alternatively, you can use the web version on a browser that supports screen sharing on Wayland, or an <a href="https://mirror.nixoscn.org/wiki/Discord/Discord#Unofficial_Clients" class="wikilink" title="unofficial client">unofficial client</a> like <em>Webcord</em> or <em>Vesktop</em>, both of which have fixed this issue in their own ways.</p>
+<h3 id="notifications-causing-crashes">Notifications causing crashes</h3><p>Discord will crash if there is no compatible notification daemon running. This issue is only prevalent in custom desktop environments, such as <a href="https://mirror.nixoscn.org/wiki/Discord/Sway" class="wikilink" title="Sway">Sway</a> or <a href="https://mirror.nixoscn.org/wiki/Discord/Hyprland" class="wikilink" title="Hyprland">Hyprland</a>. Comprehensive documentation usually exists for most window managers/compositors and can be found on their respective wikis. Nixpkgs provides a few standalone notification daemons such as <code>pkgs.dunst</code> and <code>pkgs.mako</code>. You may optionally use a notification daemon from a larger DE, such as <code>pkgs.lxqt.lxqt-notificationd</code>, however it is unclear how effective these will be outside of their normal environment.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs">{ config, lib, pkgs, ... }: {
+  <span class="hljs-comment"># You will need to add a call for the daemon to actually function.</span>
+  <span class="hljs-comment"># This is usually done within the configuration of your respective WM.</span>
+  <span class="hljs-comment"># See the official wiki/documentation for your WM for more info.</span>
+  <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+    mako
+  ];
+}</code></pre>
+      </div><h3 id="quot-must-be-your-lucky-day-quot-popup">&quot;Must be your lucky day&quot; popup</h3><p>Although Nixpkgs is usually very fast with updates (if you use <em>nixos-unstable</em>), you may still run into this issue intermittently. You may override the discord package with a more up-to-date source, or you may disable this popup entirely by adding <code>&quot;SKIP_HOST_UPDATE&quot;: true</code> to <code>~/.config/discord/settings.json</code>.</p>
+<h3 id="krisp-noise-suppression">Krisp noise suppression</h3><p>The Krisp noise suppression option will not work on NixOS because the Discord binary is patched before installation, and there is a DRM-style integrity check in the Krisp binary which prevents Krisp from working if the Discord binary is modified. See <a href="https://github.com/NixOS/nixpkgs/issues/195512">https://github.com/NixOS/nixpkgs/issues/195512</a> for details.</p>
+<h4 id="python-script-workaround">Python Script Workaround</h4><p>One way to enable Krisp noise suppression is by patching the <code>discord_krisp.node</code> binary to bypass its DRM verification. Below is a Nix configuration that creates a Python script that patches the binary by modifying specific bytes to bypass the license check:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs">{ pkgs, ... }:
+<span class="hljs-keyword">let</span>
+  <span class="hljs-attr">krisp-patcher</span> <span class="hljs-operator">=</span>
+    pkgs.writers.writePython3Bin <span class="hljs-string">&quot;krisp-patcher&quot;</span>
+      {
+        <span class="hljs-attr">libraries</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs.python3Packages; [
+          capstone
+          pyelftools
+        ];
+        <span class="hljs-attr">flakeIgnore</span> <span class="hljs-operator">=</span> [
+          <span class="hljs-string">&quot;E501&quot;</span> <span class="hljs-comment"># line too long (82 &gt; 79 characters)</span>
+          <span class="hljs-string">&quot;F403&quot;</span> <span class="hljs-comment"># &#x27;from module import *&#x27; used; unable to detect undefined names</span>
+          <span class="hljs-string">&quot;F405&quot;</span> <span class="hljs-comment"># name may be undefined, or defined from star imports: module</span>
+        ];
+      }
+      (
+        <span class="hljs-built_in">builtins.readFile</span> (
+          pkgs.fetchurl {
+            <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://pastebin.com/raw/8tQDsMVd&quot;</span>;
+            <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sha256-IdXv0MfRG1/1pAAwHLS2+1NESFEz2uXrbSdvU9OvdJ8=&quot;</span>;
+          }
+        )
+      );
+<span class="hljs-keyword">in</span>
+{
+  <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> [
+    krisp-patcher
+  ];
+}</code></pre>
+      </div><p>After adding this to your Nix configuration and rebuilding, make sure Discord is completely closed, and then run:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">$ krisp-patcher ~/.config/discord/0.0.76/modules/discord_krisp/discord_krisp.node</code></pre>
+      </div><p>Once you restart Discord and join a VC, you should see a sound wave icon to the left of the hangup icon.</p>
+<h3 id="text-to-speech">Text-to-Speech</h3><p>TTS is disabled by default; you may enable it via an override:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">(pkgs.discord.override { <span class="hljs-attr">withTTS</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; })</code></pre>
+      </div><h3 id="discord-rpc-not-functioning">Discord RPC not functioning</h3><h4 id="nixos">NixOS</h4><p>Install <a href="https://github.com/OpenAsar/arrpc">arRPC</a>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs">{pkgs, ...}:{
+  <span class="hljs-attr">enviroment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+    arrpc
+  ];
+  <span class="hljs-attr">systemd.packages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [ arrpc ];
+}</code></pre>
+      </div><h4 id="home-manager">Home Manager</h4><p>Add the following to your Home Manager configuration</p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs">{pkgs, ...}:{
+    <span class="hljs-attr">services.arrpc</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+        <span class="hljs-attr">package</span> <span class="hljs-operator">=</span> pkgs.arrpc; <span class="hljs-comment">#Default</span>
+        <span class="hljs-attr">systemdTarget</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;graphical-session.target&quot;</span>; <span class="hljs-comment">#Default</span>
+    };
+}</code></pre>
+      </div><p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="category:Gaming" class="wikilink" title="Category:Gaming">Category:Gaming</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p><a href="https://github.com/Legcord/Legcord">https://github.com/Legcord/Legcord</a> <a href="https://mirror.nixoscn.org/wiki/Discord#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+<li id="footnote-2">
+<p><a href="https://betterdiscord.app/">https://betterdiscord.app/</a> <a href="https://mirror.nixoscn.org/wiki/Discord#footnote-ref-2" data-footnote-backref aria-label="Back to reference 2">↩</a></p>
+</li>
+<li id="footnote-3">
+<p><a href="https://github.com/GooseMod/OpenAsar">https://github.com/GooseMod/OpenAsar</a> <a href="https://mirror.nixoscn.org/wiki/Discord#footnote-ref-3" data-footnote-backref aria-label="Back to reference 3">↩</a></p>
+</li>
+<li id="footnote-4">
+<p><a href="https://vencord.dev/">https://vencord.dev/</a> <a href="https://mirror.nixoscn.org/wiki/Discord#footnote-ref-4" data-footnote-backref aria-label="Back to reference 4">↩</a></p>
+</li>
+<li id="footnote-5">
+<p><a href="https://github.com/Vencord/Vesktop">https://github.com/Vencord/Vesktop</a> <a href="https://mirror.nixoscn.org/wiki/Discord#footnote-ref-5" data-footnote-backref aria-label="Back to reference 5">↩</a></p>
+</li>
+<li id="footnote-6">
+<p><a href="https://github.com/SpacingBat3/WebCord">https://github.com/SpacingBat3/WebCord</a> <a href="https://mirror.nixoscn.org/wiki/Discord#footnote-ref-6" data-footnote-backref aria-label="Back to reference 6">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

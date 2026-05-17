@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Immich</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Immich</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Immich -->
+
+<p><a href="https://immich.app/">Immich</a> is a self-hosted photo and video management solution.</p>
+<h2 id="installation">Installation</h2><p>To install Immich, add the following to your NixOS configuration:</p>
+<p>To access Immich from other devices via network, add the following as well:</p>
+<p>To change Immich’s default log verbosity, you can set the <a href="https://docs.immich.app/install/environment-variables#general"><code>IMMICH_LOG_LEVEL</code></a> environment variable: More options are available:</p>
+<h2 id="tips-and-tricks">Tips and Tricks</h2><h3 id="reducing-log-verbosity-of-redis">Reducing Log Verbosity Of Redis</h3><p>As noted in the <a href="https://docs.immich.app/FAQ/#how-can-i-reduce-the-log-verbosity-of-redis">Immich FAQ</a>, you can reduce Redis log verbosity by setting the log level to warning. In NixOS this is done with the <a href="https://search.nixos.org/options?show=services.redis.servers.%3Cname%3E.logLevel">log Level option</a> of the Redis server that Immich uses:</p>
+<h3 id="custom-media-location">Custom Media Location</h3><p>While the official Immich documentation recommends modifying <code>UPLOAD_LOCATION</code> environmental variable for Docker build, NixOS does not support modifying it. Instead, may be used, which simply sets [<a href="https://docs.immich.app/install/environment-variables/">https://docs.immich.app/install/environment-variables/</a>　<code>IMMICH_MEDIA_LOCATION</code>] variable, while this is not recommended in the official documentation:</p>
+<h3 id="enabling-hardware-accelerated-video-transcoding">Enabling Hardware Accelerated Video Transcoding</h3><p>Add the Immich user to the <code>render</code> and <code>video</code> groups, override the <code>PrivateDevices</code> service config setting to allow the service to access <code>/dev/dri/</code> and enable <a href="https://mirror.nixoscn.org/wiki/Immich/Accelerated_Video_Playback" class="wikilink" title="Accelerated Video Playback">Accelerated Video Playback</a> on your system:</p>
+<h3 id="using-immich-behind-nginx">Using Immich behind Nginx</h3><p>This is a typical <a href="https://mirror.nixoscn.org/wiki/Immich/Nginx" class="wikilink" title="Nginx">Nginx</a> configuration for Immich:</p>
+<h3 id="using-borg-for-backups">Using borg for backups</h3><p>Following Immichs <a href="https://immich.app/docs/administration/backup-and-restore/">backup docs</a> and <a href="https://immich.app/docs/guides/template-backup-script">backup script</a> an automated backup using <a href="https://mirror.nixoscn.org/wiki/Immich/Borg_backup" class="wikilink" title="Borg backup">Borg backup</a> could look something like this: Make sure to manually create a borg repo at the desired location beforehand with <code>sudo borg init --encryption=none &lt;path-to-borg-repo</code></p>
+<h2 id="troubleshooting">Troubleshooting</h2><h3 id="fixing-postgresql-database-issue-after-25-05-upgrade">Fixing PostgreSQL database issue after 25.05 upgrade</h3><h4 id="postgresql-collation-version-mismatch">PostgreSQL collation version mismatch</h4><p>After upgrading you might run into an issue like this, leading to immich-server continuously failing and restarting:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">Jul 01 14:23:12 server2 immich[178592]: Postgres notice: {
+Jul 01 14:23:12 server2 immich[178592]:   severity_local: 'WARNING',
+Jul 01 14:23:12 server2 immich[178592]:   severity: 'WARNING',
+Jul 01 14:23:12 server2 immich[178592]:   code: '01000',
+Jul 01 14:23:12 server2 immich[178592]:   message: 'database &quot;immich&quot; has a collation version mismatch',
+Jul 01 14:23:12 server2 immich[178592]:   detail: 'The database was created using collation version 2.39, but the operating system provides version 2.40.',
+Jul 01 14:23:12 server2 immich[178592]:   hint: 'Rebuild all objects in this database that use the default collation and run ALTER DATABASE immich REFRESH COLLATION VERSION,&gt;
+Jul 01 14:23:12 server2 immich[178592]:   file: 'postinit.c',
+Jul 01 14:23:12 server2 immich[178592]:   line: '477',
+Jul 01 14:23:12 server2 immich[178592]:   routine: 'CheckMyDatabase'
+Jul 01 14:23:12 server2 immich[178592]: }</code></pre>
+      </div><p>To fix this, run <code>sudo -u immich psql -d immich</code> and execute these two commands:</p>
+<div class="code-container">
+        
+        <pre><code class="language-sql hljs"><span class="hljs-keyword">ALTER</span> DATABASE immich REFRESH <span class="hljs-keyword">COLLATION</span> VERSION;
+REINDEX DATABASE immich;</code></pre>
+      </div><h3 id="immich-server-too-old-on-nixos-stable">Immich server too old on NixOS stable</h3><p>If you encounter errors like <code>Error processing stream</code> or <code>Error in runInIsolateGentle for remote-sync</code> on Android/iOS clients, the cause may be that the Immich server version packaged in <code>nixos-stable</code> is behind the mobile apps.</p>
+<p>You can use the Immich package from <code>nixos-unstable</code> while keeping the rest of your system on stable. Add the following to the top of your <code>/etc/nixos/configuration.nix</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-keyword">let</span>
+  <span class="hljs-attr">unstableTarball</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">fetchTarball</span> <span class="hljs-string">&quot;https://github.com/NixOS/nixpkgs/archive/nixos-unstable.tar.gz&quot;</span>;
+<span class="hljs-keyword">in</span> {
+  <span class="hljs-attr">nixpkgs.config</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">packageOverrides</span> <span class="hljs-operator">=</span> <span class="hljs-params">pkgs:</span> {
+      <span class="hljs-attr">unstable</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> unstableTarball {
+        <span class="hljs-attr">config</span> <span class="hljs-operator">=</span> config.nixpkgs.config;
+      };
+    };
+  };
+}</code></pre>
+      </div><p>Then override the Immich package in your service config:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.immich.package</span> <span class="hljs-operator">=</span> pkgs.unstable.immich;</code></pre>
+      </div><p><a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="category:Web_Applications" class="wikilink" title="Category:Web Applications">Category:Web Applications</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

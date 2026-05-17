@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nix ecosystem/uk</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/Nix%20ecosystem">Nix ecosystem</a><span aria-hidden="true"> / </span>uk</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Nix ecosystem/uk -->
+
+<languages/>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>The <strong>Core Nix Ecosystem</strong> is a collection of technologies designed to reproducibly build and declaratively configure and manage packages and systems as well as their dependencies. It achieves this by translating the functional paradigm from the program to the system domain by utilizing a dynamic, functional and lazy DSL called the <a href="special:MyLanguage/Overview_of_the_Nix_Language" class="wikilink" title="Nix Language">Nix Language</a> for specifying reproducible builds.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>In addition there are many other <a href="special:MyLanguage/applications" class="wikilink" title="applications">applications</a> (<em><strong>Extended Nix Ecosystem</strong></em>) developed by the Nix community, utilizing and supporting these core technologies.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h2 id="official-ecosystem">Official ecosystem</h2></div>
+
+<table>
+<thead>
+<tr>
+<th><span lang="en" dir="ltr" class="mw-content-ltr">Component</span></th>
+<th><span lang="en" dir="ltr" class="mw-content-ltr">Manual</span></th>
+<th><span lang="en" dir="ltr" class="mw-content-ltr">Description</span></th>
+<th><span lang="en" dir="ltr" class="mw-content-ltr">Use</span></th>
+<th>Ліцензія</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a href="special:MyLanguage/NixOS" class="wikilink" title="NixOS">NixOS</a></td>
+<td><span lang="en" dir="ltr" class="mw-content-ltr"><a href="https://nixos.org/nixos/manual/">NixOS Manual</a></span></td>
+<td><span lang="en" dir="ltr" class="mw-content-ltr">A Linux distribution with <em>all</em> components built by Nix, and thus supporting reproducible and declarative system-wide configuration management as well as atomic upgrades and rollbacks.</span></td>
+<td><span lang="en" dir="ltr" class="mw-content-ltr">Declaratively configure desktops, servers &amp; clusters</span></td>
+<td>MIT</td>
+</tr>
+<tr>
+<td><a href="special:MyLanguage/Nixpkgs" class="wikilink" title="Nixpkgs">Nixpkgs</a></td>
+<td><span lang="en" dir="ltr" class="mw-content-ltr"><a href="https://nixos.org/nixpkgs/manual/">Nixpkgs Manual</a></span></td>
+<td><span lang="en" dir="ltr" class="mw-content-ltr">The largest community maintained Nix package and NixOS module repository; standard releases of NixOS are hosted here.</span></td>
+<td><span lang="en" dir="ltr" class="mw-content-ltr">Share Nix packages &amp; NixOS modules</span></td>
+<td>MIT</td>
+</tr>
+<tr>
+<td><a href="special:MyLanguage/Hydra" class="wikilink" title="Hydra">Hydra</a></td>
+<td><span lang="en" dir="ltr" class="mw-content-ltr"><a href="https://nixos.org/hydra/manual/">Hydra Manual</a></span></td>
+<td><span lang="en" dir="ltr" class="mw-content-ltr">A Nix based continuous build system.</span></td>
+<td><span lang="en" dir="ltr" class="mw-content-ltr">CI build farms</span></td>
+<td>GPL-3.0</td>
+</tr>
+<tr>
+<td><a href="special:MyLanguage/Nix" class="wikilink" title="Nix">Nix</a></td>
+<td><span lang="en" dir="ltr" class="mw-content-ltr"><a href="https://nixos.org/nix/manual/">Nix Manual</a></span></td>
+<td><span lang="en" dir="ltr" class="mw-content-ltr">A package manager that parses Nix expressions specifying reproducible build, putting the result in a store address with a hash of the dependency tree, sidestepping dependency hell and supporting multiversion installs and rollbacks.</span></td>
+<td><span lang="en" dir="ltr" class="mw-content-ltr">Reproducible builds &amp; package management in Linux &amp; Darwin</span></td>
+<td>LGPL-2.1</td>
+</tr>
+</tbody></table>
+<p><span lang="en" dir="ltr" class="mw-content-ltr">Core Components of the Nix Ecosystem</span></p>
+<table style="width:20%;">
+<caption><span lang="en" dir="ltr" class="mw-content-ltr"><strong>The NixOS core ecosystem stack</strong></span></caption>
+<colgroup>
+<col style="width: 20%" />
+</colgroup>
+<tbody>
+<tr>
+<td style="text-align: center; border: 1px solid var(--border-color-base); background: var(--background-color-neutral); padding: 1.6rem" width="2%"><div style="font-size: 1.3em; font-weight: bold">
+<p>NixOS</p>
+</div>
+<p><span lang="en" dir="ltr" class="mw-content-ltr">A Linux distribution and configuration system built using Nixpkgs.</span></p></td>
+</tr>
+<tr>
+<td style="text-align: center; border: 1px solid var(--border-color-base); background: var(--background-color-neutral); padding: 1.6rem" width="2%"><div style="font-size: 1.3em; font-weight: bold">
+<p>Nixpkgs</p>
+</div>
+<p><span lang="en" dir="ltr" class="mw-content-ltr">A large, community-maintained repository of packages.</span></p></td>
+</tr>
+<tr>
+<td style="text-align: center; border: 1px solid var(--border-color-base); background: var(--background-color-neutral); padding: 1.6rem" width="2%"><div style="font-size: 1.3em; font-weight: bold">
+<p>Nix</p>
+</div>
+<p><span lang="en" dir="ltr" class="mw-content-ltr">A pure and functional build system.</span></p></td>
+</tr>
+</tbody>
+</table>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h2 id="usage-of-nixos">Usage of NixOS</h2></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Users install the <em>NixOS</em> distribution on their computers just as any other Linux distribution. They read about packages to install and configuration options in <em>Nixpkgs</em> via <a href="https://search.nixos.org/">https://search.nixos.org</a> and this wiki. They use the <em>Nix</em> language to declaratively describe in a text file what software packages should be installed and how the system should be configured. They run 2 command line programs in a terminal to transform the system into the described system. They use the system as any other Linux system.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h2 id="development-of-nixos">Development of NixOS</h2></div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Developers of <em>NixOS</em> mainly work on <em>Nixpkgs</em>. <em>NixOS</em> development itself is compromised of three large areas as well as some others which are smaller by volume (but no less important). The major ones include packaging, the module system, and documentation.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<ul>
+<li>Packaging is done in <em>Nixpkgs</em> and is not exclusive to <em>NixOS</em> or even Linux-based platforms. Maintainers of packages which are not exclusive to <em>NixOS</em> (such as tooling required to run the distribution itself) usually take care of multiple platforms although not strictly required.</li>
+</ul>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<ul>
+<li>The module system is the way in which services running on <em>NixOS</em> are primarily configured. This area stretches from &quot;low-level&quot; configuration such as <em>systemd</em> unit files or providing custom kernel configuration up to configuration file generation for specific services. The module system is the primary way for users to configure <em>NixOS</em>, and lives in the <code>nixos/</code> subdirector of <em>Nixpkgs</em>.</li>
+</ul>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<ul>
+<li>Documentation is largely embedded in packaging and module system data, although free-standing markdown files are also contained in the <em>Nixpkgs</em> repository. Documentation also includes maintaining the website, Wiki, and other aspects of the wider ecosystem. The first two categories are almost exclusively <em>Nix</em> language code written in text files, while the latter is a mix of <em>Nix</em> code, markdown files, and various other formats.</li>
+</ul>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>All contributions to <em>Nixpkgs</em>, regardless of whether they affect <em>NixOS</em> or not, are subject to peer review before being integrated into <em>Nixpkgs</em>. Many packages alongside documentation and supplementary materials such as ISOs or tarballs are pre built on <em>Hydra</em> to reduce the update time for <em>NixOS</em> users.</p>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>Those three categories are largest by contribution volume, however many maintainers also engage in activities surrounding the NixOS foundation, maintaining the infrastructure on which website, <em>Hydra</em>, and other tools run on, or developing tooling required for NixOS.</p>
+</div>
+
+<table>
+<thead>
+<tr>
+<th>Тип розробки</th>
+<th>Локація Розробки</th>
+<th>Приклади</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><span lang="en" dir="ltr" class="mw-content-ltr">Platform Agnostic Packaging</span></td>
+<td><em>Nixpkgs</em></td>
+<td><span lang="en" dir="ltr" class="mw-content-ltr"><a href="https://github.com/NixOS/nixpkgs/blob/bf3287dac860542719fe7554e21e686108716879/pkgs/tools/misc/coreutils/default.nix">coreutils package</a>, <a href="https://github.com/NixOS/nixpkgs/tree/5fe6820251dfab92c84ff356a7c7c336f8d8490c/pkgs/stdenv"><em>stdenv</em> framework</a>, <a href="https://github.com/NixOS/nixpkgs/blob/5fe6820251dfab92c84ff356a7c7c336f8d8490c/pkgs/applications/office/libreoffice/default.nix">Libreoffice package</a></span></td>
+</tr>
+<tr>
+<td><span lang="en" dir="ltr" class="mw-content-ltr">Platform Agnostic Tooling</span></td>
+<td><span lang="en" dir="ltr" class="mw-content-ltr"><em>Nixpkgs</em> and various repositories</span></td>
+<td><span lang="en" dir="ltr" class="mw-content-ltr"><a href="https://github.com/NixOS/nix">upstream/default Nix implementation (CppNix)</a>, <a href="https://github.com/NixOS/hydra"><em>Hydra</em> source code</a>, <a href="https://github.com/NixOS/nixpkgs-merge-bot"><em>Nixpkgs</em> merge bot</a></span></td>
+</tr>
+<tr>
+<td><span lang="en" dir="ltr" class="mw-content-ltr"><em>NixOS</em> Tooling</span></td>
+<td><span lang="en" dir="ltr" class="mw-content-ltr">mostly <em>Nixpkgs</em></span></td>
+<td><span lang="en" dir="ltr" class="mw-content-ltr"><a href="https://github.com/NixOS/nixpkgs/tree/5fe6820251dfab92c84ff356a7c7c336f8d8490c/pkgs/by-name/ni/nixos-rebuild-ng">nixos-rebuild-ng source code</a>, <a href="https://github.com/NixOS/nixpkgs/blob/5fe6820251dfab92c84ff356a7c7c336f8d8490c/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"><em>NixOS</em> Installation ISOs</a></span></td>
+</tr>
+<tr>
+<td><span lang="en" dir="ltr" class="mw-content-ltr"><em>NixOS</em> Module System</span></td>
+<td><em>Nixpkgs</em></td>
+<td><span lang="en" dir="ltr" class="mw-content-ltr"><a href="https://github.com/NixOS/nixpkgs/blob/master/nixos/modules/services/display-managers/default.nix">Display Manager configuration</a>, <a href="https://github.com/NixOS/nixpkgs/blob/master/nixos/modules/services/databases/mysql.nix">MySQL (and derivative) database configuration</a></span></td>
+</tr>
+<tr>
+<td>Інфраструктура</td>
+<td></td>
+<td><span lang="en" dir="ltr" class="mw-content-ltr"><a href="https://github.com/NixOS/nixos-wiki-infra">Infrastructure for this Wiki</a>, <a href="https://github.com/NixOS/infra"><em>NixOS</em> infra</a></span></td>
+</tr>
+<tr>
+<td>Документація</td>
+<td></td>
+<td><span lang="en" dir="ltr" class="mw-content-ltr"><a href="https://wiki.nixos.org/">This Wiki</a>, <a href="https://github.com/NixOS/nixpkgs/blob/8d92119c540d78599ba208010c722a60958810f4/doc/stdenv/stdenv.chapter.md"><em>stdenv</em> documentation</a>, <a href="https://github.com/NixOS/nixpkgs/blob/master/nixos/doc/manual/configuration/ipv6-config.section.md"><em>NixOS</em> IPv6 configuration</a> (visible in the <a href="https://nixos.org/manual/nixos/stable/#sec-ipv6">IPv6 section of the <em>NixOS</em> manual</a>), <a href="https://github.com/NixOS/nixpkgs/blob/master/CONTRIBUTING.md"><em>Nixpkgs</em> Contribution Guidelines</a></span></td>
+</tr>
+<tr>
+<td>Технічна організація</td>
+<td></td>
+<td><span lang="en" dir="ltr" class="mw-content-ltr"><a href="https://github.com/NixOS/nixpkgs/issues/390768"><em>NixOS</em> RelEng</a>, <a href="https://github.com/NixOS/rfcs/"><em>Nix</em> and <em>NixOS</em> RFCs</a></span></td>
+</tr>
+<tr>
+<td>Інші</td>
+<td></td>
+<td><span lang="en" dir="ltr" class="mw-content-ltr"><a href="https://github.com/NixOS/nixos-artwork"><em>NixOS</em> artwork</a>, <a href="https://discourse.nixos.org/"><em>NixOS</em> (and related) discourse</a>, <a href="https://github.com/NixOS/foundation"><em>NixOS Foundation</em></a></span></td>
+</tr>
+</tbody></table>
+<p>Різноманітні приклади розробки <em>NixOS</em> разом із посиланнями</p>
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<p>See also: <a href="https://github.com/NixOS/org">Nix organisation repository</a></p>
+</div>
+
+<p><a href="category:Pedias" class="wikilink" title="Category:Pedias">Category:Pedias</a> <a href="category:NixOS" class="wikilink" title="Category:NixOS">Category:NixOS</a> <a href="category:nix" class="wikilink" title="Category:nix">Category:nix</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

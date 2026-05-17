@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Borg backup</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Borg backup</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Borg backup -->
+
+<p><a href="https://www.borgbackup.org/">BorgBackup</a> (short: Borg) is a deduplicating incremental backup program for local and remote data. Optionally, it supports compression and authenticated encryption.</p>
+<p>This wiki article extends the documentation in the <a href="https://nixos.org/manual/nixos/stable/#module-borgbase">NixOS manual</a>.</p>
+<p>It&#39;s easier to take the first steps with Borg by using a GUI - information about Vorta may also be found in the <a href="https://nixos.org/manual/nixos/stable/#opt-services-backup-borgbackup-vorta">NixOS manual</a>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">$ nix-env -iA nixpkgs.borgbackup</code></pre>
+      </div><p>To be able to do remote backups it should be installed both locally and remotely, but usually no remote configuration required, only a local one.</p>
+<h2 id="creating-backups">Creating backups</h2><p>I&#39;ll describe remote SSH backups here, as this is the most important case. It should be as easy as:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">services.borgbackup.jobs.home-danbst</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">paths</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/home/danbst&quot;</span>;
+    <span class="hljs-attr">encryption.mode</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;none&quot;</span>;
+    <span class="hljs-attr">environment.BORG_RSH</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ssh -i /home/danbst/.ssh/id_ed25519&quot;</span>;
+    <span class="hljs-attr">repo</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ssh://user@example.com:23/path/to/backups-dir/home-danbst&quot;</span>;
+    <span class="hljs-attr">compression</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;auto,zstd&quot;</span>;
+    <span class="hljs-attr">startAt</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;daily&quot;</span>;
+  };</code></pre>
+      </div><p>First, create a directory for backups <code>/path/to/backups-dir</code> on your remote machine, then rebuild local machine using this config and correctly specified <code>paths</code>, <code>BORG_RSH</code>, etc.</p>
+<p>It will create &quot;archives&quot; with identifiers like <code>station-home-danbst-2020-06-10T00:00:46</code> every day.</p>
+<p>Personally, I&#39;ve adapted that to exclude unrelated stuff and split into multiple repos, but you don&#39;t necessarily need that:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">services.borgbackup.jobs</span> <span class="hljs-operator">=</span>
+    <span class="hljs-keyword">let</span> common-excludes <span class="hljs-operator">=</span> [
+          <span class="hljs-comment"># Largest cache dirs</span>
+          <span class="hljs-string">&quot;.cache&quot;</span>
+          <span class="hljs-string">&quot;*/cache2&quot;</span> <span class="hljs-comment"># firefox</span>
+          <span class="hljs-string">&quot;*/Cache&quot;</span>
+          <span class="hljs-string">&quot;.config/Slack/logs&quot;</span>
+          <span class="hljs-string">&quot;.config/Code/CachedData&quot;</span>
+          <span class="hljs-string">&quot;.container-diff&quot;</span>
+          <span class="hljs-string">&quot;.npm/_cacache&quot;</span>
+          <span class="hljs-comment"># Work related dirs</span>
+          <span class="hljs-string">&quot;*/node_modules&quot;</span>
+          <span class="hljs-string">&quot;*/bower_components&quot;</span>
+          <span class="hljs-string">&quot;*/_build&quot;</span>
+          <span class="hljs-string">&quot;*/.tox&quot;</span>
+          <span class="hljs-string">&quot;*/venv&quot;</span>
+          <span class="hljs-string">&quot;*/.venv&quot;</span>
+        ];
+        <span class="hljs-attr">work-dirs</span> <span class="hljs-operator">=</span> [
+          <span class="hljs-string">&quot;/home/danbst/dev/company1&quot;</span>
+          <span class="hljs-string">&quot;/home/danbst/dev/company2&quot;</span>
+        ];
+        <span class="hljs-attr">basicBorgJob</span> <span class="hljs-operator">=</span> <span class="hljs-params">name:</span> {
+          <span class="hljs-attr">encryption.mode</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;none&quot;</span>;
+          <span class="hljs-attr">environment.BORG_RSH</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ssh -o &#x27;StrictHostKeyChecking=no&#x27; -i /home/danbst/.ssh/id_ed25519&quot;</span>;
+          <span class="hljs-attr">environment.BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;yes&quot;</span>;
+          <span class="hljs-attr">extraCreateArgs</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;--verbose --stats --checkpoint-interval 600&quot;</span>;
+          <span class="hljs-attr">repo</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ssh://user@example.com//media/backup/<span class="hljs-subst">${name}</span>&quot;</span>;
+          <span class="hljs-attr">compression</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;zstd,1&quot;</span>;
+          <span class="hljs-attr">startAt</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;daily&quot;</span>;
+          <span class="hljs-attr">user</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;danbst&quot;</span>;
+        };
+  <span class="hljs-keyword">in</span> {
+    <span class="hljs-attr">home-danbst</span> <span class="hljs-operator">=</span> basicBorgJob <span class="hljs-string">&quot;backups/station/home-danbst&quot;</span> <span class="hljs-operator">//</span> <span class="hljs-keyword">rec</span> {
+      <span class="hljs-attr">paths</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/home/danbst&quot;</span>;
+      <span class="hljs-attr">exclude</span> <span class="hljs-operator">=</span> work-dirs <span class="hljs-operator">++</span> <span class="hljs-built_in">map</span> (<span class="hljs-params">x:</span> paths <span class="hljs-operator">+</span> <span class="hljs-string">&quot;/&quot;</span> <span class="hljs-operator">+</span> x) (common-excludes <span class="hljs-operator">++</span> [
+        <span class="hljs-string">&quot;Downloads&quot;</span>
+      ]);
+    };
+    <span class="hljs-attr">home-danbst-downloads</span> <span class="hljs-operator">=</span> basicBorgJob <span class="hljs-string">&quot;backups/station/home-danbst-downloads&quot;</span> <span class="hljs-operator">//</span> <span class="hljs-keyword">rec</span> {
+      <span class="hljs-attr">paths</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/home/danbst/Downloads&quot;</span>;
+      <span class="hljs-attr">exclude</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">map</span> (<span class="hljs-params">x:</span> paths <span class="hljs-operator">+</span> <span class="hljs-string">&quot;/&quot;</span> <span class="hljs-operator">+</span> x) common-excludes;
+    };
+    <span class="hljs-attr">extra-drive-important</span> <span class="hljs-operator">=</span> basicBorgJob <span class="hljs-string">&quot;backups/station/extra-drive-important&quot;</span> <span class="hljs-operator">//</span> <span class="hljs-keyword">rec</span> {
+      <span class="hljs-attr">paths</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/media/extra-drive/important&quot;</span>;
+      <span class="hljs-attr">exclude</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">map</span> (<span class="hljs-params">x:</span> paths <span class="hljs-operator">+</span> <span class="hljs-string">&quot;/&quot;</span> <span class="hljs-operator">+</span> x) common-excludes;
+    };
+  };</code></pre>
+      </div><p>After doing at least one successful backup don&#39;t forget to test mount it (see next)</p>
+<h2 id="notifications-when-backup-fails">Notifications when backup fails</h2><p>Quite often backups do fail. To perform notifications about this situations, you can setup autonotifier for all NixOS borg jobs. This requires creating a separate module, but can be also done inplace in <code>/etc/nixos/configuration.nix</code></p>
+<p>Note, that example below was for Gnome-shell desktop! For other desktops it may require changes for how to get DBUS session properly!</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs, config, lib, ... }:
+
+<span class="hljs-keyword">let</span>
+  <span class="hljs-attr">borgbackupMonitor</span> <span class="hljs-operator">=</span> { config, pkgs, lib, ... }: <span class="hljs-keyword">with</span> lib; {
+    <span class="hljs-attr">key</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;borgbackupMonitor&quot;</span>;
+    <span class="hljs-attr">_file</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;borgbackupMonitor&quot;</span>;
+    <span class="hljs-attr">config.systemd.services</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-string">&quot;notify-problems@&quot;</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+        <span class="hljs-attr">serviceConfig.User</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;danbst&quot;</span>;
+        <span class="hljs-attr">environment.SERVICE</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;%i&quot;</span>;
+        <span class="hljs-attr">script</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+          export $(cat /proc/$(<span class="hljs-subst">${pkgs.procps}</span>/bin/pgrep &quot;gnome-session&quot; -u &quot;$USER&quot;)/environ |grep -z &#x27;^DBUS_SESSION_BUS_ADDRESS=&#x27;)
+          <span class="hljs-subst">${pkgs.libnotify}</span>/bin/notify-send -u critical &quot;$SERVICE FAILED!&quot; &quot;Run journalctl -u $SERVICE for details&quot;
+        &#x27;&#x27;</span>;
+      };
+    } <span class="hljs-operator">//</span> flip mapAttrs&#x27; config.services.borgbackup.jobs (<span class="hljs-params">name:</span> <span class="hljs-params">value:</span>
+      nameValuePair <span class="hljs-string">&quot;borgbackup-job-<span class="hljs-subst">${name}</span>&quot;</span> {
+        <span class="hljs-attr">unitConfig.OnFailure</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;notify-problems@%i.service&quot;</span>;
+      }
+    );
+    
+    <span class="hljs-comment"># optional, but this actually forces backup after boot in case laptop was powered off during scheduled event</span>
+    <span class="hljs-comment"># for example, if you scheduled backups daily, your laptop should be powered on at 00:00</span>
+    <span class="hljs-attr">config.systemd.timers</span> <span class="hljs-operator">=</span> flip mapAttrs&#x27; config.services.borgbackup.jobs (<span class="hljs-params">name:</span> <span class="hljs-params">value:</span>
+      nameValuePair <span class="hljs-string">&quot;borgbackup-job-<span class="hljs-subst">${name}</span>&quot;</span> {
+        <span class="hljs-attr">timerConfig.Persistent</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      }
+    );
+  };
+
+<span class="hljs-keyword">in</span> {
+  <span class="hljs-attr">imports</span> <span class="hljs-operator">=</span>
+    [
+      ....
+      borgbackupMonitor
+    ];
+  ...
+}</code></pre>
+      </div><h2 id="don-39-t-try-backup-when-network-is-unreachable">Don&#39;t try backup when network is unreachable</h2><p>With persistent timers above you can get into a problem that after reboot backup is tried too fast, even when network is not yet available, and thus fails. This can be solved with systemd failed restart, or using internet-ready check in <code>preStart</code> script.</p>
+<p>Patching previous example:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">    } <span class="hljs-operator">//</span> flip mapAttrs&#x27; config.services.borgbackup.jobs (<span class="hljs-params">name:</span> <span class="hljs-params">value:</span>
+      nameValuePair <span class="hljs-string">&quot;borgbackup-job-<span class="hljs-subst">${name}</span>&quot;</span> {
+        <span class="hljs-attr">unitConfig.OnFailure</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;notify-problems@%i.service&quot;</span>;
+        <span class="hljs-attr">preStart</span> <span class="hljs-operator">=</span> lib.mkBefore <span class="hljs-string">&#x27;&#x27;
+          # waiting for internet after resume-from-suspend
+          until /run/wrappers/bin/ping google.com -c1 -q &gt;/dev/null; do :; done
+        &#x27;&#x27;</span>;
+      }
+    );
+    ...</code></pre>
+      </div><h2 id="mounting-point-in-time-archives">Mounting point-in-time archives</h2><p>First, check if there are any archives:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">$ borg list user@example.name:/media/backup/backups/station/home-danbst
+...
+station-home-danbst-2020-06-02T00:00:02 Mon, 2020-06-01 21:00:09 [24e6318a379ac3b494448fb2ab2ca7b2df7188426d0814978165cab8e09cd642]
+station-home-danbst-2020-06-03T00:00:12 Tue, 2020-06-02 21:00:20 [2912b78d306f5b4a254e099f0878d743849c1b99c4441815e3fa43d485414438]
+station-home-danbst-2020-06-04T00:00:07 Wed, 2020-06-03 21:00:29 [8a5e03a8f9a1a397e5e05585e112f2206043cfdc8cca4d97f73079be89ba1009]
+station-home-danbst-2020-06-05T00:00:02 Thu, 2020-06-04 21:00:11 [14df97419fd2e2a243d24cd04b643044a5c732b815cc25d3bddd8df6cf1f2549]
+station-home-danbst-2020-06-06T00:00:00 Fri, 2020-06-05 21:00:11 [69684418497adc43a0ae8ebc617494247bf6ecfe42ba6c04db354253c7f5e144]
+station-home-danbst-2020-06-08T00:00:52 Sun, 2020-06-07 21:00:59 [d5b08fa57cfb3727c5f7d855509158a70907b6fa009abe30579328def74fd2a6]
+station-home-danbst-2020-06-10T00:00:46 Tue, 2020-06-09 21:00:53 [85a5329ae39c46a03e2e925ef740f8d5090a61c35161cdd539ac248a53e5b7d4]</code></pre>
+      </div><p>Choose one of &quot;archives&quot; and mount it locally:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">$ borgfs -f -o uid=1002 \
+    user@example.com:/media/backup/backups/station/home-danbst::station-home-danbst-2020-06-10T00:00:46 \
+    ~/borg-home-danbst2 
+    home/danbst</code></pre>
+      </div><p>where uid is your user&#39;s UID, in case you are restoring on a different system. You also should have private ssh key in your ssh-agent, or specified in <code>BORG_RSH</code>. The last arg is optional, but without it you&#39;ll get root view of backup.</p>
+<h2 id="automounting-backups-using-nixos">Automounting backups using NixOS</h2><p>Actually, I don&#39;t have a solution as of time being, so I&#39;ll share a setup which allows automount, but requires <code>sudo</code> to access.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  fileSystems.<span class="hljs-string">&quot;/run/user/1002/borg-home-danbst&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">device</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;user@example.com:/media/backup/backups/station/home-danbst::station-home-danbst-2020-06-10T00:00:46&quot;</span>;
+    <span class="hljs-attr">noCheck</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">fsType</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;fuse.borgfs&quot;</span>;      <span class="hljs-comment"># note that this requires a custom binary, see below</span>
+    <span class="hljs-attr">options</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;x-systemd.automount&quot;</span> <span class="hljs-string">&quot;noauto&quot;</span> <span class="hljs-string">&quot;uid=1002&quot;</span> <span class="hljs-string">&quot;exec&quot;</span> ];    <span class="hljs-comment"># I&#x27;m using automount here to skip mount on boot, which slows startup</span>
+  };
+  
+  <span class="hljs-comment"># this one should mount the actual directory from the root view of backup</span>
+  fileSystems.<span class="hljs-string">&quot;/run/user/1002/home-danbst&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">device</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/run/user/1002/borg-home-danbst/home/danbst&quot;</span>;
+    <span class="hljs-attr">options</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;bind&quot;</span> ];
+  };
+
+  <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> [
+    ...
+    (pkgs.writeScriptBin <span class="hljs-string">&quot;mount.fuse.borgfs&quot;</span> <span class="hljs-string">&#x27;&#x27;
+      #!/bin/sh
+      export BORG_RSH=&quot;ssh -i /home/danbst/.ssh/id_ed25519&quot;
+      export BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK=yes
+      export BORG_RELOCATED_REPO_ACCESS_IS_OK=yes
+      exec <span class="hljs-subst">${pkgs.borgbackup}</span>/bin/borgfs &quot;$@&quot;
+    &#x27;&#x27;</span>)
+  ];</code></pre>
+      </div><p>If anybody reading this have found a way to mount as a user properly, please update the code above.</p>
+<p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="category:Backup" class="wikilink" title="Category:Backup">Category:Backup</a> <a href="category:NixOS_Manual" class="wikilink" title="Category:NixOS Manual">Category:NixOS Manual</a> <a href="category:Cookbook" class="wikilink" title="Category:Cookbook">Category:Cookbook</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hardware/TUXEDO</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/Hardware">Hardware</a><span aria-hidden="true"> / </span>TUXEDO</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Hardware/TUXEDO -->
+
+<p>TUXEDO Computers is a German company that specializes in assembling devices specifically designed to work out-of-the-box with Linux OSes.</p>
+<p>When configured with their flagship distro, TUXEDO devices offer particular integrations with the Linux kernel, allowing fan management, CPU underclocking, power profile selection and the tweaking of other hardware-related settings via the preinstalled Tuxedo Control Center and Kernel modules.</p>
+<p>In case you installed NixOS on a TUXEDO computer, however, you will have to specifically configure your system in order to gain access to those functionalities.</p>
+<h2 id="tuxedo-control-center">Tuxedo Control Center</h2><p>The Tuxedo Control Center is an open source utility developed by TUXEDO Computers to provide a GUI interface for managing thermal and power settings on TUXEDO laptops.</p>
+<figure>
+<img src="https://mirror.nixoscn.org/wiki/Hardware/TUXEDO/TCC_Dashboard.png" title="TCC_Dashboard.png" />
+<figcaption>TCC_Dashboard.png</figcaption>
+</figure>
+
+<p>As of today, the Tuxedo Control Center is unfortunately not available in Nixpkgs, making it impossible to install it right away.</p>
+<p>Thanks to <a href="https://github.com/blitz/tuxedo-nixos/#readme">a project</a> maintained by blitz (Julian Stecklina), however, you can set up the TCC on NixOS just by importing an external module hosted on GitHub.</p>
+<p>Doing this operation is quite straightforward, whether your system is configured to use <a href="https://mirror.nixoscn.org/wiki/Hardware/TUXEDO/Flakes" class="wikilink" title="Flakes">Flakes</a> or not.</p>
+<h3 id="installation-with-flakes">Installation with Flakes</h3><p>At the time of writing, the Flake interface is still experimental, but is stable enough to use it to import and enable this module in your system configuration.</p>
+<p>Here you can find what you should add to your</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">flake.nix</code></pre>
+      </div><p>to install the TCC:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">inputs</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">nixpkgs.url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:NixOS/nixpkgs/nixos-22.11&quot;</span>;
+    <span class="hljs-attr">tuxedo-nixos</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:blitz/tuxedo-nixos&quot;</span>;
+      <span class="hljs-attr">inputs.nixpkgs.follows</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nixpkgs&quot;</span>;
+    };
+  };
+
+  <span class="hljs-attr">outputs</span> <span class="hljs-operator">=</span> { self, nixpkgs, tuxedo-nixos }: {
+    <span class="hljs-attr">nixosConfigurations</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">your-system</span> <span class="hljs-operator">=</span> nixpkgs.lib.nixosSystem {
+        <span class="hljs-attr">modules</span> <span class="hljs-operator">=</span> [
+          <span class="hljs-symbol">./configuration.nix</span>
+          tuxedo-nixos.nixosModules.default
+          { <span class="hljs-attr">hardware.tuxedo-control-center.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; }
+        ];
+      };
+    };
+  };
+}</code></pre>
+      </div><h3 id="installation-without-flakes">Installation without Flakes</h3><p>In case you prefer to avoid enabling and using Flakes, the Tuxedo Control Center can be installed in the old and stable way:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ config, pkgs, ... }:
+<span class="hljs-keyword">let</span>
+  <span class="hljs-attr">tuxedo</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> (<span class="hljs-built_in">builtins.fetchTarball</span> <span class="hljs-string">&quot;https://github.com/blitz/tuxedo-nixos/archive/master.tar.gz&quot;</span>);
+<span class="hljs-keyword">in</span> {
+  <span class="hljs-attr">imports</span> <span class="hljs-operator">=</span> [
+    tuxedo.module
+  ];
+  <span class="hljs-attr">hardware.tuxedo-control-center.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+}</code></pre>
+      </div><h3 id="troubleshooting-on-nixpkgs-gt-22-11">Troubleshooting on Nixpkgs &gt; 22.11</h3><p>As noted in an issue on the project&#39;s GitHub page<sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Hardware/TUXEDO#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup>, blitz&#39;s TCC distribution is tested exclusively against Nixpkgs 22.11; as such, there might be errors when building it after overriding its Nixpkgs version to a newer one.</p>
+<p>To avoid such problems, it can be useful to delete the</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">i<span class="hljs-attr">nputs.nixpkgs.follows</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nixpkgs&quot;</span>;</code></pre>
+      </div><p>line in the example above and to specify</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">h<span class="hljs-attr">ardware.tuxedo-control-center.package</span> <span class="hljs-operator">=</span> tuxedo-nixos.packages.x86_64-linux.default;</code></pre>
+      </div><p>right after the enable instruction. Doing this, in fact, will build the TCC against the Nixpkgs version it is meant to.</p>
+<h2 id="tuxedo-keyboard">Tuxedo Keyboard</h2><p>The keyboard installed on some TUXEDO Laptops has a variable color backlight that, once a specific Kernel module is inserted, can be controlled via the TCC (since version 3.2.0 of the module) or via some Kernel commandline parameters (up to version 3.1.4 of the module).</p>
+<p>The tuxedo-keyboard module is currently present on Nixpkgs and can easily be enabled by adding the</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">h<span class="hljs-attr">ardware.tuxedo-keyboard.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><p>option to your NixOS configuration. If you are on version 3.2.0 (or later) this one will be the only change that you&#39;ll need to do in the configuration, as the backlight control will then be available directly from &quot;Tools&quot; &gt; &quot;Keyboard Backlight&quot; in the Tuxedo Control Center (see above if you haven&#39;t installed it yet).</p>
+<figure>
+<img src="https://mirror.nixoscn.org/wiki/Hardware/TUXEDO/TCC_KeyboardBacklightSettings.png" title="TCC_KeyboardBacklightSettings.png" />
+<figcaption>TCC_KeyboardBacklightSettings.png</figcaption>
+</figure>
+
+<p>If you installed tuxedo-keyboard 3.1.4 (or older), however, you&#39;ll have to add the</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">tuxedo_keyboard</code></pre>
+      </div><p>options to the Kernel commandline by using the</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">boot.kernelParams;</code></pre>
+      </div><p>config key as in the example below:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs, ... }:
+{
+  <span class="hljs-attr">hardware.tuxedo-keyboard.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">boot.kernelParams</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-string">&quot;tuxedo_keyboard.mode=0&quot;</span>
+    <span class="hljs-string">&quot;tuxedo_keyboard.brightness=25&quot;</span>
+    <span class="hljs-string">&quot;tuxedo_keyboard.color_left=0x0000ff&quot;</span>
+  ];
+}</code></pre>
+      </div><p>More options can be found in the [<a href="https://github.com/tuxedocomputers/tuxedo-keyboard/blob/v3.1.4/README.md#kernel-parameter-">https://github.com/tuxedocomputers/tuxedo-keyboard/blob/v3.1.4/README.md#kernel-parameter-</a> official</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">tuxedo_keyboard</code></pre>
+      </div><p>docs.]</p>
+<h2 id="references">References</h2><references />
+
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p><strong>Build broken on nixos-unstable #5</strong>, Nov 13, 2022 - <a href="https://github.com/blitz/tuxedo-nixos/issues/5">https://github.com/blitz/tuxedo-nixos/issues/5</a> <a href="https://mirror.nixoscn.org/wiki/Hardware/TUXEDO#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

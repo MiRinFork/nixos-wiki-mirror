@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Docker/en</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/Docker">Docker</a><span aria-hidden="true"> / </span>en</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Docker/en -->
+
+<p><languages/> <a href="https://www.docker.com/">Docker</a> is a platform for building, packaging, and distributing applications inside containers. Containers bundle an application&#39;s code, configurations, and dependencies into a single object that runs consistently across different computing environments. Docker works well with NixOS through the virtualization module.<sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Docker/en#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup></p>
+<h2 id="installation">Installation</h2><h4 id="shell">Shell</h4><p>To temporarily use Docker in a shell environment, you can run:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nix-shell -p docker</code></pre>
+      </div><p>This will provide a shell with Docker CLI available, but note that the Docker daemon will not be running. For full functionality, you&#39;ll need a system-level installation.</p>
+<h4 id="system-setup">System setup</h4><p>To install Docker on NixOS, add the virtualization.docker module to your system configuration at <code>/etc/nixos/configuration.nix</code>:<sup><a id="footnote-ref-2" href="https://mirror.nixoscn.org/wiki/Docker/en#footnote-2" data-footnote-ref aria-describedby="footnote-label">2</a></sup></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># In /etc/nixos/configuration.nix</span>
+v<span class="hljs-attr">irtualisation.docker</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+};
+
+<span class="hljs-comment"># Optional: Add your user to the &quot;docker&quot; group to run docker without sudo</span>
+users.users.<span class="hljs-symbol">&lt;username&gt;</span>.extraGroups <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;docker&quot;</span> ];</code></pre>
+      </div><p>For a comprehensive list of configuration options, refer to the module options.</p>
+<h2 id="configuration">Configuration</h2><h4 id="basic">Basic</h4><p>The basic Docker configuration on NixOS includes several options you can set in your <code>configuration.nix</code> file:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">v<span class="hljs-attr">irtualisation.docker</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-comment"># Set up resource limits</span>
+  <span class="hljs-attr">daemon.settings</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">experimental</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">default-address-pools</span> <span class="hljs-operator">=</span> [
+      {
+        <span class="hljs-attr">base</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;172.30.0.0/16&quot;</span>;
+        <span class="hljs-attr">size</span> <span class="hljs-operator">=</span> <span class="hljs-number">24</span>;
+      }
+    ];
+  };
+};</code></pre>
+      </div><h4 id="advanced">Advanced</h4><p>For more advanced configuration, you can customize Docker daemon options and networking:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">v<span class="hljs-attr">irtualisation.docker</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-comment"># Customize Docker daemon settings using the daemon.settings option</span>
+  <span class="hljs-attr">daemon.settings</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">dns</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;1.1.1.1&quot;</span> <span class="hljs-string">&quot;8.8.8.8&quot;</span> ];
+    <span class="hljs-attr">log-driver</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;journald&quot;</span>;
+    <span class="hljs-attr">registry-mirrors</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;https://mirror.gcr.io&quot;</span> ];
+    <span class="hljs-attr">storage-driver</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;overlay2&quot;</span>;
+  };
+  <span class="hljs-comment"># Use the rootless mode - run Docker daemon as non-root user</span>
+  <span class="hljs-attr">rootless</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">setSocketVariable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  };
+};</code></pre>
+      </div><h2 id="docker-compose">Docker Compose</h2><p>Currently, there are two options to use Docker Compose with NixOS: Arion or Compose2Nix.</p>
+<p>With Arion, you can specify most Docker Compose options in Nix Syntax, and Arion will generate a <code>docker-compose.yml</code> file internally. The result is a systemd service that starts and stops the container.</p>
+<p>Compose2Nix, generates all necessary configs directly from the <code>docker-compose.yml</code>, which is easier when using an already existing Docker Compose project. The result is similar to that from Arion: a systemd service is created that handles starting and stopping the container.</p>
+<h3 id="arion">Arion</h3><p><a href="https://docs.hercules-ci.com/arion/">Arion</a> is created for running Nix-based projects in Docker Compose. It uses the NixOS module system for configuration, it can bypass <code>docker build</code> and lets you use dockerTools or use the store directly in the containers. The images/containers can be typical dockerTools style images or full NixOS configs.</p>
+<p>To use Arion, you first need to add its module to your NixOS configuration:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">m<span class="hljs-attr">odules</span> <span class="hljs-operator">=</span> [ arion.nixosModules.arion ];</code></pre>
+      </div><p>After that, you can access its options under</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">v<span class="hljs-attr">irtualisation.arion</span> <span class="hljs-operator">=</span> {}</code></pre>
+      </div><p>A config for a simple container could look like this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">v<span class="hljs-attr">irtualisation.arion</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">backend</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;docker&quot;</span>;
+  <span class="hljs-attr">projects</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-string">&quot;db&quot;</span>.settings.services.<span class="hljs-string">&quot;db&quot;</span>.service <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">image</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;</span>;
+      <span class="hljs-attr">restart</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;unless-stopped&quot;</span>;
+      <span class="hljs-attr">environment</span> <span class="hljs-operator">=</span> { <span class="hljs-attr">POSTGRESS_PASSWORD</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;password&quot;</span>; };
+    };
+  };
+};</code></pre>
+      </div><h3 id="compose2nix">Compose2Nix</h3><p>With <a href="https://github.com/aksiksi/compose2nix">compose2nix</a> you can generate <a href="https://search.nixos.org/options?query=virtualisation.oci-containers">oci-containers</a> config from a <code>docker-compose.yaml</code>.</p>
+<h4 id="install">Install</h4><p>To use <code>compose2nix</code> with <code>nix-shell</code> you can use</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nix shell github:aksiksi/compose2nix
+compose2nix -h</code></pre>
+      </div><p>To install <code>compose2nix</code> to NixOS, add the repo to your flake inputs</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">c<span class="hljs-attr">ompose2nix</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:aksiksi/compose2nix&quot;</span>;
+  <span class="hljs-attr">inputs.nixpkgs.follows</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nixpkgs&quot;</span>;
+};</code></pre>
+      </div><p>and add the package to your configuration</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> [
+  inputs.compose2nix.packages.x86_64-linux.default
+];</code></pre>
+      </div><h4 id="usage">Usage</h4><p>After you have installed <code>compose2nix</code>, you can run <code>compose2nix</code> in the directory with your <code>docker-compose.yml</code>, which will output a <code>docker-compose.nix</code>.</p>
+<p>Alternatively, you can specify the input and output files with the following flags</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">compose2nix -inputs input.yml -output output.nix -runtime docker</code></pre>
+      </div><p>The <code>-runtime</code> flag specifies the runtime. Here, we select <code>docker</code>. Options are <code>podman</code> and <code>docker</code>. The default is <code>podman</code></p>
+<h2 id="tips-and-tricks">Tips and tricks</h2><h3 id="docker-on-btrfs">Docker on btrfs</h3><p>If you use the <a href="https://mirror.nixoscn.org/wiki/Docker/en/btrfs" class="wikilink" title="btrfs">btrfs</a> file system, you might need to set the option:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">v<span class="hljs-attr">irtualisation.docker.storageDriver</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;btrfs&quot;</span>;</code></pre>
+      </div><h3 id="rootless-docker">Rootless Docker</h3><p><a href="https://docs.docker.com/engine/security/rootless/">Rootless Docker</a> lets you run the Docker daemon as a non-root user for improved security. To do so, enable . This activates the user-level systemd Docker service. Additionally, the option configures the <code>DOCKER_HOST</code> environment variable to point to the rootless Docker instance.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">v<span class="hljs-attr">irtualisation.docker</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-comment"># Consider disabling the system wide Docker daemon</span>
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+
+  <span class="hljs-attr">rootless</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">setSocketVariable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-comment"># Optionally customize rootless Docker daemon settings</span>
+    <span class="hljs-attr">daemon.settings</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">dns</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;1.1.1.1&quot;</span> <span class="hljs-string">&quot;8.8.8.8&quot;</span> ];
+      <span class="hljs-attr">registry-mirrors</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;https://mirror.gcr.io&quot;</span> ];
+    };
+  };
+};</code></pre>
+      </div><p>A system reboot is required for these changes to take effect. Alternatively, the environment variable can be set manually in the current shell session, and the user Docker service can be started with the following commands:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">export</span> DOCKER_HOST=unix://<span class="hljs-variable">$XDG_RUNTIME_DIR</span>/docker.sock</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">systemctl --user start docker</span></code></pre>
+      </div><p>To verify the status of the rootless Docker service:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">systemctl --user status docker</span></code></pre>
+      </div><p>To confirm that Docker is running in rootless mode:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">docker info -f <span class="hljs-string">&quot;{{println .SecurityOptions}}&quot;</span> | grep rootless</span> </code></pre>
+      </div><h3 id="using-privileged-ports-for-rootless-docker">Using Privileged Ports for Rootless Docker</h3><p>Rootless containers are not able to ports from 0 to 1023 as such port can only be used by privileged users. This problem can be solved by using port forwarding.</p>
+<p>Assume you&#39;d like a rootless container to make use of ports 53 (DNS; TPC and UDP) and 80 (web; TCP). We may force the container to use port 8000 while the firewall is instructed for forward traffic from port 80 to 8000. Same logic applies for port 53. Refer to the following example:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nixos hljs"><span class="hljs-comment"># Firewall</span>
+n<span class="hljs-attr">etworking.firewall</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">allowedTCPPorts</span> <span class="hljs-operator">=</span> [ <span class="hljs-number">80</span> <span class="hljs-number">8000</span> <span class="hljs-number">53</span> <span class="hljs-number">5300</span> ];    
+  <span class="hljs-attr">allowedUDPPorts</span> <span class="hljs-operator">=</span> [ <span class="hljs-number">53</span> <span class="hljs-number">5300</span> ];
+};
+
+<span class="hljs-attr">boot.kernel.sysctl</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-string">&quot;net.ipv4.conf.eth0.forwarding&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-number">1</span>;    <span class="hljs-comment"># enable port forwarding</span>
+};
+    
+<span class="hljs-attr">networking</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">firewall.extraCommands</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    iptables -A PREROUTING -t nat -i eth0 -p TCP --dport 80 -j REDIRECT --to-port 8000
+    iptables -A PREROUTING -t nat -i eth0 -p TCP --dport 53 -j REDIRECT --to-port 5300
+    iptables -A PREROUTING -t nat -i eth0 -p UDP --dport 53 -j REDIRECT --to-port 5300
+  &#x27;&#x27;</span>;
+};</code></pre>
+      </div><p>Whilst the docker-compose.yaml might look like this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-dockerfile hljs">services:
+  myserver:
+    image: ...
+    restart: always
+    ports:
+      - <span class="hljs-string">&quot;5300:53/tcp&quot;</span>
+      - <span class="hljs-string">&quot;5300:53/udp&quot;</span>
+      - <span class="hljs-string">&quot;8000:80&quot;</span></code></pre>
+      </div><h3 id="creating-images-with-nix">Creating images with Nix</h3><h4 id="building-a-docker-image-with-nixpkgs">Building a docker image with nixpkgs</h4><p>There is an entry for <a href="https://nixos.org/nixpkgs/manual/#sec-pkgs-dockerTools">dockerTools</a> in the Nixpkgs manual for reference. In the linked page, they give the following example config:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">buildImage {
+  <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;redis&quot;</span>;
+  <span class="hljs-attr">tag</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;latest&quot;</span>;
+
+  <span class="hljs-attr">fromImage</span> <span class="hljs-operator">=</span> someBaseImage;
+  <span class="hljs-attr">fromImageName</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;
+  <span class="hljs-attr">fromImageTag</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;latest&quot;</span>;
+
+  <span class="hljs-attr">copyToRoot</span> <span class="hljs-operator">=</span> pkgs.buildEnv {
+    <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;image-root&quot;</span>;
+    <span class="hljs-attr">paths</span> <span class="hljs-operator">=</span> [ pkgs.redis ];
+    <span class="hljs-attr">pathsToLink</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;/bin&quot;</span> ];
+  };
+
+  <span class="hljs-attr">runAsRoot</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    #!<span class="hljs-subst">${pkgs.runtimeShell}</span>
+    mkdir -p /data
+  &#x27;&#x27;</span>;
+
+  <span class="hljs-attr">config</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">Cmd</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;/bin/redis-server&quot;</span> ];
+    <span class="hljs-attr">WorkingDir</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/data&quot;</span>;
+    <span class="hljs-attr">Volumes</span> <span class="hljs-operator">=</span> { <span class="hljs-string">&quot;/data&quot;</span> <span class="hljs-operator">=</span> { }; };
+  };
+
+  <span class="hljs-attr">diskSize</span> <span class="hljs-operator">=</span> <span class="hljs-number">1024</span>;
+  <span class="hljs-attr">buildVMMemorySize</span> <span class="hljs-operator">=</span> <span class="hljs-number">512</span>;
+}</code></pre>
+      </div><p>More examples can be found in the <a href="https://github.com/NixOS/nixpkgs/blob/master/pkgs/build-support/docker/examples.nix">nixpkgs</a> repo.</p>
+<p>Also check out the excellent article by <a href="https://lucabrunox.github.io/2016/04/cheap-docker-images-with-nix_15.html">lethalman</a> about building minimal docker images with nix.</p>
+<h4 id="reproducible-image-dates">Reproducible image dates</h4><p>The manual advises against using <code>created = &quot;now&quot;</code>, as that prevents images from being reproducible.</p>
+<p>An alternative, if using <a href="https://mirror.nixoscn.org/wiki/Docker/en/flakes" class="wikilink" title="flakes">flakes</a>, is to do <code>created = builtins.substring 0 8 self.lastModifiedDate</code>, which uses the commit date, and is therefore reproducible.</p>
+<h4 id="calculating-the-sha256-for-a-pulled-docker-image">Calculating the sha256 for a pulled Docker image</h4><p>The <code>sha256</code> argument of the <code>dockerTools.pullImage</code> function is the checksum of the archive generated by Skopeo. Since the archive contains the name and the tag of the image, Skopeo arguments used to fetch the image have to be identical to those used by the <code>dockerTools.pullImage</code> function.</p>
+<p>For instance, the SHA of the following image</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">pkgs.dockerTools.pullImage{
+  <span class="hljs-attr">imageName</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;lnl7/nix&quot;</span>;
+  <span class="hljs-attr">finalImageTag</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;2.0&quot;</span>;
+  <span class="hljs-attr">imageDigest</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sha256:632268d5fd9ca87169c65353db99be8b4e2eb41833b626e09688f484222e860f&quot;</span>;
+  <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;1x00ks05cz89k3wc460i03iyyjr7wlr28krk7znavfy2qx5a0hfd&quot;</span>;
+};</code></pre>
+      </div><p>can be manually generated with the following shell commands</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">skopeo copy docker://lnl7/nix@sha256:632268d5fd9ca87169c65353db99be8b4e2eb41833b626e09688f484222e860f docker-archive:///tmp/image.tgz:lnl7/nix:2.0</code></pre>
+      </div><div class="code-container">
+        
+        <pre><code class="language-bash hljs">nix-hash --<span class="hljs-built_in">base32</span> --flat --<span class="hljs-built_in">type</span> sha256 /tmp/image.tgz </code></pre>
+      </div><div class="code-container">
+        
+        <pre><code class="language-shell hljs">1x00ks05cz89k3wc460i03iyyjr7wlr28krk7znavfy2qx5a0hfd</code></pre>
+      </div><h4 id="directly-using-nix-in-image-layers">Directly Using Nix in Image Layers</h4><p>Instead of copying Nix packages into Docker image layers, Docker can be configured to directly utilize the <code>nix-store</code> by integrating with <a href="https://github.com/pdtpartners/nix-snapshotter">nix-snapshotter</a>.</p>
+<p>This will significantly reduce data duplication and the time it takes to pull images.</p>
+<h3 id="using-podman-as-an-alternative">Using Podman as an alternative</h3><p>Podman is a daemonless container engine that can run Docker containers without elevated privileges. It can be used as a drop-in replacement for Docker in many cases:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># Enable Podman in configuration.nix</span>
+v<span class="hljs-attr">irtualisation.podman</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-comment"># Create the default bridge network for podman</span>
+  <span class="hljs-attr">defaultNetwork.settings.dns_enabled</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+};
+
+<span class="hljs-comment"># Optionally, create a Docker compatibility alias</span>
+p<span class="hljs-attr">rograms.zsh.shellAliases</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">docker</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;podman&quot;</span>;
+};</code></pre>
+      </div><h3 id="changing-docker-daemon-39-s-data-root">Changing Docker Daemon&#39;s Data Root</h3><p>By default, the Docker daemon stores images, containers, and build context on the root file system. To use a different storage location, specify a new <code>data-root</code> in your configuration:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">v<span class="hljs-attr">irtualisation.docker.daemon.settings</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">data-root</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/some-place/to-store-the-docker-data&quot;</span>;
+};</code></pre>
+      </div><h3 id="docker-containers-as-systemd-services">Docker Containers as systemd Services</h3><p>You can run Docker containers as systemd services using the <code>oci-containers</code> module:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">v<span class="hljs-attr">irtualisation.oci-containers</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-comment"># backend defaults to &quot;podman&quot;</span>
+  <span class="hljs-attr">backend</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;docker&quot;</span>;
+  <span class="hljs-attr">containers</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">foo</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-comment"># ...</span>
+    };
+  };
+};</code></pre>
+      </div><p>A more advanced example:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ config, pkgs, ... }:
+
+{
+  <span class="hljs-attr">config.virtualisation.oci-containers.containers</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">hackagecompare</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">image</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;chrissound/hackagecomparestats-webserver:latest&quot;</span>;
+      <span class="hljs-attr">ports</span> <span class="hljs-operator">=</span> [<span class="hljs-string">&quot;127.0.0.1:3010:3010&quot;</span>];
+      <span class="hljs-attr">volumes</span> <span class="hljs-operator">=</span> [
+        <span class="hljs-string">&quot;/root/hackagecompare/packageStatistics.json:/root/hackagecompare/packageStatistics.json&quot;</span>
+      ];
+      <span class="hljs-attr">cmd</span> <span class="hljs-operator">=</span> [
+        <span class="hljs-string">&quot;--base-url&quot;</span>
+        <span class="hljs-string">&quot;<span class="hljs-char escape_">\&quot;</span>/hackagecompare<span class="hljs-char escape_">\&quot;</span>&quot;</span>
+      ];
+    };
+  };
+}</code></pre>
+      </div><p>See <a href="https://search.nixos.org/options?from=0&amp;size=50&amp;sort=alpha_asc&amp;query=virtualisation.oci-containers">oci-containers</a> for further options.</p>
+<h4 id="usage">Usage</h4><p>Unless otherwise specified, NixOS uses Podman to run OCI containers. Note that these are <strong>user-specific</strong>, so running commands with or without sudo can change your output.</p>
+<p>List containers</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">podman ps</span></code></pre>
+      </div><p>Update image</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">podman restart hackagecompare</span></code></pre>
+      </div><p>List images</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">podman <span class="hljs-built_in">ls</span></span></code></pre>
+      </div><p>Remove container</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">podman <span class="hljs-built_in">rm</span> hackagecompare</span></code></pre>
+      </div><p>Remove image</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">podman rmi c0d9a5f58afe</span></code></pre>
+      </div><p>Update image</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">podman pull chrissound/hackagecomparestats-webserver:latest</span></code></pre>
+      </div><p>Run interactive shell in running container</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">podman <span class="hljs-built_in">exec</span> -ti <span class="hljs-variable">$ContainerId</span> /bin/sh</span></code></pre>
+      </div><h5 id="exposing-ports-from-the-host">Exposing ports from the host</h5><p>If you have a service running on the host that you want to connect to from the container, you could try connecting to the hostname <code>host.containers.internal</code> (or <code>host.docker.internal</code> for podman), but this might require additional networking setup</p>
+<h5 id="exposing-sockets-from-the-host">Exposing sockets from the host</h5><p>If you have a service running on the host that exposes a socket, such as mariadb, you can also expose that socket to the container instead. You&#39;ll want to expose the folder the socket is in as a volume - so:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">      volumes = [
+        <span class="hljs-string">&quot;/var/run/mysqld:/mysqld&quot;</span>
+      ];</code></pre>
+      </div><p>to provide access to <code>/var/run/mysqld/mysqld.sock</code>. Sadly, this means you&#39;ll have to restart the container when /var/run/mysqld is replaced, e.g. on an upgrade.</p>
+<h3 id="running-the-docker-daemon-from-nix-the-package-manager---not-nixos">Running the docker daemon from nix-the-package-manager - not NixOS</h3><p>This is not supported. You&#39;re better off installing the docker daemon <a href="https://docs.docker.com/engine/install/">&quot;the normal non-nix way&quot;</a>.</p>
+<p>See the discourse discussion: <a href="https://discourse.nixos.org/t/how-to-run-docker-daemon-from-nix-not-nixos/43413">How to run docker daemon from nix (not NixOS)</a> for more.</p>
+<h2 id="troubleshooting">Troubleshooting</h2><h3 id="cannot-connect-to-the-docker-daemon">Cannot connect to the Docker daemon</h3><p>If you encounter errors connecting to the Docker daemon, check that: - The Docker service is running: <code>systemctl status docker</code> - Your user is in the docker <a href="https://mirror.nixoscn.org/wiki/Docker/en/User_management#Adding_User_to_a_group" class="wikilink" title="group">group</a>: <code>groups | grep docker</code> - You&#39;ve logged out and back in after adding your user to the docker group</p>
+<h3 id="storage-space-issues">Storage space issues</h3><p>When Docker uses too much disk space:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-comment"># Remove unused containers, networks, images, and volumes</span>
+docker system prune -a --volumes
+
+<span class="hljs-comment"># Configure Docker daemon to automatically prune in configuration.nix</span>
+virtualisation.docker.daemon.settings = {
+  pruning = {
+    enabled = <span class="hljs-literal">true</span>;
+    interval = <span class="hljs-string">&quot;24h&quot;</span>;
+  };
+};</code></pre>
+      </div><h3 id="network-conflicts">Network conflicts</h3><p>Docker&#39;s default subnet (`172.17.0.0/16`) might conflict with your existing network. Configure a different subnet in your `configuration.nix`:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">v<span class="hljs-attr">irtualisation.docker.daemon.settings</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">default-address-pools</span> <span class="hljs-operator">=</span> [
+    {
+      <span class="hljs-attr">base</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;192.168.0.0/16&quot;</span>;
+      <span class="hljs-attr">size</span> <span class="hljs-operator">=</span> <span class="hljs-number">24</span>;
+    }
+  ];
+};</code></pre>
+      </div><h3 id="cannot-connect-to-public-wi-fi-when-using-docker">Cannot connect to public Wi-Fi, when using Docker</h3><p>When connecting to a public Wi-Fi, where the login page&#39;s IP-Address is within the Docker network range, accessing the Internet might not be possible. This has been reported when trying to connect to the WIFIonICE of the Deutsche Bahn (DB). They use the <code>172.18.x.x</code> address range.</p>
+<p>This can be resolved by changing the default address pool that Docker uses.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">v<span class="hljs-attr">irtualisation.docker</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">daemon.settings</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-string">&quot;default-address-pools&quot;</span> <span class="hljs-operator">=</span> [
+      { <span class="hljs-string">&quot;base&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;172.27.0.0/16&quot;</span>; <span class="hljs-string">&quot;size&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-number">24</span>; }
+    ];
+  };
+};</code></pre>
+      </div><p>Restarting the container or Docker might be required.</p>
+<h2 id="references">References</h2><references/>
+
+<p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="category:Virtualization" class="wikilink" title="Category:Virtualization">Category:Virtualization</a> <a href="category:Cookbook" class="wikilink" title="Category:Cookbook">Category:Cookbook</a> <a href="category:Software" class="wikilink" title="Category:Software">Category:Software</a> <a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="category:Container" class="wikilink" title="Category:Container">Category:Container</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p><a href="https://www.docker.com/resources/what-container/">https://www.docker.com/resources/what-container/</a> <a href="https://mirror.nixoscn.org/wiki/Docker/en#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+<li id="footnote-2">
+<p><a href="https://nixos.org/manual/nixos/stable/options#opt-virtualisation.docker.enable">https://nixos.org/manual/nixos/stable/options#opt-virtualisation.docker.enable</a> <a href="https://mirror.nixoscn.org/wiki/Docker/en#footnote-ref-2" data-footnote-backref aria-label="Back to reference 2">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

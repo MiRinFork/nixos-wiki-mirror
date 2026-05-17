@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NixOS as a desktop/zh</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop">NixOS as a desktop</a><span aria-hidden="true"> / </span>zh</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: NixOS as a desktop/zh -->
+
+<p><languages/> <a href="special:MyLanguage/NixOS" class="wikilink" title="NixOS">NixOS</a> 是一款功能多样的操作系统，适用于各种用例。本文面向希望将 NixOS 作为主要桌面环境（无论是在物理硬件还是虚拟机中）的用户。此外，计划在 <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/zh/NixOS_friendly_hosters" class="wikilink" title="云端">云端</a> 环境或专用服务器基础架构上部署 NixOS 的用户，可能会发现从这里介绍的概念和实践开始会很有帮助，因为它们为在更广泛的 <a href="special:MyLanguage/Nix_ecosystem" class="wikilink" title="Nix 生态系统">Nix 生态系统</a> 中工作奠定了有益的基础。</p>
+<p><span id="Installation"></span></p>
+<h2 id="安装">安装</h2><div class="mw-translate-fuzzy">
+
+<p>如果你倾向于阅读, 请从<a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/zh/NixOS_Installation_Guide" class="wikilink" title="NixOS安装指南">NixOS安装指南</a>开始. 如果你想选择一个精良的视频教程, 请见下一条. 请记住, 为了安装一个桌面, 你需要确定一开始有至少30GiB的可用硬盘空间来容纳桌面环境(比如说, GNOME, KDE, 或者是XFCE), 浏览器(比如Firefox), 以及其他带有图形界面的典型日用软件(如VSCode). 对于相对简陋的配置, 15GiB可能够用.</p>
+</div>
+
+<p><span id="Managing_your_configuration"></span></p>
+<h2 id="管理你的配置">管理你的配置</h2><div class="mw-translate-fuzzy">
+
+<p>你可以使用<a href="https://nixos.org/manual/nixos/stable/index.html">NixOS官方手册</a>中记录的方式来管理你的所有配置. 然而, 大部分在桌面上使用NixOS的社区成员更喜欢使用<a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/zh/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a>来管理他们的配置(比如&quot;点文件&quot;)(citation needed). Home Manager是一个面向用户的工具, 用于声明你想安装什么, 以及你想如何配置它. 对于大部分设置, 如果你不使用Home Manager的话, 你就要把它们放入<a href="https://nixos.org/manual/nixos/stable/#sec-changing-config">configuration.nix</a>, 或者使用<a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/zh/FAQ#How_can_I_manage_software_with_nix-env_like_with_configuration.nix.3F" class="wikilink" title="nix-env">nix-env</a>.</p>
+</div>
+
+<p>关于如何管理配置，请参阅 。</p>
+<p><span id="System_Configuration"></span></p>
+<h3 id="系统配置">系统配置</h3><p><code>/etc/nixos/configuration.nix</code>是主配置文件，用于定义系统级设置。其中包括启用服务、管理系统用户、配置硬件选项以及指定安装的软件包。 若要使更改生效，请运行：</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">nixos-rebuild switch</span></code></pre>
+      </div><p><span id="User_configuration_with_Home_Manager"></span></p>
+<h3 id="使用-home-manager-管理用户配置">使用 Home Manager 管理用户配置</h3><p>针对应用程序偏好设置、命令行工具以及 dotfiles 等用户级配置的管理，<a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/zh/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> 提供了一种便捷的声明式方案。</p>
+<p>它允许用户自行定义需要安装的程序及其具体配置方式，而无需将这些设置写入系统级的 <a href="https://nixos.org/manual/nixos/stable/#sec-changing-config">configuration.nix</a> 中。</p>
+<p>Home Manager 可以独立于系统配置使用，既支持传统设置，也支持基于 <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/zh/Flakes" class="wikilink" title="Flakes">Flakes</a> 的新式配置。</p>
+<p><span id="With_Flakes"></span></p>
+<h3 id="通过flakes">通过Flakes</h3><div class="mw-translate-fuzzy">
+
+<p>如果你想要可组合性<sup>[citation needed]</sup>更强的NixOS配置设定, 仍在实验阶段的<a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/zh/Flakes" class="wikilink" title="Flakes">Flakes</a>特性正在使社区感到十分兴奋. 管理flakes需要对Nix生态有良好的基本理解和一些已有的实践经验.</p>
+</div>
+
+<p>关于如何开始的详细信息，请参考 <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/zh/NixOS_system_configuration#Defining_NixOS_as_a_flake" class="wikilink" title="NixOS system configuration#Defining NixOS as a flake">NixOS system configuration#Defining NixOS as a flake</a>。</p>
+<p><span id="Beyond_initial_setup"></span></p>
+<h2 id="在初始设置之外">在初始设置之外</h2><div class="mw-translate-fuzzy">
+
+<p>在你熟悉了Nix生态并安装了一个功能性的NixOS桌面后, 你可能会想了解定制化和更细化的设置.</p>
+</div>
+
+<p>常见配置项包含：</p>
+<p><span id="Desktop_Environments"></span></p>
+<h4 id="桌面环境">桌面环境</h4><p>安装并配置功能完备的桌面环境，如 <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/zh/GNOME" class="wikilink" title="GNOME">GNOME</a>、<a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/zh/KDE_Plasma" class="wikilink" title="KDE Plasma">KDE Plasma</a> 或 <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/zh/Xfce" class="wikilink" title="Xfce">Xfce</a>。</p>
+<p>完整列表请参阅 <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/zh/:Category:Desktop_environment" class="wikilink" title=":Category:Desktop environment">:Category:Desktop environment</a>。</p>
+<p><span id="Window_Managers"></span></p>
+<h4 id="窗口管理器">窗口管理器</h4><p>设置 <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/zh/i3" class="wikilink" title="i3">i3</a>、<a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/zh/Sway" class="wikilink" title="Sway">Sway</a>、<a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/zh/Hyprland" class="wikilink" title="Hyprland">Hyprland</a> 或 <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/zh/xmonad" class="wikilink" title="xmonad">xmonad</a> 等轻量级或平铺式窗口管理器。</p>
+<p>完整列表请参阅 <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/zh/:Category:Window_managers" class="wikilink" title=":Category:Window managers">:Category:Window managers</a>。</p>
+<p><span id="Display_Managers_(Login_Managers)"></span></p>
+<h4 id="显示管理器-登录管理器">显示管理器（登录管理器）</h4><p>配置图形会话管理器，例如 <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/zh/Gnome" class="wikilink" title="GDM">GDM</a>、<a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/zh/KDE" class="wikilink" title="SDDM">SDDM</a> 或 <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/zh/LightDM" class="wikilink" title="LightDM">LightDM</a>。</p>
+<p><span id="Audio_Setup"></span></p>
+<h4 id="音频配置">音频配置</h4><p>启用并配置 <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/zh/:Category:Audio" class="wikilink" title="音频">音频</a> 系统，例如 <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/zh/PipeWire" class="wikilink" title="PipeWire">PipeWire</a>、<a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/zh/PulseAudio" class="wikilink" title="PulseAudio">PulseAudio</a> 或 <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/zh/ALSA" class="wikilink" title="ALSA">ALSA</a>。</p>
+<p><span id="Network_Management"></span></p>
+<h4 id="网络管理">网络管理</h4><p>使用诸如 <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/zh/NetworkManager" class="wikilink" title="NetworkManager">NetworkManager</a> 或 <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/zh/systemd-networkd" class="wikilink" title="systemd-networkd">systemd-networkd</a> 的工具来管理 <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/zh/Networking" class="wikilink" title="网络">网络</a> 连接。</p>
+<p><span id="Bluetooth_Support"></span></p>
+<h4 id="蓝牙支持">蓝牙支持</h4><p>使用 blueman 或其他工具配置与管理<a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/zh/Bluetooth" class="wikilink" title="蓝牙">蓝牙</a>。</p>
+<p><span id="Power_Management"></span></p>
+<h4 id="电源管理">电源管理</h4><p>使用诸如 <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/zh/Laptop#tlp" class="wikilink" title="tlp">tlp</a> 或 <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/zh/systemd" class="wikilink" title="systemd">systemd</a> 服务等工具配置 <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/zh/laptop" class="wikilink" title="笔记本">笔记本</a> 的 <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/zh/Power_Management" class="wikilink" title="电池管理">电池管理</a>、挂起与休眠。</p>
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+<h4 id="printing-and-scanning">Printing and Scanning</h4></div>
+
+<p>启用 <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/zh/Cups" class="wikilink" title="Cups">Cups</a> 以支持打印机，并使用诸如 Sane 的工具来支持 <a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/zh/Scanners" class="wikilink" title="扫描">扫描</a> 设备。</p>
+<p><span id="Tips_and_tricks"></span></p>
+<h2 id="提示和技巧">提示和技巧</h2><p><span id="Modularizing_your_configuration_with_modules"></span></p>
+<h3 id="通过-nixos-模块机制模块化你的配置">通过 NixOS 模块机制模块化你的配置</h3><p><span id="See_also"></span></p>
+<h2 id="另见">另见</h2><div class="mw-translate-fuzzy">
+
+<p>在<a href="https://mirror.nixoscn.org/wiki/NixOS%20as%20a%20desktop/zh/Comparison_of_NixOS_setups" class="wikilink" title="对NixOS设置的比较">对NixOS设置的比较</a>中可查看一个对常见选择进行比较的表格.</p>
+</div>
+
+<p><a href="category:Desktop" class="wikilink" title="分类：桌面">分类：桌面</a> <a href="category:Guide" class="wikilink" title="分类：指南">分类：指南</a> <a href="category:NixOS" class="wikilink" title="分类：NixOS">分类：NixOS</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

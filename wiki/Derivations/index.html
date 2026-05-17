@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Derivations</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Derivations</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Derivations -->
+
+<p><strong>Derivations</strong> are the <a href="https://mirror.nixoscn.org/wiki/Derivations/Nix_ecosystem" class="wikilink" title="Nix ecosystem">Nix ecosystem</a> way of describing any reproducible build process. While <a href="https://mirror.nixoscn.org/wiki/Derivations/NixOS" class="wikilink" title="NixOS">NixOS</a> comes with a plethora of packages, applications and options, there will inevitably come a time when you need to build an application, a library, a package, etc. that is not available <em>off the shelf</em> already — those are all derivations <em>under the hood</em>. This makes the build process <em>reproducible</em> and <em>predictable</em>; without changing the derivation&#39;s input configuration, the output will remain the same. In essence, a derivation is a <em>pure function</em> of an executable, and a set of input configuration, that produces exactly the same output for every invocation, in unique locations on the filesystem.</p>
+<h2 id="motivation">Motivation</h2><p>While the need to build software, package libraries and execute build processes is clear to anyone using any operating system, the natural question that may arise is <em>Why go out of our way dealing with this complicated process when I can just run a few terminal commands?</em> For most distributions, the answer is <em>they don&#39;t do things this way</em>. Most Linux distributions, and most operating systems for that matter, are designed to change over time; the same build process will yield different results each time it&#39;s invoked. For example, remember trying to build a package twice; the first time you build it the installation will be successful, but the second time it&#39;s built you might get an error about the paths it&#39;s trying to write to already existing. Build processes in most Linux distributions are <em>stateful</em>, the context in which they&#39;re run might change as you&#39;re using that system.</p>
+<p>However, the Nix ecosystem is <em>fundamentally</em> different in this regard; when you build a derivation, a unique path in the <a href="https://mirror.nixoscn.org/wiki/Derivations/Nix_store" class="wikilink" title="Nix store">Nix store</a> is assigned, and all possible outputs (including filesystem operations) produced by it will be persisted under that path. No other derivation can modify those files; the result of the derivation is <strong>uniquely determined</strong> by its input configuration, and subsequent reruns will produce <em>exactly</em> the same outputs . Any potential issues regarding being able to reproduce a build process are addressed <em>by design</em>, if a derivation was successful once, it will always build successfully as long as its inputs don&#39;t change.</p>
+<p>Derivations are a powerful fundamental part of <a href="https://mirror.nixoscn.org/wiki/Derivations/Nix" class="wikilink" title="Nix">Nix</a> and provide the core platform for managing packages in NixOS. Every package and library you include in your NixOS configuration is a derivation.</p>
+<h2 id="definition">Definition</h2><p>A <strong>derivation</strong> is defined as <em>a specification for running an executable on precisely defined input files to repeatably produce output files at uniquely determined file system paths</em>. Simply put, it describes a set of steps to take some input and produce some output in a deterministic manner.</p>
+<p>Derivations can be written manually using the <code>derivation</code> function; this is the most fundamental way in which they can be defined. However, since this low-level function is quite simple, building derivations this way can easily become unwieldy and repetitive. To aid in the process of creating derivations, <a href="https://mirror.nixoscn.org/wiki/Derivations/Nixpkgs" class="wikilink" title="Nixpkgs">Nixpkgs</a> contains <a href="https://nixos.org/manual/nixpkgs/unstable/#chap-stdenv">the standard environment</a> (also known as the <code>stdenv</code>), which provides a set of utility functions for the most common derivation types (e.g. a <a href="https://mirror.nixoscn.org/wiki/Derivations/Python_libraries" class="wikilink" title="Python package">Python package</a>, a shell script, a <a href="https://mirror.nixoscn.org/wiki/Derivations/Docker" class="wikilink" title="Docker">Docker</a> container, etc.)</p>
+<h2 id="writing-a-derivation">Writing a derivation</h2><p>The most fundamental way to create a derivation is using the built-in <code>derivation</code> function. While you&#39;ll rarely write derivations this way in practice, understanding the low-level mechanics helps clarify what higher-level tools are doing for you. An example is provided in the first subsection. While it wouldn&#39;t be feasible to write every single derivation in this way, working through an example is an important step in one&#39;s Nix ecosystem journey. The latter subsections include more <em>production-ready</em> examples using the higher level utilities available in the ecosystem.</p>
+<p>Regardless of how they&#39;re built, derivations take an <em>input</em> and produce an <em>output</em> through a series of <em>steps</em>. For most packages, the inputs refer to the source files, the steps refer to the compilation process and are called <a href="https://mirror.nixoscn.org/wiki/Derivations/Derivations#Phases" class="wikilink" title="phases">phases</a>, and the outputs refer to finalized executable binaries written to some file/directory. This sequence of events can be well described within a standard environment, which the latter sections address.</p>
+<h3 id="low-level-derivations">Low-level derivations</h3><p>As mentioned above, writing derivations in this manner can quickly become unwieldy and unfeasible. However, in order to understand why, do check out the main article above to follow the process of writing a derivation while hitting every hurdle that you might hit when building one yourself. Doing so is the best way to understand conceptually how derivations operate. You can see what a well defined low-level derivation might look like, in this case simply creating a script that displays the message <em>&quot;Hello, world!&quot;</em>:</p>
+<h3 id="the-result-of-a-derivation">The result of a derivation</h3><p>When building a derivation, its result will be added to the Nix store, and a symlink will be provided in the current directory, called <code>result</code>.</p>
+<p>The <code>$out</code> variable above has a special meaning in the Nix context: it points to the file that will become the result of the derivation. Thus executing <code>chmod +x $out</code> makes the derivation executable. Because directories on POSIX systems are files themselves, the derivation&#39;s result can be an entire directory of files.</p>
+<p>The actual directory of <code>$out</code> is an implementation detail abstracted away by Nix and the stdenv builder. Anything placed within <code>$out</code> will then be part of the final derivation. Most derivation aim to follow a FHS-like structure, with the following common subdirectories:</p>
+<ul>
+<li><code>$out/bin</code> contains binaries;</li>
+<li><code>$out/lib</code> contains shared objects</li>
+<li><code>$out/include</code> contains headers</li>
+</ul>
+<p>In the context of systems like NixOS or <a href="https://mirror.nixoscn.org/wiki/Derivations/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a>, these paths will usually be symlinked into the top-level derivation&#39;s directories (the resulting system build).</p>
+<h3 id="standard-environment-derivations">Standard environment derivations</h3><p>The standard environment provides us with a useful utility function for creating derivations called <code>stdenv.mkDerivation</code>. Among other things, it ensures we have all the common binaries and libraries we might expect from a Linux build environment already available to us. For example, the derivation above can be rewritten, removing the need to point to the bash and <code>coreutil</code> paths ourselves, as follows:</p>
+<h4 id="including-source-code">Including source code</h4><p>However, when building applications, packages, or derivations in general, we are almost never manually writing the source code ourselves within the derivation&#39;s build steps. Usually, we need to point to the derivation&#39;s source code. The <code>stdenv.mkDerivation</code> function takes in an attribute called <code>src</code>, which points to a location that should be included as one of the derivation&#39;s inputs.</p>
+<p>When building the derivation, the source code will be copied in the Nix store before proceeding with the build. The reason for this is due to the nature of source code (and external files in general themselves): they <em>change over time</em>. Source code gets edited, improved, reverted, etc. By copying the source code <em>at the time of the derivation</em> to the Nix store, it becomes <em>immutable</em>; any subsequent changes would result in it getting copied to a <em>different path</em> in the store. Thus, Nix ensures the guarantees we expect from a derivation: it still is a deterministic output, a function of its inputs.</p>
+<p>Grabbing the source code can be done in a number of different ways: it can be a store path, a location on the current system, or it can be downloaded via a <a href="https://nixos.org/manual/nixpkgs/unstable/#chap-pkgs-fetchers">fetcher</a>, which is a special-purpose utility function for exactly this task:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">stdenv.mkDerivation {
+  <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> <span class="hljs-symbol">./relative-path/to/src</span>;
+
+  <span class="hljs-comment"># or</span>
+
+  <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> fetchFromGitHub {
+    <span class="hljs-attr">owner</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;torvalds&quot;</span>;
+    <span class="hljs-attr">repo</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;linux&quot;</span>;
+    <span class="hljs-attr">rev</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;refs/tags/v6.11&quot;</span>;
+
+    <span class="hljs-attr">hash</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;...&quot;</span>;
+  };
+}</code></pre>
+      </div><h3 id="nixpkgs-packages">Nixpkgs packages</h3><p>The Nixpkgs repository is relevant in two main ways: it itself contains many higher-level utilities that abstract over the <code>stdenv.mkDerivation</code> requirements for the most common use cases, and every <a href="https://mirror.nixoscn.org/wiki/Derivations/Nixpkgs" class="wikilink" title="Nixpkgs">Nixpkgs</a> package is a derivation in of itself.</p>
+<h4 id="utility-functions">Utility functions</h4><p>For example, the derivation at the beginning of this section can be rewritten in just four lines using the <code>writeShellScript</code> utility package. It handles most of the little setup required by the standard environment for us. The majority of the derivations that need to be written almost definitely can make use of one of these utility packages. For example:</p>
+<h4 id="package-metadata">Package metadata</h4><p>Derivations meant to be included as part of Nixpkgs usually include some metadata under the meta attribute. Common fields include:</p>
+<ul>
+<li><code>meta.homepage</code> and <code>meta.description</code> are used to describe and link to relevant information about the upstream source this derivation builds;</li>
+<li><code>meta.platforms</code> is useful for Nixpkgs to determine whether a package can be built on a different system (and whether to allow so in evaluation);</li>
+<li>and <code>meta.licenses</code> is useful to check if a package has a suitable license that allows for re-distribution (caching in the official <a href="https://mirror.nixoscn.org/wiki/Derivations/Binary_Cache" class="wikilink" title="binary cache">binary cache</a> or in one of the community caches);</li>
+<li><code>meta.mainProgram</code> describes the binary that can be considered the &quot;main&quot; program. For example, the cmake derivation would have this attribute set to <code>cmake</code>, which would be resolved as <code>$out/bin/cmake</code> when needed.</li>
+</ul>
+<p>A fully exhaustive documentation on all meta-attributes can be found in the <a href="https://nixos.org/manual/nixpkgs/unstable/#chap-meta">Nixpkgs manual</a>.</p>
+<h2 id="phases">Phases</h2><p>The vast majority of derivations follow a fairly established set of stages to their building—for example, configuration, building, installation, etc. Thus, the vast majority of derivations that use the standard environment&#39;s <code>stdenv.mkDerivation</code>, and any language-specific builders that make use of it, follow a convention of grouping the derivation steps in <strong>phases</strong>, which follow a common established pattern. However, this setup can be overridden for specific packaging systems (e.g. docker, etc.); to reduce complexity, this section will start with the generic phase setup first, expanding on how these can be overridden or modified in later sections.</p>
+<p>By default, derivations follow a standard pre-established set of phases, that are meant to mirror how the vast majority of packages are built. Each phase is meant to control a distinct part of the build process, an approach largely inspired by GNU&#39;s Autoconf convention of <code>./configure</code>, <code>make</code>, and <code>make install</code>.</p>
+<p>Taking the basic definition of a derivation to heart, that of being <em>a specification for supplying a set of steps to a builder</em>, each phase is defined to be a sequence of steps written in shell syntax. The phase scripts can use any program or package provided by the standard environment, such as <code>core-utils</code>, <code>gcc</code>, <code>gnumake</code>, <code>bash</code>, <code>gnuinstall</code>, etc.</p>
+<p>By common convention, standard environment derivations contain the following phases, executed in this sequence:</p>
+<ol>
+<li>Unpack: handles the preparation of the build environment (e.g. extracting archives, touching files, etc.);</li>
+<li>Patch: handles changes to the underlying source code (e.g. patching bugs, adapting the source code to work in a Nix environment, etc.);</li>
+<li>Configure: handles the configuration of the build environment, for example detecting system capabilities and setting build parameters;</li>
+<li>Build: compiles the source code into binaries, bytecode, or otherwise a distributable form of the source code;</li>
+<li>Check: performs any tests on the compiled package, for example the package&#39;s test suite;</li>
+<li>Install: copies the build artefacts to the output directory, handling any needed changes (e.g. directory structure reorganisation);</li>
+<li>Fixup: process the output artefacts to work in a Nix environment (e.g.: strip binaries, override ELF paths, handle dynamic library linking, etc.);</li>
+<li>Install Check: performs any tests on the final output, essentially acting as a integration test into the Nix environment;</li>
+<li>Dist: creates distribution archives (rarely used).</li>
+</ol>
+<p><a href="category:Nix" class="wikilink" title="Category:Nix">Category:Nix</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

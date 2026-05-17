@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Web eID</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Web eID</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Web eID -->
+
+<p>eThe Web eID project enables usage of European Union electronic identity (eID) smart cards for secure authentication and digital signing of documents on the web using public-key cryptography.</p>
+<p>Check <a href="https://web-eid.eu/%7Cweb-eid.eu">1</a> for more details and an example application.</p>
+<p>The application consists of the &quot;Web eID&quot; browser extension (available for Chrom{e,ium} and Firefox), and a native messaging host / application running on the system, which takes care of communication with the smart card.</p>
+<p>NixOS Unstable (and 23.05, once released) have the native messaging host packaged. Some local system configuration is still necessary, so the browsers know the extension is allowed to execute the native host application, and where it can find it.</p>
+<p>PCSCD also needs to be enabled:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">services.pcscd.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+}</code></pre>
+      </div><p>On the browser side, the &quot;Web eID&quot; browser extension needs to be installed, and the browser needs to know about the native messaging host.</p>
+<h2 id="firefox">Firefox</h2><p>Firefox requires an additional browser extension for Web eID to work. If Firefox is enabled with <code>programs.firefox.enable = true</code>, this can specified system-wide, as follows...</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">p<span class="hljs-attr">rograms.firefox.nativeMessagingHosts.packages</span> <span class="hljs-operator">=</span> [ pkgs.web-eid-app ];</code></pre>
+      </div><p>...or per user with Home Manager, as follows:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">p<span class="hljs-attr">rograms.firefox.nativeMessagingHosts</span> <span class="hljs-operator">=</span> [ pkgs.web-eid-app ];</code></pre>
+      </div><p>If you&#39;re building a Firefox derivation yourself, you can override it with <code>extraNativeMessagingHosts = [ pkgs.web-eid-app ];</code>.</p>
+<h2 id="google-chrome-chromium">Google Chrome / Chromium</h2><p>Google Chrome and Chromium read JSON files from the or directories (system-wide) / or (per user).</p>
+<p>To configure system-wide, use the following snippet:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  environment.etc.<span class="hljs-string">&quot;chromium/native-messaging-hosts/eu.webeid.json&quot;</span>.source <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.web-eid-app}</span>/share/web-eid/eu.webeid.json&quot;</span>;
+  environment.etc.<span class="hljs-string">&quot;opt/chrome/native-messaging-hosts/eu.webeid.json&quot;</span>.source <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.web-eid-app}</span>/share/web-eid/eu.webeid.json&quot;</span>;
+}</code></pre>
+      </div><p>For user-wide config (inside home-manager), use the following:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  xdg.configFile.<span class="hljs-string">&quot;chromium/NativeMessagingHosts/eu.webeid.json&quot;</span>.source <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.web-eid-app}</span>/share/web-eid/eu.webeid.json&quot;</span>;
+  xdg.configFile.<span class="hljs-string">&quot;google-chrome/NativeMessagingHosts/eu.webeid.json&quot;</span>.source <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.web-eid-app}</span>/share/web-eid/eu.webeid.json&quot;</span>;
+}</code></pre>
+      </div><h2 id="pkcs-11">PKCS#11</h2><p>Note some websites still use PKCS#11 instead of Web eID (for Estonian ID cards). This requires different configuration.</p>
+<p>We configure the browser(s) to load PKCS#11 modules via the <code>p11-kit-proxy</code> module as configured in <code>/etc/pkcs11/modules</code>, and configure <code>opensc-pkcs11.so</code> in there.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-comment"># Tell p11-kit to load/proxy opensc-pkcs11.so, providing all available slots</span>
+  <span class="hljs-comment"># (PIN1 for authentication/decryption, PIN2 for signing).</span>
+  environment.etc.<span class="hljs-string">&quot;pkcs11/modules/opensc-pkcs11&quot;</span>.text <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    module: <span class="hljs-subst">${pkgs.opensc}</span>/lib/opensc-pkcs11.so
+  &#x27;&#x27;</span>;
+}</code></pre>
+      </div><h3 id="firefox">Firefox</h3><p>Firefox can be configured to load PKCS#11 tokens with the following snippet:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">programs.firefox.policies.SecurityDevices.p11-kit-proxy</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.p11-kit}</span>/lib/p11-kit-proxy.so&quot;</span>;
+}</code></pre>
+      </div><p>If you&#39;re building a firefox derivation yourself, you can override it with <code>extraPolicies.SecurityDevices.p11-kit-proxy &quot;${pkgs.p11-kit}/lib/p11-kit-proxy.so&quot;;</code>.</p>
+<h3 id="google-chrome-chromium">Google Chrome / Chromium</h3><p>Unfortunately, Chrome and Chromium browsers can&#39;t be declaratively configured for PKCS#11 tokens. We need to invoke the <code>modutil</code> command on the nssdb, and render a script that&#39;ll reconfigure it:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-comment"># Wrapper script to tell to Chrome/Chromium to use p11-kit-proxy to load</span>
+    <span class="hljs-comment"># security devices, so they can be used for TLS client auth.</span>
+    <span class="hljs-comment"># Each user needs to run this themselves, it does not work on a system level</span>
+    <span class="hljs-comment"># due to a bug in Chromium:</span>
+    <span class="hljs-comment">#</span>
+    <span class="hljs-comment"># https://bugs.chromium.org/p/chromium/issues/detail?id=16387</span>
+    (pkgs.writeShellScriptBin <span class="hljs-string">&quot;setup-browser-eid&quot;</span> <span class="hljs-string">&#x27;&#x27;
+      NSSDB=&quot;<span class="hljs-char escape_">&#x27;&#x27;$</span>{HOME}/.pki/nssdb&quot;
+      mkdir -p <span class="hljs-char escape_">&#x27;&#x27;$</span>{NSSDB}
+
+      <span class="hljs-subst">${pkgs.nssTools}</span>/bin/modutil -force -dbdir sql:$NSSDB -add p11-kit-proxy \
+        -libfile <span class="hljs-subst">${pkgs.p11-kit}</span>/lib/p11-kit-proxy.so
+    &#x27;&#x27;</span>)
+  ];</code></pre>
+      </div><p>Invoke <code>setup-browser-eid</code> to configure (and whenever this gets garbage-collected), and restart your browser.</p>
+<h2 id="belgian-eid-cards">Belgian eID cards</h2><p>The Web eID browser extension, used for authentication with Belgian eID cards, requires the PKCS#11 module <code>libbeidpkcs11.so.0</code> to be available in the directory <code>/usr/lib/x86_64-linux-gnu/</code>. Since this directory does not exist by default on NixOS, the Web eID application installed on the host system will not detect or support Belgian eID cards.</p>
+<p>To resolve this, you can create a symlink from the Nix store version of <code>beidpkcs11.so</code>, provided by the <code>eid-mw</code> package, into <code>/usr/lib/x86_64-linux-gnu/</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ystem.activationScripts.web-eid-app</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">text</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    mkdir -p /usr/lib/x86_64-linux-gnu
+    ln -sf <span class="hljs-subst">${pkgs.eid-mw}</span>/lib/pkcs11/beidpkcs11.so /usr/lib/x86_64-linux-gnu/libbeidpkcs11.so.0
+  &#x27;&#x27;</span>;
+};</code></pre>
+      </div><p>This script ensures the required symlink is created at system activation time and remains up to date with the correct Nix store path for <code>eid-mw</code>.</p>
+<p>Alternatively, systemd can be used to create the symlink, as such:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ystemd.tmpfiles.rules</span> <span class="hljs-operator">=</span> [
+  <span class="hljs-string">&quot;L+ /usr/lib/x86_64-linux-gnu/libbeidpkcs11.so.0 - - - - <span class="hljs-subst">${pkgs.eid-mw}</span>/lib/pkcs11/beidpkcs11.so&quot;</span>
+];</code></pre>
+      </div><p><a href="category:Hardware" class="wikilink" title="Category:Hardware">Category:Hardware</a> <a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="category:Web_Applications" class="wikilink" title="Category:Web Applications">Category:Web Applications</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Neovim/zh</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/Neovim">Neovim</a><span aria-hidden="true"> / </span>zh</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Neovim/zh -->
+
+<languages/>
+
+  
+<p><em>另见: <a href="special:MyLanguage/Vim" class="wikilink" title="Vim">Vim</a></em></p>
+<p><a href="https://neovim.io/">Neovim</a><sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Neovim/zh#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup> 是一款高度可扩展的开源文本编辑器，旨在改进和现代化流行的 <a href="special:MyLanguage/Vim" class="wikilink" title="Vim">Vim</a><sup><a id="footnote-ref-2" href="https://mirror.nixoscn.org/wiki/Neovim/zh#footnote-2" data-footnote-ref aria-describedby="footnote-label">2</a></sup> 编辑器。它被设计为 Vim 的无缝衔接替代品，在保持与大多数 Vim 插件和配置的兼容性的同时，提供额外的功能和改进。Neovim 注重可扩展性、易用性和性能。</p>
+<p>它引入了强大的插件架构，支持异步插件执行，这可以显著提升某些操作的性能。它还内置了终端模拟器，允许用户直接在编辑器中运行 shell 命令。该项目注重代码质量和可维护性，拥有简洁且文档完善的代码库，方便开发者贡献代码。</p>
+<p><span id="Installation"></span></p>
+<h2 id="安装">安装</h2><h4 id="shell">Shell</h4><p>要在不修改系统配置的情况下临时在 shell 环境中使用 Neovim，您可以运行：</p>
+<p>这样就能在当前 shell 中使用 Neovim 编辑器了。之后，您可以通过输入 <code>nvim</code> 来启动 Neovim。</p>
+<p><span id="System_setup"></span></p>
+<h4 id="系统设置">系统设置</h4><p>要在系统范围内安装 Neovim，使其可供所有用户使用，请将以下内容添加到您的配置中：</p>
+<p>使用 <code>nixos-rebuild switch</code> 或 <code>home-manager switch</code> 重建系统后，Neovim 将被安装且可使用。</p>
+<p><span id="Configuration"></span></p>
+<h2 id="配置">配置</h2><p><span id="Basic"></span></p>
+<h4 id="基础">基础</h4><p><span id="Advanced"></span></p>
+<h4 id="进阶">进阶</h4><h2 id="小技巧">小技巧</h2><p><span id="Package_Variations"></span></p>
+<h4 id="包的变体">包的变体</h4><p>请查看 <a href="https://github.com/nix-community/neovim-nightly-overlay">Neovim Nightly Overlay</a><sup><a id="footnote-ref-3" href="https://mirror.nixoscn.org/wiki/Neovim/zh#footnote-3" data-footnote-ref aria-describedby="footnote-label">3</a></sup> 以安装最新的 Neovim nightly 版本。</p>
+<p>您可以通过以下命令运行主版本：</p>
+<p><span id="Plugin_Management"></span></p>
+<h4 id="插件管理">插件管理</h4><p><span id="Frameworks"></span></p>
+<h4 id="框架">框架</h4><p>如果您不想手动配置系统，NixOS 提供了多种预定义配置和社区支持的选项。以下列举其中一些：</p>
+<ul>
+<li><a href="https://www.lazyvim.org/">LazyVim</a><sup><a id="footnote-ref-4" href="https://mirror.nixoscn.org/wiki/Neovim/zh#footnote-4" data-footnote-ref aria-describedby="footnote-label">4</a></sup></li>
+<li><a href="https://astronvim.com/">AstroNvim</a><sup><a id="footnote-ref-5" href="https://mirror.nixoscn.org/wiki/Neovim/zh#footnote-5" data-footnote-ref aria-describedby="footnote-label">5</a></sup></li>
+<li><a href="https://nvchad.com/">NVChad</a><sup><a id="footnote-ref-6" href="https://mirror.nixoscn.org/wiki/Neovim/zh#footnote-6" data-footnote-ref aria-describedby="footnote-label">6</a></sup></li>
+</ul>
+<p>默认情况下，LazyVim 会阻止加载非 LazyVim 管理的插件。这包括所有通过 Nix 安装的插件。如果您想同时使用 Nix 和 LazyVim 安装插件，请将以下内容添加到您的 LazyVim 配置中：</p>
+<p><a href="https://github.com/folke/lazy.nvim/issues/402#issuecomment-2084997594">源码</a></p>
+<p><span id="FHS_wrapper"></span></p>
+<h4 id="fhs-包装">FHS 包装</h4><p>您可以创建自定义的 Neovim FHS 包装器</p>
+<p>该 FHS 封装示例基于 nixpkgs 中的一个贡献代码<sup><a id="footnote-ref-7" href="https://mirror.nixoscn.org/wiki/Neovim/zh#footnote-7" data-footnote-ref aria-describedby="footnote-label">7</a></sup>。 有关包含使用类似 FHS 环境设置 <code>mason.nvim</code> 的扩展配置，请参阅此 <a href="https://github.com/NixOS/nixpkgs/issues/281219#issuecomment-2284713258">NixOS/nixpkgs 问题评论</a>。</p>
+<h2 id="故障排除">故障排除</h2><p><span id="lua-language-server:_Dynamically_linked_executable_error"></span></p>
+<h4 id="lua-language-server-动态链接可执行文件错误">lua-language-server: 动态链接可执行文件错误</h4><p>在您的<code>~/.local/state/nvim/lsp.log</code>文件中，您会看到以下错误：</p>
+<p>这个问题可以在 Stack Overflow 上找到解决方案<sup><a id="footnote-ref-8" href="https://mirror.nixoscn.org/wiki/Neovim/zh#footnote-8" data-footnote-ref aria-describedby="footnote-label">8</a></sup>。</p>
+<p><span id="See_also"></span></p>
+<h2 id="另见">另见</h2><div lang="en" dir="ltr" class="mw-content-ltr">
+
+<ul>
+<li><a href="https://mirror.nixoscn.org/wiki/Neovim/zh/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> – For declarative Neovim configuration at the user level: <a href="https://nix-community.github.io/home-manager/options.html#opt-programs.neovim.enable">Neovim module in Home Manager</a></li>
+<li><a href="https://neovim.io/doc/">Official Documentation</a> – Official Neovim documentation.</li>
+<li><a href="https://search.nixos.org/options?channel=unstable&amp;query=programs.neovim">NixOS options for Neovim</a> – System-level Neovim configuration.</li>
+<li><a href="https://discourse.nixos.org/search?q=neovim">Neovim discussions on NixOS Discourse</a> – Community tips, troubleshooting, and use cases.</li>
+<li><a href="https://github.com/nix-community/neovim-overlay">Neovim Overlay on Nixpkgs</a> – For nightly builds and additional Neovim packages.</li>
+</ul>
+</div>
+
+<p><span id="References"></span></p>
+<h2 id="参考">参考</h2><p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="category:CLI_Applications" class="wikilink" title="Category:CLI Applications">Category:CLI Applications</a> <a href="category:Text_Editor" class="wikilink" title="Category:Text Editor">Category:Text Editor</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p>Neovim 团队, &quot;Home - Neovim&quot;, Neovim 官方网站, 最后更新日期：2025年3月；访问日期：2025年6月。 <a href="https://neovim.io/">https://neovim.io/</a> <a href="https://mirror.nixoscn.org/wiki/Neovim/zh#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+<li id="footnote-2">
+<p>NixOS 维基社区, &quot;Vim&quot;, NixOS 维基, 最后编辑于 2025 年 2 月 24 日，访问于 2025 年 6 月。 <a href="https://wiki.nixos.org/wiki/Vim">https://wiki.nixos.org/wiki/Vim</a> <a href="https://mirror.nixoscn.org/wiki/Neovim/zh#footnote-ref-2" data-footnote-backref aria-label="Back to reference 2">↩</a></p>
+</li>
+<li id="footnote-3">
+<p>Nix 社区, &quot;neovim-nightly-overlay&quot;, GitHub, 最后更新于 2025 年 6 月，访问于 2025 年 6 月。<a href="https://github.com/nix-community/neovim-nightly-overlay">https://github.com/nix-community/neovim-nightly-overlay</a> <a href="https://mirror.nixoscn.org/wiki/Neovim/zh#footnote-ref-3" data-footnote-backref aria-label="Back to reference 3">↩</a></p>
+</li>
+<li id="footnote-4">
+<p>LazyVim 团队, &quot;入门教程&quot;, LazyVim 官方网站, © 2025, 访问于 2025年6月。 <a href="https://www.lazyvim.org/">https://www.lazyvim.org/</a> <a href="https://mirror.nixoscn.org/wiki/Neovim/zh#footnote-ref-4" data-footnote-backref aria-label="Back to reference 4">↩</a></p>
+</li>
+<li id="footnote-5">
+<p>AstroNvim 团队, &quot;AstroNvim&quot;, AstroNvim 官方网站, N/A, 访问于 2025年6月。 <a href="https://astronvim.com/">https://astronvim.com/</a> <a href="https://mirror.nixoscn.org/wiki/Neovim/zh#footnote-ref-5" data-footnote-backref aria-label="Back to reference 5">↩</a></p>
+</li>
+<li id="footnote-6">
+<p>Siduck, &quot;NvChad&quot;, NvChad 官方网站, © 2025, 访问于 2025年6月。 <a href="https://nvchad.com/">https://nvchad.com/</a> <a href="https://mirror.nixoscn.org/wiki/Neovim/zh#footnote-ref-6" data-footnote-backref aria-label="Back to reference 6">↩</a></p>
+</li>
+<li id="footnote-7">
+<p>NixOS，“功能：自定义 Neovim FHS 封装”（Pull Request #334032），GitHub，2025 年，访问于 2025 年 6 月。<a href="https://github.com/NixOS/nixpkgs/pull/334032">https://github.com/NixOS/nixpkgs/pull/334032</a> <a href="https://mirror.nixoscn.org/wiki/Neovim/zh#footnote-ref-7" data-footnote-backref aria-label="Back to reference 7">↩</a></p>
+</li>
+<li id="footnote-8">
+<p>Stack Overflow 贡献者，“对‘无法在 NixOS 上启动动态链接可执行文件...’的解答”，Stack Overflow，2025，访问于 2025 年 6 月。<a href="https://stackoverflow.com/a/78215911/27134695">https://stackoverflow.com/a/78215911/27134695</a> <a href="https://mirror.nixoscn.org/wiki/Neovim/zh#footnote-ref-8" data-footnote-backref aria-label="Back to reference 8">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

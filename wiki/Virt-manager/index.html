@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Virt-manager</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Virt-manager</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Virt-manager -->
+
+<p><a href="https://virt-manager.org/">Virt-manager</a> (a.k.a. Virtual Machine Manager) is a GUI application for managing local and remote virtual machines through <a href="https://mirror.nixoscn.org/wiki/Virt-manager/libvirt" class="wikilink" title="libvirt">libvirt</a>. It primarily targets KVM VMs, but also manages Xen and LXC (Linux Containers).</p>
+<h2 id="prequisites">Prequisites</h2><p>Though Virt-manager (using the KVM hypervisor) is able to take advantage of virtualisation capabilities without any UEFI/BIOS configuration, best performance demands that the host have Vt-x and Vt-d (Intel) or AMD-V and AMD-Vi (AMD) enabled.</p>
+<p>These settings can usually be found under the UEFI/BIOS settings.</p>
+<h2 id="installation">Installation</h2><p>In your configuration file add:</p>
+<h3 id="networking">Networking</h3><p>To use the default libvirt network, you will need to install the <code>dnsmasq</code> package. This is required for DNS and DCHP functionality within the network:</p>
+<p>The default network starts off inactive, you must enable it before it is accessible. This can be done by running the following command:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">virsh net-start default</span></code></pre>
+      </div><p>And if you would like to enable it automatically at boot:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">virsh net-autostart default</span></code></pre>
+      </div><p>By default, this will enable a virtual network bridge under the name <code>virbr0</code>. You may need to allow it through your firewall filter like so:</p>
+<h3 id="display">Display</h3><p>The default video may not allow different resolutions and is limited. It is recommended to use Virtio instead.</p>
+<p>For information on how to use Virtio with your VM&#39;s, <a href="https://wiki.libvirt.org/Virtio.html">you can read up on Virtio on the libvirt wiki</a>.</p>
+<h3 id="shared-folders">Shared folders</h3><p>To be able to share a folder with a guest, you will need &#39;virtiofsd&#39;. The recommended way to solve this problem is now to add <code>pkgs.virtiofsd</code> to <code>virtualisation.libvirtd.qemu.vhostUserPackages</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">v<span class="hljs-attr">irtualisation.libvirtd</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">qemu.vhostUserPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [ virtiofsd ];
+};</code></pre>
+      </div><h3 id="windows-guest">Windows Guest</h3><p>See <a href="https://github.com/virtio-win/virtio-win-guest-tools-installer">Virtio-win guest tools</a> for additional drivers for both paravirtual and emulated hardware</p>
+<h3 id="guest-agent">Guest Agent</h3><p>When running NixOS as a guest, enable the <a href="https://wiki.qemu.org/Features/GuestAgent">QEMU guest agent</a> with:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">services.qemuGuest.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">services.spice-vdagentd.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;  <span class="hljs-comment"># enable copy and paste between host and guest</span>
+}</code></pre>
+      </div><p>The host must <a href="https://wiki.libvirt.org/Qemu_guest_agent.html#setting-qemu-ga-up">provide the needed virtio serial port</a> under the special name <code>org.qemu.guest_agent.0</code>.</p>
+<h3 id="wayland">Wayland</h3><p>In order to run on Wayland, virt-manager must be ran under XWayland with `$ GDK_BACKEND=x11 virt-manager` or a gdk cursor must be set. An example of setting a gdk cursor with home-manager is as follows:</p>
+<p><code> home.pointerCursor = {</code><br><code>    gtk.enable = true;</code><br><code>    package = pkgs.vanilla-dmz;</code><br><code>    name = &quot;Vanilla-DMZ&quot;;</code><br><code> };</code></p>
+<h2 id="troubleshooting">Troubleshooting</h2><h3 id="unable-to-find-39-efi-39-firmware">Unable to find &#39;efi&#39; firmware</h3><p>The following guide is to fix the following error which will occur when starting a virtual machine after NixOS upgrade: <code>Error: Error starting domain: operation failed: Unable to find &#39;efi&#39; firmware that is compatible with the current configuration</code></p>
+<p>Solution:</p>
+<ol>
+<li>Delete old generations: <code>nix-collect-garbage -d</code></li>
+<li>Find where the EFI boot loaded file is located: <code>find /nix/store/ -maxdepth 1 -type d -name &quot;*qemu*&quot; | xargs -I {} find &quot;{}&quot; -type f -name &quot;edk2-x86_64-secure-code.fd&quot;</code> Find the dir holding the latest qemu. The directory should be something like: <code>xbfjilai721rzd9rf9dhhpv03xza4xp4-qemu-9.1.3</code>. Take a note of this directory name.</li>
+<li>Open VM in virt-manager, go to XML and within the <code>&lt;os ...&gt;</code> tag:<ol>
+<li>Edit <code>&lt;loader ...&gt;</code> with the above directory name</li>
+<li>Edit <code>&lt;nvram ...&gt;</code> with the above directory name.</li>
+</ol>
+</li>
+</ol>
+<p><a href="category:Virtualization" class="wikilink" title="Category:Virtualization">Category:Virtualization</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

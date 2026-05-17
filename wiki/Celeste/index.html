@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Celeste</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Celeste</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Celeste -->
+
+<p><a href="https://www.celestegame.com/">Celeste</a> is a precision platformer game about climbing a mountain. This page explains how to play the game, possibly with mods, on NixOS. You may seek further support about Celeste on NixOS in a <a href="https://discord.com/channels/403698615446536203/1236055875282800741">thread</a> in the Discord server for Celeste.</p>
+<h2 id="base-game-installation">Base game installation</h2><p>Celeste is not free (as in free beer) for downloading. If you own a copy only on Steam, install <a href="https://mirror.nixoscn.org/wiki/Celeste/Steam" class="wikilink" title="Steam">Steam</a>, and then install and launch Celeste in Steam. If you own a copy on itch.io, you can either extract it and run it using , or use the package.</p>
+<p>For using the <code>celestegame</code> package follow one of the 3 methodes:</p>
+<h3 id="manual-updates">Manual Updates</h3><p>First download the Linux version of Celeste on <a href="https://maddymakesgamesinc.itch.io/celeste">itch.io</a>, and then add it to Nix store by running this command:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nix-store --add-fixed sha256 celeste-linux.zip</code></pre>
+      </div><p>You can then install Celeste by the <code>celestegame</code> package on Nixpkgs.</p>
+<h3 id="automatic-updates">Automatic Updates</h3><p>For automatic updates you need to let the nix daemon know of your itch.io API key you can get one on <a href="https://itch.io/user/settings/api-keys">1</a>.</p>
+<p>On NixOS you can do this by adding an <code>EnvironmentFile</code> to the systemd service staring the nix-daemon and adding the API key to the <code>EnvironmentFile</code> specified you can see an example below.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">systemd.services.nix-daemon.serviceConfig.EnvironmentFile</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/path/to/file/with/env/vars&quot;</span>;
+}</code></pre>
+      </div><div class="code-container">
+        
+        <pre><code class="language-bash hljs">NIX_ITCHIO_API_KEY=my_secret_api_key</code></pre>
+      </div><h3 id="none-itch-io-version">None itch.io version</h3><p>You can override the source to use something other than the itch.io version, as long as it is a Zip file containing the DRM-free game files of Celeste. The Zip file must not contain only a single top-level directory, but should contain the files such as the <code>Celeste</code> binary file directly at top-level. To override the source, write, for example:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">celestegame.override {
+  <span class="hljs-attr">overrideSrc</span> <span class="hljs-operator">=</span> requireFile {
+    <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;celeste-linux.zip&quot;</span>;
+    <span class="hljs-attr">hash</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sha256-phNDBBHb7zwMRaBHT5D0hFEilkx9F31p6IllvLhHQb8=&quot;</span>;
+    <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://example.com&quot;</span>;
+  };
+}</code></pre>
+      </div><h2 id="installing-olympus">Installing Olympus</h2><p>Olympus is a GUI tool that can be used to manage multiple Celeste installations and their mods. You can install Olympus by the package.</p>
+<ul>
+<li>If you want to manage the game from Steam, the game directly extracted from itch.io, or the game installed from the package <code>celestegame.passthru.celeste-unwrapped</code>, install <code>olympus.override { celesteWrapper = &quot;steam-run&quot;; }</code>. Setting <code>celesteWrapper</code> is essential if you want to launch Celeste from Olympus, but other functionalities of Olympus work without this.</li>
+<li>If you want to manage the game installed from the package <code>celestegame</code>, just install <code>olympus</code>.</li>
+</ul>
+<p>If you want to manage the game installed by the <code>celestegame</code> package using Olympus, it may not be convenient because Olympus cannot automatically discover it by default, and if you manually add the Nix store path as a Celeste installation in Olympus, the path will probably become invalid or outdated after you update Nixpkgs. To fix this, you can specify an absolute path where a symbolic link to the Celeste installation will be created, and instruct Olympus to discover a Celeste installation in that path. For example, in a NixOS configuration, you can write:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+  (celestegame.override { <span class="hljs-attr">gameDir</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/home/madeline/Games/Celeste/game&quot;</span>; })
+  (olympus.override { <span class="hljs-attr">finderHints</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/home/madeline/Games/Celeste/game&quot;</span>; })
+];</code></pre>
+      </div><p>After switching to this NixOS configuration, you need to launch Celeste once before launch Olympus because the path specified by <code>gameDir</code> is created the first time you launch Celeste. You can also specify multiple directories by setting <code>gameDir</code> and <code>finderHints</code> to arrays of strings.</p>
+<h3 id="managing-mods-with-olympus">Managing mods with Olympus</h3><p>If your game is from Steam or directly extracted from itch.io downloads, then you can install Everest and manage mods in Olympus rightaway.</p>
+<p>If you use the <code>celestegame</code> package, you cannot install Everest using Olympus. Read <a href="https://mirror.nixoscn.org/wiki/Celeste#Installing_Everest" class="wikilink" title="#Installing Everest">#Installing Everest</a> for more information. A working snippet of NixOS configuration may look like this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+  (celestegame.override {
+    <span class="hljs-attr">withEverest</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">writableDir</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/home/madeline/Games/Celeste/writable&quot;</span>;
+    <span class="hljs-attr">gameDir</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/home/madeline/Games/Celeste/game&quot;</span>;
+  })
+  (olympus.override { <span class="hljs-attr">finderHints</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/home/madeline/Games/Celeste/game&quot;</span>; })
+];</code></pre>
+      </div><h3 id="managing-multiple-installations">Managing multiple installations</h3><p>You can manage different installations, giving benefits of possibly having different sets of mods for each installation. To do this, you can write something like this in your NixOS configuration:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+  (celestegame.override {
+    <span class="hljs-attr">withEverest</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">writableDir</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/home/madeline/Games/Celeste/writable1&quot;</span>;
+    <span class="hljs-attr">gameDir</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/home/madeline/Games/Celeste/game1&quot;</span>;
+  })
+  (celestegame.override {
+    <span class="hljs-attr">withEverest</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">writableDir</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/home/madeline/Games/Celeste/writable2&quot;</span>;
+    <span class="hljs-attr">gameDir</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/home/madeline/Games/Celeste/game2&quot;</span>;
+  })
+  (olympus.override { <span class="hljs-attr">finderHints</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-string">&quot;/home/madeline/Games/Celeste/game1&quot;</span>
+    <span class="hljs-string">&quot;/home/madeline/Games/Celeste/game2&quot;</span>
+  ]; })
+];</code></pre>
+      </div><p>However, this may be a little inconvenient because the <code>gameDir</code> is only populated when you launch Celeste for the first time. Having an activation script for this may be desired. TODO: write instructions about the activation scripts here.</p>
+<p>You may also manage both the game from the <code>celestegame</code> package and the game from Steam or itch.io in Olympus. Because of the limitation of the implementation of Celeste launch wrappers in Olympus, the same <code>celesteWrapper</code> is used for all of the installtions that you launch through Olympus. If you set it to <code>&quot;steam-run&quot;</code> for launching the game from Steam, you may have trouble launching the game from the package. This may be fixed by overriding <code>everest</code> to <code>everest-bin</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">celestegame.override {
+  <span class="hljs-attr">withEverest</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">everest</span> <span class="hljs-operator">=</span> everest-bin;
+  <span class="hljs-attr">writableDir</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/home/madeline/Games/Celeste/writable&quot;</span>;
+  <span class="hljs-attr">gameDir</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/home/madeline/Games/Celeste/game&quot;</span>;
+}</code></pre>
+      </div><p>If it still does not work, you can also try replacing <code>celestegame</code> with <code>celestegame.passthru.celeste-unwrapped</code>, but this package does not support <code>gameDir</code>.</p>
+<h2 id="installing-everest">Installing Everest</h2><p><a href="https://everestapi.github.io/">Everest</a> is a mod loader for Celeste.</p>
+<p>Installing and using Everest for the game from Steam or the game directly extracted from itch.io downloads is not very different from the upstream documentation (other than the quirk that you may need <a href="https://mirror.nixoscn.org/wiki/Celeste/nix-ld" class="wikilink" title="nix-ld">nix-ld</a> or an FHS wrapper like <code>steam-run</code> to run MiniInstaller). However, different steps are needed if you use the <code>celestegame</code> package. Because the Nix store is read-only, some further steps are needed to install mods. You need to override the <code>writableDir</code> argument to make file writing happen there instead of in the Nix store path. Therefore, to install Celeste with Everest using the <code>celestegame</code> package, you can write:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">celestegame.override {
+  <span class="hljs-attr">withEverest</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">writableDir</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/home/madeline/Games/Celeste/writable&quot;</span>;
+}</code></pre>
+      </div><p>After that, all the file writing operations should be only done in the writable directory you set. For this specific example, you should expect the Everest logs to be at <code>/home/madeline/Games/Celeste/writable/everest-log.txt</code>, and you should install mods by putting them in <code>/home/madeline/Games/Celeste/writable/Mods</code>.</p>
+<p>Notice that, while you can specify multiple paths for <code>gameDir</code>, you can only specify one path for <code>writableDir</code>. Therefore, if you want this Celeste installation to be playable by multiple users on this machine, setting <code>writableDir</code> to a path that is writable by all of them is advised.</p>
+<h2 id="installing-mons">Installing Mons</h2><p><a href="https://mons.coloursofnoise.ca/">Mons</a> is a CLI mod manager for Celeste. It can be installed using the package. However, it is not advised to use Mons because it is now outdated and does not work with the current modding ecosystem anymore.</p>
+<p><a href="category:Gaming" class="wikilink" title="Category:Gaming">Category:Gaming</a> <a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

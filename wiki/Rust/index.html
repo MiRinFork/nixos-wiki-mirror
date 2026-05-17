@@ -1,0 +1,585 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rust</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Rust</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Rust -->
+
+<p>This article is about the <a href="https://www.rust-lang.org/">Rust programming language</a>. There are 3 methods to use the Rust compiler and toolchain in Nix/NixOS:</p>
+<ol>
+<li>via nixpkgs,</li>
+<li>via rustup,</li>
+<li>or with unofficial overlays on nixpkgs.</li>
+</ol>
+<p>Installing via nixpkgs is the best way to use Rust, but there are valid reasons to use any approach.</p>
+<h2 id="installing-via-nixpkgs">Installing via nixpkgs</h2><p>The <code>cargo</code> and <code>rustc</code> derivations provide the Rust toolchain in nixpkgs. An advantage of using nixpkgs is that it&#39;s dead simple and you get pinned versions, deterministic builds in nix-shell, etc. However, nixpkgs only maintains a single version of the Rust stable toolchain, so if you require a nightly toolchain or switch between multiple toolchains then this approach may not be for you.</p>
+<p>Here&#39;s an example <code>shell.nix</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-keyword">let</span>
+  <span class="hljs-comment"># Pinned nixpkgs, deterministic. Last updated: 2/12/21.</span>
+  <span class="hljs-attr">pkgs</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> (<span class="hljs-built_in">fetchTarball</span>(<span class="hljs-string">&quot;https://github.com/NixOS/nixpkgs/archive/a58a0b5098f0c2a389ee70eb69422a052982d990.tar.gz&quot;</span>)) {};
+
+  <span class="hljs-comment"># Rolling updates, not deterministic.</span>
+  <span class="hljs-comment"># pkgs = import (fetchTarball(&quot;channel:nixpkgs-unstable&quot;)) {};</span>
+<span class="hljs-keyword">in</span>
+pkgs.callPackage (
+  {
+    mkShell,
+    cargo,
+    rustc,
+  }:
+  mkShell {
+    <span class="hljs-attr">strictDeps</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">nativeBuildInputs</span> <span class="hljs-operator">=</span> [
+      cargo
+      rustc
+    ];
+  }
+) { }</code></pre>
+      </div><h2 id="installating-with-bindgen-support">Installating with bindgen support</h2><p>By default crates using <code>bindgen</code> will not compile. To add bindgen support add the <code>rustPlatform.bindgenHook</code> to your <code>nativeBuildInputs</code>.</p>
+<p>Here&#39;s an example <code>shell.nix</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  pkgs <span class="hljs-operator">?</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> { },
+}:
+pkgs.callPackage (
+  {
+    mkShell,
+    cargo,
+    rustc,
+    rustPlatform,
+    pkg-config,
+  }:
+  mkShell {
+    <span class="hljs-attr">strictDeps</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">nativeBuildInputs</span> <span class="hljs-operator">=</span> [
+      cargo
+      rustc
+      rustPlatform.bindgenHook
+      <span class="hljs-comment"># optional: add pkg-config support</span>
+      pkg-config
+    ];
+    <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> [
+      <span class="hljs-comment"># add desired native packages</span>
+      <span class="hljs-comment"># ...</span>
+    ];
+    <span class="hljs-comment"># ...</span>
+  }
+) { }</code></pre>
+      </div><p>This also works, when compiling rust crates:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  rustPlatform,
+  pkg-config,
+  ...
+}:
+rustPlatform.buildRustPackage {
+  <span class="hljs-comment"># ...</span>
+  <span class="hljs-attr">nativeBuildInputs</span> <span class="hljs-operator">=</span> [
+    rustPlatform.bindgenHook
+    pkg-config
+  ];
+  <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-comment"># add desired native packages</span>
+    <span class="hljs-comment"># ...</span>
+  ];
+}</code></pre>
+      </div><h2 id="installation-via-rustup">Installation via rustup</h2><p>The rustup tool is maintained by the Rust community and offers an interface to install and switch between Rust toolchains. In this scenario, rustup handles the &quot;package management&quot; of Rust toolchains and places them in <code>$PATH</code>. Nixpkgs offers rustup via the <code>rustup</code> derivation. More info on using rustup can be found on their official website: <a href="https://rustup.rs/">https://rustup.rs/</a>.</p>
+<p>If you want the most &quot;normal&quot; Rust experience I recommend using rustup with the following example shell.nix:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  pkgs <span class="hljs-operator">?</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> { },
+}:
+<span class="hljs-keyword">let</span>
+  <span class="hljs-attr">overrides</span> <span class="hljs-operator">=</span> (<span class="hljs-built_in">builtins.fromTOML</span> (<span class="hljs-built_in">builtins.readFile</span> .<span class="hljs-operator">/</span>rust-toolchain.toml));
+<span class="hljs-keyword">in</span>
+pkgs.callPackage (
+  {
+    stdenv,
+    mkShell,
+    rustup,
+    rustPlatform,
+  }:
+  mkShell {
+    <span class="hljs-attr">strictDeps</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">nativeBuildInputs</span> <span class="hljs-operator">=</span> [
+      rustup
+      rustPlatform.bindgenHook
+    ];
+    <span class="hljs-comment"># libraries here</span>
+    <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span>
+      [
+      ];
+    <span class="hljs-attr">RUSTC_VERSION</span> <span class="hljs-operator">=</span> overrides.toolchain.channel;
+    <span class="hljs-comment"># https://github.com/rust-lang/rust-bindgen#environment-variables</span>
+    <span class="hljs-attr">shellHook</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+      export PATH=&quot;<span class="hljs-char escape_">&#x27;&#x27;$</span>{CARGO_HOME:-~/.cargo}/bin&quot;:&quot;$PATH&quot;
+      export PATH=&quot;<span class="hljs-char escape_">&#x27;&#x27;$</span>{RUSTUP_HOME:-~/.rustup}/toolchains/$RUSTC_VERSION-<span class="hljs-subst">${stdenv.hostPlatform.rust.rustcTarget}</span>/bin&quot;:&quot;$PATH&quot;
+    &#x27;&#x27;</span>;
+  }
+) { }</code></pre>
+      </div><p>It&#39;s important to have a file named <code>rust-toolchain.toml</code> lying in the same directory as the shell.nix. Rust already has a standardized way of pinning a toolchain version for a workspace or a project. See <a href="https://rust-lang.github.io/rustup/overrides.html#the-toolchain-file">the Rustup book</a> for its syntax.</p>
+<p>A minimal example of the <code>rust-toolchain.toml</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-toml hljs"><span class="hljs-section">[toolchain]</span>
+<span class="hljs-attr">channel</span> = <span class="hljs-string">&quot;stable&quot;</span> <span class="hljs-comment"># This can also be &quot;nightly&quot; if you want a nightly rust</span>
+                   <span class="hljs-comment"># or nightly-20XX-XX-XX for a specific nightly.</span></code></pre>
+      </div><h2 id="cross-compiling">Cross-compiling</h2><h3 id="to-windows-via-rustup">To Windows via rustup</h3><ul>
+<li><a href="https://github.com/jraygauthier/jrg-rust-cross-experiment/tree/master/simple-static-rustup-target-windows">simple-static-rustup-target-windows</a><ul>
+<li><a href="https://github.com/jraygauthier/jrg-rust-cross-experiment/blob/master/simple-static-rustup-target-windows/shell.nix">shell.nix</a></li>
+</ul>
+</li>
+</ul>
+<h3 id="to-windows-via-a-cargo-plugin">To Windows via a cargo plugin:</h3><ul>
+<li>use <a href="https://crates.io/crates/cargo-xwin">cargo-xwin</a> with rustup install or the <a href="https://search.nixos.org/packages?show=cargo-xwin&amp;type=packages&amp;query=cargo+windows">nix cargo plugin</a></li>
+<li>run cargo commands prefixed by xwin, e.g. <code>cargo xwin run --target x86_64-pc-windows-msvc</code></li>
+</ul>
+<h2 id="unofficial-overlays">Unofficial overlays</h2><ol>
+<li><a href="https://github.com/oxalica/rust-overlay">https://github.com/oxalica/rust-overlay</a> (Flake support, Nightly &amp; Stable)</li>
+<li><a href="https://github.com/nix-community/fenix">https://github.com/nix-community/fenix</a> (Flake support, Nightly &amp; Stable)</li>
+<li><a href="https://github.com/mozilla/nixpkgs-mozilla">https://github.com/mozilla/nixpkgs-mozilla</a> (Flake support, Nightly &amp; Stable)</li>
+</ol>
+<h2 id="devenv-sh-support">devenv.sh support</h2><ol>
+<li><a href="https://github.com/cachix/devenv/blob/main/examples/rust/devenv.nix">https://github.com/cachix/devenv/blob/main/examples/rust/devenv.nix</a> and <code>devenv shell</code></li>
+</ol>
+<h2 id="developing-rust-projects-using-nix">Developing Rust projects using Nix</h2><p>The <a href="https://nixos.org/manual/nixpkgs/stable/#rust">Nixpkgs manual</a> uses <code>buildRustPackage</code>.</p>
+<p><a href="https://srid.ca/rust-nix">This</a> blog post shows how to do it using <code>dream2nix</code>. A template repo is available here: <a href="https://github.com/srid/rust-nix-template">https://github.com/srid/rust-nix-template</a></p>
+<h2 id="using-overrideattrs-with-rust-packages">Using overrideAttrs with Rust Packages</h2><p>There are two ways to use <code>overrideAttrs</code> with Rust packages:</p>
+<ul>
+<li>Using <a href="https://mirror.nixoscn.org/wiki/Rust/Import_From_Derivation" class="wikilink" title="Import From Derivation">Import From Derivation</a>:</li>
+</ul>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">il</span> <span class="hljs-operator">=</span> pkgs.nil.overrideAttrs (
+  <span class="hljs-params">finalAttrs:</span> <span class="hljs-params">previousAttrs:</span> {
+    <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;unstable-2024-09-19&quot;</span>;
+                                                                           
+    <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> pkgs.fetchFromGitHub {
+      <span class="hljs-attr">owner</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;oxalica&quot;</span>;
+      <span class="hljs-attr">repo</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nil&quot;</span>;
+      <span class="hljs-attr">rev</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;c8e8ce72442a164d89d3fdeaae0bcc405f8c015a&quot;</span>;
+      <span class="hljs-attr">hash</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sha256-mIuOP4I51eFLquRaxMKx67pHmhatZrcVPjfHL98v/M8=&quot;</span>;
+    };
+                                                                           
+    <span class="hljs-comment"># Requires IFD</span>
+    <span class="hljs-attr">cargoDeps</span> <span class="hljs-operator">=</span> pkgs.rustPlatform.importCargoLock {
+      <span class="hljs-attr">lockFile</span> <span class="hljs-operator">=</span> finalAttrs.src <span class="hljs-operator">+</span> <span class="hljs-string">&quot;/Cargo.lock&quot;</span>;
+      <span class="hljs-attr">allowBuiltinFetchGit</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    };
+    <span class="hljs-attr">cargoHash</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;
+  }
+);</code></pre>
+      </div><ul>
+<li>Overriding <code>cargoDeps</code>:</li>
+</ul>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">il</span> <span class="hljs-operator">=</span> pkgs.nil.overrideAttrs (
+  <span class="hljs-params">finalAttrs:</span> <span class="hljs-params">previousAttrs:</span> {
+    <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;unstable-2024-09-19&quot;</span>;
+                                                                           
+    <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> pkgs.fetchFromGitHub {
+      <span class="hljs-attr">owner</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;oxalica&quot;</span>;
+      <span class="hljs-attr">repo</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nil&quot;</span>;
+      <span class="hljs-attr">rev</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;c8e8ce72442a164d89d3fdeaae0bcc405f8c015a&quot;</span>;
+      <span class="hljs-attr">hash</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sha256-mIuOP4I51eFLquRaxMKx67pHmhatZrcVPjfHL98v/M8=&quot;</span>;
+    };
+                                                                           
+    <span class="hljs-comment"># Doesn&#x27;t require IFD</span>
+    <span class="hljs-attr">cargoDeps</span> <span class="hljs-operator">=</span> previousAttrs.cargoDeps.overrideAttrs {
+      <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nil-vendor.tar.gz&quot;</span>;
+      <span class="hljs-keyword">inherit</span> (finalAttrs) src;
+      <span class="hljs-comment">#outputHash = pkgs.lib.fakeHash;</span>
+      <span class="hljs-attr">outputHash</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sha256-RWgknkeGNfP2wH1X6nc+b10Qg1QX3UeewDdeWG0RIE8=&quot;</span>;
+    <span class="hljs-comment">#};</span>
+  }
+);</code></pre>
+      </div><h2 id="packaging-rust-projects-with-nix">Packaging Rust projects with nix</h2><p>At the time of writing, there are now no less than 8 different solutions for building Rust code with Nix. In the following table they are compared:</p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Cargo.lock solution</th>
+<th>Derivations</th>
+<th>Build logic</th>
+<th>Supports cross</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a href="https://github.com/NixOS/nixpkgs/blob/master/doc/languages-frameworks/rust.section.md"><code>buildRustPackage</code></a></td>
+<td>Checksum</td>
+<td>1</td>
+<td>cargo</td>
+<td>Yes</td>
+<td>Built into nixpkgs</td>
+</tr>
+<tr>
+<td><a href="https://github.com/kolloch/crate2nix"><code>crate2nix</code></a></td>
+<td>Codegen (with optional IFD)</td>
+<td>Many</td>
+<td><code>buildRustCrate</code></td>
+<td><a href="https://github.com/kolloch/crate2nix/commit/8bfeb42bda097e0bdf5452691a5e157aad3cc11f">experimental</a></td>
+<td>Spiritual successor to <a href="https://github.com/nix-community/carnix"><code>carnix</code></a></td>
+</tr>
+<tr>
+<td><a href="https://github.com/nmattia/naersk/"><code>naersk</code></a></td>
+<td>Import</td>
+<td>2</td>
+<td>cargo</td>
+<td>Yes</td>
+<td><a href="https://github.com/nmattia/naersk/blob/22b96210b2433228d42bce460f3befbdcfde7520/rust/rustc.nix#L22-L29">Seems to only support building on x86</a></td>
+</tr>
+<tr>
+<td><a href="https://github.com/cargo2nix/cargo2nix"><code>cargo2nix</code></a></td>
+<td>Codegen</td>
+<td>Many</td>
+<td>cargo + custom</td>
+<td>Yes</td>
+<td>Defaults to the oxalica Rust overlay but this can be overridden with <code>rustToolchain</code></td>
+</tr>
+<tr>
+<td><a href="https://github.com/edolstra/import-cargo"><code>import-cargo</code></a></td>
+<td>Import</td>
+<td>1</td>
+<td>cargo</td>
+<td>Unclear</td>
+<td>More of a proof of concept than a full working solution</td>
+</tr>
+<tr>
+<td><a href="https://github.com/ipetkov/crane"><code>crane</code></a></td>
+<td>Import</td>
+<td>2</td>
+<td>cargo</td>
+<td><a href="https://github.com/ipetkov/crane/tree/master/examples">Yes</a></td>
+<td>Inspired by naersk, with <a href="https://discourse.nixos.org/t/introducing-crane-composable-and-cacheable-builds-with-cargo/17275/4">better support for composing Cargo invocations as completely separate derivations</a></td>
+</tr>
+<tr>
+<td><a href="https://dream2nix.dev/reference/rust-crane"><code>dream2nix</code></a></td>
+<td>Codegen</td>
+<td>1 or 2</td>
+<td>cargo (via <code>buildRustPackage</code> or <code>crane</code>)</td>
+<td>Yes</td>
+<td>A framework for unifying 2nix converters across languages (Experimental)</td>
+</tr>
+</tbody></table>
+<p>Explanation for the columns</p>
+<ul>
+<li><strong>Cargo.lock solution:</strong> How does this solution handle reproducibly determining what crates need to be downloaded from the Cargo.lock file? “Checksum” means it requires you to specify the checksum of all the downloaded dependencies. “Import” means it dynamically imports and parses Cargo.lock from a Nix expression, which means Cargo.lock needs to be present in the same repository as the nix expressions (or IFD must be used). “Codegen” means it generates a .nix file from the Cargo.lock, which is then committed to source control.</li>
+<li><strong>Derivations:</strong> How many derivations does this solution use to compile Rust code? “1” means the project and all its dependencies are compiled in one derivation. “2” means all dependencies are moved into a separate derivation, so the project can be updated independently, but any change to the set of dependencies rebuilds everything. “Many” means each dependency is built in its own derivation, so changes to dependencies only do the minimal amount of rebuilding necessary (and, ideally, different projects can share dependencies, although I haven’t checked if this works in practice).</li>
+<li><strong>Build logic:</strong> How does this solution orchestrate building of crates? “Cargo” means it relies on Cargo; <code>buildRustCrate</code> means it uses Nixpkgs’ <code>buildRustCrate</code>; “custom” means it uses its own custom logic. <code>buildRustPackage</code> means it uses Nixpkgs&#39; <code>buildRustPackage</code>, which in turn uses Cargo.</li>
+<li><strong>Supports cross:</strong> Does the solution allow for cross-compilation of crates?</li>
+</ul>
+<h2 id="shell-nix-example">Shell.nix example</h2><div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  pkgs <span class="hljs-operator">?</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> { },
+}:
+
+pkgs.callPackage (
+  {
+    mkShell,
+    rustc,
+    cargo,
+    rustPlatform,
+    rustfmt,
+    clippy,
+    rust-analyzer,
+  }:
+  mkShell {
+    <span class="hljs-attr">strictDeps</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">nativeBuildInputs</span> <span class="hljs-operator">=</span> [
+      rustc
+      cargo
+      rustfmt
+      clippy
+      rust-analyzer
+    ];
+
+    <span class="hljs-comment"># Certain Rust tools won&#x27;t work without this</span>
+    <span class="hljs-comment"># rust-analyzer from nixpkgs does not need this.</span>
+    <span class="hljs-comment"># This can also be fixed by using oxalica/rust-overlay and specifying the rust-src extension</span>
+    <span class="hljs-comment"># See https://discourse.nixos.org/t/rust-src-not-found-and-other-misadventures-of-developing-rust-on-nixos/11570/3?u=samuela. for more details.</span>
+    <span class="hljs-attr">RUST_SRC_PATH</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${rustPlatform.rustLibSrc}</span>&quot;</span>;
+  }
+) { }</code></pre>
+      </div><p>This will have the stable Rust compiler + the official formatter and linter inside the ephemeral shell. It&#39;ll also set the RUST_SRC_PATH environment variable to point to the right location, which tools, such as rust-analyzer, require to be set.</p>
+<h3 id="custom-rust-version-or-targets">Custom Rust version or targets</h3><div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-keyword">let</span>
+  <span class="hljs-attr">rustVersion</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;latest&quot;</span>;
+  <span class="hljs-comment">#rustVersion = &quot;1.62.0&quot;;</span>
+  <span class="hljs-attr">rust_overlay</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> (
+    <span class="hljs-built_in">builtins.fetchTarball</span> <span class="hljs-string">&quot;https://github.com/oxalica/rust-overlay/archive/master.tar.gz&quot;</span>
+  );
+  <span class="hljs-attr">pkgs</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> {
+    <span class="hljs-attr">overlays</span> <span class="hljs-operator">=</span> [
+      rust_overlay
+      (<span class="hljs-params">_:</span> <span class="hljs-params">prev:</span> {
+        <span class="hljs-attr">my-rust</span> <span class="hljs-operator">=</span> prev.rust-bin.stable.${rustVersion}.default.override {
+          <span class="hljs-attr">extensions</span> <span class="hljs-operator">=</span> [
+            <span class="hljs-string">&quot;rust-src&quot;</span> <span class="hljs-comment"># for rust-analyzer</span>
+            <span class="hljs-string">&quot;rust-analyzer&quot;</span>
+          ];
+          <span class="hljs-comment"># Or import nixpkgs with `crossSystem`</span>
+          <span class="hljs-comment">#targets = [ &quot;arm-unknown-linux-gnueabihf&quot; ];</span>
+        };
+      })
+    ];
+
+  };
+<span class="hljs-keyword">in</span>
+pkgs.callPackage (
+  {
+    mkShell,
+    hello,
+    my-rust,
+    pkg-config,
+    openssl,
+  }:
+  mkShell {
+    <span class="hljs-attr">strictDeps</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-comment"># host/target agnostic programs</span>
+    <span class="hljs-attr">depsBuildBuild</span> <span class="hljs-operator">=</span> [
+      hello
+    ];
+    <span class="hljs-comment"># compilers &amp; linkers &amp; dependecy finding programs</span>
+    <span class="hljs-attr">nativeBuildInputs</span> <span class="hljs-operator">=</span> [
+      my-rust
+      pkg-config
+    ];
+    <span class="hljs-comment"># libraries</span>
+    <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> [
+      openssl
+    ];
+    <span class="hljs-attr">RUST_BACKTRACE</span> <span class="hljs-operator">=</span> <span class="hljs-number">1</span>;
+  }
+) { }</code></pre>
+      </div><h3 id="vs-code-integration">VS Code integration</h3><p>The <a href="https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer">rust-analyzer</a> VS Code extension offers Rust support.</p>
+<p>If you get the error <code>can&#39;t load standard library, try installing rust-src</code>, either configure <code>RUST_SRC_PATH</code> as shown above, or set <code>&quot;rust-analyzer.server.path&quot;: &quot;rust-analyzer&quot;</code> in your VS Code settings to use rust-analyzer from nixpkgs rather than the one bundled with the extension.</p>
+<p>You can use the <a href="https://marketplace.visualstudio.com/items?itemName=arrterian.nix-env-selector">arrterian.nix-env-selector</a> extension to enable your nix-shell inside VSCode and have these settings picked up by other extensions.</p>
+<h2 id="faq">FAQ</h2><h3 id="rust-from-a-rustup-toolchain-file">Rust from a rustup toolchain file</h3><div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-keyword">let</span>
+  <span class="hljs-attr">rust-overlay</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">builtins.fetchTarball</span> <span class="hljs-string">&quot;https://github.com/oxalica/rust-overlay/archive/master.tar.gz&quot;</span>;
+  <span class="hljs-attr">pkgs</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> {
+    <span class="hljs-attr">overlays</span> <span class="hljs-operator">=</span> [
+      (<span class="hljs-built_in">import</span> rust-overlay)
+      (<span class="hljs-params">_:</span> <span class="hljs-params">prev:</span> {
+        <span class="hljs-attr">my-rust-toolchain</span> <span class="hljs-operator">=</span> prev.rust-bin.fromRustupToolchainFile <span class="hljs-symbol">./toolchain.toml</span>;
+      })
+    ];
+  };
+<span class="hljs-keyword">in</span>
+pkgs.callPackage (
+  {
+    mkShell,
+    my-rust-toolchain,
+  }:
+  mkShell {
+    <span class="hljs-attr">strictDeps</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">nativeBuildInputs</span> <span class="hljs-operator">=</span> [
+      my-rust-toolchain
+    ];
+  }
+) { }</code></pre>
+      </div><p>From <a href="https://ayats.org/blog/nix-rustup">https://ayats.org/blog/nix-rustup</a> and <a href="https://github.com/oxalica/rust-overlay?tab=readme-ov-file#cheat-sheet-common-usage-of-rust-bin">https://github.com/oxalica/rust-overlay?tab=readme-ov-file#cheat-sheet-common-usage-of-rust-bin</a></p>
+<h3 id="building-rust-crates-that-require-external-system-libraries">Building Rust crates that require external system libraries</h3><p>For example, the <code>openssl-sys</code> crate needs the OpenSSL static libraries and searches for the library path with <code>pkg-config</code>. That&#39;s why you need to have the Nix derivatives <code>openssl</code> and <code>pkg-config</code> in order to build that crate. You&#39;ll need to start a shell providing these packages:</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell-session hljs">$ nix-shell -p pkg-config openssl</code></pre>
+      </div><p>In some cases (eg <a href="https://discourse.nixos.org/t/rust-openssl-woes/12340">here</a>) you may also need</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">P<span class="hljs-attr">KG_CONFIG_PATH</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.openssl.dev}</span>/lib/pkgconfig&quot;</span>;</code></pre>
+      </div><p>Similarly, the crate <code>libsqlite3-sys</code>, e.g. to use and compile the database ORM tool <code>diesel-cli</code> with Sqlite support, needs</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell-session hljs">$ nix-shell -p pkg-config sqlite</code></pre>
+      </div><p>Otherwise the following error occurs:</p>
+<div class="code-container">
+        
+        <pre><code class="language-text hljs">error: linking with `cc` failed: exit status: 1
+...
+ = note: /nix/store/kmqs0wll31ylwbqkpmlgbjrn6ny3myik-binutils-2.35.1/bin/ld: cannot find -lsqlite3
+          collect2: error: ld returned 1 exit status</code></pre>
+      </div><p>Note that you need to use a <code>nix-shell</code> environment. Installing the Nix packages <code>openssl</code> or <code>sqlite</code> globally under <code>systemPackages</code> in NixOS or in <code>nix-env</code> <a href="https://mirror.nixoscn.org/wiki/Rust/FAQ/I_installed_a_library_but_my_compiler_is_not_finding_it._Why?" class="wikilink" title=" is discouraged"> is discouraged</a> and doesn&#39;t always work (<code>pkg-config</code> may not be able to locate the libraries).</p>
+<h3 id="building-with-a-different-rust-version-than-the-one-in-nixpkgs">Building with a different Rust version than the one in Nixpkgs</h3><p>The following uses the <a href="https://github.com/nix-community/fenix">fenix</a> overlay and <code>makeRustPlatform</code> to build a crate with Rust Nightly:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">inputs</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">fenix</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:nix-community/fenix&quot;</span>;
+      <span class="hljs-attr">inputs.nixpkgs.follows</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nixpkgs&quot;</span>;
+    };
+    <span class="hljs-attr">flake-utils.url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:numtide/flake-utils&quot;</span>;
+    <span class="hljs-attr">nixpkgs.url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nixpkgs/nixos-unstable&quot;</span>;
+  };
+
+  <span class="hljs-attr">outputs</span> <span class="hljs-operator">=</span> { self, fenix, flake-utils, nixpkgs }:
+    flake-utils.lib.eachDefaultSystem (<span class="hljs-params">system:</span>
+      <span class="hljs-keyword">let</span> pkgs <span class="hljs-operator">=</span> nixpkgs.legacyPackages.${system}; <span class="hljs-keyword">in</span>
+      {
+        <span class="hljs-attr">defaultPackage</span> <span class="hljs-operator">=</span> (pkgs.makeRustPlatform {
+          <span class="hljs-keyword">inherit</span> (fenix.packages.${system}.minimal) cargo rustc;
+        }).buildRustPackage {
+          <span class="hljs-attr">pname</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;hello&quot;</span>;
+          <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;0.1.0&quot;</span>;
+          <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> <span class="hljs-symbol">./.</span>;
+          <span class="hljs-attr">cargoSha256</span> <span class="hljs-operator">=</span> nixpkgs.lib.fakeSha256;
+        };
+      });
+}</code></pre>
+      </div><h3 id="using-lld-instead-of-ld">Using LLD instead of LD</h3><p>If you want to use <code>lld</code>, then the correct way to do this is to use <code>pkgs.llvmPackages.bintools</code>, <em>not</em> <code>pkgs.lld</code>. This is because the former uses a wrapper script that correctly sets <code>rpath</code>. You can find more information about this <a href="https://matklad.github.io/2022/03/14/rpath-or-why-lld-doesnt-work-on-nixos.html">here</a>.</p>
+<p><a href="category:Languages" class="wikilink" title="Category:Languages">Category:Languages</a> <a href="category:Rust" class="wikilink" title="Category:Rust">Category:Rust</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

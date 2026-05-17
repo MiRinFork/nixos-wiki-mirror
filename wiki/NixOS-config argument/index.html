@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NixOS-config argument</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / NixOS-config argument</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: NixOS:config argument -->
+
+<p>This argument gives access to the entire configuration of the system. It is computed from option declarations and option definitions defined inside all modules used for the system.</p>
+<h2 id="simple-case">Simple Case</h2><p>The following code is used to support the explanation.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{config, pkgs, lib ...}:
+
+{
+  <span class="hljs-attr">options</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">foo</span> <span class="hljs-operator">=</span> lib.mkOption {
+      <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;...&quot;</span>;
+    };
+  };
+
+  <span class="hljs-attr">config</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">bar</span> <span class="hljs-operator">=</span> config.foo;
+  };
+}</code></pre>
+      </div><p>This snippet of code is a module which declare the option &quot;<code>foo</code>&quot; and define the option &quot;<code>bar</code>&quot;. The option &quot;<code>bar</code>&quot; is defined with the value <code>config.foo</code>. This attribute <code>foo</code> of the <code>config</code> argument, is the result of the <a href="nixos:Declaration#Evaluation" class="wikilink" title="evaluation">evaluation</a> of the definitions and the declarations of the option &quot;<code>foo</code>&quot;. Definitions of the option &quot;<code>foo</code>&quot; may exists in other module used by the system.</p>
+<p>Adding additional modules to the system may change the value of <code>config.foo</code> and may change the behavior of the previous module.</p>
+<h2 id="conditional-statements">Conditional Statements</h2><p>The process of module computation is highly recursive and may cause trouble when you want to add control flow statements. A common mistake is to use &quot;<code>if</code>&quot; or &quot;<code>assert</code>&quot; statements in the computation of a module.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{config, pkgs, lib, ...}:
+
+{
+  <span class="hljs-attr">options</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">foo</span> <span class="hljs-operator">=</span> lib.mkOption {
+      <span class="hljs-attr">default</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+      <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> lib.types; bool;
+      <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;foo boolean option&quot;</span>;
+    };
+  };
+
+  <span class="hljs-attr">config</span> <span class="hljs-operator">=</span>
+    <span class="hljs-keyword">if</span> config.foo <span class="hljs-keyword">then</span>
+      { <span class="hljs-attr">bar</span> <span class="hljs-operator">=</span> <span class="hljs-number">42</span>; }
+    <span class="hljs-keyword">else</span>
+      {};
+}</code></pre>
+      </div><p>The previous module cause an infinite recursion:</p>
+<ul>
+<li>The <code>config</code> attribute is evaluated. This evaluation needs the result of the <code>if</code> statement.</li>
+<li>The <code>if</code> statement is evaluated. This evaluation needs the result of the condition.</li>
+<li>The condition (<code>config.foo</code>) is evaluated. This evaluation needs the result of the <code>config</code> argument.</li>
+<li>The <code>config</code> argument is evaluated. This evaluation needs the result of merging of all modules.</li>
+<li>The merge function of the modules is evaluated. This evaluation needs the evaluation of each module <code>config</code> attribute.</li>
+</ul>
+<p>To avoid such infinite recursion, <a href="nixos:Properties" class="wikilink" title="properties">properties</a> have been introduced, thus the previous code should be rewritten in:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{config, pkgs, lib, ...}:
+
+{
+  <span class="hljs-attr">options</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">foo</span> <span class="hljs-operator">=</span> lib.mkOption {
+      <span class="hljs-attr">default</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+      <span class="hljs-attr">type</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> lib.types; bool;
+      <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;foo boolean&quot;</span>;
+    };
+  };
+
+  <span class="hljs-attr">config</span> <span class="hljs-operator">=</span> lib.mkIf config.foo {
+    <span class="hljs-attr">bar</span> <span class="hljs-operator">=</span> <span class="hljs-number">42</span>;
+  };
+}</code></pre>
+      </div><h2 id="common-pattern">Common Pattern</h2><p>Often, the module declare options embedded inside an attribute set. To access these options, we add an attribute <code>cfg</code> as a shortcut notation.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{config, pkgs, lib, ...}:
+
+<span class="hljs-keyword">let</span>
+  <span class="hljs-attr">cfg</span> <span class="hljs-operator">=</span> config.foo.bar.baz;
+
+  <span class="hljs-comment"># ...</span>
+<span class="hljs-keyword">in</span>
+
+<span class="hljs-keyword">with</span> lib; {
+  <span class="hljs-attr">options</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">foo.bar.baz</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> mkOption { <span class="hljs-comment">/* ... */</span> };
+      <span class="hljs-attr">option1</span> <span class="hljs-operator">=</span> mkOption { <span class="hljs-comment">/* ... */</span> };
+      <span class="hljs-attr">option2</span> <span class="hljs-operator">=</span> mkOption { <span class="hljs-comment">/* ... */</span> };
+      <span class="hljs-attr">option3</span> <span class="hljs-operator">=</span> mkOption { <span class="hljs-comment">/* ... */</span> }; 
+    };
+  };
+
+  <span class="hljs-attr">config</span> <span class="hljs-operator">=</span> mkIf cfg.enable {
+    <span class="hljs-comment"># ...</span>
+  };
+}</code></pre>
+      </div><p><a href="category:Reference" class="wikilink" title="Category:Reference">Category:Reference</a> <a href="category:NixOS" class="wikilink" title="Category:NixOS">Category:NixOS</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

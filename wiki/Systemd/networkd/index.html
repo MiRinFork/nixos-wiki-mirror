@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Systemd/networkd</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/Systemd">Systemd</a><span aria-hidden="true"> / </span>networkd</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Systemd/networkd -->
+
+<p><a href="https://www.freedesktop.org/software/systemd/man/systemd-networkd.html">systemd-networkd</a> is the network configuration component of the <a href="https://mirror.nixoscn.org/wiki/Systemd/networkd/systemd" class="wikilink" title="systemd">systemd</a> software suite. It is well integrated into NixOS below and should be preferred over options for most use cases, since it receives far superior maintenance.</p>
+<p>Configuration for networkd is split into three sections.</p>
+<ul>
+<li><p>reconfigures existing network devices</p>
+<ul>
+<li><a href="https://www.freedesktop.org/software/systemd/man/systemd.link.html">https://www.freedesktop.org/software/systemd/man/systemd.link.html</a></li>
+<li>actually implemented by udev, not networkd</li>
+</ul>
+</li>
+<li><p>creates virtual network devices</p>
+<ul>
+<li><a href="https://www.freedesktop.org/software/systemd/man/systemd.netdev.html">https://www.freedesktop.org/software/systemd/man/systemd.netdev.html</a></li>
+</ul>
+</li>
+<li><p>configures network devices</p>
+<ul>
+<li><a href="https://www.freedesktop.org/software/systemd/man/systemd.network.html">https://www.freedesktop.org/software/systemd/man/systemd.network.html</a></li>
+</ul>
+</li>
+</ul>
+<p>In most simple scenarios configuring existing network devices is what you want to do.</p>
+<h2 id="basics">Basics</h2><h3 id="when-to-use">When to use</h3><p>Use systemd-networkd for setups that rely on static configuration, that doesn&#39;t change much during its lifetime, that does not require varying profiles for a single interface. Common examples are:</p>
+<ul>
+<li>Servers/Routers</li>
+<li>Always-On VPN Tunnels</li>
+</ul>
+<p>Following that logic, it is less suitable to</p>
+<ul>
+<li>Varying WLAN profiles</li>
+<li>Selectively used VPN tunnels</li>
+</ul>
+<p>These use cases are better served by <a href="https://mirror.nixoscn.org/wiki/Systemd/networkd/NetworkManager" class="wikilink" title="NetworkManager">NetworkManager</a> and its various frontends, that provides a better integrated user experience for various desktop systems.</p>
+<h3 id="enabling">Enabling</h3><p>To be able to use networkd configuration, it needs to be enabled first.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ystemd.network.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><p>Some guides will mention the option, which in addition to enabling systemd-networkd, also offers translation of some and options into networkd. If you can write your complete network setup in native networkd configuration, you should stay away from that option.</p>
+<h3 id="configuring">Configuring</h3><p>The configuration of networkd happens through one or multiple configuration files per interface stored in <code>/etc/systemd/network</code>.</p>
+<p>The following declaration in your NixOS configuration</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  systemd.network.networks.<span class="hljs-string">&quot;10-lan&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">matchConfig.Name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;lan&quot;</span>;
+    <span class="hljs-attr">networkConfig.DHCP</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ipv4&quot;</span>;
+  };</code></pre>
+      </div><p>renders the following network configuration:</p>
+<p>Note that we usually prefix the configuration file with a number. This can be important, because networkd collects all available configuration files, then sorts them alphanumerically, and uses the first match for each interface as its configuration. This happens separately for <code>.link</code>, <code>.netdev</code> and <code>.network</code> files, so that you can have one configuration of each type per interface.</p>
+<h3 id="debugging">Debugging</h3><p>When things don&#39;t work as expected, the journal for <code>systemd-networkd.service</code> should be consulted. Unfortunately, by default the log is not very useful in its default loglevel. Increasing the loglevel can be done using the <code>SYSTEMD_LOG_LEVEL</code> environment variable.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">systemd.services.<span class="hljs-string">&quot;systemd-networkd&quot;</span>.environment.SYSTEMD_LOG_LEVEL <span class="hljs-operator">=</span> <span class="hljs-string">&quot;debug&quot;</span>;</code></pre>
+      </div><p>Log level can also be changed at runtime with</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">$ systemctl service-log-level systemd-networkd.service debug
+<span class="hljs-comment"># or</span>
+$ systemctl service-log-level systemd-networkd.service info</code></pre>
+      </div><h3 id="limitations">Limitations</h3><p>Some limitations might be surprising, so it is probably helpful to get them out of the way early.</p>
+<ul>
+<li><ul>
+<li>Executed by udev and only applied on boot</li>
+</ul>
+</li>
+<li><ul>
+<li>Does not modify properties (e.g., MTU, VLAN ID, VXLAN ID, Wireguard Peers) of existing netdevs<ul>
+<li><a href="https://github.com/systemd/systemd/issues/9627">https://github.com/systemd/systemd/issues/9627</a></li>
+<li>This should be fixed as of systemd v257 (<a href="https://github.com/systemd/systemd/pull/34909">https://github.com/systemd/systemd/pull/34909</a>)</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="network-online-target">network-online.target</h3><p>While <code>network.target</code> only requires the network management stack to be up, which means it does not care about network interfaces being configured, the <code>network-online.target</code> waits until a defined set of network interfaces are in a state, that by its configuration is considered online.</p>
+<p>When networkd is enabled, the <code>network-online.target</code> is implemented through the <code>systemd-networkd-wait-online.service</code>, which makes sure interfaces configured through networkd are in their expected operational state.</p>
+<p>The current operational state of network interfaces can be learned from <code>networkctl</code>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">❯ networkctl
+IDX LINK          TYPE     OPERATIONAL SETUP     
+  1 lo            loopback carrier     unmanaged
+  2 enp10s0       ether    routable    unmanaged
+  3 wlp9s0        wlan     no-carrier  unmanaged</code></pre>
+      </div><p>For most network interfaces that will mean that they have <code>routable</code> network connectivity, but in more complex setups some links may be content with more simple states like <code>carrier</code> or <code>enslaved</code>. Interfaces that are managed by networkd, but not always in use, shouldn&#39;t be required for <code>network-online.target</code></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">systemd.network.networks.<span class="hljs-string">&quot;50-enp3s0&quot;</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">matchConfig.Name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;enp3s0&quot;</span>;
+  <span class="hljs-comment"># acquire a DHCP lease on link up</span>
+  <span class="hljs-attr">networkConfig.DHCP</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;yes&quot;</span>;
+  <span class="hljs-comment"># this port is not always connected and not required to be online</span>
+  <span class="hljs-attr">linkConfig.RequiredForOnline</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;no&quot;</span>;
+};</code></pre>
+      </div><p>Note that the default value for <code>linkConfig.RequiredForOnline</code> is unexpectedly <code>&quot;yes&quot;</code>, which often leads to a failing <code>network-online.target</code>.</p>
+<p>Setting individual interfaces to <code>&quot;no&quot;</code> is a perfectly valid choice and should be considered, before disabling the <code>systemd-networkd-wait-online.service</code> entirely, because a working <code>network-online.target</code> is required for some services to properly start without race conditions.</p>
+<p>Also consider enabling the <code>systemd.network.wait-online.anyInterface</code> option, which makes networkd consider the network online when any interface is online, as opposed to all that have a positive value for <code>linkConfig.RequiredForOnline</code>. This is useful on portable machines with a wired and a wireless interface, for example.</p>
+<p>Recommended documentation:</p>
+<ul>
+<li><a href="https://systemd.io/NETWORK_ONLINE/">Network Configuration Synchronization Points</a></li>
+<li><a href="https://www.freedesktop.org/software/systemd/man/systemd.network.html#RequiredForOnline=">RequiredForOnline=</a></li>
+<li><a href="https://www.freedesktop.org/software/systemd/man/networkctl.html#%0A%20%20%20%20%20%20%20%20%20%20list%0A%20%20%20%20%20%20%20%20%20%20PATTERN%E2%80%A6%0A%20%20%20%20%20%20%20%20">List of operational interface states</a></li>
+</ul>
+<h2 id="examples">Examples</h2><p>Examples should be concise and give proper hints on how to achieve a reliably working <code>network-online.target</code>.</p>
+<h3 id="interface-naming">Interface Naming</h3><p>The name of an interface can be changed based on different matches. This is useful for pretty names (e.g. wan, lan), but also if you want to make sure that your interface name never changes. This might be useful because even with predictable interface naming your interface name can change, for example when you add a new PCIe card and indexing changes, or due to kernel changes the way your mainboard gets interpreted changes.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  systemd.network.links.<span class="hljs-string">&quot;10-wan&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-comment"># Check systemd.link(5) for other matchers</span>
+    <span class="hljs-attr">matchConfig.Path</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;pci-0000:09:00.0&quot;</span>;
+    <span class="hljs-attr">linkConfig.Name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;wan&quot;</span>;
+  };</code></pre>
+      </div><h3 id="dhcp-ra">DHCP/RA</h3><p>Common scenario for dynamic configuration, DHCP for IPv4 and router advertisements for IPv6 connectivity. Make <code>network-online.target</code> wait until addresses and routes are configured.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  systemd.network.networks.<span class="hljs-string">&quot;10-wan&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">matchConfig.Name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;enp1s0&quot;</span>;
+    <span class="hljs-attr">networkConfig</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-comment"># start a DHCP Client for IPv4 Addressing/Routing</span>
+      <span class="hljs-attr">DHCP</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ipv4&quot;</span>;
+      <span class="hljs-comment"># accept Router Advertisements for Stateless IPv6 Autoconfiguraton (SLAAC)</span>
+      <span class="hljs-attr">IPv6AcceptRA</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    };
+    <span class="hljs-comment"># make routing on this interface a dependency for network-online.target</span>
+    <span class="hljs-attr">linkConfig.RequiredForOnline</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;routable&quot;</span>;
+  };</code></pre>
+      </div><h3 id="static">Static</h3><p>Apply a static address and routing configuration onto <code>enp1s0</code>.</p>
+<p>When the gateway is not on the same prefix as the address configured, as is customary on some cloud providers, you usually also need to set <code>GatewayOnLink</code>, to indicate the gateway is directly reachable on the interface.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  systemd.network.networks.<span class="hljs-string">&quot;10-wan&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-comment"># match the interface by name</span>
+    <span class="hljs-attr">matchConfig.Name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;enp1s0&quot;</span>;
+    <span class="hljs-attr">address</span> <span class="hljs-operator">=</span> [
+      <span class="hljs-comment"># configure addresses including subnet mask</span>
+      <span class="hljs-string">&quot;192.0.2.100/24&quot;</span>
+      <span class="hljs-string">&quot;2001:DB8::2/64&quot;</span>
+    ];
+    <span class="hljs-attr">routes</span> <span class="hljs-operator">=</span> [
+      <span class="hljs-comment"># create default routes for both IPv6 and IPv4</span>
+      { <span class="hljs-attr">Gateway</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;fe80::1&quot;</span>; }
+      { <span class="hljs-attr">Gateway</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;192.0.2.1&quot;</span>; }
+      <span class="hljs-comment"># or when the gateway is not on the same network</span>
+      {
+        <span class="hljs-attr">Gateway</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;172.31.1.1&quot;</span>;
+        <span class="hljs-attr">GatewayOnLink</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      }
+    ];
+    <span class="hljs-comment"># make the routes on this interface a dependency for network-online.target</span>
+    <span class="hljs-attr">linkConfig.RequiredForOnline</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;routable&quot;</span>;
+  };</code></pre>
+      </div><h3 id="vlan">VLAN</h3><p>VLANs can be configured on top of hardlinks as well as virtual links, like bonding interfaces. They provide separate logical networks over physical links.</p>
+<p>In this example we tag two VLANs with Ids 10 and 20 on a physical link <code>enp1s0</code>. The VLAN interfaces become available as <code>vlan10</code> and <code>vlan20</code> and can receive additional configuration.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">systemd.network</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">netdevs</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-string">&quot;20-vlan10&quot;</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">netdevConfig</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">Kind</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;vlan&quot;</span>;
+          <span class="hljs-attr">Name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;vlan10&quot;</span>;
+        };
+        <span class="hljs-attr">vlanConfig.Id</span> <span class="hljs-operator">=</span> <span class="hljs-number">10</span>;
+      };
+      <span class="hljs-string">&quot;20-vlan20&quot;</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">netdevConfig</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">Kind</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;vlan&quot;</span>;
+          <span class="hljs-attr">Name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;vlan20&quot;</span>;
+        };
+        <span class="hljs-attr">vlanConfig.Id</span> <span class="hljs-operator">=</span> <span class="hljs-number">20</span>;
+      };
+    };
+
+    <span class="hljs-attr">networks</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-string">&quot;30-enp1s0&quot;</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">matchConfig.Name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;enp1s0&quot;</span>;
+        <span class="hljs-comment"># tag vlan on this link</span>
+        <span class="hljs-attr">vlan</span> <span class="hljs-operator">=</span> [
+          <span class="hljs-string">&quot;vlan10&quot;</span>
+          <span class="hljs-string">&quot;vlan20&quot;</span>
+        ];
+        <span class="hljs-attr">networkConfig.LinkLocalAddressing</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;no&quot;</span>;
+        <span class="hljs-attr">linkConfig.RequiredForOnline</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;carrier&quot;</span>;
+      };
+      <span class="hljs-string">&quot;40-vlan10&quot;</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">matchConfig.Name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;vlan10&quot;</span>;
+        <span class="hljs-comment"># add relevant configuration here</span>
+      };
+      <span class="hljs-string">&quot;40-vlan20&quot;</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">matchConfig.Name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;vlan20&quot;</span>;
+        <span class="hljs-comment"># add relevant configuration here</span>
+      };
+    };
+  };</code></pre>
+      </div><h3 id="bridge">Bridge</h3><p>Given multiple interfaces, that are connected into a bridge will act like a common switch and forward Ethernet frames between all connected bridge ports. The Linux bridge supports various features, like spanning tree, bridge port isolation or acting as a multicast router.</p>
+<p>The configuration on top of the bridge interface depends on the desired functionality, e.g., configuring an IP address would make the bridge host reachable on the Ethernet segment.</p>
+<p>Recommended documentation:</p>
+<ul>
+<li><a href="https://www.freedesktop.org/software/systemd/man/systemd.network.html#%5BBridge%5D%20Section%20Options">[Bridge] configuration reference</a></li>
+</ul>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">systemd.network</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">netdevs</span> <span class="hljs-operator">=</span> {
+       <span class="hljs-comment"># Create the bridge interface</span>
+       <span class="hljs-string">&quot;20-br0&quot;</span> <span class="hljs-operator">=</span> {
+         <span class="hljs-attr">netdevConfig</span> <span class="hljs-operator">=</span> {
+           <span class="hljs-attr">Kind</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;bridge&quot;</span>;
+           <span class="hljs-attr">Name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;br0&quot;</span>;
+         };
+       };
+    };
+    <span class="hljs-attr">networks</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-comment"># Connect the bridge ports to the bridge</span>
+      <span class="hljs-string">&quot;30-enp1s0&quot;</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">matchConfig.Name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;enp1s0&quot;</span>;
+        <span class="hljs-attr">networkConfig.Bridge</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;br0&quot;</span>;
+        <span class="hljs-attr">linkConfig.RequiredForOnline</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;enslaved&quot;</span>;
+      };
+      <span class="hljs-string">&quot;30-enp2s0&quot;</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">matchConfig.Name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;enp2s0&quot;</span>;
+        <span class="hljs-attr">networkConfig.Bridge</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;br0&quot;</span>;
+        <span class="hljs-attr">linkConfig.RequiredForOnline</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;enslaved&quot;</span>;
+      };
+      <span class="hljs-comment"># Configure the bridge for its desired function</span>
+      <span class="hljs-string">&quot;40-br0&quot;</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">matchConfig.Name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;br0&quot;</span>;
+        <span class="hljs-attr">bridgeConfig</span> <span class="hljs-operator">=</span> {};
+        <span class="hljs-comment"># Disable address autoconfig when no IP configuration is required</span>
+        <span class="hljs-comment">#networkConfig.LinkLocalAddressing = &quot;no&quot;;</span>
+        <span class="hljs-attr">linkConfig</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-comment"># or &quot;routable&quot; with IP addresses configured</span>
+          <span class="hljs-attr">RequiredForOnline</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;carrier&quot;</span>;
+        };
+      };
+    };
+  };</code></pre>
+      </div><h3 id="bonding">Bonding</h3><div style="margin-left: 2em; margin-bottom:1em">
+
+<p><em>More details: <a href="https://mirror.nixoscn.org/wiki/Systemd/networkd/Networking#Link_aggregation" class="wikilink" title="Networking#Link aggregation">Networking#Link aggregation</a></em></p>
+</div>
+
+<p>Given two hardlinks <code>enp2s0</code> and <code>enp3s0</code> create a virtual <code>bond0</code> interface using Dynamic LACP (802.3ad), hashing outgoing packets using a packet&#39;s layer 3/4 (network/transport layer in the OSI model) information.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">systemd.network</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">netdevs</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-string">&quot;10-bond0&quot;</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">netdevConfig</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">Kind</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;bond&quot;</span>;
+          <span class="hljs-attr">Name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;bond0&quot;</span>;
+        };
+        <span class="hljs-attr">bondConfig</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">Mode</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;802.3ad&quot;</span>;
+          <span class="hljs-attr">TransmitHashPolicy</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;layer3+4&quot;</span>;
+        };
+      };
+    };
+    <span class="hljs-attr">networks</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-string">&quot;30-enp2s0&quot;</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">matchConfig.Name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;enp2s0&quot;</span>;
+        <span class="hljs-attr">networkConfig.Bond</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;bond0&quot;</span>;
+      };
+      <span class="hljs-string">&quot;30-enp3s0&quot;</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">matchConfig.Name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;enp3s0&quot;</span>;
+        <span class="hljs-attr">networkConfig.Bond</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;bond0&quot;</span>;
+      };
+      <span class="hljs-string">&quot;40-bond0&quot;</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">matchConfig.Name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;bond0&quot;</span>;
+        <span class="hljs-attr">linkConfig</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">RequiredForOnline</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;carrier&quot;</span>;
+        };
+        <span class="hljs-attr">networkConfig.LinkLocalAddressing</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;no&quot;</span>;
+      };
+    };
+  };</code></pre>
+      </div><h3 id="router-advertisement">Router Advertisement</h3><p>Router advertisements are way to allow clients to achieve stateless autoconfiguration (SLAAC). The most prominent setup is where the router announces a prefix onto a LAN segment, which the receiving client can use to set up an address on that prefix, and configure the sender as its default gateway.</p>
+<p>In this example the router will announce a static IPv6 prefix on the <code>lan</code> interface from it&#39;s automatically configured link local address on that link. The router does not generally require a unique local or globally reachable address on the link, unless you also want to host services like DNS and NTP on that LAN segment.</p>
+<p>Recommended documentation:</p>
+<ul>
+<li><a href="https://www.freedesktop.org/software/systemd/man/systemd.network.html#%5BIPv6SendRA%5D%20Section%20Options">[IPv6SendRa] configuration reference</a></li>
+</ul>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">systemd.network</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">networks</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-string">&quot;30-lan&quot;</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">matchConfig.Name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;lan&quot;</span>;
+        <span class="hljs-attr">address</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;2001:db8:1122:3344::1/64&quot;</span> ];
+        <span class="hljs-attr">networkConfig</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-attr">IPv6SendRA</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+        };
+        <span class="hljs-attr">ipv6Prefixes</span> <span class="hljs-operator">=</span> [
+          {
+            <span class="hljs-comment"># Announce a static prefix</span>
+            <span class="hljs-attr">ipv6PrefixConfig.Prefix</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;2001:db8:1122:3344::/64&quot;</span>;
+          }
+        ];
+        <span class="hljs-attr">ipv6SendRAConfig</span> <span class="hljs-operator">=</span> {
+          <span class="hljs-comment"># Provide a DNS resolver</span>
+          <span class="hljs-attr">EmitDNS</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+          <span class="hljs-attr">DNS</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;2001:db8:1122:3344::1&quot;</span>;
+        };
+      };
+    };
+  };</code></pre>
+      </div><p>An extended form of this setup uses DHCPv6 prefix delegation to acquire a dynamic prefix over a WAN link, which then gets distributed onto designated LAN segments.</p>
+<h3 id="wireguard">WireGuard</h3><p>WireGuard can also be set up using <code>systemd.network.netdevs</code>. More details can be found at <a href="https://mirror.nixoscn.org/wiki/Systemd/networkd/WireGuard#Setting_up_WireGuard_with_systemd-networkd" class="wikilink" title="WireGuard#Setting up WireGuard with systemd-networkd">WireGuard#Setting up WireGuard with systemd-networkd</a>.</p>
+<h2 id="user-configurations">User configurations</h2><p>This section allows references to actual user configurations. They show how individual configuration snippets get integrated as a whole and serve as real world examples.</p>
+<p><em>When adding new links, please describe the primary features of your setup and against which NixOS version it was last updated.</em></p>
+<ul>
+<li><a href="https://gist.github.com/mweinelt/b78f7046145dbaeab4e42bf55663ef44">NixOS 22.11 VDSL Router (VLANs on top of Bonding, IPv6 Prefix-Delegation, pppd Integration)</a> by <a href="https://github.com/mweinelt">mweinelt</a></li>
+<li><a href="https://github.com/philipwilk/nixos/blob/4fec9d73bfa7b1ecb490186522de38d25ee81e69/homelab/router/systemd.nix">NixOS Unstable (25.04) Router (ipv4/ipv6 dual stack, dnssec+dnsovertls, NTP-rs)</a> by <a href="https://github.com/philipwilk">philipwilk</a></li>
+</ul>
+<p><a href="category:systemd" class="wikilink" title="Category:systemd">Category:systemd</a> <a href="category:systemd" class="wikilink" title="Category:systemd">Category:systemd</a> <a href="category:Networking" class="wikilink" title="Category:Networking">Category:Networking</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

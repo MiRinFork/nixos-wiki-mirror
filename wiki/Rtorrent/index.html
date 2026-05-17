@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rtorrent</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Rtorrent</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Rtorrent -->
+
+<p>rtorrent is a bittorrent client. This article discusses integrations of rtorrent with other graphical interfaces such as flood.</p>
+<h3 id="integration-with-flood-js-via-unix-sockets">Integration with flood-js via UNIX sockets</h3><p>rtorrent can open a socket which other software can use to interface with. No unprotected RPC socket of rtorrent is required with this setup and it therefore provides a higher security standard.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ config, lib, pkgs, ... }:
+
+<span class="hljs-keyword">let</span>
+  <span class="hljs-attr">peer-port</span> <span class="hljs-operator">=</span> <span class="hljs-number">51412</span>;
+  <span class="hljs-attr">web-port</span> <span class="hljs-operator">=</span> <span class="hljs-number">8112</span>;
+<span class="hljs-keyword">in</span> {
+  
+  <span class="hljs-attr">services.rtorrent</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">port</span> <span class="hljs-operator">=</span> peer-port;
+    <span class="hljs-attr">package</span> <span class="hljs-operator">=</span> pkgs.rtorrent; <span class="hljs-comment"># (2025-07-28) upstream develop of rtorrent continued, jesec-rtorrent does not build in nixpkgs</span>
+    <span class="hljs-attr">openFirewall</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  };
+  <span class="hljs-comment"># If you have lots of torrents in the seed you may see rtorrent stack-trace with &quot;too many open files&quot;</span>
+  <span class="hljs-comment"># to increase the limit of open files use:</span>
+  <span class="hljs-attr">systemd.services.rtorrent.serviceConfig.LimitNOFILE</span> <span class="hljs-operator">=</span> <span class="hljs-number">16384</span>;
+
+  <span class="hljs-attr">services.flood</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">port</span> <span class="hljs-operator">=</span> web-port;
+    <span class="hljs-attr">openFirewall</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">extraArgs</span> <span class="hljs-operator">=</span> [<span class="hljs-string">&quot;--rtsocket=<span class="hljs-subst">${config.services.rtorrent.rpcSocket}</span>&quot;</span>];
+  };
+  <span class="hljs-comment"># allow access to the socket by putting it in the same group as rtorrent service</span>
+  <span class="hljs-comment"># the socket will have g+w permissions</span>
+  <span class="hljs-attr">systemd.services.flood.serviceConfig.SupplementaryGroups</span> <span class="hljs-operator">=</span> [ config.services.rtorrent.group ];
+}</code></pre>
+      </div><p>Sample configuration is to be put into <strong>rtorrent.nix</strong> and imported in your <strong>configuration.nix</strong> via:</p>
+<p><code>{</code><br><code>  imports = [ ./rtorrent.nix ];</code><br><code>}</code></p>
+<p>After performing <strong>nixos-rebuild switch</strong> on port <a href="http://localhost:8112/">http://localhost:8112</a> the flood service should run.</p>
+<p><a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Low-level derivations</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Low-level derivations</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Low-level derivations -->
+
+<p>Writing <strong>low-level derivations</strong> without the convenience of the <a href="https://mirror.nixoscn.org/wiki/Low-level%20derivations/standard_environment" class="wikilink" title="standard environment">standard environment</a> requires understanding the core fundamentals of how <a href="https://mirror.nixoscn.org/wiki/Low-level%20derivations/Nix" class="wikilink" title="Nix">Nix</a> works. While writing <a href="https://mirror.nixoscn.org/wiki/Low-level%20derivations/derivations" class="wikilink" title="derivations">derivations</a> in this manner is not common, they can be useful when no utility present in the standard environment matches the required use case, as well as being an essential learning tool for understanding why <code>stdenv.mkDerivation</code> is needed in most cases.</p>
+<p>In the section below, we&#39;ll start by writing a simple derivation that creates a script which displays the message <em>&quot;Hello, world&quot;</em> when run. While developing the Nix file, we&#39;ll be encountering the same challenges that led the Nix community to develop more ergonomic tooling. Each obstacle we hit - from missing system dependencies to path management - illustrates a core principle of Nix&#39;s purely functional build model. By the end, you&#39;ll understand both what makes Nix powerful and why most derivations use abstraction layers.</p>
+<h2 id="a-hello-world-example">A <em>Hello, world</em> example</h2><p>Our goal is simple: creating a script that displays <em>&quot;Hello, world!&quot;</em>. If we were to simply create a script ourselves, it might look like this: When running this script (e.g. <code>$ ./example.sh</code>) we&#39;ll get exactly the output we want. However, we&#39;re trying to build the script using Nix. Our first approach might be to write a simple derivation similar to: There are a number of elements in this Nix file, but remembering the conceptual model of a framework makes quick work of figuring them out: a derivation is a set of <em>inputs along with an executable</em> that produces a deterministic <em>output</em>, following a list of <em>steps.</em> Here our inputs are quite literally the key-value pairs in the derivation <a href="https://mirror.nixoscn.org/wiki/Low-level%20derivations/Attribute_set" class="wikilink" title="attrset">attrset</a>: the <code>name</code> of the derivation and the system it&#39;s being built <em>for</em>. The executable (called the <code>builder</code>) is the program found at <code>/bin/bash</code>. And the steps are:</p>
+<ol>
+<li>Write the string <code>#!/bin/bash</code> to the output file (<code>$out</code>);</li>
+<li>Write the string <code>echo &quot;Hello, World!&quot;</code> to the output file;</li>
+<li>Make the output file executable.</li>
+</ol>
+<p>However, if we try to build this example:</p>
+<p>This failure could potentially be surprising. We don&#39;t have any syntactic errors, and the logic of the script sure looks good. Let&#39;s dive in into what&#39;s happening. First, we can see that the derivation is being built under the <code>/nix/store/l6s955asmyc22nx7y5pg3ngnzg30r4vb-hello-world.drv</code> path in the <a href="https://mirror.nixoscn.org/wiki/Low-level%20derivations/Nix_store" class="wikilink" title="Nix store">Nix store</a>. The hash for the derivation is how Nix is able to guarantee isolation between different invocations of a derivation with different <em>inputs</em>. The hash is essentially generated as a function of the input attrset.</p>
+<p>However, the builder failed, because it couldn&#39;t find <code>/bin/bash</code>. This happens because the <a href="https://mirror.nixoscn.org/wiki/Low-level%20derivations/Nix_ecosystem" class="wikilink" title="Nix ecosystem">Nix ecosystem</a> isolates our build environment from the system itself, we cannot use a binary that isn&#39;t defined in our derivation, in this case <a href="https://mirror.nixoscn.org/wiki/Low-level%20derivations/bash" class="wikilink" title="bash">bash</a> itself! In order to use it, we need to add it as an input to our derivation, by referencing the package directly:</p>
+<p>Building the package again, we&#39;ll come across another surprising error:</p>
+<p>Turns out <code>chmod</code> is not part of our build environment either; that&#39;s how minimal the low-level derivation environment is! However, before we fix the script in a similar manner, let&#39;s observe another important detail: the store path. Compare the build location of this example, and the previous one; the SHAs are different! That is because our derivation has different inputs to the one before, therefore it&#39;s built under a different location in the Nix store. And to highlight this, without fixing the script, let&#39;s build it again:</p>
+<p>The SHA is the same, because our inputs haven&#39;t changed. This is the essence to why derivations are <em>pure functions</em> of their inputs.</p>
+<p>In rewriting our derivation, we need to import <code>chmod</code>, which is part of the <code>coreutils</code> package. We could point to the binary similarly to how we did it before, but for variation, let&#39;s modify our <code>PATH</code> variable instead:</p>
+<p>Let&#39;s rebuild it again, noticing how the SHA will change again, as we changed our derivation&#39;s inputs:</p>
+<p>This time it built successfully. Finally, let&#39;s run our script:</p>
+<p>As mentioned above, building derivations this way can be unwieldy. But working through this example should shed some light onto why the community has built the standard environment, providing utility functions to build derivations for the most common use cases.</p>
+<h3 id="standard-environment">Standard environment</h3><p>For practicality purposes, let&#39;s compare this to the standard environment way of doing this. Using <code>stdenv.mkDerivation</code> gives us access to the common Linux utilities pre-included for us, so we don&#39;t have to do the package importing ourselves:</p>
+<h3 id="nixpkgs-utilities">Nixpkgs utilities</h3><p>Even further up the chain of abstractions, <a href="https://mirror.nixoscn.org/wiki/Low-level%20derivations/Nixpkgs" class="wikilink" title="Nixpkgs">Nixpkgs</a> contains many pre-built utilities for us that handle some of the configuration involved in the standard environment as well. In our case, we can use the <code>writeShellScript</code>:</p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

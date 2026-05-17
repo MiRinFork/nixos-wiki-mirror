@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Minecraft</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Minecraft</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Minecraft -->
+
+<p><a href="https://www.minecraft.net/about-minecraft">Minecraft</a> is a sandbox game about building, surviving, fighting, and being creative, developed by Mojang Studios.<sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Minecraft#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup> <a href="https://www.minecraft.net/about-minecraft">Minecraft</a> currently has two supported variants known as:</p>
+<ul>
+<li><strong>Minecraft: Java Edition</strong>, which is only available on Windows, MacOS, and Linux, and is known for modding.</li>
+<li><strong>Minecraft: Bedrock Edition</strong>, which is available on Windows, Xbox One, Xbox Series S and X, PlayStation 4 and 5, Nintendo Switch, Android, and iOS. Bedrock is not playable on Linux due to UWP applications not being supported on Linux.<sup><a id="footnote-ref-2" href="https://mirror.nixoscn.org/wiki/Minecraft#footnote-2" data-footnote-ref aria-describedby="footnote-label">2</a></sup><sup><a id="footnote-ref-3" href="https://mirror.nixoscn.org/wiki/Minecraft#footnote-3" data-footnote-ref aria-describedby="footnote-label">3</a></sup></li>
+</ul>
+<h2 id="launchers">Launchers</h2><p><strong>Official Minecraft Launcher:</strong> <a href="https://www.minecraft.net/download">Website</a> —</p>
+<p><strong><a href="https://mirror.nixoscn.org/wiki/Minecraft/Prism_Launcher" class="wikilink" title="Prism Launcher">Prism Launcher</a>:</strong> A free, open source launcher. <a href="https://prismlauncher.org/">Website</a> —</p>
+<p><strong>ATLauncher:</strong> A simple and easy to use Minecraft launcher which contains many different modpacks for you to choose from and play. <a href="https://atlauncher.com/about">Website</a> —</p>
+<p><strong>Badlion Client:</strong> A closed source PvP modpack. <a href="https://www.badlion.net/">Website</a> —</p>
+<p><strong>Lunar Client:</strong> A free Minecraft client with mods, cosmetics, and performance boost. <a href="https://www.lunarclient.com/">Website</a> —</p>
+<p><strong><a href="https://mirror.nixoscn.org/wiki/Minecraft/HMCL" class="wikilink" title="HMCL">HMCL</a>:</strong> A Minecraft Launcher which is multi-functional, cross-platform and popular. <a href="https://hmcl.huangyuhui.net/">Website</a> —</p>
+<h2 id="installation">Installation</h2><p>Your preferred client can be installed by adding the package to your configuration:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> [
+  pkgs.<span class="hljs-symbol">&lt;LAUNCHER&gt;</span>
+];</code></pre>
+      </div><p>Alternatively, the package can be installed per-user with <code>users.users.</code><USER><code>.packages</code> or <a href="https://mirror.nixoscn.org/wiki/Minecraft/Home_Manager" class="wikilink" title="home-manager">home-manager</a>.</p>
+<p>For a NixOS configuration, use:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">users.users.<span class="hljs-symbol">&lt;USER&gt;</span>.packages <span class="hljs-operator">=</span> [
+  pkgs.<span class="hljs-symbol">&lt;LAUNCHER&gt;</span>
+];</code></pre>
+      </div><p>For <a href="https://mirror.nixoscn.org/wiki/Minecraft/Home_Manager" class="wikilink" title="home-manager">home-manager</a>, use:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">h<span class="hljs-attr">ome.packages</span> <span class="hljs-operator">=</span> [
+  pkgs.<span class="hljs-symbol">&lt;LAUNCHER&gt;</span>
+];</code></pre>
+      </div><p>Alternatively, it can be imperatively installed by running <code>nix-env -iA nixos.</code><LAUNCHER> or <code>nix profile install nixpkgs#</code><LAUNCHER> if <a href="https://mirror.nixoscn.org/wiki/Minecraft/Flakes" class="wikilink" title="Flakes">Flakes</a> are enabled.</p>
+<h2 id="troubleshooting">Troubleshooting</h2><h3 id="atlauncher-can-39-t-start-instance">ATlauncher can&#39;t start instance</h3><p>By default, ATlauncher installs its own Java runtime in <code>**USERSDIR**/runtimes/minecraft</code>, which gets selected in the settings&#39; <code>Java Path</code>.</p>
+<p>To fix this, make sure to select the java version installed in the system store from the <code>Settings &gt; Java/Minecraft &gt; Java Path</code> menu and also disable the <code>Use Java Provided By Minecraft?</code> option.</p>
+<p>If your instance still doesn&#39;t start, check the instance settings and apply the same changes there.</p>
+<h3 id="prism-launcher-doesn-39-t-have-java-version-xx">Prism Launcher doesn&#39;t have Java Version XX.</h3><p>The <a href="https://mirror.nixoscn.org/wiki/Minecraft/Prism_Launcher" class="wikilink" title="Prism Launcher">Prism Launcher</a> package can be overridden to add additional <a href="https://mirror.nixoscn.org/wiki/Minecraft/Java" class="wikilink" title="Java">Java</a> runtimes. Check <a href="https://mirror.nixoscn.org/wiki/Minecraft/Prism_Launcher#Advanced" class="wikilink" title="Prism_Launcher#Advanced">Prism_Launcher#Advanced</a> to see an example.</p>
+<h3 id="minecraft-launch-error-with-nvidia-graphics-and-system-glfw">Minecraft Launch Error with NVIDIA Graphics and System GLFW.</h3><p>When using the system GLFW together with an NVIDIA graphics card in the launcher, Minecraft may fail to start and display the following error message: <code>GLFW error 65544: EGL: Failed to clear current context: An EGLDisplay argument does not name a valid EGL display connection</code>.</p>
+<p>In this case, setting the environment variable <code>__GL_THREADED_OPTIMIZATIONS</code> to <code>0</code> resolves the issue.</p>
+<h3 id="minecraft-can-t-start-without-java-version-xx">Minecraft can’t start without Java Version XX.</h3><p>Different Minecraft versions need different <a href="https://mirror.nixoscn.org/wiki/Minecraft/Java" class="wikilink" title="Java">Java</a> versions</p>
+<table>
+<thead>
+<tr>
+<th>Minecraft Version</th>
+<th>Minimum Compatible JRE Version</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>&lt; 1.17</td>
+<td>8</td>
+</tr>
+<tr>
+<td>1.17</td>
+<td>16</td>
+</tr>
+<tr>
+<td>&gt;= 1.18</td>
+<td>17</td>
+</tr>
+<tr>
+<td>&gt;= 1.20.5</td>
+<td>21</td>
+</tr>
+</tbody></table>
+<h3 id="official-minecraft-launcher-fails-to-start-the-game">Official Minecraft Launcher fails to start the game.</h3><p>It is possible that you are attempting to start a version of Minecraft that is 1.19 or higher. <strong>Unfortunately, this is broken on NixOS</strong>. It is strongly recommended to use alternative launchers.&#39;&#39;&#39;</p>
+<h2 id="see-also">See Also</h2><ul>
+<li><a href="https://wiki.archlinux.org/title/Minecraft">Minecraft on Arch Wiki</a></li>
+</ul>
+<h2 id="references">References</h2><p><a href="category:_Applications" class="wikilink" title="Category: Applications">Category: Applications</a> <a href="category:_Gaming" class="wikilink" title="Category: Gaming">Category: Gaming</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p><a href="https://www.minecraft.net/en-us/about-minecraft"><a href="https://www.minecraft.net/about-minecraft">https://www.minecraft.net/about-minecraft</a></a> <a href="https://mirror.nixoscn.org/wiki/Minecraft#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+<li id="footnote-2">
+<p><a href="https://www.minecraft.net/article/java-or-bedrock-edition">https://www.minecraft.net/article/java-or-bedrock-edition</a> <a href="https://mirror.nixoscn.org/wiki/Minecraft#footnote-ref-2" data-footnote-backref aria-label="Back to reference 2">↩</a></p>
+</li>
+<li id="footnote-3">
+<p><a href="https://learn.microsoft.com/en-us/windows/uwp/get-started/universal-application-platform-guide"><a href="https://learn.microsoft.com/windows/uwp/get-started/universal-application-platform-guide">https://learn.microsoft.com/windows/uwp/get-started/universal-application-platform-guide</a></a> <a href="https://mirror.nixoscn.org/wiki/Minecraft#footnote-ref-3" data-footnote-backref aria-label="Back to reference 3">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

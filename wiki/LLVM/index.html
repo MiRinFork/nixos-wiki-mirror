@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LLVM</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / LLVM</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: LLVM -->
+
+<p>From <a href="wikipedia:LLVM" class="wikilink" title="Wikipedia">Wikipedia</a>:</p>
+<p>The LLVM compiler infrastructure project is a &quot;collection of modular and reusable compiler and toolchain technologies&quot; used to develop compiler front ends and back ends.</p>
+<h2 id="build-llvm-clang-from-source">Build LLVM/clang from source</h2><p>LLVM/clang when compiled from source won&#39;t find headers/libraries/startup files without compiler wrapper. However it is possible to use the following <code>shell.nix</code> to get started and provide the missing flags to the compiler manually</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-keyword">with</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> {};
+<span class="hljs-keyword">let</span>
+  <span class="hljs-attr">gccForLibs</span> <span class="hljs-operator">=</span> stdenv.cc.cc;
+<span class="hljs-keyword">in</span> stdenv.mkDerivation {
+  <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;llvm-env&quot;</span>;
+  <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> [
+    bashInteractive
+    python3
+    ninja
+    cmake
+    llvmPackages_latest.llvm
+  ];
+
+  <span class="hljs-comment"># where to find libgcc</span>
+  <span class="hljs-attr">NIX_LDFLAGS</span><span class="hljs-operator">=</span><span class="hljs-string">&quot;-L<span class="hljs-subst">${gccForLibs}</span>/lib/gcc/<span class="hljs-subst">${targetPlatform.config}</span>/<span class="hljs-subst">${gccForLibs.version}</span>&quot;</span>;
+  <span class="hljs-comment"># teach clang about C startup file locations</span>
+  <span class="hljs-attr">CFLAGS</span><span class="hljs-operator">=</span><span class="hljs-string">&quot;-B<span class="hljs-subst">${gccForLibs}</span>/lib/gcc/<span class="hljs-subst">${targetPlatform.config}</span>/<span class="hljs-subst">${gccForLibs.version}</span> -B <span class="hljs-subst">${stdenv.cc.libc}</span>/lib&quot;</span>;
+
+  <span class="hljs-attr">cmakeFlags</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-string">&quot;-DGCC_INSTALL_PREFIX=<span class="hljs-subst">${gcc}</span>&quot;</span>
+    <span class="hljs-string">&quot;-DC_INCLUDE_DIRS=<span class="hljs-subst">${stdenv.cc.libc.dev}</span>/include&quot;</span>
+    <span class="hljs-string">&quot;-GNinja&quot;</span>
+    <span class="hljs-comment"># Debug for debug builds</span>
+    <span class="hljs-string">&quot;-DCMAKE_BUILD_TYPE=Release&quot;</span>
+    <span class="hljs-comment"># inst will be our installation prefix</span>
+    <span class="hljs-string">&quot;-DCMAKE_INSTALL_PREFIX=../inst&quot;</span>
+    <span class="hljs-string">&quot;-DLLVM_INSTALL_TOOLCHAIN_ONLY=ON&quot;</span>
+    <span class="hljs-comment"># change this to enable the projects you need</span>
+    <span class="hljs-string">&quot;-DLLVM_ENABLE_PROJECTS=clang&quot;</span>
+    <span class="hljs-comment"># enable libcxx* to come into play at runtimes</span>
+    <span class="hljs-string">&quot;-DLLVM_ENABLE_RUNTIMES=libcxx;libcxxabi&quot;</span>
+    <span class="hljs-comment"># this makes llvm only to produce code for the current platform, this saves CPU time, change it to what you need</span>
+    <span class="hljs-string">&quot;-DLLVM_TARGETS_TO_BUILD=host&quot;</span>
+  ];
+}</code></pre>
+      </div><p>After that you can execute the following commands to get a working clang:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"> $ </span><span class="language-bash">git <span class="hljs-built_in">clone</span> https://github.com/llvm/llvm-project/</span>
+<span class="hljs-meta prompt_"> $ </span><span class="language-bash"><span class="hljs-built_in">mkdir</span> build &amp;&amp; <span class="hljs-built_in">cd</span> build</span>
+<span class="hljs-meta prompt_"> $ </span><span class="language-bash">cmake <span class="hljs-variable">$cmakeFlags</span> ../llvm-project/llvm</span>
+<span class="hljs-meta prompt_"> $ </span><span class="language-bash">ninja</span>
+<span class="hljs-meta prompt_"> # </span><span class="language-bash">installs everything to ../inst</span>
+<span class="hljs-meta prompt_"> $ </span><span class="language-bash">ninja install</span>
+<span class="hljs-meta prompt_"> $ </span><span class="language-bash"><span class="hljs-built_in">cd</span> ..</span></code></pre>
+      </div><p>Then assuming you have a test program called <code>main.c</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"> $ </span><span class="language-bash">./inst/bin/clang <span class="hljs-variable">$CFLAGS</span> -o main main.c</span> </code></pre>
+      </div><h2 id="building-nixpkgs-nixos-with-llvm">Building Nixpkgs/NixOS with LLVM</h2><p>It is technically possible to build Nixpkgs and NixOS with LLVM, however many packages are broken due to the differences between GCC and Clang. Tristan Ross, one of the maintainers of LLVM, started a project back in June of 2024 to improve the state of LLVM compiled packages. Currently, the project is located on GitHub at <a href="https://github.com/RossComputerGuy/nixpkgs-llvm-ws">RossComputerGuy/nixpkgs-llvm-ws</a>. Many packages have been fixed upstream but it is best to try the Flake as not all fixes are merged.</p>
+<h3 id="using-llvm-in-nixpkgs-without-the-nixpkgs-llvm-workspace">Using LLVM in Nixpkgs without the Nixpkgs LLVM Workspace</h3><p>To use LLVM to build packages in Nix, it can be done by either using the <code>pkgsLLVM</code> attribute or by overriding a derivation and changing out the <code>stdenv</code>. Changing out the <code>stdenv</code> is as simple as this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">pkgs.hello.override {
+  <span class="hljs-attr">stdenv</span> <span class="hljs-operator">=</span> pkgs.llvmPackages.stdenv;
+}</code></pre>
+      </div><p><a href="category:Development" class="wikilink" title="Category:Development">Category:Development</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

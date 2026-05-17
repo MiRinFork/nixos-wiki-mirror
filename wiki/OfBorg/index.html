@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OfBorg</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / OfBorg</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: OfBorg -->
+
+<p><a href="https://github.com/NixOS/ofborg"><strong>OfBorg</strong></a> is the primary <a href="https://en.wikipedia.org/wiki/Continuous_integration">CI</a> service on <a href="https://mirror.nixoscn.org/wiki/OfBorg/Nixpkgs" class="wikilink" title="Nixpkgs">Nixpkgs</a>.</p>
+<h2 id="checks">Checks</h2><p>This section outlines the various checks which OfBorg performs.</p>
+<h3 id="ofborg-eval">ofborg-eval</h3><p>Checks that the changed <a href="https://mirror.nixoscn.org/wiki/OfBorg/Nix_Expression_Language" class="wikilink" title="Nix Expression Language">Nix Expression Language</a> files are valid.</p>
+<h3 id="ofborg-eval-check-maintainers">ofborg-eval-check-maintainers</h3><p>Checks that the changed package&#39;s maintainers are added to <code>maintainers/maintainer-list.nix</code>.</p>
+<p>This action returns a GitHub Gist with all maintainers found for a package.</p>
+<h3 id="ofborg-eval-check-meta">ofborg-eval-check-meta</h3><p>Checks that modified packages have an associated <code>meta</code> table inside of derivations.</p>
+<h3 id="ofborg-eval-darwin">ofborg-eval-darwin</h3><p>Checks that the modified packages build correctly on Darwin (macOS) systems.</p>
+<h3 id="ofborg-eval-nixos">ofborg-eval-nixos</h3><p>Checks that the modified packages build correctly on <a href="https://mirror.nixoscn.org/wiki/OfBorg/NixOS" class="wikilink" title="NixOS">NixOS</a>.</p>
+<h2 id="commands">Commands</h2><p>See <a href="https://github.com/NixOS/ofborg#commands">1</a>.</p>
+<h2 id="status">Status</h2><p>To see live logs from ofborg for a pull request, you can go to <code>https://logs.ofborg.org/?attempt_id=-ofborg-&amp;key=nixos%2Fnixpkgs.&amp;lt;PR NUMBER&gt;</code>. Replace <code>&lt;PR NUMBER&gt;</code> with the number of your pr, e.g <code>123456</code></p>
+<p>To see the queue status for the builders, you can use <a href="https://ofborg.org/prometheus/graph?g0.expr=ofborg_queue_builder_waiting%7Barch!%3D%22aarch64-darwin-lowprior%22%2Carch!%3D%22x86_64-darwin-lowprior%22%7D%20or%20ofborg_queue_evaluator_waiting&amp;g0.tab=0&amp;g0.stacked=0&amp;g0.show_exemplars=0&amp;g0.range_input=3d">the ofborg prometheus instance</a>.</p>
+<p>You can also find <a href="https://ofborg.org/prometheus/alerts">alerts</a> on this prometheus instance.</p>
+<p>Additionally, statistics about the size of the various build queues are available at <a href="https://events.ofborg.org/stats.php">stats.php</a>.</p>
+<h2 id="trivia">Trivia</h2><p>The name &quot;Of Borg&quot; is in reference to an American TV series called Star Trek, where a prominent character was <a href="https://en.wikipedia.org/wiki/Borg#Assimilation">assimilated</a> into an alien group and his name changed to &quot;Locutus Of Borg&quot;. Further information can be found in the ofborg <a href="https://github.com/NixOS/ofborg/issues/689#issuecomment-2295416227">issues</a> tracker.</p>
+<h2 id="links">Links</h2><ul>
+<li><a href="https://github.com/NixOS/ofborg">OfBorg&#39;s source</a></li>
+<li><a href="https://github.com/NixOS/ofborg/wiki">OfBorg&#39;s documentation</a>: Has instructions for operating a builder (as well as setting it up on MacOS).</li>
+</ul>
+<p><a href="category:Nixpkgs" class="wikilink" title="Category:Nixpkgs">Category:Nixpkgs</a> <a href="category:Pedias" class="wikilink" title="Category:Pedias">Category:Pedias</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

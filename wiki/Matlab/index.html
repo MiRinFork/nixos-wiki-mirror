@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Matlab</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Matlab</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Matlab -->
+
+<p>MATLAB (an abbreviation of &quot;matrix laboratory&quot;) is a proprietary multi-paradigm programming language and numeric computing environment developed by MathWorks.<a href="https://en.wikipedia.org/wiki/MATLAB">1</a></p>
+<h2 id="installation">Installation</h2><p>Matlab due to it&#39;s installation method and licensing is really problematic to package into nixpkgs<a href="https://github.com/NixOS/nixpkgs/issues/56887">2</a>, that is why the only way to install it is to use some imperative way (to install it outside the nix store).</p>
+<h3 id="recommended-based-on-doronbehar-3-repo-with-or-without-flakes">(Recommended) Based on Doronbehar <a href="https://gitlab.com/doronbehar/nix-matlab">3</a> repo (with or without flakes)</h3><p>You may prefer to use <a href="https://gitlab.com/doronbehar/nix-matlab">this method</a> by doronbehar. It is based on the one described below, but requires less work.</p>
+<h3 id="based-on-tviiti4-repo-or-custom-work-without-flakes">Based on tviiti<a href="https://github.com/tviti/nix-cfg/tree/aunuu/pkgs/matlab">4</a> repo or custom work (without flakes)</h3><p>Firstly you need to download zipped Matlab archive for Linux from the official webpage. Then create a folder for the installation files and unzip the archive into that folder via <code>unzip -X -K</code> command.</p>
+<p>Then you will need <code>shell.nix</code> file that will create proper FHS environment. This shell should use <code>buildFHSUserEnv</code> function and should contain all the relevant packages. Personally I have used tviti<a href="https://github.com/tviti/nix-cfg/tree/aunuu/pkgs/matlab">5</a> imperative Matlab shell.</p>
+<p>Get into the proper environment via <code>nix-shell</code>. Then you can safely start Matlab installer by running <code>./install</code> script in the Matlab installation folder. It is strongly preferred to install Matlab somewhere in the user home folder.</p>
+<p>After successful installation, you should add Matlab do your <code>configuration.nix</code> file. Personally I have used modified tvitii<a href="https://github.com/tviti/nix-cfg/tree/aunuu/pkgs/matlab">6</a> files. I have simply switched <code>runPath</code> to the path of freshly installed Matlab folder. Then in my configuration.nix I have used his matlab folder like so:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">...
+<span class="hljs-keyword">let</span>
+    <span class="hljs-attr">tviti-matlab</span> <span class="hljs-operator">=</span> pkgs.callPackage <span class="hljs-symbol">./matlab</span> { };
+...
+<span class="hljs-keyword">in</span> {
+...
+    <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> [ ... tviti-matlab.matlab  ... ];
+...</code></pre>
+      </div><p>Now you should have <code>matlab</code> in your path and be able to run it via <code>matlab</code> command.</p>
+<h4 id="weird-java-errors">Weird java errors</h4><p>In case you have java errors, and you are using tvitii<a href="https://github.com/tviti/nix-cfg/tree/master/pkgs/matlab">7</a> derivation, you may need to modify <code>matlab.nix</code> to something like this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ common,  buildFHSUserEnv }:
+buildFHSUserEnv {
+  <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;matlab&quot;</span>;
+
+  <span class="hljs-attr">targetPkgs</span> <span class="hljs-operator">=</span> <span class="hljs-params">pkgs:</span> <span class="hljs-keyword">with</span> pkgs; common.targetPkgs pkgs;
+
+  <span class="hljs-attr">runScript</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${common.runPath}</span>/bin/matlab&quot;</span>;
+}</code></pre>
+      </div><h3 id="other-possible-issues">Other possible issues</h3><h4 id="i-can-39-t-see-anything">I can&#39;t see anything</h4><p>If you are using Window Manager and Matlab does not display anything, you will need to use <code>wmname</code> command (preferably when starting your session). Just run <code>wmname LG3D</code>, run Matlab again and the issue should be fixed.</p>
+<h4 id="no-hardware-support">No hardware support</h4><p>There is a great answer about that here on Matlab answers<a href="https://www.mathworks.com/matlabcentral/answers/241850-matlab-failing-to-find-hardware-opengl#answer_263092">8</a>.</p>
+<p>Summarizing this answer:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">cd</span> &lt;your_matlab_location&gt;/sys/os/glnxa64/
+<span class="hljs-built_in">sudo</span> <span class="hljs-built_in">mv</span> libstdc++.so.6 libstdc++.so.6.bak
+<span class="hljs-built_in">sudo</span> <span class="hljs-built_in">ln</span> -s /usr/lib64/libstdc++.so.6  libstdc++.so.6</code></pre>
+      </div><p>You will not have <code>/usr/lib64/libstdc++.so.6</code> at the time of following the steps, but Matlab will be run in FHS env, and this path will be visible for it.</p>
+<p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

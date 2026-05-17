@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Blender</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Blender</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Blender -->
+
+<p><a href="https://www.blender.org/">Blender</a> is an open-source 3D suite for modelling, animation, VFX, and more.</p>
+<h2 id="installation">Installation</h2><p>The default <code>blender</code> nix package is compiled without support for any compute APIs (CUDA, OptiX, oneAPI, HIP), and can be installed with the following in your configuration.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+  blender
+];</code></pre>
+      </div><p>If you want to install Blender with support for compute APIs, see: <a href="https://mirror.nixoscn.org/wiki/Blender#Advanced_Installation" class="wikilink" title="#Advanced Installation">#Advanced Installation</a></p>
+<h2 id="configuration">Configuration</h2><h3 id="installing-with-additional-python-packages">Installing With Additional Python Packages</h3><p>To install additional Python modules into Blender, use the <code>withPackages</code> attribute.</p>
+<p>Example using a normal Blender package:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+  (blender.withPackages(<span class="hljs-params">ps:</span> [ ps.pyserial ps.fs ]))
+];</code></pre>
+      </div><p>Examples using abnormal Blender Packages:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-keyword">let</span>
+  <span class="hljs-attr">blender-cuda</span> <span class="hljs-operator">=</span> blender.override {<span class="hljs-attr">config.cudaSupport</span><span class="hljs-operator">=</span><span class="hljs-literal">true</span>;};
+<span class="hljs-keyword">in</span> {
+
+  <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+    (blender-cuda.withPackages(<span class="hljs-params">ps:</span> [ ps.yq ]))
+<span class="hljs-comment">#   (pkgsRocm.blender.withPackages(ps: [ ps.pyserial ps.fs ]))</span>
+  ];
+}</code></pre>
+      </div><p>In these functions, <code>ps</code> is an alias for <code>python313Packages</code>.</p>
+<p>Installing with additional packages will result in a binary named <code>blender-wrapped</code>, as it adds the python modules by wrapping Blender in a custom Python environment.</p>
+<p>When using a binary or unofficial Blender nix package, support for this feature will vary depending on if and how the packager implemented it.</p>
+<p>A workaround if using a package that doesn&#39;t support <code>withPackages</code> is to install the python packages globally.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+  python313Packages.yq
+  python313Packages.pyserial
+];</code></pre>
+      </div><p>Or if it fits your use case better, you can install them in a nix-shell and run Blender from within that shell.</p>
+<h2 id="tips-amp-tricks">Tips &amp; Tricks</h2><h3 id="blendfarm">Blendfarm</h3><p>The Blendfarm network renderer for Blender is handled by . A very simple example configuration is shown below.</p>
+<h2 id="advanced-installation">Advanced Installation</h2><ul>
+<li><a href="https://mirror.nixoscn.org/wiki/Blender#Binary_Packages" class="wikilink" title="#Binary Packages">#Binary Packages</a> for Blender binary packages with support for all APIs</li>
+<li><a href="https://mirror.nixoscn.org/wiki/Blender#CUDA_&amp;_OptiX" class="wikilink" title="#CUDA &amp; OptiX">#CUDA &amp; OptiX</a> for support for NVIDIA&#39;s CUDA &amp; OptiX</li>
+<li><a href="https://mirror.nixoscn.org/wiki/Blender#HIP" class="wikilink" title="#HIP">#HIP</a> for support for AMD&#39;s HIP</li>
+<li><a href="https://mirror.nixoscn.org/wiki/Blender#oneAPI" class="wikilink" title="#oneAPI">#oneAPI</a> for support for Intel&#39;s oneAPI</li>
+<li><a href="https://mirror.nixoscn.org/wiki/Blender#Last_Resorts" class="wikilink" title="#Last Resorts">#Last Resorts</a> if all other methods don&#39;t work for your situation</li>
+</ul>
+<h3 id="binary-packages">Binary Packages</h3><p>These are alternative distribution methods that package the Blender binaries, meaning they have support for all APIs.</p>
+<h4 id="steam">Steam</h4><p>Installing <a href="https://store.steampowered.com/app/365670/Blender/">Blender through Steam</a> will run Linux native Blender in the Steam Runtime environment, and it will receive automatic updates through Steam. Note that if you make Steam run the Windows version (through Proton) by selecting &quot;Force the use of a specific Steam Play compatibility tool&quot; under Properties &gt; Compatibility, the APIs will fail as they will not have the relevant Windows drivers.</p>
+<h4 id="the-blender-bin-flake">The blender-bin Flake</h4><p>The unofficial <a href="https://github.com/edolstra/nix-warez/tree/master/blender">blender-bin</a> flake, provided by edolstra, packages the binary release of Blender for NixOS, and hosts it on FlakeHub <a href="https://flakehub.com/flake/edolstra/blender-bin?view=usage">here</a>. The following demonstrates how to add the flake to a <a href="https://mirror.nixoscn.org/wiki/Blender/NixOS_system_configuration#Defining_NixOS_as_a_flake" class="wikilink" title="flake-based configuration">flake-based configuration</a>.</p>
+<h3 id="cuda-amp-optix">CUDA &amp; OptiX</h3><p>By default Nixpkgs builds software with CUDA (and therefore OptiX) support disabled, because of the unfree license. For Blender there are multiple ways around this, detailed below.</p>
+<h4 id="the-cudasupport-flag">The cudaSupport Flag</h4><p>Whether a compatible package is built with CUDA support is managed by the <code>cudaSupport</code> flag enabled.</p>
+<p>The following example shows how to override specifically the Blender package for CUDA support, for general information on the topic see: <a href="https://mirror.nixoscn.org/wiki/Blender/CUDA#Enabling_CUDA_In_Packages" class="wikilink" title="Enabling CUDA In Packages">Enabling CUDA In Packages</a>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+  (blender.override {<span class="hljs-attr">config.cudaSupport</span><span class="hljs-operator">=</span><span class="hljs-literal">true</span>;})
+
+<span class="hljs-comment">/* (blender.override {
+    config.cudaSupport=true;
+    config.rocmSupport=true;}) # to compile blender with both HIP and CUDA/OptiX support */</span>
+];</code></pre>
+      </div><p>If installing Blender with <code>cudaSupport</code>, it is highly recommended you set up a <a href="https://mirror.nixoscn.org/wiki/Blender/CUDA#Setting_up_CUDA_Binary_Cache" class="wikilink" title="CUDA binary cache">CUDA binary cache</a>. If you do not have one set up, and install Blender with <code>cudaSupport</code>, your machine will be compiling Blender from source.</p>
+<p>Compiling Blender is very resource-intensive, so if you are unable to use a binary cache, please see the associated warning and information in <a href="https://mirror.nixoscn.org/wiki/Blender/CUDA#Enabling_CUDA_In_Packages" class="wikilink" title="CUDA#Enabling CUDA In Packages">CUDA#Enabling CUDA In Packages</a>.</p>
+<h4 id="community-flakes">Community Flakes</h4><p>In addition to the <a href="https://mirror.nixoscn.org/wiki/Blender#The_blender-bin_Flake" class="wikilink" title="#blender-bin flake">#blender-bin flake</a>, there is also <a href="https://github.com/adithyagenie/blender-cuda-nixos">blender-cuda-nixos</a>, which compiles Blender with <code>cudaSupport</code> enabled and caches it on cachix so you don&#39;t need to build it yourself. For the most up-to-date instructions on adding it to your configuration, see its <a href="https://github.com/adithyagenie/blender-cuda-nixos/blob/master/README.md">README</a>.</p>
+<h3 id="hip">HIP</h3><p>With the deprecation of the <code>blender-hip</code> package,<sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Blender#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup> the easiest way to add Blender with HIP support is now with the <code>pkgsRocm.blender</code> package. Other methods are to use the <code>rocmSupport</code> config variable, or to use a <a href="https://mirror.nixoscn.org/wiki/Blender#Binary_Packages" class="wikilink" title="#Binary Package">#Binary Package</a>.</p>
+<p>The below example is Blender-specific. For more general information on enabling ROCm/HIP in your configuration, see: <a href="https://mirror.nixoscn.org/wiki/Blender/AMD_GPU#Enabling_ROCm_&amp;_HIP_For_Packages" class="wikilink" title="AMD GPU#Enabling ROCm &amp; HIP For Packages">AMD GPU#Enabling ROCm &amp; HIP For Packages</a>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+
+  pkgsRocm.blender
+
+<span class="hljs-comment">/* (blender.override {
+    config.rocmSupport=true;
+    config.cudaSupport=false;}) # (equivalent to `pkgsRocm.blender`) */</span>
+
+<span class="hljs-comment">/* (blender.override {
+    config.cudaSupport=true;
+    config.rocmSupport=true;}) # to compile blender with both HIP and CUDA/OptiX support */</span>
+];</code></pre>
+      </div><h3 id="oneapi">oneAPI</h3><p>Currently, Nixpkgs has extremely limited oneAPI support (see ), which is explicitly blocking . As such, the current only way to have oneAPI support on NixOS is through one of the <a href="https://mirror.nixoscn.org/wiki/Blender#Binary_Packages" class="wikilink" title="#Binary Packages">#Binary Packages</a>.</p>
+<h3 id="last-resorts">Last Resorts</h3><p>If nothing else works for your situation, you can also download the Blender binary from <a href="https://www.blender.org/download/">blender.org</a> and run it in NixOS using a program like <a href="https://mirror.nixoscn.org/wiki/Blender/Nix-ld" class="wikilink" title="nix-ld">nix-ld</a> or <a href="https://github.com/thiagokokada/nix-alien">nix-alien</a>, patch the binary manually (see: <a href="https://mirror.nixoscn.org/wiki/Blender/Packaging/Binaries" class="wikilink" title="Packaging/Binaries">Packaging/Binaries</a>), or try using a container like <a href="https://mirror.nixoscn.org/wiki/Blender/Distrobox" class="wikilink" title="Distrobox">Distrobox</a> (see: <a href="https://distrobox.it/useful_tips/#using-the-gpu-inside-the-container">Distrobox: Using the GPU Inside the Container</a>).</p>
+<h2 id="known-issues">Known Issues</h2><h3 id="ui-is-dim-on-vulkan-backend-and-kde-plasma">UI is dim on Vulkan backend and KDE Plasma</h3><p>This is a cross-distro issue on current KDE Plasma with NVIDIA, (confirmed issue on KDE Version 6.6.2-6.6.4 Wayland Session with NVIDIA drivers Versions 595.XX, though may affect others too). A workaround option that doesn&#39;t require downgrading is to force XWayland by running Blender with the following command. See more information at the related on Blender&#39;s repo.</p>
+<div class="code-container">
+        
+        <pre><code class="language-sh hljs">WAYLAND_DISPLAY=0 blender</code></pre>
+      </div><h2 id="references">References</h2><references />
+
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+ <a href="https://mirror.nixoscn.org/wiki/Blender#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

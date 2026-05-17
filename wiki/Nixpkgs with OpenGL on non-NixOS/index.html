@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nixpkgs with OpenGL on non-NixOS</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Nixpkgs with OpenGL on non-NixOS</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Nixpkgs with OpenGL on non-NixOS -->
+
+<p>Applications in `nixpkgs` handle OpenGL in a certain way. Using these applications outside of NixOS requires the use of a wrapper.</p>
+<h2 id="solutions">Solutions</h2><table>
+<thead>
+<tr>
+<th><p>Driver Support</p></th>
+<th><p><a href="https://github.com/nix-community/nixGL">NixGL</a></p></th>
+<th><p><a href="https://github.com/numtide/nix-gl-host/">nix-gl-host</a></p></th>
+<th><p><a href="https://github.com/soupglasses/nix-system-graphics">nix-system-graphics</a></p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><p>AMD (mesa)</p></td>
+<td style="text-align:center;"><p>✅</p></td>
+<td style="text-align:center;"><p>❌</p></td>
+<td style="text-align:center;"><p>✅</p></td>
+</tr>
+<tr>
+<td><p>Intel (mesa)</p></td>
+<td style="text-align:center;"><p>✅</p></td>
+<td style="text-align:center;"><p>❌</p></td>
+<td style="text-align:center;"><p>✅</p></td>
+</tr>
+<tr>
+<td><p>Nvidia (nouveau)</p></td>
+<td style="text-align:center;"><p>✅</p></td>
+<td style="text-align:center;"><p>❌</p></td>
+<td style="text-align:center;"><p>✅</p></td>
+</tr>
+<tr>
+<td><p>Nvidia (proprietary)</p></td>
+<td style="text-align:center;"><p>✅</p></td>
+<td style="text-align:center;"><p>✅</p></td>
+<td style="text-align:center;"><p>⚠️ Must be manually set to match OS driver version</p></td>
+</tr>
+<tr>
+<td><p>Functionality</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><p>Graphical programs from nix</p></td>
+<td colspan="2" style="text-align:center;"><p>⚠️ Must be manually wrapped</p></td>
+<td style="text-align:center;"><p>✅</p></td>
+</tr>
+<tr>
+<td><p>Graphical programs from host (non-nix) (<em>e.g.</em> launch non-nix web browser from nixpkgs#kitty)</p></td>
+<td colspan="2" style="text-align:center;"><p>❌ Broken</p></td>
+<td style="text-align:center;"><p>✅</p></td>
+</tr>
+<tr>
+<td><p>License</p></td>
+<td style="text-align:center;"><p>❌ None</p></td>
+<td style="text-align:center;"><p>Apache-2.0</p></td>
+<td style="text-align:center;"><p>MIT</p></td>
+</tr>
+</tbody>
+</table>
+
+<p><a href="category:Video" class="wikilink" title="Category:Video">Category:Video</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

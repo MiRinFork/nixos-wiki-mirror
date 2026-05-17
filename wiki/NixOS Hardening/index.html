@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NixOS Hardening</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / NixOS Hardening</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: NixOS Hardening -->
+
+<h2 id="kernel">Kernel</h2><h3 id="linux-hardened">linux-hardened</h3><p><a href="https://github.com/anthraxx/linux-hardened">linux-hardened</a> is a Linux kernel with additional hardening patches applied. You can check for latest releases <a href="https://github.com/anthraxx/linux-hardened/releases">here</a>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">b<span class="hljs-attr">oot.kernelPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">let</span>
+  <span class="hljs-attr">linux_hardened_pkg</span> <span class="hljs-operator">=</span> { fetchFromGitHub, buildLinux, lib, ... } @ <span class="hljs-params">args:</span>
+
+      buildLinux (args <span class="hljs-operator">//</span> <span class="hljs-keyword">rec</span> {
+        <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;6.12.79-hardened1&quot;</span>;
+        <span class="hljs-attr">hash</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sha256-TKrLHk4aB47vqehEdp5ks4WtMCq/XCDr9ro3eQOoPvE=&quot;</span>;
+        <span class="hljs-attr">extraMeta.branch</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;6.12&quot;</span>;
+
+        <span class="hljs-attr">modDirVersion</span> <span class="hljs-operator">=</span> version;
+        <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> fetchFromGitHub {
+          <span class="hljs-keyword">inherit</span> hash;
+          <span class="hljs-attr">owner</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;anthraxx&quot;</span>;
+          <span class="hljs-attr">repo</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;linux-hardened&quot;</span>;
+          <span class="hljs-attr">tag</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;v<span class="hljs-subst">${version}</span>&quot;</span>;
+        };
+        <span class="hljs-attr">kernelPatches</span> <span class="hljs-operator">=</span> [];
+
+        <span class="hljs-attr">structuredExtraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> lib.kernel; {
+          <span class="hljs-comment"># Perform additional validation of commonly targeted structures.</span>
+          <span class="hljs-attr">DEBUG_NOTIFIERS</span> <span class="hljs-operator">=</span> yes;
+          <span class="hljs-attr">DEBUG_PLIST</span> <span class="hljs-operator">=</span> yes;
+          <span class="hljs-attr">DEBUG_SG</span> <span class="hljs-operator">=</span> yes;
+          <span class="hljs-attr">DEBUG_VIRTUAL</span> <span class="hljs-operator">=</span> yes;
+          <span class="hljs-attr">SCHED_STACK_END_CHECK</span> <span class="hljs-operator">=</span> yes;
+
+          <span class="hljs-comment"># tell EFI to wipe memory during reset</span>
+          <span class="hljs-comment"># https://lwn.net/Articles/730006/</span>
+          <span class="hljs-attr">RESET_ATTACK_MITIGATION</span> <span class="hljs-operator">=</span> yes;
+
+          <span class="hljs-comment"># restricts loading of line disciplines via TIOCSETD ioctl to CAP_SYS_MODULE</span>
+          <span class="hljs-attr">CONFIG_LDISC_AUTOLOAD</span> <span class="hljs-operator">=</span> option no;
+
+          <span class="hljs-comment"># Enable init_on_free by default</span>
+          <span class="hljs-attr">INIT_ON_FREE_DEFAULT_ON</span> <span class="hljs-operator">=</span> yes;
+
+          <span class="hljs-comment"># Initialize all stack variables on function entry</span>
+          <span class="hljs-attr">INIT_STACK_ALL_ZERO</span> <span class="hljs-operator">=</span> yes;
+
+          <span class="hljs-comment"># Wipe all caller-used registers on exit from a function</span>
+          <span class="hljs-attr">ZERO_CALL_USED_REGS</span> <span class="hljs-operator">=</span> yes;
+
+          <span class="hljs-comment"># Enable the SafeSetId LSM</span>
+          <span class="hljs-attr">SECURITY_SAFESETID</span> <span class="hljs-operator">=</span> yes;
+
+          <span class="hljs-comment"># Reboot devices immediately if kernel experiences an Oops.</span>
+          <span class="hljs-attr">PANIC_TIMEOUT</span> <span class="hljs-operator">=</span> freeform <span class="hljs-string">&quot;-1&quot;</span>;
+
+          <span class="hljs-comment"># Enable gcc plugin options</span>
+          <span class="hljs-attr">GCC_PLUGINS</span> <span class="hljs-operator">=</span> yes;
+
+          <span class="hljs-comment">#A port of the PaX stackleak plugin</span>
+          <span class="hljs-attr">GCC_PLUGIN_STACKLEAK</span> <span class="hljs-operator">=</span> yes;
+
+          <span class="hljs-comment"># Runtime undefined behaviour checks</span>
+          <span class="hljs-comment"># https://www.kernel.org/doc/html/latest/dev-tools/ubsan.html</span>
+          <span class="hljs-comment"># https://developers.redhat.com/blog/2014/10/16/gcc-undefined-behavior-sanitizer-ubsan</span>
+          <span class="hljs-attr">UBSAN</span> <span class="hljs-operator">=</span> yes;
+          <span class="hljs-attr">UBSAN_TRAP</span> <span class="hljs-operator">=</span> yes;
+          <span class="hljs-attr">UBSAN_BOUNDS</span> <span class="hljs-operator">=</span> yes;
+          <span class="hljs-attr">UBSAN_LOCAL_BOUNDS</span> <span class="hljs-operator">=</span> option yes; <span class="hljs-comment"># clang only</span>
+          <span class="hljs-attr">CFI_CLANG</span> <span class="hljs-operator">=</span> option yes; <span class="hljs-comment"># clang only Control Flow Integrity since 6.1</span>
+
+          <span class="hljs-comment"># Disable various dangerous settings</span>
+          <span class="hljs-attr">PROC_KCORE</span> <span class="hljs-operator">=</span> no; <span class="hljs-comment"># Exposes kernel text image layout</span>
+          <span class="hljs-attr">INET_DIAG</span> <span class="hljs-operator">=</span> no; <span class="hljs-comment"># Has been used for heap based attacks in the past</span>
+
+          <span class="hljs-comment"># INET_DIAG=n causes the following options to not exist anymore, but since they are defined in common-config.nix,</span>
+          <span class="hljs-comment"># make them optional</span>
+          <span class="hljs-attr">INET_DIAG_DESTROY</span> <span class="hljs-operator">=</span> option no;
+          <span class="hljs-attr">INET_RAW_DIAG</span> <span class="hljs-operator">=</span> option no;
+          <span class="hljs-attr">INET_TCP_DIAG</span> <span class="hljs-operator">=</span> option no;
+          <span class="hljs-attr">INET_UDP_DIAG</span> <span class="hljs-operator">=</span> option no;
+          <span class="hljs-attr">INET_MPTCP_DIAG</span> <span class="hljs-operator">=</span> option no;
+
+          <span class="hljs-comment"># CONFIG_DEVMEM=n causes these to not exist anymore.</span>
+          <span class="hljs-attr">STRICT_DEVMEM</span> <span class="hljs-operator">=</span> option no;
+          <span class="hljs-attr">IO_STRICT_DEVMEM</span> <span class="hljs-operator">=</span> option no;
+
+          <span class="hljs-comment"># stricter IOMMU TLB invalidation</span>
+          <span class="hljs-attr">IOMMU_DEFAULT_DMA_STRICT</span> <span class="hljs-operator">=</span> option yes;
+          <span class="hljs-attr">IOMMU_DEFAULT_DMA_LAZY</span> <span class="hljs-operator">=</span> option no;
+
+          <span class="hljs-comment"># not needed for less than a decade old glibc versions</span>
+          <span class="hljs-attr">LEGACY_VSYSCALL_NONE</span> <span class="hljs-operator">=</span> yes;
+        };
+      } <span class="hljs-operator">//</span> (args.argsOverride <span class="hljs-keyword">or</span> {}));
+    <span class="hljs-attr">linux_hardened</span> <span class="hljs-operator">=</span> pkgs.callPackage linux_hardened_pkg{};
+  <span class="hljs-keyword">in</span>
+    lib.recurseIntoAttrs (pkgs.linuxPackagesFor linux_hardened);</code></pre>
+      </div><h3 id="lock-kernel-modules">Lock kernel modules</h3><p>This option locks kernel modules after the system is initialized. For example it prevents malicious USB devices from exploiting vulnerable kernel modules.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ecurity.lockKernelModules</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><p>All needed modules must be loaded at boot by adding them to <code>boot.kernelModules</code>. One way of knowing what modules must be enabled is to disable this option and then list all enabled modules with <code>lsmod</code>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">b<span class="hljs-attr">oot.kernelModules</span> <span class="hljs-operator">=</span> [
+  <span class="hljs-comment"># USB</span>
+  <span class="hljs-string">&quot;usb_storage&quot;</span> <span class="hljs-string">&quot;uinput&quot;</span> <span class="hljs-string">&quot;usbhid&quot;</span> <span class="hljs-string">&quot;usbserial&quot;</span>
+  <span class="hljs-comment"># DVD</span>
+  <span class="hljs-string">&quot;udf&quot;</span> <span class="hljs-string">&quot;iso9660&quot;</span>
+  <span class="hljs-comment"># GPU</span>
+  <span class="hljs-string">&quot;amdgpu&quot;</span> <span class="hljs-string">&quot;i915&quot;</span>
+  <span class="hljs-comment"># Networking</span>
+  <span class="hljs-string">&quot;nft_chain_nat&quot;</span> <span class="hljs-string">&quot;xt_conntrack&quot;</span> <span class="hljs-string">&quot;xt_CHECKSUM&quot;</span> <span class="hljs-string">&quot;xt_MASQUERADE&quot;</span> <span class="hljs-string">&quot;ipt_REJECT&quot;</span> <span class="hljs-string">&quot;ip6t_REJECT&quot;</span> <span class="hljs-string">&quot;nf_reject_ipv4&quot;</span> <span class="hljs-string">&quot;nf_reject_ipv6&quot;</span> <span class="hljs-string">&quot;xt_mark&quot;</span> <span class="hljs-string">&quot;xt_comment&quot;</span> <span class="hljs-string">&quot;xt_multiport&quot;</span> <span class="hljs-string">&quot;xt_addrtype&quot;</span> <span class="hljs-string">&quot;xt_connmark&quot;</span> <span class="hljs-string">&quot;nf_conntrack_netlink&quot;</span>
+];</code></pre>
+      </div><h3 id="module-blacklist">Module blacklist</h3><div class="code-container">
+        
+        <pre><code class="language-nix hljs">b<span class="hljs-attr">oot.blacklistedKernelModules</span> <span class="hljs-operator">=</span> [
+  <span class="hljs-comment"># Obscure network protocols</span>
+  <span class="hljs-string">&quot;ax25&quot;</span> <span class="hljs-string">&quot;netrom&quot;</span> <span class="hljs-string">&quot;rose&quot;</span>
+
+  <span class="hljs-comment"># Old or rare or insufficiently audited filesystems</span>
+  <span class="hljs-string">&quot;adfs&quot;</span> <span class="hljs-string">&quot;affs&quot;</span>
+  <span class="hljs-string">&quot;bfs&quot;</span> <span class="hljs-string">&quot;befs&quot;</span>
+  <span class="hljs-string">&quot;cramfs&quot;</span>
+  <span class="hljs-string">&quot;efs&quot;</span> <span class="hljs-string">&quot;erofs&quot;</span> <span class="hljs-string">&quot;exofs&quot;</span>
+  <span class="hljs-string">&quot;freevxfs&quot;</span> <span class="hljs-string">&quot;f2fs&quot;</span>
+  <span class="hljs-string">&quot;hfs&quot;</span> <span class="hljs-string">&quot;hpfs&quot;</span>
+  <span class="hljs-string">&quot;jfs&quot;</span>
+  <span class="hljs-string">&quot;minix&quot;</span>
+  <span class="hljs-string">&quot;nilfs2&quot;</span> <span class="hljs-string">&quot;ntfs&quot;</span>
+  <span class="hljs-string">&quot;omfs&quot;</span>
+  <span class="hljs-string">&quot;qnx4&quot;</span> <span class="hljs-string">&quot;qnx6&quot;</span>
+  <span class="hljs-string">&quot;sysv&quot;</span>
+  <span class="hljs-string">&quot;ufs&quot;</span>
+];</code></pre>
+      </div><h3 id="kernel-image-protection">Kernel image protection</h3><p>Prevents replacing the running kernel image.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ecurity.protectKernelImage</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><h3 id="kernel-parameters">Kernel parameters</h3><div class="code-container">
+        
+        <pre><code class="language-nix hljs">b<span class="hljs-attr">oot.kernelParams</span> <span class="hljs-operator">=</span> [
+ <span class="hljs-comment"># Don&#x27;t merge slabs</span>
+ <span class="hljs-string">&quot;slab_nomerge&quot;</span>
+
+ <span class="hljs-comment"># Overwrite free&#x27;d pages</span>
+ <span class="hljs-string">&quot;page_poison=1&quot;</span>
+
+ <span class="hljs-comment"># Enable page allocator randomization</span>
+ <span class="hljs-string">&quot;page_alloc.shuffle=1&quot;</span>
+
+ <span class="hljs-comment"># Disable debugfs</span>
+ <span class="hljs-string">&quot;debugfs=off&quot;</span>
+];</code></pre>
+      </div><h3 id="sysctl-parameters">Sysctl parameters</h3><div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># Hide kptrs even for processes with CAP_SYSLOG</span>
+boot.kernel.sysctl.<span class="hljs-string">&quot;kernel.kptr_restrict&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;2&quot;</span>;
+
+<span class="hljs-comment"># Disable bpf() JIT (to eliminate spray attacks)</span>
+boot.kernel.sysctl.<span class="hljs-string">&quot;net.core.bpf_jit_enable&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+
+<span class="hljs-comment"># Disable ftrace debugging</span>
+boot.kernel.sysctl.<span class="hljs-string">&quot;kernel.ftrace_enabled&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+
+<span class="hljs-comment"># Disable io_uring, a large source of security vulnerabilities</span>
+<span class="hljs-comment"># https://security.googleblog.com/2023/06/learnings-from-kctf-vrps-42-linux.html</span>
+boot.kernel.sysctl.<span class="hljs-string">&quot;kernel.io_uring_disabled&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-number">2</span>;
+
+<span class="hljs-comment"># Enable strict reverse path filtering (that is, do not attempt to route</span>
+<span class="hljs-comment"># packets that &quot;obviously&quot; do not belong to the iface&#x27;s network; dropped</span>
+<span class="hljs-comment"># packets are logged as martians).</span>
+boot.kernel.sysctl.<span class="hljs-string">&quot;net.ipv4.conf.all.log_martians&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+boot.kernel.sysctl.<span class="hljs-string">&quot;net.ipv4.conf.all.rp_filter&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;1&quot;</span>;
+boot.kernel.sysctl.<span class="hljs-string">&quot;net.ipv4.conf.default.log_martians&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+boot.kernel.sysctl.<span class="hljs-string">&quot;net.ipv4.conf.default.rp_filter&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;1&quot;</span>;
+
+<span class="hljs-comment"># Ignore broadcast ICMP (mitigate SMURF)</span>
+boot.kernel.sysctl.<span class="hljs-string">&quot;net.ipv4.icmp_echo_ignore_broadcasts&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+<span class="hljs-comment"># Ignore incoming ICMP redirects (note: default is needed to ensure that the</span>
+<span class="hljs-comment"># setting is applied to interfaces added after the sysctls are set)</span>
+boot.kernel.sysctl.<span class="hljs-string">&quot;net.ipv4.conf.all.accept_redirects&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+boot.kernel.sysctl.<span class="hljs-string">&quot;net.ipv4.conf.all.secure_redirects&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+boot.kernel.sysctl.<span class="hljs-string">&quot;net.ipv4.conf.default.accept_redirects&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+boot.kernel.sysctl.<span class="hljs-string">&quot;net.ipv4.conf.default.secure_redirects&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+boot.kernel.sysctl.<span class="hljs-string">&quot;net.ipv6.conf.all.accept_redirects&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+boot.kernel.sysctl.<span class="hljs-string">&quot;net.ipv6.conf.default.accept_redirects&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+
+<span class="hljs-comment"># Ignore outgoing ICMP redirects (this is ipv4 only)</span>
+boot.kernel.sysctl.<span class="hljs-string">&quot;net.ipv4.conf.all.send_redirects&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+boot.kernel.sysctl.<span class="hljs-string">&quot;net.ipv4.conf.default.send_redirects&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;</code></pre>
+      </div><h3 id="disable-simultaneous-multithreading-smt">Disable Simultaneous Multithreading (SMT)</h3><p>Might cause significant performance cost.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ecurity.allowSimultaneousMultithreading</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;</code></pre>
+      </div><h3 id="force-page-table-isolation">Force Page Table Isolation</h3><div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ecurity.forcePageTableIsolation</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><h2 id="nix-settings">Nix settings</h2><h3 id="nix-allowed-users">Nix allowed users</h3><p>This option allows only <code>users</code> group to connect to the Nix daemon.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">ix.settings.allowed-users</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;@users&quot;</span> ];</code></pre>
+      </div><h2 id="other-settings">Other settings</h2><h3 id="memory-allocator">Memory allocator</h3><p>You can use security-focused memory allocator like <a href="https://llvm.org/docs/ScudoHardenedAllocator.html">scudo</a> or <a href="https://github.com/GrapheneOS/hardened_malloc">GrapheneOS hardened_malloc</a>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># scudo</span>
+e<span class="hljs-attr">nvironment.memoryAllocator.provider</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;scudo&quot;</span>;
+<span class="hljs-attr">environment.variables.SCUDO_OPTIONS</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;zero_contents=true&quot;</span>;
+
+<span class="hljs-comment"># hardened_malloc</span>
+e<span class="hljs-attr">nvironment.memoryAllocator.provider</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;graphene-hardened&quot;</span>;</code></pre>
+      </div><p>Some programs may not work with these memory allocators. You can force them to use the default libc allocator by blacklisting <code>/etc/ld-nix.so.preload</code> with a firejail wrap.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">p<span class="hljs-attr">rograms.firejail</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">wrappedBinaries</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">chromium</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">executable</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.chromium}</span>/bin/chromium-browser&quot;</span>;
+      <span class="hljs-attr">profile</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.firejail}</span>/etc/firejail/chromium-browser.profile&quot;</span>;
+      <span class="hljs-attr">extraArgs</span> <span class="hljs-operator">=</span> [
+        <span class="hljs-string">&quot;--blacklist=/etc/ld-nix.so.preload&quot;</span>
+      ];
+    };
+  };
+};</code></pre>
+      </div><h3 id="flush-l1-data-cache">Flush L1 data cache</h3><p>Might cause significant performance cost.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ecurity.virtualisation.flushL1DataCache</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;always&quot;</span>;</code></pre>
+      </div><h3 id="apparmor">AppArmor</h3><p>See <a href="https://mirror.nixoscn.org/wiki/NixOS%20Hardening/Security#AppArmor" class="wikilink" title="Security#AppArmor">Security#AppArmor</a> for more details.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ecurity.apparmor.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+<span class="hljs-attr">security.apparmor.killUnconfinedConfinables</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><h2 id="lower-level">Lower-level</h2><h3 id="secure-boot">Secure Boot</h3><p>See <a href="https://mirror.nixoscn.org/wiki/NixOS%20Hardening/Secure_Boot" class="wikilink" title="Secure Boot">Secure Boot</a>. <a href="https://mirror.nixoscn.org/wiki/NixOS%20Hardening/Limine" class="wikilink" title="Limine">Limine</a> bootloader supports coreboot&#39;s Secure Boot.</p>
+<h2 id="see-also">See Also</h2><ul>
+<li><a href="https://wiki.archlinux.org/title/Security">Arch Wiki Security Page</a></li>
+</ul>
+<p><a href="category:Guide" class="wikilink" title="Category:Guide">Category:Guide</a> <a href="category:NixOS" class="wikilink" title="Category:NixOS">Category:NixOS</a> <a href="category:Security" class="wikilink" title="Category:Security">Category:Security</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

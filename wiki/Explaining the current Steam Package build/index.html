@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Explaining the current Steam Package build</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Explaining the current Steam Package build</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Explaining the current Steam Package build -->
+
+<p>This article should give insight about how steam is currently packaged and how and why it works like this. It also discusses what the problems are in packaging it and how we can approach solving them.</p>
+<h2 id="description-of-the-package">Description of the package</h2><p>Steam is distributed as a .deb file, for now only as an i686 package (the amd64 package only has documentation). When unpacked, it has a script called steam that in ubuntu (their target distro) would go to /usr/bin. When run for the first time, this script copies some files to the user&#39;s home, which include another script that is the ultimate responsible for launching the steam binary, which is also in $HOME.</p>
+<h2 id="nix-problems-and-constraints">Nix problems and constraints</h2><ul>
+<li>We don&#39;t have <code>/bin/bash</code> and many scripts point there. Similarly for <code>/usr/bin/python</code>, for some functionality.</li>
+<li>We don&#39;t have the dynamic loader in <code>/lib</code></li>
+<li>The <code>steam.sh</code> script in <code>$HOME</code> could not be patched the last time an attempt was made, as it is always checked and rewritten by the Steam client.</li>
+<li>The <code>steam</code> binary cannot be patched, as this is also checked by the Steam client.</li>
+</ul>
+<h2 id="approaches">Approaches</h2><h3 id="chroot">chroot</h3><p>This is the current approach, documented here: <a href="http://sandervanderburg.blogspot.nl/2013/09/composing-fhs-compatible-chroot.html">http://sandervanderburg.blogspot.nl/2013/09/composing-fhs-compatible-chroot.html</a></p>
+<ul>
+<li>Pros:<ul>
+<li>this method would allow us to have binaries in the expected paths without disrupting the system.</li>
+<li>Steam itself, as well as Valve games and perhaps others like to checksum their executables, so patching does not work.</li>
+</ul>
+</li>
+<li>Cons:<ul>
+<li>Performance might suffer from this, but we are not sure.</li>
+<li>Kernel patch is required for SteamVR asynchronous reprojection.<sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Explaining%20the%20current%20Steam%20Package%20build#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup><sup><a id="footnote-ref-2" href="https://mirror.nixoscn.org/wiki/Explaining%20the%20current%20Steam%20Package%20build#footnote-2" data-footnote-ref aria-describedby="footnote-label">2</a></sup></li>
+</ul>
+</li>
+</ul>
+<h3 id="link-bash-to-bin-and-glibc-lib-to-lib-and-be-happy">Link bash to /bin and glibc/lib to /lib and be happy</h3><ul>
+<li>Pros: easy, works</li>
+<li>Cons: not very nix-compliant</li>
+</ul>
+<h3 id="workaround-the-scripts-and-launch-steam-directly">Workaround the scripts and launch steam directly</h3><ul>
+<li>Pros: not so hard</li>
+<li>Cons: this only solves the part concerned with running steam. What about the games? We can patch some of them, but at least Team Fortress is checked and rewritten if modified</li>
+</ul>
+<p>This is the approach that I (page) took in my GitHub branch: <a href="https://github.com/cpages/nixpkgs/tree/steam">https://github.com/cpages/nixpkgs/tree/steam</a></p>
+<h3 id="intercept-steam-39-s-calls-with-ld_preload-or-the-like">Intercept Steam&#39;s calls with LD_PRELOAD or the like</h3><ul>
+<li>Pros: more robust</li>
+<li>Cons: difficult to achieve and may be broken by changes in the binary</li>
+</ul>
+<p>aszlig started working in this in his branch: <a href="https://github.com/aszlig/nixpkgs/tree/steam">https://github.com/aszlig/nixpkgs/tree/steam</a></p>
+<h3 id="but-what-about-the-games">But what about the games?</h3><p>You can install any of the games normally, but they will fail to start. From this step on, you&#39;re in the unsupported realm. Some games can be patchelfed:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">patchelf --set-interpreter /path/to/ld.so game_binary (you can get the path to an x86 ld.so looking at the steam script <span class="hljs-keyword">in</span> the store, <span class="hljs-keyword">for</span> me /nix/store/xh0q23rgqbjfrh3zfv4jyxvcvjnxqh64-glibc-2.15.0/lib/ld-linux.so.2)</code></pre>
+      </div><p>You might also need patching some scripts. That all depends on each one. You can then press play from steam and if you&#39;re lucky that&#39;ll be it!</p>
+<p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p><a href="https://lvra.gitlab.io/docs/distros/nixos/#steamvr">https://lvra.gitlab.io/docs/distros/nixos/#steamvr</a> <a href="https://mirror.nixoscn.org/wiki/Explaining%20the%20current%20Steam%20Package%20build#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+<li id="footnote-2">
+<p><a href="https://github.com/NixOS/nixpkgs/issues/217119">https://github.com/NixOS/nixpkgs/issues/217119</a> <a href="https://mirror.nixoscn.org/wiki/Explaining%20the%20current%20Steam%20Package%20build#footnote-ref-2" data-footnote-backref aria-label="Back to reference 2">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Debug Symbols</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Debug Symbols</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Debug Symbols -->
+
+<p>Nix packages rarely embed debugging symbols, and since the notion of &quot;installing&quot; a package is somewhat complicated with nix, one cannot &quot;just&quot; install the <code>foo-dev</code> to magically get debug symbols for <code>foo</code>. Here are some explanations on how to get debug symbols with nix, and especially on NixOS.</p>
+<p>By default, packages are stripped and all (most?) debug information is irrevocably lost. If you want to debug an application using a library from such a package, there is little you can do to get debug symbols.</p>
+<p>Two types of packages can provide debug symbols:</p>
+<h4 id="unstripped-packages">Unstripped packages</h4><p>To prevent stripping of a derivation, use the option <code>dontStrip = true;</code>. This still compiles with optimisation; to compile with <code>-Og -ggdb</code> in addition to disabling stripping, you can use the function <code>enableDebugging</code>. Let&#39;s take the example of <code>socat</code>. If you install socat, then run you see that you have debugging symbols for neither socat itself nor for dependent libraries.</p>
+<p>Now, build an unstripped socat: Let&#39;s retry with gdb: You have got debugging symbols for socat, but not its dependencies. Also, gdb complains that it did not find the source files of socat. For source files:</p>
+<ul>
+<li>download the tarball: <code>nix-build &quot;</code><nixpkgs><code>&quot; -A socat.src</code></li>
+<li>extract it: <code>tar xvf result</code></li>
+<li>back in gdb:</li>
+</ul>
+<p>Semi-victory !</p>
+<p>To provide debug info for dependencies, we would have to recompile them all with <code>enableDebugging</code> which is time consuming and tedious. The only reasonable solution would be to ship debugging information by default, but it would waste a lot of disk space. This leads to the second type of packages.</p>
+<h4 id="packages-with-a-debug-output">Packages with a debug output</h4><p>Some packages are built with <code>separateDebugInfo = true;</code>. The debug symbols will be stripped from the normal output(s) of the derivation, but instead of being discarded they will be put in a special <code>debug</code> output. Since the library does not depend on this output, no disk space is wasted by default.</p>
+<p>The openssl package is such a derivation. Imagine you are debugging a live socat and suddenly want debug symbols for openssl. Previous gdb output tells us the version of openssl we are interested in is <code>/nix/store/9kr8r78bwk12050ppywfbhg1vrsd6dp8-openssl-1.0.2p</code>. We can get back to the original derivation: Then we can get the store path for the debug output: This store path is probably not yet on our disk, so let&#39;s download it: And now we can tell gdb that debug symbols are in the <code>lib/debug</code> subdirectory with <code>set debug-file-directory</code>: Victory!</p>
+<p>Unfortunately, it seems you must issue <code>set debug-file-directory</code> before the library is loaded. If you already have typed <code>start</code> or if you have attached a live <code>socat</code> with <code>gdb -p</code>, <code>set debug-file-directory</code> won&#39;t have any effect. In this case you can export <code>NIX_DEBUG_INFO_DIRS=/nix/store/xd69daaly33m7zid6g31glwmml7lk93f-openssl-1.0.2p-debug/lib/debug</code> before launching gdb.</p>
+<h4 id="nixos">NixOS</h4><p>By toggling <code>environment.enableDebugInfo</code> to &#39;true&#39; in <code>/etc/nixos/configuration.nix</code>, all separate debug info derivations in your <code>systemPackages</code> will have their debug output linked in <code>/run/current-system/sw/lib/debug/</code> and will be automatically available to gdb. Though note that this will not pick up debug symbols of dependencies – you will need to add the dependencies you want to debug to <code>environment.systemPackages</code> explicitly. If a derivation you are interested in does not have separate debug info enabled, you still have to override it with an overlay for example.</p>
+<h4 id="dwarffs">dwarffs</h4><p>To avoid the need to explicitly list every dependency in <code>environment.systemPackages</code> to have its debug output available, you can use <a href="https://github.com/edolstra/dwarffs">dwarffs</a>. It will create a virtual file system where gdb will be able to look for separate debug symbols for packages on-demand. The downside is that it might increase gdb start up time significantly.</p>
+<h4 id="nixseparatedebuginfo">nixseparatedebuginfo</h4><p><a href="https://github.com/symphorien/nixseparatedebuginfod2">nixseparatedebuginfod2</a> is a debuginfod server that can download the relevant debug outputs and source files as needed by debuginfod-capable tools. Compared to dwarffs, it does not require root access, and handles debug outputs of derivations not built by hydra (eg locally or on a custom binary cache) and source files. Gdb is built with support for debuginfod, and valgrind has support if you additionally install the bin output of elfutils.</p>
+<p><a href="category:Nixpkgs" class="wikilink" title="Category:Nixpkgs">Category:Nixpkgs</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

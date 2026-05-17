@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Power Management</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Power Management</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Power Management -->
+
+<p>This article covers configurations related to power management in terms of energy saving modes of various devices and components.</p>
+<h2 id="configuration">Configuration</h2><h3 id="hard-drives">Hard drives</h3><p>Following snippet configures <a href="https://mirror.nixoscn.org/wiki/Power%20Management/Udev" class="wikilink" title="Udev">Udev</a> rules which automatically run the program <code>hdparm</code> to enable power saving modes for hard disks, especially rotational drives mapped to <code>/dev/sd*</code>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.udev.extraRules</span> <span class="hljs-operator">=</span> 
+  <span class="hljs-keyword">let</span>
+    <span class="hljs-attr">mkRule</span> <span class="hljs-operator">=</span> <span class="hljs-params">as:</span> lib.concatStringsSep <span class="hljs-string">&quot;, &quot;</span> as;
+    <span class="hljs-attr">mkRules</span> <span class="hljs-operator">=</span> <span class="hljs-params">rs:</span> lib.concatStringsSep <span class="hljs-string">&quot;<span class="hljs-char escape_">\n</span>&quot;</span> rs;
+  <span class="hljs-keyword">in</span> mkRules ([( mkRule [
+    <span class="hljs-string">&#x27;&#x27;ACTION==&quot;add|change&quot;&#x27;&#x27;</span>
+    <span class="hljs-string">&#x27;&#x27;SUBSYSTEM==&quot;block&quot;&#x27;&#x27;</span>
+    <span class="hljs-string">&#x27;&#x27;KERNEL==&quot;sd[a-z]&quot;&#x27;&#x27;</span>
+    <span class="hljs-string">&#x27;&#x27;ATTR{queue/rotational}==&quot;1&quot;&#x27;&#x27;</span>
+    <span class="hljs-string">&#x27;&#x27;RUN+=&quot;<span class="hljs-subst">${pkgs.hdparm}</span>/bin/hdparm -B 90 -S 41 /dev/%k&quot;&#x27;&#x27;</span>
+  ])]);</code></pre>
+      </div><p>The <code>hdparm</code> parameters <code>-B</code> and <code>-S</code> define power saving modes and in case of <code>-S</code> the standby (spindown) timeout. The number 41 means therefore: Turn off the motor after 205 = 41*5 seconds.</p>
+<h3 id="suspend-hooks">Suspend hooks</h3><p>NixOS provides the option which defines commands that are added to a global script that will be executed after resuming.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">p<span class="hljs-attr">owerManagement.resumeCommands</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+  echo &quot;This should show up in the journal after resuming.&quot;
+&#x27;&#x27;</span>;</code></pre>
+      </div><p>It is also possible to use the <code>post-resume</code> target directly to make a service.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ystemd.services.your-service-name</span> <span class="hljs-operator">=</span> { 
+  <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Service description here&quot;</span>;
+  <span class="hljs-attr">wantedBy</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;post-resume.target&quot;</span> ];
+  <span class="hljs-attr">after</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;post-resume.target&quot;</span> ];
+  <span class="hljs-attr">script</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    echo &quot;This should show up in the journal after resuming.&quot;
+  &#x27;&#x27;</span>;
+  <span class="hljs-attr">serviceConfig.Type</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;oneshot&quot;</span>;
+};</code></pre>
+      </div><h3 id="hibernation">Hibernation</h3><p>Hibernation requires a configured swap device. See <a href="https://nixos.org/manual/nixos/stable/#ch-installation">installation instructions</a> on how to create a swap partition.</p>
+<p>Please note that <code>resumeDevice</code> must match the output of <code>swapon -s</code> especially if you&#39;re dealing with mapped volumes (LUKS, logical volumes, logical volumes under LUKS, etc.). If you&#39;re using a swapfile, you must also <a href="https://search.nixos.org/options?channel=unstable&amp;show=boot.resumeDevice&amp;from=0&amp;size=50&amp;sort=relevance&amp;type=packages&amp;query=resume+offset">specify the offset to it.</a></p>
+<p>Therefore, an example configuration could look like this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-operator">//</span> I&#x27;m hibernating into a logical volume that&#x27;s also under LUKS. Pretty cool, right<span class="hljs-operator">?</span>
+
+<span class="hljs-attr">swapDevices</span> <span class="hljs-operator">=</span> [
+  {
+    <span class="hljs-attr">device</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/dev/VG/SWAP&quot;</span>;
+  }
+];
+
+<span class="hljs-attr">boot.resumeDevice</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/dev/dm-7&quot;</span>;</code></pre>
+      </div><p>Derived from a system with the following output from <code>swapon -s</code> :</p>
+<div class="code-container">
+        
+        <pre><code class="language-text hljs">Filename                                Type            Size           Used             Priority
+/dev/dm-7                               partition       67108860       00
+/dev/zram0                              partition       32881148       032767</code></pre>
+      </div><p>Test and use hibernation with the following command:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">systemctl hibernate</code></pre>
+      </div><h2 id="tips-and-tricks">Tips and tricks</h2><h3 id="go-into-hibernate-after-specific-suspend-time">Go into hibernate after specific suspend time</h3><p>Using following configuration, your system will go from suspend into hibernate after 1 hour:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ystemd.sleep.extraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+  HibernateDelaySec=1h
+&#x27;&#x27;</span>;</code></pre>
+      </div><p>Or, to disable suspend entirely, consider a configuration like this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ystemd.sleep.extraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+  AllowSuspend=no
+  AllowHibernation=no
+  AllowHybridSleep=no
+  AllowSuspendThenHibernate=no
+&#x27;&#x27;</span>;</code></pre>
+      </div><h2 id="troubleshooting">Troubleshooting</h2><h3 id="system-immediately-wakes-up-from-suspend">System immediately wakes up from suspend</h3><p>Particularly in some Gigabyte motherboards with NVMe drives, the system may immediately wake up from being suspended. This can be worked around by disabling the wakeup triggers for the offending components:</p>
+<h4 id="solution-1-disabling-wakeup-triggers-for-all-pcie-devices">Solution 1: Disabling wakeup triggers for all PCIe devices</h4><p>If you don&#39;t need your system to wakeup via PCIe components you can simply disable it for all without needing to determine which component is causing problems.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.udev.extraRules</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+  ACTION==&quot;add&quot;, SUBSYSTEM==&quot;pci&quot;, DRIVER==&quot;pcieport&quot;, ATTR{power/wakeup}=&quot;disabled&quot;
+&#x27;&#x27;</span>;</code></pre>
+      </div><h4 id="solution-2-disable-a-common-nvme-interface">Solution 2: Disable a common NVMe interface</h4><p>Specifically on Gigabyte motherboards you can try targetting only the NVMe ports.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.udev.extraRules</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+  ACTION==&quot;add&quot; SUBSYSTEM==&quot;pci&quot; ATTR{vendor}==&quot;0x1022&quot; ATTR{device}==&quot;0x1483&quot; ATTR{power/wakeup}=&quot;disabled&quot;
+&#x27;&#x27;</span>;</code></pre>
+      </div><h4 id="solution-3-disable-a-single-device-39-s-wakeup-triggers">Solution 3: Disable a single device&#39;s wakeup triggers</h4><p>If you wish to be more granular in what components should no longer be able to wakeup your system, you can find out which component is causing the wakeup events.</p>
+<p>First, list all components and their current wakeup status:</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell-session hljs">$ cat /proc/acpi/wakeup
+Device  S-state   Status   Sysfs node
+GP12      S4    *enabled   pci:0000:00:07.1
+GP13      S4    *disabled  pci:0000:00:08.1
+XHC0      S4    *enabled   pci:0000:0a:00.3
+GP30      S4    *disabled
+....
+PT27      S4    *disabled
+PT28      S4    *disabled
+PT29      S4    *disabled  pci:0000:03:09.0</code></pre>
+      </div><p>You can temporarily toggle a device by writing its &quot;Device&quot; name back into <code>/proc/acpi/wakeup</code></p>
+<div class="code-container">
+        
+        <pre><code class="language-sh hljs"><span class="hljs-built_in">echo</span> GPP0 | <span class="hljs-built_in">sudo</span> <span class="hljs-built_in">tee</span> /proc/acpi/wakeup</code></pre>
+      </div><p>After finding out which component is causing unwanted wakeups you can use the sysfs id to find out the &quot;vendor&quot; and &quot;device&quot; fields:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">cat</span> /sys/class/pci_bus/0000:04/device/0000:04:00.0/vendor</span>
+0x1987
+<span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">cat</span> /sys/class/pci_bus/0000:04/device/0000:04:00.0/device</span>
+0x5013</code></pre>
+      </div><p>And finally use those values in a <code>udev</code> rule:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.udev.extraRules</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+  ACTION==&quot;add&quot; SUBSYSTEM==&quot;pci&quot; ATTR{vendor}==&quot;0x1987&quot; ATTR{device}==&quot;0x5013&quot; ATTR{power/wakeup}=&quot;disabled&quot;
+&#x27;&#x27;</span>;</code></pre>
+      </div><h3 id="suspend-blocked-by-pre-sleep-service">Suspend blocked by <code>pre-sleep.service</code></h3><p>Sometimes, the system appears to suspend (Wi-Fi turns off, screen locks), but the hardware does not actually suspend, and all subsequent <code>systemctl suspend</code> or <code>systemctl reboot</code> commands are met with:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">systemctl <span class="hljs-built_in">suspend</span></span>
+Call to Suspend failed: Action suspend already in progress, refusing requested suspend operation.
+<span class="hljs-meta prompt_">
+# </span><span class="language-bash">systemctl reboot</span>
+Call to Reboot failed: Action suspend already in progress, refusing requested reboot operation.</code></pre>
+      </div><p>If directly telling the kernel to suspend as root works:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash"><span class="hljs-built_in">echo</span> mem &gt; /sys/power/state</span></code></pre>
+      </div><p>Then a long-running <code>pre-sleep.service</code> might be hanging the sleep. This can be verified with <code>systemctl list-jobs</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">systemctl list-jobs</span> 
+JOB   UNIT                    TYPE  STATE  
+12144 suspend.target          start waiting
+12149 pre-sleep.service       start running
+12145 systemd-suspend.service start waiting
+12268 post-resume.target      start waiting
+12148 sleep.target            start waiting
+12269 post-resume.service     start waiting</code></pre>
+      </div><p>Here, the <code>pre-sleep.service</code> is blocking and halting suspend. To see why, we can use <code>systemctl cat pre-sleep.service</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-systemd hljs"># systemctl cat pre-sleep.service
+# /etc/systemd/system/pre-sleep.service
+[Unit]
+Before=sleep.target
+Description=Pre-Sleep Actions
+
+[Service]
+# &lt;... Omitted Environment directives PATH, LOCALE_ARCHIVE, TZDIR ...&gt;
+ExecStart=/nix/store/yzf7cpiqzq49san2frijxsh160zjy6fp-unit-script-pre-sleep-start/bin/pre-sleep-start 
+Type=oneshot
+
+[Install]
+WantedBy=sleep.target</code></pre>
+      </div><p>In this case, the <code>pre-sleep-start</code> script referenced by <code>ExecStart</code> contained directives installed by the <a href="https://mirror.nixoscn.org/wiki/Power%20Management/Displaylink" class="wikilink" title="Displaylink">Displaylink</a> package, that contained a flush operation which hung the suspend action. Starting <code>dlm.service</code> or running <code>sudo DisplayLinkManager</code> unblocks the script and made suspend work normally.</p>
+<h4 id="cancelling-an-existing-suspend-action">Cancelling an existing suspend action</h4><p>An existing suspend operation that is hung may be interrupted using <strong><code>systemctl cancel</code></strong> in case reboots or internet access is needed.</p>
+<h2 id="see-also">See also</h2><ul>
+<li><a href="https://mirror.nixoscn.org/wiki/Power%20Management/Laptop" class="wikilink" title="Laptop">Laptop</a></li>
+</ul>
+<h2 id="external-resources">External resources</h2><p>- </p>
+<p><a href="category:Configuration" class="wikilink" title="Category:Configuration">Category:Configuration</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

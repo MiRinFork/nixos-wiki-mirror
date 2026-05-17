@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NixOS on ARM/Orange Pi 5 Plus</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM">NixOS on ARM</a><span aria-hidden="true"> / </span>Orange Pi 5 Plus</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: NixOS on ARM/Orange Pi 5 Plus -->
+
+<div class="infobox">
+
+<table>
+<thead>
+<tr>
+<th colspan="2" class="title"><p>Orange Pi 5 Plus</p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><p>Manufacturer</p></td>
+<td><p>Orange Pi</p></td>
+</tr>
+<tr>
+<td><p>Architecture</p></td>
+<td><p>AArch64</p></td>
+</tr>
+<tr>
+<td><p>Bootloader</p></td>
+<td><p>uboot 2024.1+</p></td>
+</tr>
+<tr>
+<td><p>Startup order</p></td>
+<td><p>SPI NOR Flash, SD, NVMe</p></td>
+</tr>
+<tr>
+<td><p>Maintainer</p></td>
+<td><p><a href="user:ryan4yin" class="wikilink" title="ryan4yin">ryan4yin</a></p></td>
+</tr>
+</tbody>
+</table>
+
+</div>
+
+<h1 id="orange-pi-5-plus">Orange PI 5 Plus</h1><p>The Orange Pi 5 Plus is a Single-Board Computer with a Rockchip RK3588 SoC.</p>
+<p>Note that rk3588 is the same as rk3588s, but with more I/O pins (Linux device trees for rk3588 include rk3588s).</p>
+<h2 id="system-configuration">System configuration</h2><p>Upstream nixpkgs provide kernel and u-boot for Orange Pi 5 Plus. The generic steps from <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/Orange%20Pi%205%20Plus/NixOS_on_ARM" class="wikilink" title="NixOS on ARM">NixOS on ARM</a> apply to this board as well. Make sure the kernel you use is recent enough to support Pi 5 Plus though (6.12 and above are ok). Alternatively, you may use vendor-supplied components, flakes for which are provided by volunteers.</p>
+<p>Join <code>#nixos-on-arm:nixos.org</code> Matrix channel to hang out with users that are running this board.</p>
+<h3 id="using-upstream-components-with-u-boot">Using upstream Components with U-Boot</h3><p>1. If you have installed U-Boot into on-board SPI flash, you should be able to directly boot generic aarch64 NixOS images.</p>
+<p>2. If you want to have U-Boot on your SD card, you need to dd it into aarch64 NixOS image at the right offsets. Find the <code>idbloader.img</code> and <code>u-boot.itb</code> binaries in <a href="https://search.nixos.org/packages?channel=25.11&amp;show=ubootOrangePi5Plus">ubootOrangePi5Plus</a> package and dd them into SD card image as shown below.</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">dd if=idbloader.img of=sd-card.img seek=64 conv=fsync,notrunc
+dd if=u-boot.itb of=sd-card.img seek=16384 conv=fsync,notrunc</code></pre>
+      </div><p>See the <a href="https://github.com/gnull/nixos-rk3588/tree/main/examples/upstream-opi">example from gnull/nixos-rk3588</a> for a minimal complete configuration to build an SD card image with U-Boot installed (option 2 above). In addition to choosing an appropriate kernel and <code>dd</code>&#39;ing U-Boot into the image, the example also sets kernel parameters to enable the serial console.</p>
+<p>The <a href="https://github.com/Mic92/nixos-aarch64-images">Mic92/nixos-aarch64-images</a> is another approach for installing U-Boot into aarch64 images (although with no direct support for OPi 5 Plus yet).</p>
+<h3 id="using-vendor-supplied-components-with-u-boot">Using Vendor-supplied Components with U-Boot</h3><p><a href="https://github.com/gnull/nixos-rk3588">gnull/nixos-rk3588</a> (a maintained fork of the original by <a href="user:ryan4yin" class="wikilink" title="ryan4yin">ryan4yin</a>) is a flake that builds a working SD card image using vendor-supplied kernel and firmware. The kernel used here is older than the upstream Nixpkgs version, and may differ in some driver versions (the complete list of differences is not documented as of now). For example, vendor kernel uses RKNPU driver for NPU, while upstream kernel uses <a href="https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/drivers/accel/rocket?h=v6.18">rocket</a> driver — they provide different interfaces and are supported by different tools.</p>
+<h3 id="using-uefi">Using UEFI</h3><p>OPi 5 Plus supports booting NixOS with UEFI (such as <a href="https://github.com/edk2-porting/edk2-rk3588">edk2</a>) instead of U-Boot. The <a href="https://github.com/gnull/nixos-rk3588">gnull/nixos-rk3588</a> has an example (with known bugs <a href="https://github.com/gnull/nixos-rk3588/issues/1">1</a>).</p>
+<h2 id="troubleshooting">Troubleshooting</h2><h3 id="what-to-do-when-bootloader-breaks-spi">What to do when bootloader breaks (SPI)?</h3><p>If you flash uBoot with incorrect bootloader, you may be unable to load anything else until uboot is fixed. Orange Pi 5 Plus supports maskrom mode with `rkdeveloptool`, as documented here: <a href="https://forum.armbian.com/topic/26418-maskrom-erase-spi/#comment-175057">https://forum.armbian.com/topic/26418-maskrom-erase-spi/#comment-175057</a></p>
+<h2 id="see-also">See Also</h2><p>- <a href="https://github.com/NixOS/nixpkgs/pull/292667">https://github.com/NixOS/nixpkgs/pull/292667</a></p>
+<p><a href="category:NixOS_on_ARM" class="wikilink" title="Category:NixOS on ARM">Category:NixOS on ARM</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

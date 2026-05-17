@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dokuwiki</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Dokuwiki</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Dokuwiki -->
+
+<p><a href="https://www.dokuwiki.org/">DokuWiki</a> is a web application and simple Wiki software for creating documentation and editable pages in markdown language. Compared to other Wikis, it is more minimal and only depends on PHP and file access without any need for databases. It stores all information in plain text files to be available even without the DokuWiki software (e.g. to read directly from backup).</p>
+<h2 id="installation">Installation</h2><p>To setup DokuWiki locally, this is the most minimal configuration to get started</p>
+<p>After that DokuWiki will be available at <a href="http://localhost/">http://localhost</a> .</p>
+<h2 id="configuration">Configuration</h2><p>Besides several options which are exposed by the DokuWiki module in NixOS, you can also use <code>settings</code> option to add custom options to your DokuWiki configuration. See the <a href="https://www.dokuwiki.org/config">upstream documentation</a> for available options.</p>
+<h3 id="templates">Templates</h3><p>Unfortunately no templates are packaged yet in nixpkgs. It is possible to manually package a template, for example from the <a href="https://www.dokuwiki.org/template">official template repository</a>, and include it in your Dokuwiki instance. In the following example the template <a href="https://www.dokuwiki.org/template:mindthedark">mindthedark</a> is packaged and enabled</p>
+<p>Please note that you&#39;ll have to manually update the tempalte source and checksum in case there&#39;s a new version.</p>
+<h3 id="plugins">Plugins</h3><p>The following example packages the <a href="https://www.dokuwiki.org/plugin:edittable">edittable plugin</a></p>
+<p>The plugin is enabled automatically. Note that in case of this plugin, we strip the root directory called <em>edittable-master</em> and only copy the plugin files to the <em>out</em>-folder. Please note that you&#39;ll have to manually update the plugin source and checksum in case there&#39;s a new version.</p>
+<h3 id="clean-urls">Clean URLs</h3><p>If supported by the webserver you&#39;ve choosen (using the <code>webserver</code> option), you can enable clean urls or url rewriting by enabling the option <a href="https://www.dokuwiki.org/config:userewrite">userewrite</a>. This means you can access your sites with the simple URL scheme like <a href="http://localhost/my_project">http://localhost/my_project</a> .</p>
+<p>Clean URLs are reported to work with the webserver <a href="https://mirror.nixoscn.org/wiki/Dokuwiki/Caddy" class="wikilink" title="Caddy">Caddy</a>.</p>
+<h3 id="anonymous-editing">Anonymous editing</h3><p>To disable the user authentication completely and make the Wiki editable by anyone (even anonymous users), you can disable the config <a href="https://www.dokuwiki.org/config:useacl">useacl</a> with the following option</p>
+<h2 id="tips-and-tricks">Tips and tricks</h2><h3 id="ssl-behind-reverse-proxy">SSL behind reverse proxy</h3><p>In case you&#39;re running DokuWiki behind a reverse proxy which offers ssl/https to the outside, you might have to enforce https protocol by changing the baseurl</p>
+<h2 id="see-also">See also</h2><ul>
+<li><a href="https://mirror.nixoscn.org/wiki/Dokuwiki/Mediawiki" class="wikilink" title="Mediawiki">Mediawiki</a>, PHP- and web-based wiki software.</li>
+<li><a href="https://mirror.nixoscn.org/wiki/Dokuwiki/Outline" class="wikilink" title="Outline">Outline</a>, a modern web based wiki and knowledge base for teams.</li>
+</ul>
+<p><a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="category:Web_Applications" class="wikilink" title="Category:Web Applications">Category:Web Applications</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

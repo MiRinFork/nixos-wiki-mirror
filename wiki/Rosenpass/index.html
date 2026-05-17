@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rosenpass</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Rosenpass</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Rosenpass -->
+
+<p><a href="https://rosenpass.eu/">Rosenpass</a> implements a post-quantum-secure key exchange for use with e.g. <a href="https://mirror.nixoscn.org/wiki/Rosenpass/WireGuard" class="wikilink" title="WireGuard">WireGuard</a>.</p>
+<h1 id="setting-up-rosenpass">Setting up Rosenpass</h1><p>This wiki page guides through the set up of an encrypted Wireguard with Rosenpass connection between two network hosts.</p>
+<p>For this guide, we assume that there are 2 NixOS hosts, both reachable via the network hostnames <code>server</code> and <code>client</code>.</p>
+<p>After successful setup, the hosts will be able to reach each other via these IPs:</p>
+<ul>
+<li>server: <code>1:c:bad:c0de::1</code></li>
+<li>client: <code>1:c:bad:c0de::2</code></li>
+</ul>
+<h2 id="generate-and-distribute-keypairs">Generate and distribute keypairs</h2><p>Each peer needs to have a public-private keypair, for both WireGuard and Rosenpass. The keys can be generated on any machine that already has WireGuard and Rosenpass installed using the <code>wg</code> and the <code>rosenpass</code> utilities. Install these tools either temporarily with <code>nix-shell -p rosenpass wireguard-tools</code> or add these tools to your system profile.</p>
+<p>We will first need to generate and then distribute the keypairs.</p>
+<p>Creating the key pairs is simple, but to do this securely, it should happen on the respective hosts. This way it becomes a bit elaborate to distribute the public keys to the other respective peer:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">ssh root@server <span class="hljs-string">&quot;rm -rf /var/secrets/{rp,wg} &amp;&amp; mkdir -m 755 -p /var/secrets/{rp,wg} &amp;&amp; chown systemd-network:systemd-network /var/secrets/wg&quot;</span>
+ssh root@client <span class="hljs-string">&quot;rm -rf /var/secrets/{rp,wg} &amp;&amp; mkdir -m 755 -p /var/secrets/{rp,wg} &amp;&amp; chown systemd-network:systemd-network /var/secrets/wg&quot;</span>
+
+ssh root@server <span class="hljs-string">&quot;cd /var/secrets/rp &amp;&amp; rosenpass gen-keys --secret-key pqsk --public-key pqpk&quot;</span>
+ssh root@client <span class="hljs-string">&quot;cd /var/secrets/rp &amp;&amp; rosenpass gen-keys --secret-key pqsk --public-key pqpk&quot;</span>
+
+ssh root@server <span class="hljs-string">&quot;cd /var/secrets/wg &amp;&amp; wg genkey | tee wgsk | wg pubkey &gt; wgpk&quot;</span>
+ssh root@client <span class="hljs-string">&quot;cd /var/secrets/wg &amp;&amp; wg genkey | tee wgsk | wg pubkey &gt; wgpk&quot;</span>
+
+rsync root@server:/var/secrets/rp/pqpk server.pqpk
+rsync root@client:/var/secrets/rp/pqpk client.pqpk
+rsync --perms --<span class="hljs-built_in">chmod</span>=644 server.pqpk root@client:/var/secrets/rp/server.pqpk
+rsync --perms --<span class="hljs-built_in">chmod</span>=644 client.pqpk root@server:/var/secrets/rp/client.pqpk
+
+ssh root@server <span class="hljs-string">&quot;echo server wg pubkey is \$(cat /var/secrets/wg/wgpk)&quot;</span>
+ssh root@client <span class="hljs-string">&quot;echo client wg pubkey is \$(cat /var/secrets/wg/wgpk)&quot;</span></code></pre>
+      </div><p>Note down the results of the last two printed lines as these are the public keys that need to be entered in the following NixOS configuration snippets.</p>
+<p>You can create as many keypairs as you like for different connections or roles; it is also possible to reuse the same keypair for every connection.</p>
+<h3 id="server-setup">Server setup</h3><p>Enable WireGuard on the server via <code>/etc/nixos/configuration.nix</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-comment"># ... rest of the server config ...</span>
+
+  <span class="hljs-attr">systemd.network</span> <span class="hljs-operator">=</span> {
+    networks.<span class="hljs-string">&quot;rosenpass&quot;</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">matchConfig.Name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;rosenpass0&quot;</span>;
+      <span class="hljs-attr">networkConfig.IPv4Forwarding</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">networkConfig.IPv6Forwarding</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">address</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;1:c:bad:c0de::1/64&quot;</span> ];
+    };
+    netdevs.<span class="hljs-string">&quot;10-rosenpass0&quot;</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">netdevConfig</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">Kind</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;wireguard&quot;</span>;
+        <span class="hljs-attr">Name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;rosenpass0&quot;</span>;
+      };
+      <span class="hljs-attr">wireguardConfig.PrivateKeyFile</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/var/secrets/wg/wgsk&quot;</span>;
+      <span class="hljs-attr">wireguardConfig.ListenPort</span> <span class="hljs-operator">=</span> <span class="hljs-number">10000</span>;
+      <span class="hljs-attr">wireguardPeers</span> <span class="hljs-operator">=</span> [
+        {
+          <span class="hljs-comment"># It is possible to restrict this to the actual IP here.</span>
+          <span class="hljs-attr">AllowedIPs</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;::/0&quot;</span> ];
+          <span class="hljs-attr">PublicKey</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&lt;copy content of client.wgpk here&gt;&quot;</span>;
+        }
+      ];
+    };
+  };
+
+  <span class="hljs-attr">services.rosenpass</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">defaultDevice</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;rosenpass0&quot;</span>;
+    <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">verbosity</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Verbose&quot;</span>;
+      <span class="hljs-attr">public_key</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/var/secrets/rp/pqpk&quot;</span>;
+      <span class="hljs-attr">secret_key</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/var/secrets/rp/pqsk&quot;</span>;
+      <span class="hljs-attr">listen</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;[::]:9999&quot;</span> ];
+      <span class="hljs-attr">peers</span> <span class="hljs-operator">=</span> [
+        {
+          <span class="hljs-attr">public_key</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/var/secrets/rp/client.pqpk&quot;</span>;
+          <span class="hljs-attr">peer</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&lt;copy content of client.wgpk here&gt;&quot;</span>;
+        }
+      ];
+    };
+  };
+
+  <span class="hljs-attr">networking.firewall.allowedUDPPorts</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-number">9999</span> <span class="hljs-comment"># rosenpass</span>
+    <span class="hljs-number">10000</span> <span class="hljs-comment"># WireGuard</span>
+  ];
+}</code></pre>
+      </div><h3 id="client-setup">Client setup</h3><div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-comment"># ...</span>
+
+  <span class="hljs-attr">systemd.network</span> <span class="hljs-operator">=</span> {
+    networks.<span class="hljs-string">&quot;rosenpass&quot;</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">matchConfig.Name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;rosenpass0&quot;</span>;
+      <span class="hljs-attr">networkConfig.IPv4Forwarding</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">networkConfig.IPv6Forwarding</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">address</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;1:c:bad:c0de::2/64&quot;</span> ];
+    };
+    netdevs.<span class="hljs-string">&quot;10-rosenpass0&quot;</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">netdevConfig</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">Kind</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;wireguard&quot;</span>;
+        <span class="hljs-attr">Name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;rosenpass0&quot;</span>;
+      };
+      <span class="hljs-attr">wireguardConfig.PrivateKeyFile</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/var/secrets/wg/wgsk&quot;</span>;
+      <span class="hljs-attr">wireguardPeers</span> <span class="hljs-operator">=</span> [
+        {
+          <span class="hljs-comment"># It is possible to restrict this to the actual IP here.</span>
+          <span class="hljs-attr">AllowedIPs</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;::/0&quot;</span> ];
+          <span class="hljs-attr">PublicKey</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&lt;copy content of server.wgpk here&gt;&quot;</span>;
+          <span class="hljs-attr">Endpoint</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&lt;IP of Server&gt;:10000&quot;</span>;
+          <span class="hljs-attr">PersistentKeepalive</span> <span class="hljs-operator">=</span> <span class="hljs-number">25</span>;
+        }
+      ];
+    };
+  };
+
+  <span class="hljs-attr">services.rosenpass</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">defaultDevice</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;rosenpass0&quot;</span>;
+    <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">verbosity</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Verbose&quot;</span>;
+      <span class="hljs-attr">public_key</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/var/secrets/rp/pqpk&quot;</span>;
+      <span class="hljs-attr">secret_key</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/var/secrets/rp/pqsk&quot;</span>;
+      <span class="hljs-attr">peers</span> <span class="hljs-operator">=</span> [
+        {
+          <span class="hljs-attr">public_key</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/var/secrets/rp/server.pqpk&quot;</span>;
+          <span class="hljs-attr">endpoint</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&lt;IP of Server&gt;:9999&quot;</span>;
+          <span class="hljs-attr">peer</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&lt;copy content of server.wgpk here&gt;&quot;</span>;
+        }
+      ];
+    };
+  };
+}</code></pre>
+      </div><p>As the keypairs are already in place, running <code>nixos-rebuild switch</code> (or any of the deployment tools you prefer) should result in a working setup.</p>
+<p>If you need more connections, then create keypairs for more hosts, reuse the *client* config for them and extend the peer lists (for both WireGuard and Rosenpass) in the server configuration.</p>
+<h2 id="testing-the-connection">Testing the connection</h2><p>Log in (preferably as root) on both servers and check if the network setup was successful:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_"># </span><span class="language-bash">ip a</span>
+...
+3: rosenpass0: &lt;POINTOPOINT,NOARP,UP,LOWER_UP&gt; mtu 1420 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/none
+    inet6 1:c:bad:c0de::1/64 scope global
+       valid_lft forever preferred_lft forever
+<span class="hljs-meta prompt_">
+# </span><span class="language-bash">wg show all</span>
+interface: rosenpass0
+  public key: nF7sPZ6pfsyR2yVg+TBen2awq00iU54aMiQ1DPLxGWA=
+  private key: (hidden)
+  listening port: 10000
+
+peer: sl23uUw0pdWO7vS/O6a7+ZBALLEPkf9jFEl8sviJsnY=
+  preshared key: (hidden)
+  endpoint: [2a01:4f8:c013:afbc::]:52845
+  allowed ips: ::/0
+  latest handshake: 59 seconds ago
+  transfer: 2.00 KiB received, 1.43 KiB sent
+<span class="hljs-meta prompt_">
+# </span><span class="language-bash">wg show all preshared-keys</span>
+rosenpass0  sl23uUw0pdWO7vS/O6a7+ZBALLEPkf9jFEl8sviJsnY=    2WlrMm+4c56xazoeewsEUmY9rnRhn1kKu9iAepoGCrg=</code></pre>
+      </div><p>It is important that <code>rosenpass0</code> exists at all, has the right configured addresses on both hosts, and that the other peer is correctly shown in the WireGuard output.</p>
+<p>For Rosenpass, it is important that the last column in the output of <code>wg show all preshared-keys</code> is the same on both hosts, as this is the key that is exchanged via Rosenpass and then inserted as preshared key into the WireGuard connection.</p>
+<p>Finally, both machines must be able to reach each other:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">ssh server <span class="hljs-string">&quot;ping -c3 1:c:bad:c0de::2&quot;</span></span>
+PING 1:c:bad:c0de::2 (1:c:bad:c0de::2) 56 data bytes
+64 bytes from 1:c:bad:c0de::2: icmp_seq=1 ttl=64 time=1.12 ms
+64 bytes from 1:c:bad:c0de::2: icmp_seq=2 ttl=64 time=1.33 ms
+64 bytes from 1:c:bad:c0de::2: icmp_seq=3 ttl=64 time=1.13 ms
+
+--- 1:c:bad:c0de::2 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2003ms
+rtt min/avg/max/mdev = 1.116/1.190/1.329/0.098 ms
+<span class="hljs-meta prompt_">
+$ </span><span class="language-bash">ssh client <span class="hljs-string">&quot;ping -c3 1:c:bad:c0de::1&quot;</span></span>
+PING 1:c:bad:c0de::1 (1:c:bad:c0de::1) 56 data bytes
+64 bytes from 1:c:bad:c0de::1: icmp_seq=1 ttl=64 time=1.03 ms
+64 bytes from 1:c:bad:c0de::1: icmp_seq=2 ttl=64 time=1.40 ms
+64 bytes from 1:c:bad:c0de::1: icmp_seq=3 ttl=64 time=1.97 ms
+
+--- 1:c:bad:c0de::1 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2003ms
+rtt min/avg/max/mdev = 1.027/1.466/1.969/0.387 ms</code></pre>
+      </div><h1 id="troubleshooting">Troubleshooting</h1><h2 id="the-rosenpass0-device-does-not-pop-up">The <code>rosenpass0</code> device does not pop up</h2><p>This is most likely an issue in the non-Rosenpass part of the configuration. Please have a look at the output of the command <code>systemctl status sytemd-network</code>. If for example file permissions of the keys are too restrictive, then this will manifest as error messages here.</p>
+<h2 id="rosenpass-is-not-able-to-exchange-keys">Rosenpass is not able to exchange keys</h2><p>Even if the rosenpass0 device pops up, it still might be possible that Rosenpass observes errors during setup or connect. Please have a look at the output of the command <code>systemctl status rosenpass</code>. If for example file permissions of the keys are too restrictive, then this will manifest as error messages here.</p>
+<h1 id="see-also">See also</h1><ul>
+<li><a href="https://www.wireguard.com/">WireGuard homepage</a></li>
+<li><a href="https://rosenpass.eu/">Rosenpass homepage</a></li>
+<li>WireGuard page in this Wiki: <a href="https://mirror.nixoscn.org/wiki/Rosenpass/WireGuard" class="wikilink" title="WireGuard">WireGuard</a></li>
+<li><a href="https://search.nixos.org/options?query=rosenpass">List of Rosenpass options supported by NixOS</a></li>
+<li><a href="https://search.nixos.org/options?query=wireguard">List of WireGuard options supported by NixOS</a></li>
+</ul>
+<p><a href="category:Networking" class="wikilink" title="Category:Networking">Category:Networking</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

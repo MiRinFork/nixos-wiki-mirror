@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Anki</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Anki</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Anki -->
+
+<p>Anki is a spaced repetition system (SRS) commonly used to learn new languages. Information is placed on individual flashcards, which are sorted into decks. Anki is extensible using <a href="https://mirror.nixoscn.org/wiki/Anki/Python" class="wikilink" title="Python">Python</a> addons.</p>
+<p>In addition to the desktop software, Anki has an iOS app, Android app, and web interface available. Decks/flashcards can be synced using a self hosted instance of <code>anki-sync-server</code> or an AnkiWeb account.</p>
+<h2 id="installation">Installation</h2><p><code>anki</code> is recommended over <code>anki-bin</code>, due to <code>anki-bin</code> being out of date (at the time of writing). Using old versions of <code>anki-bin</code> may lead to decks being incompatible with newer versions.</p>
+<p>NixOs  </p>
+<p><code>environment.systemPackages = [</code><br><code>  pkgs.anki</code><br><code>];</code></p>
+<p>nix-shell  </p>
+<p><code>$ nix-shell -p anki</code></p>
+<h2 id="installing-addons">Installing Addons</h2><p>Additional addons can be installed using the following syntax:</p>
+<p>NixOs  </p>
+<p><code>environment.systemPackages = [</code><br><code>  (pkgs.anki.withAddons [</code><br><code>    pkgs.ankiAddons.passfail2</code><br><code>  ])</code><br><code>];</code></p>
+<p>Note that as of writing, <code>anki-bin</code> does not support installing addons in this way.</p>
+<h3 id="configuring-addons">Configuring Addons</h3><p>Addons can be configured using <code>.withConfig</code>:</p>
+<p>NixOs  </p>
+<p><code>environment.systemPackages = [</code><br><code>  (pkgs.anki.withAddons [</code><br><code>    (pkgs.ankiAddons.passfail2.withConfig {</code><br><code>      config = {</code><br><code>        again_button_name = &quot;Incorrect&quot;;</code><br><code>        good_button_name = &quot;Correct&quot;;</code><br><code>      };</code><br><code>    })</code><br><code>  ])</code><br><code>];</code></p>
+<h2 id="self-hosting">Self Hosting</h2><p>You can self host an instance of anki-sync-server via the NixOS module. The default port for this service is 27701. The most simplest setup for it you can have is like below:</p>
+<p>NixOS  </p>
+<p><code>services.anki-sync-server = {</code><br><code> enable = true;</code><br><code> address = &quot;0.0.0.0&quot;;</code><br><code> openFirewall = true;</code><br><code> users = [</code><br><code>   {</code><br><code>      username = &quot;bob&quot;;</code><br><code>      password = &quot;password&quot;;</code><br><code>   }</code><br><code> ];</code><br><code>};</code></p>
+<p>You would then access the self hosted instance by changing it on the anki app you&#39;re using, but make sure to write as <a href="http://replacelocaliphere:27701/"><code>http://ReplaceLocalIPHere:27701/</code></a> it is necessary to have the <code>/</code> at the end on the clients. After doing that, attempt to sync and when asked for log in details do, in this case <code>bob</code> as the email address and <code>password</code> as the password and it will work. Note: This does let anyone on your local network access your anki-sync-server instance and it is exposed under http. It also exposes your password in plain text on the server. A better recommendation is to use the <code>passwordFile</code> option.</p>
+<h3 id="reverse-proxy">Reverse Proxy</h3><p>You can reverse proxy anki-sync-server to make sure it&#39;s running under a https connection and in order to restrict it more to your vpn of choice. A complete setup for that using caddy as the reverse proxy would be:</p>
+<p>NixOS  </p>
+<p><code>services.anki-sync-server = {</code><br><code> enable = true;</code><br><code> address = &quot;127.0.0.1&quot;;</code><br><code> users = [</code><br><code>   {</code><br><code>      username = &quot;bob&quot;;</code><br><code>      password = &quot;password&quot;;</code><br><code>   }</code><br><code> ];</code><br><code>};</code><br><code>services.caddy.virtualHosts.&quot;anki.custom.domain&quot;.extraConfig = &#39;&#39;&#39;&#39;&#39;&#39;&#39;</code><br><code>  reverse_proxy ${config.services.anki-sync-server.address}:${builtins.toString config.services.anki-sync-server.port}</code><br><code>&#39;&#39;&#39;&#39;&#39;&#39;&#39;;</code></p>
+<p>Then to access that on your anki clients, you change the sync server to <a href="https://anki.custom.domain/"><code>https://anki.custom.domain/</code></a> that end <code>/</code> is important in order to get the clients working properly. Then you would log in with the &quot;email address&quot; as <code>bob</code> and the password as <code>password</code> Note: It is still recommended to use the <code>passwordFile</code> option over the plain text <code>password</code> option as the latter option stores it in plain text in the nix store on the server.</p>
+<p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Filesystems</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Filesystems</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Filesystems -->
+
+<p><a href="category:filesystem" class="wikilink" title="category:filesystem">category:filesystem</a> is a NixOS option that allows the user to mount filesystems at specific mount points. The mounted filesystems may also be encrypted. Also see <a href="https://nixos.org/manual/nixos/stable/options.html#opt-fileSystems">the fileSystem option documentation</a>.</p>
+<p>For boot mount options, <a href="https://manpages.ubuntu.com/manpages/noble/en/man8/mount.8.html#filesystem-independent%20mount%20options">check here</a>.</p>
+<p>Common example filesystem mount. You can put this in configuration.nix:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"> fileSystems.<span class="hljs-string">&quot;/mnt/exampleDrive&quot;</span> <span class="hljs-operator">=</span> {
+   <span class="hljs-attr">device</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/dev/disk/by-uuid/4f999afe-6114-4531-ba37-4bf4a00efd9e&quot;</span>;
+   <span class="hljs-attr">fsType</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;exfat&quot;</span>;
+   <span class="hljs-attr">options</span> <span class="hljs-operator">=</span> [ <span class="hljs-comment"># If you don&#x27;t have this options attribute, it&#x27;ll default to &quot;defaults&quot; </span>
+     <span class="hljs-comment"># boot options for fstab. Search up fstab mount options you can use</span>
+     <span class="hljs-string">&quot;users&quot;</span> <span class="hljs-comment"># Allows any user to mount and unmount</span>
+     <span class="hljs-string">&quot;nofail&quot;</span> <span class="hljs-comment"># Prevent system from failing if this drive doesn&#x27;t mount</span>
+     <span class="hljs-string">&quot;exec&quot;</span> <span class="hljs-comment"># Permit execution of binaries and other executable files</span>
+   ];
+ };</code></pre>
+      </div><h2 id="making-disk-visible-in-your-file-explorer">Making disk visible in your file explorer</h2><p>You might not see the disk in your file explorer (ie GNOME Nautilus). Add to the options: <code>x-gvfs-show</code> and it&#39;ll show up.</p>
+<h2 id="porting-etc-fstab">Porting /etc/fstab</h2><p>The options specified in /etc/fstab may not be fully compatible with NixOS fileSystems options. For example, here are some options NixOS doesn&#39;t recognize that are available on some Linux distributions:</p>
+<ul>
+<li>iocharset</li>
+<li>rw (but it seems to not be needed)</li>
+<li>uid with username rather than actual uid</li>
+</ul>
+<h2 id="mount-order">Mount order</h2><p>Without any specification, the mount order is up to the implementation (probably alphabetic).</p>
+<p>Should the order in which filesystems are mounted is important, users should make use of the <a href="https://nixos.org/manual/nixos/stable/options.html#opt-fileSystems._name_.depends"> option</a>. This is useful for example in <a href="https://mirror.nixoscn.org/wiki/Filesystems#Bind_mounts" class="wikilink" title="#Bind mounts">#Bind mounts</a></p>
+<h2 id="bind-mounts">Bind mounts</h2><blockquote>
+<p>Bind mounting allows a filesystem hierarchy or a file to be mounted at a different mount point. Unlike a symbolic link, a bind mount does not exist on the filesystem itself.<sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Filesystems#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup></p>
+</blockquote>
+<p>These are used to make files or folders available in other parts of the filesystem hierarchy. In order to do so both source and target filesystems have to be mounted first.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">fileSystems.<span class="hljs-string">&quot;/mnt/datastore&quot;</span>.label <span class="hljs-operator">=</span> <span class="hljs-string">&quot;datastore&quot;</span>;
+fileSystems.<span class="hljs-string">&quot;/mnt/aggregator&quot;</span>.label <span class="hljs-operator">=</span> <span class="hljs-string">&quot;aggregator&quot;</span>;
+
+<span class="hljs-comment">####################</span>
+<span class="hljs-comment"># Bind mounts</span>
+
+<span class="hljs-comment"># Mount /mnt/datastore/applications/app1 on /mnt/aggregator/app1</span>
+<span class="hljs-comment"># Accessing /mnt/aggregator/app1 will actually access /mnt/datastore/...</span>
+fileSystems.<span class="hljs-string">&quot;/mnt/aggregator/app1&quot;</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">depends</span> <span class="hljs-operator">=</span> [
+      <span class="hljs-comment"># The mounts above have to be mounted in this given order</span>
+      <span class="hljs-string">&quot;/mnt/datastore&quot;</span> 
+      <span class="hljs-string">&quot;/mnt/aggregator&quot;</span> 
+  ];
+  <span class="hljs-attr">device</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/mnt/datastore/applications/app1&quot;</span>;
+  <span class="hljs-attr">fsType</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;none&quot;</span>;
+  <span class="hljs-attr">options</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-string">&quot;bind&quot;</span>
+    <span class="hljs-string">&quot;ro&quot;</span> <span class="hljs-comment"># The filesystem hierarchy will be read-only when accessed from /mnt/aggregator/app1</span>
+  ];
+};</code></pre>
+      </div><h2 id="tips-and-tricks">Tips and tricks</h2><h3 id="ssd-trim-support">SSD TRIM support</h3><p>On NixOS, <a href="https://en.wikipedia.org/wiki/Trim_(computing)">TRIM</a> support is enabled by default by the option. This periodically discards unused blocks on supported storage devices, helping to maintain SSD performance over time.</p>
+<p>The trimming schedule is controlled by the option. Continuous trimming (as set by the <code>discard</code>, see <code>man mount(8)</code>) mount option is not recommended as it can negatively impact SSD performance.</p>
+<p>Additionally, setting <code>noatime</code> can reduce the number of disk writes and can improve system performance.</p>
+<h1 id="references">References</h1><references />
+
+<p><a href="category:NixOS" class="wikilink" title="Category:NixOS">Category:NixOS</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p><a href="https://en.wikipedia.org/wiki/Mount_(Unix)#Bind_mounting">Wikipedia - Bind mount</a> <a href="https://mirror.nixoscn.org/wiki/Filesystems#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

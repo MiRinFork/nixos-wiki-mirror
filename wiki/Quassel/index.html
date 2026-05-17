@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quassel</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Quassel</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Quassel -->
+
+<p>From the homepage:</p>
+<p>Quassel IRC is a modern, cross-platform, distributed IRC client, meaning that one (or multiple) client(s) can attach to and detach from a central core -- much like the popular combination of screen and a text-based IRC client such as WeeChat, but graphical. In addition to this unique feature, we aim to bring a pleasurable, comfortable chatting experience to all major platforms (including Linux®, Windows®, and MacOS X® as well as Android smartphones), making communication with your peers not only convenient, but also ubiquitous available.</p>
+<h2 id="client">Client</h2><p>Previously, multiple builds of Quassel clients were provided in Nixpkgs. It is not the case anymore.</p>
+<p>The client is <code>quasselClient</code>.</p>
+<h2 id="server">Server</h2><p>To enable the Quassel server (variously referred to as the Quassel daemon or Quassel Core), add</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.quassel.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><p>to your NixOS configuration. By default, the server only accepts connections from the local machine; set</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.quassel.interfaces</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;0.0.0.0&quot;</span> ];
+<span class="hljs-attr">networking.firewall.allowedTCPPorts</span> <span class="hljs-operator">=</span> [ <span class="hljs-number">4242</span> ];</code></pre>
+      </div><p>to accept external connections. The first time you connect to the new server, a wizard will guide you through the remaining configuration steps. Before connecting to the new server, you may wish to optionally configure SSL or PostgreSQL.</p>
+<h2 id="ssl">SSL</h2><p>The Quassel server can use SSL if a certificate is provided. Install openssl (using nix-env or by adding it to</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">environment.systemPackages</code></pre>
+      </div><p>) and run</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">sudo</span> -u quassel <span class="hljs-built_in">mkdir</span> -p /home/quassel/.config/quassel-irc.org
+<span class="hljs-built_in">sudo</span> -u quassel openssl req -x509 -nodes -days 365 -newkey rsa:4096 -keyout /home/quassel/.config/quassel-irc.org/quasselCert.pem -out /home/quassel/.config/quassel-irc.org/quasselCert.pem</code></pre>
+      </div><p>You will be prompted for some details about the certificate. If quassel.service was running, restart it by running:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">sudo</span> systemctl restart quassel.service</code></pre>
+      </div><h2 id="postgresql">PostgreSQL</h2><p>By default, Quassel uses an SQLite database, but it can be configured to use PostgreSQL for better performance. (If you aren&#39;t sure which database backend you want to use, stay with SQLite because it is always possible to switch to PostgreSQL later.)</p>
+<p>Start by enabling the PostgreSQL service in your NixOS configuration:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"> <span class="hljs-comment">/* Enable the PostgreSQL service */</span>
+ <span class="hljs-attr">services.postgresql</span> <span class="hljs-operator">=</span> {
+   <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+   <span class="hljs-attr">package</span> <span class="hljs-operator">=</span> pkgs.postgresql94;
+ };
+ 
+ <span class="hljs-comment">/* Only start Quassel after PostgreSQL has started */</span>
+ <span class="hljs-attr">systemd.services.quassel.after</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;postgresql.service&quot;</span> ];
+ 
+ <span class="hljs-comment">/* Make the quasselcore command available in the shell */</span>
+ <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> [ pkgs.quasselDaemon_qt5 ];</code></pre>
+      </div><p>Activate this configuration with nixos-rebuild switch. Create a PostgreSQL role (user) for Quassel:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">sudo</span> createuser -A -D -P -E -W quassel</code></pre>
+      </div><p>You will be prompted for a password; you will also need to provide the password to Quassel, so don&#39;t forget it! Create a PostgreSQL database for Quassel:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">sudo</span> createdb -O quassel -E UTF8 quassel</code></pre>
+      </div><p>If you have never connected to this Quassel server before, you can connect now and select the PostgreSQL backend when prompted. You will need to provide the PostgreSQL username (quassel) and password you created above.</p>
+<p>If you are switching from the SQLite backend to the PostgreSQL backend, you will need to migrate the existing data. Stop the Quassel server with</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">sudo</span> systemctl stop quassel.service</code></pre>
+      </div><p>Start the migration with</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">sudo</span> -u quassel quasselcore --configdir=/home/quassel/.config/quassel-irc.org --select-backend=PostgreSQL</code></pre>
+      </div><p>You will need to provide the PostgreSQL username (quassel) and password you created above. When this is finished, restart the Quassel server:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">sudo</span> systemctl start quassel.service</code></pre>
+      </div><p><a href="category:_Applications" class="wikilink" title="Category: Applications">Category: Applications</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

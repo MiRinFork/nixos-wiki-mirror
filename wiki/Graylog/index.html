@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Graylog</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Graylog</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Graylog -->
+
+<p>The <a href="https://graylog.org/">Graylog</a> software centrally captures, stores, and enables real-time search and log analysis against terabytes of machine data from any component in the IT infrastructure and applications.<sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Graylog#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup></p>
+<h2 id="installation">Installation</h2><p>The installation consists of three different software programs, namely Graylog, <a href="https://mirror.nixoscn.org/wiki/Graylog/MongoDB" class="wikilink" title="MongoDB">MongoDB</a> and <a href="https://mirror.nixoscn.org/wiki/Graylog/OpenSearch" class="wikilink" title="OpenSearch">OpenSearch</a>.</p>
+<p>It&#39;s advised to pin each package to one major version to circumvent upgrade issues. See following example that uses Graylog 6, MongoDB 6 and Opensearch 2.14.0. We&#39;re on NixOS 24.05.</p>
+<p>Regarding OpenSearch, the version seems to be important. See Troubleshooting below to know why.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ config, pkgs, ... }:
+{
+  <span class="hljs-attr">services</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">graylog</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">extraConfig</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        http_external_uri = https://graylog.example.com/
+      &#x27;&#x27;</span>;
+      <span class="hljs-attr">elasticsearchHosts</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;http://127.0.0.1:9200&quot;</span> ];
+      <span class="hljs-attr">package</span> <span class="hljs-operator">=</span> pkgs.graylog-<span class="hljs-number">6</span>_0;
+      <span class="hljs-attr">passwordSecret</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;yPE4lpLpjdCxJ5V3q9st7nSw6zo9XYueL191VubFqdjRMK9Wtc4WGbDhJD1AvUPcBwZhMTxtmt9JurbT0fOwaqIdonmVWMAd&quot;</span>;
+      <span class="hljs-attr">rootPasswordSha2</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;c0b0109d9439de57fe3cf03abeccbc52f4c98170c732d3b69af5e6395ace574e&quot;</span>;
+    };
+    <span class="hljs-attr">mongodb</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">package</span> <span class="hljs-operator">=</span> pkgs.mongodb-<span class="hljs-number">6</span>_0;
+    };
+    <span class="hljs-attr">opensearch</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-string">&quot;cluster.name&quot;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;my-cluster&quot;</span>;
+      };
+    };
+  };
+}</code></pre>
+      </div><h2 id="troubleshooting">Troubleshooting</h2><p>Graylog officially states in their <a href="https://go2docs.graylog.org/current/downloading_and_installing_graylog/installing_graylog.html">documentation</a> that OpenSearch Version 2.16.0 should not be used. This is a problem as this version is the only one available as a nixpkg in the unstable branch. NixOS 24.05 uses 2.14.0 which doesn&#39;t have issues.</p>
+<p>If OpenSearch v2.16.0 was already installed, Graylog has a workaround here: <a href="https://graylog.org/post/alert-notice-opensearch-v2-16/">https://graylog.org/post/alert-notice-opensearch-v2-16/</a></p>
+<h2 id="references">References</h2><references/>
+
+<p><a href="category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="category:Web_Applications" class="wikilink" title="Category:Web Applications">Category:Web Applications</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p><a href="wikipedia:en:Graylog" class="wikilink" title="Wikipedia:en:Graylog">Wikipedia:en:Graylog</a> <a href="https://mirror.nixoscn.org/wiki/Graylog#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

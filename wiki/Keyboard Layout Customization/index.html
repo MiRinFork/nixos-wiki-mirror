@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Keyboard Layout Customization</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Keyboard Layout Customization</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Keyboard Layout Customization -->
+
+<h2 id="20-09-and-later">20.09 and later</h2><p>In 20.09 there&#39;s <a href="https://nixos.org/manual/nixos/stable/#custom-xkb-layouts">services.xserver.extraLayouts</a> for this.</p>
+<h2 id="using-xkbcomp">Using xkbcomp</h2><h3 id="simple">Simple</h3><p>The easiest way to customize your keyboard layout on NixOS is with these options:</p>
+<ul>
+<li><code>services.xserver.xkb.layout</code>: Keyboard layout, or multiple keyboard layouts separated by commas.</li>
+<li><code>services.xserver.xkb.variant</code>: X keyboard variant or multiple variants separated by commas (a variant can be empty).</li>
+<li><code>services.xserver.xkb.model</code>: Keyboard model.</li>
+<li><code>services.xserver.xkb.options</code>: X keyboard options; layout switching goes here.</li>
+</ul>
+<p>=====<a href="example:=====">Example:=====</a></p>
+<p>For desktop:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">s<span class="hljs-attr">ervices.xserver.xkb</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">layout</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;us,ru&quot;</span>;
+  <span class="hljs-attr">variant</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;workman,&quot;</span>;
+  <span class="hljs-attr">options</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;grp:win_space_toggle&quot;</span>;
+};</code></pre>
+      </div><p>For console:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">c<span class="hljs-attr">onsole.keyMap</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;us&quot;</span>;</code></pre>
+      </div><p>You can find valid values for these options in <code>$(nix-build --no-out-link &#39;&lt;nixpkgs&gt;&#39; -A xkeyboard_config)/etc/X11/xkb/rules/base.lst</code></p>
+<h3 id="advanced">Advanced</h3><p>If the above options aren&#39;t enough, you can instead create your own keyboard layout by going through xkb. To get started, install <code>xorg.xkbcomp</code> and run <code>setxkbmap -print &gt; layout.xkb</code> to get an initial file. This corresponds to your current layout. Use <code>xkbcomp layout.xkb $DISPLAY</code> to load the file as your new layout. Refer to <a href="https://wiki.archlinux.org/index.php/X_KeyBoard_extension">https://wiki.archlinux.org/index.php/X_KeyBoard_extension</a> on how to edit this file.</p>
+<p>Lots of examples can be found in <code>$(nix-build --no-out-link &#39;&lt;nixpkgs&gt;&#39; -A xorg.xkeyboardconfig)/etc/X11/xkb/</code>. For available key symbols, see <code>$(nix-build --no-out-link &#39;&lt;nixpkgs&gt;&#39; -A xorg.xproto)/include/X11/keysymdef.h</code>.</p>
+<p>To load this file at the start of the X session, add the following to your <code>configuration.nix</code>. The extra compilation step (<code>xkbcomp</code>) helps catching layout errors at build time.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-keyword">let</span>
+  <span class="hljs-attr">compiledLayout</span> <span class="hljs-operator">=</span> pkgs.runCommand <span class="hljs-string">&quot;keyboard-layout&quot;</span> {} <span class="hljs-string">&#x27;&#x27;
+    <span class="hljs-subst">${pkgs.xorg.xkbcomp}</span>/bin/xkbcomp <span class="hljs-subst">${.<span class="hljs-operator">/</span>path<span class="hljs-operator">/</span>to<span class="hljs-operator">/</span>layout.xkb}</span> $out
+  &#x27;&#x27;</span>;
+<span class="hljs-keyword">in</span>
+  <span class="hljs-attr">services.xserver.displayManager.sessionCommands</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.xorg.xkbcomp}</span>/bin/xkbcomp <span class="hljs-subst">${compiledLayout}</span> $DISPLAY&quot;</span>;</code></pre>
+      </div><p>If you are using home-manager, you also need to prevent home-manager from managing the keyboard by having <code>home.keyboard = null;</code> in your home-manager configuration.</p>
+<h3 id="relevant-other-options">Relevant other options</h3><ul>
+<li><code>services.xserver.exportConfiguration</code>: Makes it so the above mentioned xkb directory (and the <code>xorg.conf</code> file) gets exported to <code>/etc/X11/xkb</code>, which is useful if you have to often look stuff up in it.</li>
+<li><code>services.xserver.xkb.dir</code>: Allows you to set a different xkb directory altogether. All the above mentioned things will use this instead of the default one in regards to xkb stuff.</li>
+<li><code>console.useXkbConfig</code>: Makes it so the tty console has about the same layout as the one configured in the <code>services.xserver</code> options.</li>
+</ul>
+<h3 id="configs">Configs</h3><ul>
+<li><a href="https://github.com/infinisil/system/blob/94852ed690fccfdda27c2e3985be84c51f1eac8e/new-modules/keylayout.nix">https://github.com/infinisil/system/blob/94852ed690fccfdda27c2e3985be84c51f1eac8e/new-modules/keylayout.nix</a></li>
+</ul>
+<h3 id="advanced-configuration-with-xmodmap">Advanced configuration with xmodmap</h3><p>Some users have found xmodmap to be a helpful tool although reports of successful implementation are varied.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">
+cat <span class="hljs-symbol">/etc/nixos/configuration.nix</span>
+
+<span class="hljs-attr">services.xserver.displayManager.sessionCommands</span> <span class="hljs-operator">=</span>
+  ${pkgs.xorg.xmodmap}<span class="hljs-symbol">/bin/xmodmap</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.writeText  <span class="hljs-string">&quot;xkb-layout&quot;</span> <span class="hljs-string">&#x27;&#x27;
+    ! Map umlauts to RIGHT ALT + &lt;key&gt;
+      keycode 108 = Mode_switch
+      keysym e = e E EuroSign
+      keysym c = c C cent
+      keysym a = a A adiaeresis Adiaeresis
+      keysym o = o O odiaeresis Odiaeresis
+      keysym u = u U udiaeresis Udiaeresis
+      keysym s = s S ssharp
+    
+      ! disable capslock
+      ! remove Lock = Caps_Lock
+  &#x27;&#x27;</span>}</span>&quot;</span></code></pre>
+      </div><p>Works after boot and after suspend/resume.</p>
+<p>You may need to add some delay to make xmodmap command work.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">services.xserver.displayManager.sessionCommands</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sleep 5 &amp;&amp; <span class="hljs-subst">${pkgs.xorg.xmodmap}</span>/bin/xmodmap -e &#x27;keycode 43 = h H Left H&#x27; &amp;&quot;</span>;</code></pre>
+      </div><p><a href="category:Desktop" class="wikilink" title="Category:Desktop">Category:Desktop</a> <a href="category:Hardware" class="wikilink" title="Category:Hardware">Category:Hardware</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

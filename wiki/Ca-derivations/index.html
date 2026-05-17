@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ca-derivations</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Ca-derivations</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Ca-derivations -->
+
+<p><strong>ca derivations</strong> (or more formally <em>Floating content-addressed derivations</em>) is an upcoming feature of the Nix package manager.</p>
+<p>Without entering too much into the details − <a href="https://www.tweag.io/blog/2020-09-10-nix-cas/">this blog post</a> or <a href="https://edolstra.github.io/pubs/phd-thesis.pdf#page=143">the relevant section in Eelco’s PhD thesis</a> provide a more detailed explanation of the underlying idea and its consequences − content-addressed Nix is an extension of the Nix model bringing several new possibilities. In particular, it enables “early cutoff” (stopping a rebuild if it can be proved that the end-result will be the same as something already known), which could reduce hydra’s (and yours) load and storage a lot. It also changes the Trust model of Nix, allowing for example several users to share the same store without trusting each other.</p>
+<h2 id="setting-up-nix-for-ca-derivations">Setting-up Nix for CA derivations</h2><p>Being still an experimental feature, CA derivations are currently only available on unstable Nix versions, and require an explicit opt-in.</p>
+<h3 id="on-nixos">On NixOS</h3><p>In NixOS this can be achieved with the following options in configuration.nix.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs, ... }: {
+   <span class="hljs-attr">nix.settings.experimental-features</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-string">&quot;ca-derivations&quot;</span>
+  ];
+}</code></pre>
+      </div><h3 id="non-nixos">Non NixOS</h3><p>Make sure the file `/etc/nix/nix.conf` exists and contains the following:</p>
+<div class="code-container">
+        
+        <pre><code class="language-ini hljs"><span class="hljs-attr">experimental-features</span> = ca-derivations</code></pre>
+      </div><h2 id="using-ca-derivations">Using CA derivations</h2><p>The feature is opt-in, meaning that each derivation must individually be marked as content-addressed. When using <code>nixpkgs-unstable</code>, this can be done by setting <code>__contentAddressed = true</code> in the call to mkDerivation.</p>
+<p>It is also possible to mark all the derivations as content-addressed by default, by passing <code>config.contentAddressedByDefault = true</code> as argument to nixpkgs.</p>
+<h2 id="ensuring-that-a-derivation-is-properly-content-addressed">Ensuring that a derivation is properly content-addressed</h2><p>Once a derivation has been built, one can check that it is indeed content-addressed by running <code>nix path-info --sigs {outPath}</code>. If this yields a line containing <code>ca:fixed:r:…</code>, then it means that the path is indeed content-addressed (and as such is trusted by your system). For example:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-build <span class="hljs-string">&#x27;&lt;nixpkgs&gt;&#x27;</span> --arg config <span class="hljs-string">&#x27;{ contentAddressedByDefault = true; }&#x27;</span> -A vim</span>
+/nix/store/988jq9bj7s336q48bzdaamcl90k5g1yw-vim-8.2.2567
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">nix path-info --sigs ./result</span>
+/nix/store/988jq9bj7s336q48bzdaamcl90k5g1yw-vim-8.2.2567    ca:fixed:r:sha256:0z37vk3ndszn3p2in3li6rk3kln1lfqd9b6vl6w0qhkn7bixqibc</code></pre>
+      </div><h2 id="links">Links</h2><p>Tweag + Nix dev update #12: <a href="https://discourse.nixos.org/t/tweag-nix-dev-update-12/13185/3">https://discourse.nixos.org/t/tweag-nix-dev-update-12/13185/3</a></p>
+<p><a href="category:Nix" class="wikilink" title="Category:Nix">Category:Nix</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

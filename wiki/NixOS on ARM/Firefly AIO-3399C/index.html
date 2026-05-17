@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NixOS on ARM/Firefly AIO-3399C</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM">NixOS on ARM</a><span aria-hidden="true"> / </span>Firefly AIO-3399C</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: NixOS on ARM/Firefly AIO-3399C -->
+
+<div class="infobox">
+
+<table>
+<thead>
+<tr>
+<th colspan="2" class="title"><p>Firefly AIO-3399C</p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td colspan="2"><figure>
+<img src="https://mirror.nixoscn.org/wiki/NixOS%20on%20ARM/Firefly%20AIO-3399C/Firefly_AIO-3399C.png" title="A Firefly AIO-3399C attached to LVDS" width="256" />
+<figcaption>A Firefly AIO-3399C attached to LVDS</figcaption>
+</figure></td>
+</tr>
+<tr>
+<td><p>Manufacturer</p></td>
+<td><p>Firefly</p></td>
+</tr>
+<tr>
+<td><p>Architecture</p></td>
+<td><p>AArch64</p></td>
+</tr>
+<tr>
+<td><p>Bootloader</p></td>
+<td><p>u-boot with ARM trusted boot and Rockchip Miniloader</p></td>
+</tr>
+<tr>
+<td><p>Boot order</p></td>
+<td><p>official: eMMC</p></td>
+</tr>
+<tr>
+<td><p>Maintainer</p></td>
+<td><p><a href="user:makefu" class="wikilink" title="makefu">makefu</a></p></td>
+</tr>
+</tbody>
+</table>
+
+</div>
+
+<h2 id="status">Status</h2><p>The board <strong>boots NixOS from eMMC</strong> with the downstream u-boot and Rockchip trusted boot blob. Also flashing Rockchip tertiary bootloader (**idbloader**).</p>
+<p>Additionally image provided by firefly on <a href="http://www.t-firefly.com/doc/download/54.html">the chinese download page</a>, click on <strong>Ubuntu (GPT)</strong>. The image has also been uploaded to <a href="https://archive.org/details/AIO-3399C">archive.org</a>.</p>
+<p>The official documentation, which is a pretty good state, can be found at <a href="http://wiki.t-firefly.com/en/AIO-3399C/">the wiki of firefly</a>.</p>
+<h2 id="serial-console">Serial console</h2><p>On the board there are 3 pins which have a 2.54mm pitch, this is the debug console with the text DEBUG on it. Starting from the middle to the side of the board:</p>
+<ul>
+<li>GND (Black Wire)</li>
+<li>RX (White Wire)</li>
+<li>TX (Green Wire)</li>
+<li>VCC, only the silver trace point and not a pin</li>
+</ul>
+<p>Baud rate is <code>1500000</code> Connect to it via:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nix-shell -p picocom --run <span class="hljs-string">&quot;picocom -b 1500000 /dev/ttyUSB0&quot;</span></code></pre>
+      </div><p>When you build your own image, you need the following extra kernel command-line parameters to get serial output:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">boot.kernelParams</span> <span class="hljs-operator">=</span> lib.mkForce [<span class="hljs-string">&quot;console=ttyS2,1500000n8&quot;</span> <span class="hljs-string">&quot;earlycon=uart8250,mmio32,0xff1a0000&quot;</span> <span class="hljs-string">&quot;earlyprintk&quot;</span>];
+}</code></pre>
+      </div><p>Make sure you disable other consoles (tty0) as they seem to interfere with the output.</p>
+<h2 id="board-specific-installation-notes">Board-specific installation notes</h2><h3 id="installation-onto-emmc">Installation onto eMMC</h3><h4 id="boot-parts">boot parts</h4><p>For booting the Image you will need the following parts:</p>
+<ol>
+<li>idbloader (rockchip proprietary)</li>
+<li>u-boot customized by firefly</li>
+<li>ARM Trusted image customized for working with uboot</li>
+</ol>
+<p>The whole setup can be built by hand with the following scripts originally from user <strong>samueldr</strong>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">git <span class="hljs-built_in">clone</span> https://github.com/makefu/ROC-RK3399-PC-overlay.git builder &amp;&amp; <span class="hljs-built_in">cd</span> builder
+nix-build -A pkgsCross.aarch64-multiplatform.AIO-3399C.firmware
+<span class="hljs-built_in">ls</span> result/
+<span class="hljs-built_in">cp</span> result/{idbloader.img,uboot.img,trust.img} .</code></pre>
+      </div><h4 id="boot-and-rootfs">boot and rootfs</h4><p>The latest linux kernel (4.19 and up) is working with this board. Instead of building the image yourself you can fetch the latest sd-image from hydra and dd the created images onto the separate partitions. You can find all the successful builds in <a href="https://hydra.nixos.org/job/nixos/release-18.09-aarch64/nixos.sd_image.aarch64-linux">hydra @ nixos:release-18.09-aarch64:nixos.sd_image.aarch64-linux</a></p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-comment"># get the latest link directly from hydra</span>
+wget https://hydra.nixos.org/build/89033499/download/1/nixos-sd-image-18.09.2227.ea0820818a7-aarch64-linux.img -O sd.img
+udisksctl loop-setup -f sd.img -r
+<span class="hljs-built_in">dd</span> <span class="hljs-keyword">if</span>=/dev/loop0p1 boot.img
+<span class="hljs-built_in">dd</span> <span class="hljs-keyword">if</span>=/dev/loop0p2 root.img</code></pre>
+      </div><h4 id="bringing-the-device-into-rockchip-loader-mode">Bringing the device into Rockchip loader mode</h4><p>The board can easily be flashed by booting the device into the Rockchip <em>loader</em> mode. The device exposes the emmc with the rockusb protocol to a connected host pc.</p>
+<p>To bring the device in the loader mode:</p>
+<ol>
+<li>Disconnect from power</li>
+<li>Connect USB-C from the board to your computer</li>
+<li>Hold &#39;Recovery&#39; button pressed</li>
+<li>Connect power, wait for 2 (or more) seconds</li>
+<li>Short press the &#39;reset&#39; button and release the &#39;Recovery&#39; button afterwards</li>
+</ol>
+<h4 id="flashing-all-boot-parts">flashing all boot parts</h4><div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-comment"># You should have the following files available:</span>
+$ <span class="hljs-built_in">ls</span> *.img
+boot.img root.img trust.img uboot.img idbloader.img
+
+<span class="hljs-comment"># enter loader or maskrom mode</span>
+nix-build -A AIO-3399C.upgrade_tool
+<span class="hljs-comment"># optional: re-flash the rockchip loader, haven&#x27;t tested</span>
+<span class="hljs-comment"># result/bin/upgrade_tool UL idbloader.img</span>
+result/bin/upgrade_tool di -u uboot.img -t trust.img -boot ./boot.img -rootfs root.img
+result/bin/upgrade_tool rd <span class="hljs-comment"># reset</span></code></pre>
+      </div><p>Now cross fingers, the system should boot into NixOS now, the getty BAUD rate will change to <code>115200</code>.</p>
+<h2 id="compatibility-notes">Compatibility notes</h2><p>See the <a href="http://opensource.rock-chips.com/wiki_Status_Matrix">Rockchip compatibility matrix</a>. Uboot requires the Rockchip Miniloader and an arm trusted boot image.</p>
+<h3 id="downstream-kernel">Downstream kernel</h3><p>The downstream kernel sources can be found on github at <a href="https://github.com/FireflyTeam/kernel">1</a>. The stable kernel branch they are maintaining is <code>4.4</code>, however mainline 4.19 is already work according to the <a href="http://opensource.rock-chips.com/wiki_Status_Matrix">Rockchip compatibility matrix</a>.</p>
+<h3 id="u-boot">u-boot</h3><p>Firefly maintains an own u-boot fork at <a href="https://github.com/FireflyTeam/u-boot">2</a>.</p>
+<h3 id="firefly-upgrade_tool">Firefly upgrade_tool</h3><p>Firefly provides an <code>upgrade_tool</code> which is a modified <a href="http://opensource.rock-chips.com/wiki_Upgradetool">rock-chip upgrade tool</a>. Using the upstream tool however may result in weird errors like being unable to flash the image or being unable to erase the flash. To be sure use the <a href="https://archive.org/details/AIO-3399C">archive.org mirror</a>.</p>
+<p>However, because the software is essentially a blob, you will need to either patchelf the thing or use <strong>steam-run</strong>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nix-shell -p steam-run --run <span class="hljs-string">&quot;steam-run ./upgrade_tool&quot;</span></code></pre>
+      </div><p>I tried flashing with the open-source rkflashtool (in the same repo as the u-boot stuff), however i was unable to actually connect to the device neither in &quot;loader&quot; nor in &quot;maskrom&quot; mode. I resorted to using the closed source blob <code>upgrade_tool</code> which works directly.</p>
+<h3 id="rockchip-maskrom-mode">Rockchip MaskROM Mode</h3><p>Maskrom mode is a way to get extended privileges when flashing but you need to shorten two trace points on the board. Follow <a href="https://wiki.t-firefly.com/en/AIO-3399C/04-maskrom_mode.html">the official documentation</a>. However the loader mode should be enough for most things.</p>
+<h2 id="resources">Resources</h2><ul>
+<li><a href="http://en.t-firefly.com/product/industry/aio_3399c">Official product page</a></li>
+<li><a href="http://wiki.t-firefly.com/en/AIO-3399C/">Firefly Wiki Page for the AIO-3399c</a></li>
+</ul>
+<p><a href="category:NixOS_on_ARM" class="wikilink" title="Category:NixOS on ARM">Category:NixOS on ARM</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

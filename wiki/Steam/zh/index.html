@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Steam/zh</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / <a href="https://mirror.nixoscn.org/wiki/Steam">Steam</a><span aria-hidden="true"> / </span>zh</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Steam/zh -->
+
+<p><languages/> <a href="https://store.steampowered.com/">Steam</a> 是一个数字游戏发行平台，提供庞大的游戏库供用户购买、下载和管理。在 NixOS 系统上，Steam 通常易于安装和使用，很多时候都能“开箱即用”。它通过兼容层 <a href="https://mirror.nixoscn.org/wiki/Steam/zh#Proton" class="wikilink" title="Proton">Proton</a> 支持在 Linux 上运行许多 Windows 游戏。<sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Steam/zh#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup></p>
+<p><span id="Installation"></span></p>
+<h2 id="安装">安装</h2><h4 id="shell">Shell</h4><p>要在 shell 环境中临时使用 Steam 相关工具，例如 <code>steam-run</code>（用于 FHS 环境）或 <code>steamcmd</code>（用于服务器管理或 steam-tui 设置等工具），可以运行以下命令。</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-shell -p steam-run <span class="hljs-comment"># For FHS environment</span></span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-shell -p steamcmd  <span class="hljs-comment"># For steamcmd</span></span></code></pre>
+      </div><p>这样就可以在当前 shell 中使用这些工具，而无需将其添加到系统配置中。为了使 <code>steamcmd</code> 能够正确执行某些任务（例如初始化 steam-tui），您可能需要运行一次 steamcmd 来生成必要的文件，如 <a href="https://mirror.nixoscn.org/wiki/Steam/zh#steam-tui" class="wikilink" title=" steam-tui"> steam-tui</a> 部分所示。</p>
+<p><span id="System_setup"></span></p>
+<h4 id="系统设置">系统设置</h4><p>要安装 <a href="special:MyLanguage/Steam" class="wikilink" title="Steam">Steam</a> 软件包并启用所有必要的系统选项以使其运行，请将以下内容添加到您的系统配置中：</p>
+<p><a href="https://news.ycombinator.com/item?id=41549030">关于内核 6.10 问题的轶事</a></p>
+<p><span id="Configuration"></span></p>
+<h2 id="配置">配置</h2><p>基本 Steam 功能可以直接在 属性集中启用：</p>
+<p>true;</code> 将 选项同步设置为 true 来隐性启用}}</p>
+<p><span id="Tips_and_tricks"></span></p>
+<h2 id="提示和技巧">提示和技巧</h2><p><span id="Gamescope_Compositor_/_&quot;Boot_to_Steam_Deck&quot;"></span></p>
+<h3 id="gamescope-compositor-quot-启动至-steam-deck-quot">Gamescope Compositor / &quot;启动至 Steam Deck&quot;</h3><p>Gamescope 可以作为最小桌面环境运行，这意味着您可以从 TTY 启动它，并获得与 Steam Deck 硬件控制台非常相似的体验。</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># Clean Quiet Boot</span>
+b<span class="hljs-attr">oot</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">kernelParams</span> <span class="hljs-operator">=</span> [
+    <span class="hljs-string">&quot;quiet&quot;</span>
+    <span class="hljs-string">&quot;splash&quot;</span>
+    <span class="hljs-string">&quot;console=/dev/null&quot;</span>
+  ];
+  <span class="hljs-attr">plymouth.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+};
+
+<span class="hljs-attr">programs</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">gamescope</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">capSysNice</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  };
+  <span class="hljs-attr">steam.gamescopeSession.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+};
+
+<span class="hljs-comment"># Gamescope Auto Boot from TTY (example)</span>
+s<span class="hljs-attr">ervices</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">xserver.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>; <span class="hljs-comment"># Assuming no other Xserver needed</span>
+  <span class="hljs-attr">getty.autologinUser</span> <span class="hljs-operator">=</span> <span class="hljs-operator">&lt;</span><span class="hljs-string">&quot;USERNAME_HERE&quot;</span><span class="hljs-operator">&gt;</span>;
+  <span class="hljs-attr">greetd</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">settings</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">default_session</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">command</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${lib.getExe pkgs.gamescope}</span> -W 1920 -H 1080 -f -e --xwayland-count 2 --hdr-enabled --hdr-itm-enabled -- steam -pipewire-dmabuf -gamepadui -steamdeck -steamos3 &gt; /dev/null 2&gt;&amp;1&quot;</span>;
+        <span class="hljs-attr">user</span> <span class="hljs-operator">=</span> <span class="hljs-operator">&lt;</span><span class="hljs-string">&quot;USERNAME HERE&quot;</span><span class="hljs-operator">&gt;</span>;
+      };
+    };
+  };
+};</code></pre>
+      </div><h3 id="gamescope-hdr">Gamescope HDR</h3><p>要使 HDR 在 gamescope 中工作，您需要在启用 <code>gamescope</code> 程序的同时，单独安装 <code>gamescope-wsi</code> 软件包。</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">p<span class="hljs-attr">rograms.gamescope</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">capSysNice</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+};
+<span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+  gamescope-wsi <span class="hljs-comment"># HDR won&#x27;t work without this</span>
+];</code></pre>
+      </div><p>此外，在 Steam 中配置游戏启动选项时，可能需要使用参数 <code>--hdr-debug-force-output</code> 以在 gamescope 中强制启用 HDR（参考以下示例）。</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">gamescope -W 3840 -H 2160 -r 120 -f --adaptive-sync --hdr-enabled --hdr-debug-force-output --mangoapp -- %<span class="hljs-built_in">command</span>%</code></pre>
+      </div><h3 id="steam-tui">steam-tui</h3><p>如果您想使用 steam-tui 客户端，则需要自行安装。它依赖于 <code>steamcmd</code> 的设置，因此您需要运行一次 <code>steamcmd</code> 来生成必要的配置文件。 首先，确保 <code>steamcmd</code> 可用（例如，运行 <code>nix-shell -p steamcmd</code> 或将其添加到 <code>environment.systemPackages</code> ），然后运行：</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">steamcmd +quit <span class="hljs-comment"># This initializes steamcmd&#x27;s directory structure</span></code></pre>
+      </div><p>然后安装并运行 <code>steam-tui</code>。如果 <code>steamcmd</code> 出现问题，您可能需要先在 <code>steam-tui</code> 中登录：</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-comment"># (Inside steamcmd prompt, if needed for full login before steam-tui)</span>
+<span class="hljs-comment"># login &lt;username&gt; &lt;password&gt; &lt;steam_2fa_code&gt;</span>
+<span class="hljs-comment"># quit</span></code></pre>
+      </div><p>安装完成后， <code>steam-tui</code> （例如通过 <code>home.packages</code> 或 <code>environment.systemPackages</code> 安装）应该可以正常启动。</p>
+<p><span id="FHS_environment_only"></span></p>
+<h3 id="仅-fhs-环境">仅 FHS 环境</h3><p>要运行需要标准 Linux 文件系统层次结构标准 (FHS) 的专有游戏或从互联网下载的软件，可以使用 <code>steam-run</code> 。它提供了一个类似 FHS 的环境，而无需对软件进行任何修改。 请注意，对于从 Nixpkgs 安装的客户端（如 Minigalaxy 或 Itch），这并非必要，因为它们已经根据需要使用 FHS 环境。 有两种方法可以实现 <code>steam-run</code> 功能： 1. 安装 <code>steam-run</code> ，可选择系统级安装或用户级安装：</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># In /etc/nixos/configuration.nix</span>
+e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+  steam-run
+];</code></pre>
+      </div><p>2. 如果您需要更大的灵活性，或者想要使用已覆盖的 Steam 包的 FHS 环境：</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># In /etc/nixos/configuration.nix</span>
+e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+  (steam.override { <span class="hljs-comment">/* Your overrides here */</span> }).run
+];</code></pre>
+      </div><h3 id="proton">Proton</h3><p>您应该可以使用 Proton 运行大多数 Windows 游戏。如果某个游戏有原生 Linux 版本，但在 NixOS 上会出现问题，您可以通过在 Steam 的游戏兼容性设置中选择特定的 Proton 版本来强制使用 Proton。</p>
+<p>默认情况下，Steam 还会在 <code>~/.steam/root/compatibilitytools.d</code> 中查找自定义 Proton 版本。可以通过设置环境变量 <code>STEAM_EXTRA_COMPAT_TOOLS_PATHS</code> 来添加其他搜索路径。</p>
+<p>自定义 Proton 版本的声明式安装（例如 GE-Proton）：</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">p<span class="hljs-attr">rograms.steam.extraCompatPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+  proton-ge-bin
+];</code></pre>
+      </div><p>可使用 ProtonUp-Qt 手动管理多个 Proton 版本：</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+  protonup-qt
+];</code></pre>
+      </div><p><span id="Overriding_the_Steam_package"></span></p>
+<h3 id="覆盖-steam-软件包">覆盖 Steam 软件包</h3><p>在某些情况下，您可能需要覆盖默认的 Steam 程序包以提供缺失的依赖项或修改其构建。为此，请使用 <code>programs.steam.package</code> 选项。NixOS 上的 Steam 会在 FHS 环境下运行许多游戏，但 Steam 客户端本身或某些工具可能需要额外的库。</p>
+<p>示例：添加 Bumblebee 和 Primus（适用于 NVIDIA Optimus）：</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">p<span class="hljs-attr">rograms.steam.package</span> <span class="hljs-operator">=</span> pkgs.steam.override {
+  <span class="hljs-attr">extraPkgs</span> <span class="hljs-operator">=</span> <span class="hljs-params">pkgs&#x27;:</span> <span class="hljs-keyword">with</span> pkgs&#x27;; [ bumblebee primus ];
+};
+
+<span class="hljs-comment"># For 32-bit applications with Steam, if using steamFull:</span>
+<span class="hljs-comment"># programs.steam.package = pkgs.steamFull.override { extraPkgs = pkgs&#x27;: with pkgs&#x27;; [ bumblebee primus ]; };</span></code></pre>
+      </div><p>示例：为 Gamescope 添加 Xorg 库（在 Steam 中使用时）：</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">p<span class="hljs-attr">rograms.steam.package</span> <span class="hljs-operator">=</span> pkgs.steam.override {
+  <span class="hljs-attr">extraPkgs</span> <span class="hljs-operator">=</span> <span class="hljs-params">pkgs&#x27;:</span> <span class="hljs-keyword">with</span> pkgs&#x27;; [
+    libXcursor
+    libXi
+    libXinerama
+    libXScrnSaver
+    libpng
+    libpulseaudio
+    libvorbis
+    stdenv.cc.cc.lib <span class="hljs-comment"># Provides libstdc++.so.6</span>
+    libkrb5
+    keyutils
+    <span class="hljs-comment"># Add other libraries as needed</span>
+  ];
+};</code></pre>
+      </div><p><span id="Fix_missing_icons_for_games_in_GNOME_dock_and_activities_overview"></span></p>
+<h3 id="修复-gnome-dock-栏和活动概览中游戏图标缺失的问题">修复 GNOME Dock 栏和活动概览中游戏图标缺失的问题</h3><p>GNOME 使用窗口类来确定与窗口关联的图标。Steam 目前在其 .desktop 文件中没有设置所需的键值<sup><a id="footnote-ref-2" href="https://mirror.nixoscn.org/wiki/Steam/zh#footnote-2" data-footnote-ref aria-describedby="footnote-label">2</a></sup>，但您可以通过编辑每个游戏的 .desktop 文件中的 <code>StartupWMClass</code> 键值来手动修复此问题，该文件位于 <code>~/.local/share/applications/</code> 目录下。</p>
+<p>对于通过 Proton 运行的游戏，该值应为 <code>steam_app_</code><game_id> （在哪里<game_id>与 <code>Exec</code> 行中 <a href="steam://rungameid/">steam://rungameid/</a> 之后的值匹配）。</p>
+<p>对于原生运行的游戏，该值应与游戏的主可执行文件匹配。</p>
+<p>例如，Valheim 的修改后的 .desktop 文件如下所示：</p>
+<div class="code-container">
+        
+        <pre><code class="language-desktop hljs">[Desktop Entry]
+Name=Valheim
+Comment=Play this game on Steam
+Exec=steam steam://rungameid/892970
+Icon=steam_icon_892970
+Terminal=false
+Type=Application
+Categories=Game;
+StartupWMClass=valheim.x86_64</code></pre>
+      </div><p><span id="Troubleshooting"></span></p>
+<h2 id="故障排除">故障排除</h2><p>对于所有问题：首先通过终端运行 <code>steam -dev -console</code> 并读取输出。</p>
+<p><span id="Steam_fails_to_start._What_do_I_do?"></span></p>
+<h3 id="steam-无法启动-我该怎么办">Steam 无法启动。我该怎么办？</h3><p>至少在 <code>x86-64</code> 平台上，导致 Steam 无法启动的一个常见问题是未在 <code>/etc/nixos/hardware-configuration.nix</code> 文件中启用以下选项：</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs"> {
+   <span class="hljs-attr">hardware.graphics.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+   <span class="hljs-attr">hardware.graphics.enable32Bit</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+ }</code></pre>
+      </div><p>如果您已设置这些选项（或者 32 位不适用于您的系统/平台），但仍然无法运行 Steam，请在终端运行 <code>strace steam -dev -console 2&gt; steam.logs</code> 命令。如果未安装 <code>strace</code> ，请使用 <code>nix-shell -p strace</code> 或 <code>nix run nixpkgs#strace -- steam -dev -console 2&gt; steam.logs</code> （如果使用 Flakes 版本）临时安装。之后，请提交错误报告。</p>
+<p><span id="Steam_is_not_updated"></span></p>
+<h3 id="steam-未更新">Steam 未更新</h3><p>更新后重启 <a href="special:MyLanguage/Steam" class="wikilink" title="Steam">Steam</a> 时，它会启动旧版本。(<a href="https://github.com/NixOS/nixpkgs/issues/181904">#181904</a>) 一个解决方法是删除 <code>/home/&lt;USER&gt;/.local/share/Steam/userdata</code> 目录下的用户文件。您可以在终端中使用 <code>rm -rf /home/&lt;USER&gt;/.local/share/Steam/userdata</code> 命令或文件管理器来完成此操作。之后，重启 Steam 即可重新生成配置。</p>
+<p><span id="Game_fails_to_start"></span></p>
+<h3 id="游戏无法启动">游戏无法启动</h3><p>游戏可能无法启动，原因可能是缺少依赖项（目前应将此添加到脚本中），或者无法进行补丁更新。直接启动游戏的步骤如下： 如果可以，请修补脚本/二进制文件。</p>
+<ul>
+<li>在二进制文件夹中添加一个名为 steam_appid.txt 的文件，内容为 appid（可在 Steam 的标准输出中找到）。</li>
+<li>使用来自 nix/store steam 脚本的 LD_LIBRARY_PATH，启动游戏二进制文件</li>
+</ul>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">LD_LIBRARY_PATH=~/.steam/bin32:<span class="hljs-variable">$LD_LIBRARY_PATH</span>:/nix/store/pfsa... blabla ...curl-7.29.0/lib:. ./Osmos.bin32 (<span class="hljs-keyword">if</span> you could not patchelf the game, call ld.so directly with the binary as parameter)</code></pre>
+      </div><p>注意：如果游戏卡在“正在安装脚本”界面，请检查是否存在 DXSETUP.EXE 进程并手动运行它，然后重新启动游戏。</p>
+<p><span id="Changing_the_driver_on_AMD_GPUs"></span></p>
+<h4 id="更改-amd-gpu-的驱动程序">更改 AMD GPU 的驱动程序</h4><p>有时，更换 AMD GPU 的驱动程序会有帮助。要尝试此方法，首先，安装多个驱动程序，例如 radv 和 amdvlk：</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">h<span class="hljs-attr">ardware.graphics</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-comment">## radv: an open-source Vulkan driver from freedesktop</span>
+  <span class="hljs-attr">enable32Bit</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+  <span class="hljs-comment">## amdvlk: an open-source Vulkan driver from AMD</span>
+  <span class="hljs-attr">extraPackages</span> <span class="hljs-operator">=</span> [ pkgs.amdvlk ];
+  <span class="hljs-attr">extraPackages32</span> <span class="hljs-operator">=</span> [ pkgs.driversi686Linux.amdvlk ];
+};</code></pre>
+      </div><p>如果两个驱动程序都存在，<a href="special:MyLanguage/Steam" class="wikilink" title="Steam">Steam</a> 将默认使用 amdvlk。amdvlk 驱动程序在 Vulkan 规范实现方面更准确，但性能不如 radv。然而，这种在正确性和性能之间的权衡有时会直接影响游戏体验。</p>
+<p>如果同时安装了 radv 和 amdvlk，要将驱动程序“重置”为 radv，请设置环境变量 <code>AMD_VULKAN_ICD = &quot;RADV&quot;</code> 或 <code>VK_ICD_FILENAMES = &quot;/run/opengl-driver/share/vulkan/icd.d/radeon_icd.x86_64.json&quot;</code> 。例如，如果您从 shell 启动 Steam，则可以通过运行 <code>AMD_VULKAN_ICD=&quot;RADV&quot; steam</code> 为当前会话启用 radv。如果您不确定当前使用的是哪个驱动程序，可以启动一个启用了 <a href="https://github.com/flightlessmango/MangoHud">MangoHud</a> 的游戏，MangoHud 可以显示当前正在使用的驱动程序。</p>
+<h3 id="steamvr">SteamVR</h3><p>SteamVR 启动时的 setcap 问题可以通过以下方法解决： <code>sudo setcap CAP_SYS_NICE+ep ~/.local/share/Steam/steamapps/common/SteamVR/bin/linux64/vrcompositor-launcher</code></p>
+<p><span id="Gamescope_fails_to_launch_when_used_within_Steam"></span></p>
+<h3 id="与-steam-使用时-gamescope-无法启动">与 Steam 使用时 Gamescope 无法启动</h3><p>Gamescope 可能由于缺少 Xorg 库而无法启动。(<a href="https://github.com/NixOS/nixpkgs/issues/214275">#214275</a>) 要解决此问题，请添加以下内容覆盖 steam 包：</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">p<span class="hljs-attr">rograms.steam.package</span> <span class="hljs-operator">=</span> pkgs.steam.override {
+  <span class="hljs-attr">extraPkgs</span> <span class="hljs-operator">=</span> <span class="hljs-params">pkgs&#x27;:</span> <span class="hljs-keyword">with</span> pkgs&#x27;; [
+    libXcursor
+    libXi
+    libXinerama
+    libXScrnSaver
+    libpng
+    libpulseaudio
+    libvorbis
+    stdenv.cc.cc.lib <span class="hljs-comment"># Provides libstdc++.so.6</span>
+    libkrb5
+    keyutils
+    <span class="hljs-comment"># Add other libraries as needed</span>
+  ];
+};</code></pre>
+      </div><p><span id="Udev_rules_for_additional_Gamepads"></span></p>
+<h3 id="额外游戏手柄的-udev-规则">额外游戏手柄的 udev 规则</h3><p>在某些特定情况下，游戏手柄可能需要一些额外的配置才能正常工作，这些配置以 udev 规则的形式表示。这可以通过 <code>services.udev.extraRules</code> 来配置。</p>
+<p>以下示例适用于 8bitdo Ultimate 蓝牙控制器，不同的控制器需要知道设备的供应商和产品 ID：</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">services.udev.extraRules</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    SUBSYSTEM==&quot;input&quot;, ATTRS{idVendor}==&quot;2dc8&quot;, ATTRS{idProduct}==&quot;3106&quot;, MODE=&quot;0660&quot;, GROUP=&quot;input&quot;
+  &#x27;&#x27;</span>;</code></pre>
+      </div><p>要查找设备的供应商和产品 ID，<a href="https://search.nixos.org/packages?channel=unstable&amp;show=usbutils&amp;from=0&amp;size=50&amp;sort=relevance&amp;type=packages&amp;query=usbutils">usbutils</a> 可能有用。</p>
+<p><span id="Known_issues"></span></p>
+<h3 id="已知问题">已知问题</h3><p>“Project Zomboid”可能会报告“无法确定Java是32位还是64位”。这与Java本身无关，是由其使用自身过时的Java二进制文件解析路径时，其中包含非拉丁字符导致的。请通过在<code>steam-run bash</code>中直接启动本地Java二进制文件来解决错误。</p>
+<p>通过 <a href="special:MyLanguage/Steam" class="wikilink" title="Steam">Steam</a> 应用重置密码可能会反复在验证码环节失败，即使验证码界面显示成功，<a href="special:MyLanguage/Steam" class="wikilink" title="Steam">Steam</a> 本身也会提示验证码错误。通过 <a href="special:MyLanguage/Steam" class="wikilink" title="Steam">Steam</a> 网站重置密码应该可以解决这个问题。</p>
+<p><span id="References"></span></p>
+<h2 id="参考">参考</h2><p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="category:Gaming" class="wikilink" title="Category:Gaming">Category:Gaming</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p><a href="https://store.steampowered.com/">https://store.steampowered.com/</a> <a href="https://mirror.nixoscn.org/wiki/Steam/zh#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+<li id="footnote-2">
+<p><a href="https://github.com/ValveSoftware/steam-for-linux/issues/12207">https://github.com/ValveSoftware/steam-for-linux/issues/12207</a> <a href="https://mirror.nixoscn.org/wiki/Steam/zh#footnote-ref-2" data-footnote-backref aria-label="Back to reference 2">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

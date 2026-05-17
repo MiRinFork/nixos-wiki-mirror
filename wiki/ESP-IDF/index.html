@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ESP-IDF</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / ESP-IDF</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: ESP-IDF -->
+
+<p><a href="https://github.com/espressif/esp-idf">ESP-IDF</a> is the official framework to develop programs for the Espressif Systems <a href="https://en.wikipedia.org/wiki/ESP32">ESP32</a> series microcontrollers. This guide explains how to install and use ESP-IDF on NixOS.</p>
+<h2 id="the-easy-way">The easy way</h2><p>The ESP32 toolchain and ESP-IDF have been packaged in <a href="https://github.com/mirrexagon/nixpkgs-esp-dev">https://github.com/mirrexagon/nixpkgs-esp-dev</a>. If you have Nix 2.4 or later, you can get a shell with everything you need to build ESP-IDF projects for ESP32 with this command (no need to download anything yourself):</p>
+<div class="code-container">
+        
+        <pre><code class="language-sh hljs">nix --experimental-features <span class="hljs-string">&#x27;nix-command flakes&#x27;</span> develop github:mirrexagon/nixpkgs-esp-dev#esp-idf-full</code></pre>
+      </div><p>If you have an older version of Nix that doesn&#39;t support flakes, you can clone the repo and use one of the included shell files:</p>
+<div class="code-container">
+        
+        <pre><code class="language-sh hljs"><span class="hljs-built_in">mkdir</span> ~/esp
+<span class="hljs-built_in">cd</span> ~/esp
+git <span class="hljs-built_in">clone</span> https://github.com/mirrexagon/nixpkgs-esp-dev.git
+<span class="hljs-built_in">cd</span> nixpkgs-esp-dev
+nix-shell shells/esp32-idf.nix</code></pre>
+      </div><p>See the <a href="https://github.com/mirrexagon/nixpkgs-esp-dev#readme">README</a> for more information.</p>
+<h2 id="the-manual-way">The manual way</h2><p>If you want to set up the environment yourself, here is one way to do it.</p>
+<h3 id="setting-up-the-toolchain">Setting up the toolchain</h3><p>ESP-IDF uses the Xtensa or risc-v32 ESP32 GCC toolchain. Espressif hosts the official <a href="https://github.com/espressif/crosstool-NG/releases">prebuilt binaries</a> on GitHub. Sadly, these are not statically compiled, and do not work on NixOS without the use of a FHS environment. I will use <code>buildFHSUserEnv</code> to make the binaries work. Let&#39;s make a derivation out of this:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ stdenv, lib, fetchurl, makeWrapper, buildFHSUserEnv }:
+
+<span class="hljs-keyword">let</span>
+  <span class="hljs-attr">fhsEnv</span> <span class="hljs-operator">=</span> buildFHSUserEnv {
+    <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;esp32-toolchain-env&quot;</span>;
+    <span class="hljs-attr">targetPkgs</span> <span class="hljs-operator">=</span> <span class="hljs-params">pkgs:</span> <span class="hljs-keyword">with</span> pkgs; [ zlib ];
+    <span class="hljs-attr">runScript</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;</span>;
+  };
+<span class="hljs-keyword">in</span>
+
+stdenv.mkDerivation <span class="hljs-keyword">rec</span> {
+  <span class="hljs-attr">pname</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;esp32-toolchain&quot;</span>;
+  <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;2021r2-patch3&quot;</span>;
+
+  <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> fetchurl {
+<span class="hljs-comment">#    url = &quot;https://github.com/espressif/crosstool-NG/releases/download/esp-${version}/riscv32-esp-elf-gcc8_4_0-esp-${version}-linux-amd64.tar.gz&quot;;</span>
+<span class="hljs-comment">#    hash = &quot;sha256-F5y61Xl5CtNeD0FKGNkAF8DxWMOXAiQRqOmGfbIXTxU=&quot;;</span>
+    <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://github.com/espressif/crosstool-NG/releases/download/esp-<span class="hljs-subst">${version}</span>/xtensa-esp32-elf-gcc8_4_0-esp-<span class="hljs-subst">${version}</span>-linux-amd64.tar.gz&quot;</span>;
+    <span class="hljs-attr">hash</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sha256-nt0ed2J2iPQ1Vhki0UKZ9qACG6H2/2fkcuEQhpWmnlM=&quot;</span>;
+  };
+
+  <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> [ makeWrapper ];
+
+  <span class="hljs-attr">phases</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;unpackPhase&quot;</span> <span class="hljs-string">&quot;installPhase&quot;</span> ];
+
+  <span class="hljs-attr">installPhase</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    cp -r . $out
+    for FILE in $(ls $out/bin); do
+      FILE_PATH=&quot;$out/bin/$FILE&quot;
+      if [[ -x $FILE_PATH ]]; then
+        mv $FILE_PATH $FILE_PATH-unwrapped
+        makeWrapper <span class="hljs-subst">${fhsEnv}</span>/bin/esp32-toolchain-env $FILE_PATH --add-flags &quot;$FILE_PATH-unwrapped&quot;
+      fi
+    done
+  &#x27;&#x27;</span>;
+
+  <span class="hljs-attr">meta</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> lib; {
+    <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ESP32 toolchain&quot;</span>;
+    <span class="hljs-attr">homepage</span> <span class="hljs-operator">=</span> https:<span class="hljs-symbol">//docs.espressif.com/projects/esp-idf/en/stable/get-started/linux-setup.html</span>;
+    <span class="hljs-attr">license</span> <span class="hljs-operator">=</span> licenses.gpl3;
+  };
+}</code></pre>
+      </div><p>Create a new directory <code>~/esp</code> and save this derivation as <code>~/esp/esp-toolchain.nix</code>.</p>
+<h3 id="setting-up-esp-idf-and-the-development-shell">Setting up ESP-IDF and the development shell</h3><p>Clone the <a href="https://github.com/espressif/esp-idf">espressif/esp-idf</a> repository:</p>
+<div class="code-container">
+        
+        <pre><code class="language-sh hljs"><span class="hljs-built_in">cd</span> ~/esp
+git <span class="hljs-built_in">clone</span> --recursive https://github.com/espressif/esp-idf.git</code></pre>
+      </div><p>Now that we have ESP-IDF in place, it&#39;s time to set up the <code>nix-shell</code> environment with all the dependencies we need.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs <span class="hljs-operator">?</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> {} }:
+
+pkgs.mkShell {
+  <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;esp-idf-env&quot;</span>;
+  <span class="hljs-attr">buildInputs</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+    (pkgs.callPackage <span class="hljs-symbol">./esp32-toolchain.nix</span> {})
+
+    git
+    wget
+    gnumake
+
+    flex
+    bison
+    gperf
+    pkg-config
+
+    cmake
+
+    ncurses5
+
+    ninja
+
+    (python3.withPackages (<span class="hljs-params">p:</span> <span class="hljs-keyword">with</span> p; [
+      pip
+      virtualenv
+    ]))
+  ];
+
+  <span class="hljs-attr">shellHook</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    export IDF_PATH=$(pwd)/esp-idf
+    export PATH=$IDF_PATH/tools:$PATH
+    export IDF_PYTHON_ENV_PATH=$(pwd)/.python_env
+
+    if [ ! -e $IDF_PYTHON_ENV_PATH ]; then
+      python -m venv $IDF_PYTHON_ENV_PATH
+      . $IDF_PYTHON_ENV_PATH/bin/activate
+      pip install -r $IDF_PATH/tools/requirements/requirements.core.txt
+    else
+      . $IDF_PYTHON_ENV_PATH/bin/activate
+    fi
+  &#x27;&#x27;</span>;
+}</code></pre>
+      </div><p>Save this as <code>~/esp/shell.nix</code>.</p>
+<p>You can now enter the development shell with the ESP32 toolchain and dependencies of ESP-IDF:</p>
+<div class="code-container">
+        
+        <pre><code class="language-sh hljs"><span class="hljs-built_in">cd</span> ~/esp
+nix-shell</code></pre>
+      </div><p>That&#39;s all you need to start developing with ESP-IDF on NixOS! The next step is to follow the <a href="https://esp-idf.readthedocs.io/en/latest/get-started/index.html#start-a-project">ESP-IDF Get Started guide</a> from section &quot;Start a project&quot; onward.</p>
+<h2 id="see-also">See also</h2><ul>
+<li><a href="https://github.com/bgamari/esp32.nix">esp32.nix</a> provides nix expression for building the esp32 sdk as well as micropython.</li>
+<li><a href="https://github.com/taktoa/esp32-baremetal">esp32-baremetal</a> has an example how to build esp32 firmware without relying on an sdk.</li>
+<li><a href="https://web.archive.org/web/20240621182952/https://specific.solutions.limited/projects/hanging-plotter/electronics">tutorial</a> for setting up the prebuilt toolchain with vscode</li>
+</ul>
+<p><a href="category:Guide" class="wikilink" title="Category:Guide">Category:Guide</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

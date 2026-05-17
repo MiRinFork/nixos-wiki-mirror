@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Node.js</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Node.js</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Node.js -->
+
+<p>__TOC__</p>
+<p><a href="https://nodejs.org/">Node.js</a> is an open-source, cross-platform <a href="https://mirror.nixoscn.org/wiki/Node.js/JavaScript" class="wikilink" title="JavaScript">JavaScript</a> runtime environment that allows developers to execute JavaScript code on the server side. Built on the V8 JavaScript engine, it enables the creation of scalable and high-performance applications, particularly for real-time web services.</p>
+<h2 id="setup">Setup</h2><p>Adapt or add following line to your system configuration:&lt;syntaxhighlight lang=&quot;nix&gt;</p>
+<p><code> environment.systemPackages = with pkgs; [ nodejs ];</code></p>
+</syntaxhighlight>
+
+<p>See <code>nix search nixpkgs nodejs</code> for additional versions like <code>nodejs-12_x</code>, etc.</p>
+<h2 id="packaging">Packaging</h2><h3 id="packaging-with-buildnpmpackage">Packaging with <code>buildNpmPackage</code></h3><p>From the <a href="https://nixos.org/manual/nixpkgs/stable/#javascript-tool-specific">Nixpkgs manual</a>: &quot;<code>buildNpmPackage</code> allows you to package npm-based projects in Nixpkgs without the use of an auto-generated dependencies file (as used in node2nix). It works by utilizing npm’s cache functionality – creating a reproducible cache that contains the dependencies of a project, and pointing npm to it.&quot;</p>
+<p>To better understand what happens under the hood and see the latest features <a href="https://github.com/NixOS/nixpkgs/blob/master/pkgs/build-support/node/build-npm-package/default.nix">see the build-npm-package source</a>.</p>
+<p>Here&#39;s a <code>flake.nix</code> example to build a node package from the current directory.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">inputs</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">nixpkgs.url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:nixos/nixpkgs/nixos-unstable&quot;</span>;
+  };
+
+  <span class="hljs-attr">outputs</span> <span class="hljs-operator">=</span> {
+    self,
+    nixpkgs,
+  }: <span class="hljs-keyword">let</span>
+    <span class="hljs-attr">pkgs</span> <span class="hljs-operator">=</span> nixpkgs.legacyPackages.<span class="hljs-string">&quot;x86_64-linux&quot;</span>;
+  <span class="hljs-keyword">in</span> {
+    packages.<span class="hljs-string">&quot;x86_64-linux&quot;</span>.default <span class="hljs-operator">=</span> pkgs.buildNpmPackage {
+      <span class="hljs-attr">pname</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;my-node-script&quot;</span>;
+      <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;0.1.0&quot;</span>;
+      <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> <span class="hljs-symbol">./.</span>;
+      <span class="hljs-attr">npmDepsHash</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=&quot;</span>;
+    };
+  };
+}</code></pre>
+      </div><p>By default, the build phase runs the <code>build</code> script defined in <code>package.json</code>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-json hljs"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;scripts&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;build&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;npm install&quot;</span>
+  <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span></code></pre>
+      </div><p>The binaries created in this package are defined by the <code>bin</code> key in <code>package.json</code>. This example will result in a <code>my-node-script</code> binary being created that basically runs <code>node main.js</code>.</p>
+<div class="code-container">
+        
+        <pre><code class="language-json hljs"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;bin&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;my-node-script&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;main.js&quot;</span>
+  <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span></code></pre>
+      </div><h4 id="packaging-electron-applications">Packaging electron applications</h4><p>When trying to <code>npm i</code> electron, by default electron will try to download binaries from the internet, which does not work in the Nix sandbox. To stop it from trying to access the internet, set the environment variable <code>ELECTRON_SKIP_BINARY_DOWNLOAD = &quot;1&quot;;</code>.</p>
+<p>For examples of packaging electron applications, search <a href="https://github.com/search?q=buildNpmPackage+electron+repo%3ANixOS%2Fnixpkgs&amp;type=code&amp;l=NixOS%2Fnixpkgs">Nixpkgs</a> for the terms &quot;buildNpmPackage&quot; and &quot;electron&quot;.</p>
+<h3 id="packaging-with-yarn2nix">Packaging with <code>yarn2nix</code></h3><p>yarn2nix uses the yarn nodejs tool to create a file called yarn.lock, which in return can be used by yarn2nix to generate a usable yarn expression. This is what was needed to convert a small application server <a href="https://git.shackspace.de/rz/muellshack/tree/3be09715911628b164fa1cf346387555ca26a5b1">shackspace muellshack</a>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-console hljs"><span class="hljs-meta prompt_">$ </span><span class="language-bash">nix-shell -p yarn yarn2nix</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">yarn install</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">creates yarn.lock</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">yarn2nix &gt; yarn.nix</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash">vim package.json</span>
+<span class="hljs-meta prompt_"># </span><span class="language-bash">add:    <span class="hljs-string">&quot;bin&quot;</span>: <span class="hljs-string">&quot;app.js&quot;</span>,</span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">cat</span> &gt; default.nix &lt;&lt;<span class="hljs-string">EOF</span></span>
+with (import &lt;nixpkgs&gt; {});
+rec {
+  muellshack = mkYarnPackage {
+    name = &quot;muellshack&quot;;
+    src = ./.;
+    packageJSON = ./package.json;
+    yarnLock = ./yarn.lock;
+    yarnNix = ./yarn.nix;
+  };
+}
+EOF
+<span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-string">sed -i &#x27;1i#!/usr/bin/env node&#x27; app.js</span></span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-string">chmod +x app.js</span></span>
+<span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-string">nix-build</span></span>
+<span class="hljs-meta prompt_">
+$ </span><span class="language-bash"><span class="hljs-string">result/bin/muellshack</span></span></code></pre>
+      </div><p>The complete diff can be found at <a href="https://git.shackspace.de/rz/muellshack/commit/f5e498acd47695c4947dc1b5ddebfad2eee8d653">the respective diff</a></p>
+<h2 id="troubleshooting">Troubleshooting</h2><h3 id="using-npm-install--g-fails">Using <code>npm install -g</code> fails</h3><p>The following errors are to be expected.</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">npm ERR! Error: EACCES: permission denied, access '/nix/store/00000000000000000000000000000000-nodejs-6.14.3/lib/node_modules'
+npm ERR!     at Error (native)
+npm ERR!  { Error: EACCES: permission denied, access '/nix/store/00000000000000000000000000000000-nodejs-6.14.3/lib/node_modules'
+npm ERR!     at Error (native)
+npm ERR!   errno: -13,
+npm ERR!   code: 'EACCES',
+npm ERR!   syscall: 'access',
+npm ERR!   path: '/nix/store/00000000000000000000000000000000-nodejs-6.14.3/lib/node_modules' }
+npm ERR!
+npm ERR! Please try running this command again as root/Administrator.</code></pre>
+      </div><p>The store is read-only as it should be. Purity in Nix and NixOS makes it <em>right</em> not to allow installation using <code>-g</code>.</p>
+<p>There are a couple solutions, none of them are strictly wrong. You can either configure <code>npm</code> so it installs globally to your home, or avoid using <code>-g</code> entirely. It is also possible, for node versions 8 and greater, to use <code>npx</code>.</p>
+<h4 id="install-to-your-home">Install to your home</h4><p>This is done through configuring npm and amending your <code>PATH</code>.<sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Node.js#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup></p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs"> $ npm set prefix ~/.npm-global</code></pre>
+      </div><p>Then, amend your <code>PATH</code> so it looks into <code>$HOME/.npm-global</code>.</p>
+<h4 id="avoid-using--g">Avoid using <code>-g</code></h4><p>This is a bit harder to implement, but creates a bit more strictness in your environment; it will be impossible accidentally make use of what would have been a globally installed package. The idea is to install it to either a temporary transitory folder or to the project folder, then run the locally installed instance of the package, the binaries are found under <code>node_packages/.bin/</code>.<sup><a id="footnote-ref-2" href="https://mirror.nixoscn.org/wiki/Node.js#footnote-2" data-footnote-ref aria-describedby="footnote-label">2</a></sup></p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs"> $ npm install uglify-es
+[ ... ]
+
+ $ ls -l node_modules/.bin/
+total 0
+lrwxrwxrwx 1 user users 25 Jul 17 15:34 uglifyjs -&gt; ../uglify-es/bin/uglifyjs
+
+ $ node_modules/.bin/uglifyjs --help
+  Usage: uglifyjs [options] [files...]</code></pre>
+      </div><h5 id="direnv">direnv</h5><p>If calling the executables with full path is too cumbersome, another elegant solution is to leverage <a href="https://direnv.net/">direnv</a>. Direnv is a shell-hook that can set directory-specific environment-variables. You basically add a file &quot;.envrc&quot; next to your &quot;package.json&quot; with the following content:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">layout node</code></pre>
+      </div><p>direnv then adds your &quot;node_modules/.bin&quot; to your path whenever you enter the directory. Please follow direnv&#39;s setup instructions on how to activate setup direnv in general.</p>
+<h4 id="using-npx">Using <code>npx</code></h4><div class="code-container">
+        
+        <pre><code class="language- hljs"> $ nix-shell -p nodejs-8_x
+
+ $ npx create-react-app --help
+npx: installed 67 in 1.671s
+  Usage: create-react-app &lt;project-directory&gt; [options]
+[...]</code></pre>
+      </div><h4 id="using-npx-with-binaries">Using <code>npx</code> with binaries</h4><p>Some binaries obtained via npm will not work out of the box with NixOS, as they&#39;re dynamically linked to things that don&#39;t exist in NixOS (for good reason!)</p>
+<p>They&#39;ll typically give some kind of <code>ENOENT</code> error. For example, <code>npx cypress open</code> might give an error like:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">$ npx cypress open
+
+Cypress failed to start.
+This is usually caused by a missing library or dependency.
+The error below should indicate which dependency is missing.
+https://on.cypress.io/required-dependencies
+If you are using Docker, we provide containers with all required dependencies installed.
+----------
+spawn /home/rkb/.cache/Cypress/4.10.0/Cypress/Cypress ENOENT</code></pre>
+      </div><p>One quick workaround for this is <a href="https://mirror.nixoscn.org/wiki/Node.js/Steam#FHS_environment_only" class="wikilink" title=" to use steam-run"> to use <code>steam-run</code></a> to provide a placeholder FHS environment that *should* work; e.g. for the Cypress example above:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">$ nix-env -iA nixos.steam-run
+
+$ steam-run npx cypress open
+
+-- Cypress opens successfully!</code></pre>
+      </div><p>(Inspired by <a href="https://discourse.nixos.org/t/how-to-make-nixos-so-easy-that-people-can-be-productive-up-front-without-having-to-first-learn-the-nix-language/5625">this discussion on discourse.nixos.org</a>)</p>
+<p><strong>Google-fonts fetch failure with NextJS</strong></p>
+<p>Nextjs is a popular React framework and comes with built-in support with support for Google fonts. If a NPM project uses it,</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs">npm run build # which calls &quot;next build&quot;</code></pre>
+      </div><p>will try to fetch and optimize the Google fonts during a nix build run, which will fail in Nix&#39;s isolated sandbox without internet:</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs">...
+Running phase: buildPhase
+Executing npmBuildHook
+<span class="hljs-meta prompt_">
+&gt; </span><span class="language-bash">nextjs-ollama-local-ai@0.1.0 build</span>
+<span class="hljs-meta prompt_">&gt; </span><span class="language-bash">next build</span>
+
+   ▲ Next.js 14.1.0
+
+   Creating an optimized production build ...
+request to https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;display=swap failed, reason: getaddrinfo EAI_AGAIN fonts.googleapis.com
+    at ClientRequest.&lt;anonymous&gt; (/build/source/node_modules/next/dist/compiled/node-fetch/index.js:1:66160)
+    at ClientRequest.emit (node:events:518:28)
+    at TLSSocket.socketErrorListener (node:_http_client:500:9)
+    at TLSSocket.emit (node:events:518:28)
+    at emitErrorNT (node:internal/streams/destroy:169:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:128:3)
+    at process.processTicksAndRejections (node:internal/process/task_queues:82:21) {
+  type: &#x27;system&#x27;,
+  errno: &#x27;EAI_AGAIN&#x27;,
+  code: &#x27;EAI_AGAIN&#x27;
+}
+Failed to compile.
+
+src/app/layout.tsx
+`next/font` error:
+Failed to fetch `Inter` from Google Fonts.
+<span class="hljs-meta prompt_">
+&gt; </span><span class="language-bash">Build failed because of webpack errors</span>
+
+ERROR: `npm build` failed</code></pre>
+      </div><p>You have to patch the Javascript code</p>
+<div class="code-container">
+        
+        <pre><code class="language-javascript hljs"># <span class="hljs-title class_">In</span> layout.<span class="hljs-property">tsx</span> file replace
+#
+# <span class="hljs-keyword">import</span> {<span class="hljs-title class_">Inter</span>} <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;next/font/google&quot;</span>; #or any other <span class="hljs-title class_">Google</span> font like <span class="hljs-title class_">Inter</span>
+# <span class="hljs-keyword">const</span> inter = <span class="hljs-title class_">Inter</span>({ <span class="hljs-attr">subsets</span>: [<span class="hljs-string">&quot;latin&quot;</span>] });
+# 
+# <span class="hljs-title function_">with</span> (<span class="hljs-string">&quot;src:&quot;</span> must be relative to the src/app/layout.<span class="hljs-property">tsx</span> file):
+<span class="hljs-keyword">import</span> localFont <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;next/font/local&quot;</span>;
+<span class="hljs-keyword">const</span> inter = <span class="hljs-title function_">localFont</span>({ <span class="hljs-attr">src</span>: <span class="hljs-string">&#x27;./Inter.ttf&#x27;</span> });</code></pre>
+      </div><p>and place the Google fonts from Nixpkgs into the project, e.g. in a <code>preBuild</code> phase:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">buildNpmPackage {
+  <span class="hljs-attr">pname</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;myproject&quot;</span>;
+  <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;1.0.0&quot;</span>;
+  ...
+
+  <span class="hljs-comment"># see https://github.com/NixOS/nixpkgs/blob/master/pkgs/by-name/cr/crabfit-frontend/package.nix</span>
+  <span class="hljs-attr">preBuild</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    cp &quot;<span class="hljs-subst">${
+      google-fonts.override { <span class="hljs-attr">fonts</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;Inter&quot;</span> ]; }</span>
+    }/share/fonts/truetype/Inter[slnt,wght].ttf&quot; src/app/Inter.ttf
+  &#x27;&#x27;</span>;
+
+  ...
+}</code></pre>
+      </div><p>You can take a look at what fonts are available in the Nix <code>google-fonts</code> package by calling:</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs">ls -ahl $(nix build --no-link --print-out-paths nixpkgs#google-fonts)/share/fonts/truetype/</code></pre>
+      </div><p>Take a look at <a href="https://github.com/NixOS/nixpkgs/blob/8358fd43a66594d8b3445d87006185fa76d4be6e/pkgs/by-name/ho/homepage-dashboard/package.nix">homepage-dashboard package in nixpkgs</a> for further workarounds for Nextjs in Nix.</p>
+<h2 id="tips-and-tricks">Tips and tricks</h2><h3 id="example-nix-flake-shell-for-node-js-development">Example nix flake shell for Node.js development</h3><p><a href="https://mirror.nixoscn.org/wiki/Node.js/Flake" class="wikilink" title="Flake">Flake</a> example: (Note: the `${&lt;nixpkgs&gt;}` needs to be replaced by `${<nixpkgs>}`</p>
+<h3 id="using-nodepackages-with-a-different-node-version">Using nodePackages with a different node version</h3><p>Packages in are built using , so if you <a href="https://mirror.nixoscn.org/wiki/Node.js/Overlays" class="wikilink" title="overlay that package">overlay that package</a> to a different version, the will be built using that: &lt;syntaxhighlight lang=&quot;nix&gt; final: prev: {</p>
+<p><code>     nodejs = prev.nodejs-16_x;</code></p>
+<p>}</p>
+</syntaxhighlight>
+
+<div class="code-container">
+        
+        <pre><code class="language- hljs">$ pnpm node --version
+v16.17.1</code></pre>
+      </div><h3 id="override-nodejs-package">Override NodeJS package</h3><p>Overriding a Nix package which is based on <em>buildNpmPackage</em> can be challeging because not only the source hash has to get changed but sometimes also the <em>package-lock.json</em> file and the <em>npmDepsHash</em>.</p>
+<p>Unfortunately it is not possible to directly access and change <em>npmDepsHash</em> inside <em>overrideAttrs</em>, so this is an example workaround for changing the version, <em>package-lock.json</em> and hashes of the package <em>eslint</em>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> [
+  (eslint.overrideAttrs (<span class="hljs-params">oldAttrs:</span> <span class="hljs-keyword">rec</span> {
+    <span class="hljs-attr">version</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;8.57.0&quot;</span>;
+    <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> fetchFromGitHub {
+      <span class="hljs-attr">owner</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;eslint&quot;</span>;
+      <span class="hljs-attr">repo</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;eslint&quot;</span>;
+      <span class="hljs-attr">rev</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;refs/tags/v<span class="hljs-subst">${version}</span>&quot;</span>;
+      <span class="hljs-attr">hash</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sha256-nXlS+k8FiN7rbxhMmRPb3OplHpl+8fWdn1nY0cjL75c=&quot;</span>;
+    };
+    <span class="hljs-attr">postPatch</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+      cp <span class="hljs-subst">${.<span class="hljs-operator">/</span>package-lock.json}</span> package-lock.json
+    &#x27;&#x27;</span>;
+    <span class="hljs-attr">npmDepsHash</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sha256-DiXgAD0PvIIBxPAsdU8OOJIyvYI0JyPqu6sj7XN94hE=&quot;</span>;
+    <span class="hljs-attr">npmDeps</span> <span class="hljs-operator">=</span> pkgs.fetchNpmDeps {
+      <span class="hljs-attr">src</span> <span class="hljs-operator">=</span> lib.fileset.toSource {
+        <span class="hljs-attr">root</span> <span class="hljs-operator">=</span> <span class="hljs-symbol">./.</span>;
+        <span class="hljs-attr">fileset</span> <span class="hljs-operator">=</span> lib.fileset.unions [
+          <span class="hljs-symbol">./package-lock.json</span>
+          <span class="hljs-symbol">./package.json</span>
+        ];
+      };
+      <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;eslint-<span class="hljs-subst">${version}</span>-npm-deps&quot;</span>;
+      <span class="hljs-attr">hash</span> <span class="hljs-operator">=</span> npmDepsHash;
+    };
+  }))
+];</code></pre>
+      </div><h2 id="external-links">External Links</h2><ul>
+<li><a href="https://github.com/svanderburg/node2nix">node2nix</a></li>
+</ul>
+<h3 id="references">References</h3><p><a href="category:JavaScript" class="wikilink" title="Category:JavaScript">Category:JavaScript</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p><a href="https://logs.nix.samueldr.com/nixos/2018-07-09#1358500">joepie91 on #nixos, 2018-07-09</a> <a href="https://mirror.nixoscn.org/wiki/Node.js#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+<li id="footnote-2">
+<p>[<a href="https://logs.nix.samueldr.com/nixos/2018-07-17#1386090">https://logs.nix.samueldr.com/nixos/2018-07-17#1386090</a>; samueldr on #nixos, 2018-07-17] <a href="https://mirror.nixoscn.org/wiki/Node.js#footnote-ref-2" data-footnote-backref aria-label="Back to reference 2">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

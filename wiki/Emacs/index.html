@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Emacs</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Emacs</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Emacs -->
+
+<p><strong>Emacs</strong> is a free and open-source text editor known for its exceptional extensibility and adaptability. It can be customized into anything from a simple editor to a full development environment or productivity tool. Emacs features built-in self-documentation, syntax-aware editing, and a vast ecosystem of community-developed packages.<sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/Emacs#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup></p>
+<p>For an easier introduction, <a href="https://doomemacs.org/">Doom Emacs</a> offers a pre-configured Emacs framework with modern defaults and features like IDE tools, note-taking, and task management.</p>
+<p>There is an official Matrix room for Nix/Emacs: <a href="https://matrix.to/#/#emacs:nixos.org">#emacs:nixos.org</a>.</p>
+<h2 id="installation">Installation</h2><h4 id="shell">Shell</h4><p>To temporarily use Emacs in a shell environment without modifying your system configuration, you can run: This makes the Emacs editor available in your current shell. You can then launch Emacs by typing <code>emacs</code>.</p>
+<h4 id="system-setup">System setup</h4><p>To install Emacs system-wide, making it available to all users, add the following to your configuration:</p>
+<p>Alternatively, Emacs can be installed specific to a user via <a href="https://mirror.nixoscn.org/wiki/Emacs/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a>:</p>
+<p>After rebuilding your system with <code>nixos-rebuild switch</code> or <code>home-manager switch</code>, Emacs will be installed and accessible.</p>
+<h2 id="configuration">Configuration</h2><h4 id="nixos-system-configuration">NixOS System Configuration</h4><p>System wide configuration of Emacs is limited to only the <a href="https://www.gnu.org/software/emacs/manual/html_node/emacs/Emacs-Server.html">Emacs daemon</a>. To enable Emacs daemon user services system-wide and set as default editor:</p>
+<p>Use <code>emacsclient</code> to connect to the daemon. For a full list of module configuration options, see .</p>
+<h4 id="home-manager">Home Manager</h4><p><a href="https://mirror.nixoscn.org/wiki/Emacs/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> provides a larger set of user-specific configuration options for Emacs.</p>
+<p>A minimal configuration that installs Emacs alongside <code>nix-mode</code> and <code>nixfmt</code> packages:</p>
+<p>To search for Emacs plugins within the package set, see . A full list of Home Manager configuration module options can be found <a href="https://home-manager-options.extranix.com/?query=programs.emacs">here</a>.</p>
+<p>Home Manager also provides a configuration module for enabling the Emacs daemon:</p>
+<p>See <a href="https://home-manager-options.extranix.com/?query=services.emacs">the module options</a> for <code>services.emacs</code> configurations options.</p>
+<h2 id="tips-and-tricks">Tips and Tricks</h2><h4 id="installing-packages">Installing Packages</h4><p>One can mix and match whether Emacs packages are installed by Nix or Emacs. This can be particularly useful for Emacs packages that need to be built, such as vterm. One way to install Emacs packages through Nix is by the following, replacing with the variant in use:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs;
+[ ...
+  ((emacsPackagesFor emacs-pgtk).emacsWithPackages (
+    <span class="hljs-params">epkgs:</span> [ epkgs.vterm ]
+  ))
+  ...
+];
+
+<span class="hljs-comment"># To make the packages available to emacsclient, one can do the following:</span>
+s<span class="hljs-attr">ervices.emacs.package</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; (
+  (emacsPackagesFor emacs-pgtk).emacsWithPackages (
+    <span class="hljs-params">epkgs:</span> [ epkgs.vterm ]
+  )
+);
+
+<span class="hljs-comment"># Some packages have characters like + that Nix considers a syntax error. </span>
+<span class="hljs-comment"># To fix this, write the package name in quotes and specify the package set, even if using with epkgs;. </span>
+<span class="hljs-comment"># For example, use epkgs.&quot;ido-completing-read+&quot;.</span></code></pre>
+      </div><p>Note that if the expression <code>(emacsPackagesFor emacs-pgtk)</code> is present, <code>emacs-pgtk</code> need not be listed separately in the list <code>environment.systemPackages</code>. Indeed, if one does that, <code>nixos-rebuild</code> will warn about link collisions when the configuration is rebuilt.</p>
+<h6 id="alternative-way-of-installation-to-ensuring-consistent-package-management-for-emacs-and-emacsclient">Alternative way of installation to ensuring consistent package management for emacs and emacsclient</h6><p>If you plan to use the same packages for both emacs and emacsclient, you can define a custom emacs like this:</p>
+<p>You may then reference it twice:</p>
+<p>Using this approach, there is no need to keep two lists of emacsPackages in sync.</p>
+<h4 id="tree-sitter">Tree-sitter</h4><p><a href="https://mirror.nixoscn.org/wiki/Emacs/Emacs" class="wikilink" title="Emacs">Emacs</a> 29 <a href="emacswiki:Tree-sitter" class="wikilink" title="supports Tree-sitter parsers">supports Tree-sitter parsers</a> when built with the <code>--with-tree-sitter</code> option. The <code>emacsPackages.treesit-grammars</code> fake package makes them accessible to Emacs when using <code>emacs29.pkgs.withPackages</code>:<sup><a id="footnote-ref-2" href="https://mirror.nixoscn.org/wiki/Emacs#footnote-2" data-footnote-ref aria-describedby="footnote-label">2</a></sup></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  pkgs <span class="hljs-operator">?</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> { },
+}:
+pkgs.emacs29.pkgs.withPackages (<span class="hljs-params">epkgs:</span> [
+  (epkgs.treesit-grammars.<span class="hljs-keyword">with</span>-grammars (<span class="hljs-params">grammars:</span> [ grammars.tree-sitter-bash ]))
+])</code></pre>
+      </div><p>When using Emacs with tree-sitter support, it&#39;s recommended to install both <code>epkgs.tree-sitter-langs</code> and <code>epkgs.treesit-grammars</code>. While <code>treesit-grammars</code> handles the registration of grammars with Emacs&#39;s native tree-sitter interface, the actual grammar files will come from <code>tree-sitter-langs</code>. <code>tree-sitter-langs</code> being a MELPA package means it receives regular updates when new grammar versions are released, whereas the grammars in the tree-sitter-grammars package may lag behind in nixpkgs. The combination ensures you get both up-to-date grammars and proper integration with Emacs&#39;s built-in tree-sitter support.</p>
+<p><b>Bonus Tip:</b></p>
+<p><code>emacs.pkgs.pretty-sha-path</code> is quality of life improvement for Nix, Guix users.</p>
+<p>Allows toggling Guix/Nix store paths by replacing SHA-sequences with ellipsis, i.e.:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">/gnu/store/72f54nfp6g1hz873w8z3gfcah0h4nl9p-foo-0.1  →  /gnu/store/…-foo-0.1
+/nix/store/nh4n4yzb1bx7nss2rg342dz44g14m06x-bar-0.2  →  /nix/store/…-bar-0.2</code></pre>
+      </div><p>located at <a href="https://github.com/alezost/pretty-sha-path.el">https://github.com/alezost/pretty-sha-path.el</a></p>
+<h4 id="automatic-package-management">Automatic Package Management</h4><p>If you use <code>use-package</code> or <code>leaf</code> in your configuration, the community overlay can manage your Emacs packages automatically by using <code>emacsWithPackagesFromUsePackage</code>. First, install the overlay (instructions above), then add the following to your <code>configuration.nix</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> [
+    (pkgs.emacsWithPackagesFromUsePackage {
+      <span class="hljs-attr">package</span> <span class="hljs-operator">=</span> pkgs.emacsGit;  <span class="hljs-comment"># replace with pkgs.emacsPgtk, or another version if desired.</span>
+      <span class="hljs-attr">config</span> <span class="hljs-operator">=</span> path<span class="hljs-symbol">/to/your/config.el</span>;
+      <span class="hljs-comment"># config = path/to/your/config.org; # Org-Babel configs also supported</span>
+
+      <span class="hljs-comment"># Optionally provide extra packages not in the configuration file.</span>
+      <span class="hljs-attr">extraEmacsPackages</span> <span class="hljs-operator">=</span> <span class="hljs-params">epkgs:</span> [
+        epkgs.use-package
+      ];
+
+      <span class="hljs-comment"># Optionally override derivations.</span>
+      <span class="hljs-attr">override</span> <span class="hljs-operator">=</span> <span class="hljs-params">epkgs:</span> epkgs <span class="hljs-operator">//</span> {
+        <span class="hljs-attr">somePackage</span> <span class="hljs-operator">=</span> epkgs.melpaPackages.somePackage.overrideAttrs(<span class="hljs-params">old:</span> {
+           <span class="hljs-comment"># Apply fixes here</span>
+        });
+      };
+    })
+  ];
+}</code></pre>
+      </div><p>See the <a href="https://github.com/nix-community/emacs-overlay#extra-library-functionality">overlay README</a> for a full list of options.</p>
+<h4 id="adding-packages-from-outside-elpa-melpa">Adding packages from outside ELPA/MELPA</h4><p>Some packages may require more sophisticated derivation, but the following is a good starting point for adding external packages:</p>
+<p>You can then use the new package with automatic package management like so:</p>
+<p>or manual package management like so:</p>
+<h4 id="packaging-and-testing-emacs-nixpkgs">Packaging and testing Emacs nixpkgs</h4><p>Emacs packages can be defined and tested like other nixpkgs. They can be obtained from melpa, elpa or other sources such as github.</p>
+<p>They are located at <code>pkgs/applications/editors/emacs/elisp-packages/manual-packages/</code> <a href="https://github.com/NixOS/nixpkgs/tree/master/pkgs/applications/editors/emacs/elisp-packages/manual-packages">1</a> and a new pkg must be added under <code>pkgs/applications/editors/elisp-packages/manual-packages.nix</code> <a href="https://github.com/NixOS/nixpkgs/blob/master/pkgs/applications/editors/emacs/elisp-packages/manual-packages.nix">2</a>. Once the nixpkg is ready, it can be tested using the following command. This inserts the nixpkg into the load-path of Emacs.</p>
+<h4 id="window-manager-integration">Window Manager Integration</h4><p>Out of the box, non-&quot;Mac Port&quot; versions of Emacs will not be picked up properly by window managers like <a href="https://github.com/koekeishiya/yabai">Yabai</a> because <a href="https://github.com/koekeishiya/yabai/issues/86#issuecomment-507537023">Emacs does not set the correct macOS window role</a>. This can be fixed with a patch (e.g. the first patch in the example above). However, even with the patch, Yabai may not correctly pick up Emacs if you invoke the <code>emacs</code> binary directly from a shell. For Emacs to work properly with window managers you must invoke it by running the macOS app that is generated when you install Emacs with nix. You can setup an alias to do this like so (replace <code>pkgs.emacs</code> with the package you are using):</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">p<span class="hljs-attr">rograms.zsh</span> <span class="hljs-operator">=</span> {
+  <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">shellAliases</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">emacs</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.emacs}</span>/Applications/Emacs.app/Contents/MacOS/Emacs&quot;</span>;
+  };
+};</code></pre>
+      </div><h4 id="available-emacs-variants">Available Emacs Variants</h4><h5 id="stable-nixpkgs">Stable (nixpkgs)</h5><p>Emacs is available in nixpkgs under the names <code>emacs</code> and <code>emacs-gtk</code>.</p>
+<p><a href="https://github.com/NixOS/nixpkgs/pull/189543">Since 2022-09</a>, the package called <code>emacs</code> now installs the lucid toolkit instead of gtk. The reason is that Emacs is less stable with gtk especially in daemon mode. However, the lucid flavor of Emacs will not take into account the GTK theme (since it is not even GTK) and looks quite… ugly (see comparisons <a href="https://emacs.stackexchange.com/questions/33065/on-linux-why-should-one-choose-lucid-over-gtk-gui-for-emacs">here</a>). If you still prefer the GTK version of Emacs, you can instead install <code>emacs-gtk</code> (before 2022-09 this package does not exist and Emacs defaults to the gtk version).</p>
+<h5 id="unstable-community-overlay">Unstable (community overlay)</h5><p>The <a href="https://github.com/nix-community/emacs-overlay">community overlay</a> provides nightly versions of the Emacs unstable branches, ELPA/MELPA packages, and <a href="https://github.com/ch11ng/exwm">EXWM</a> + its dependencies. <strong>To use these, first apply the overlay (instructions below), which will make the packages available in nixpkgs.</strong> Then you can follow the normal nixpkgs installation instructions (above), but use your package of choice from the overlay (e.g. <code>pkgs.emacsGit</code>) in place of <code>pkgs.emacs</code>. See the <a href="https://github.com/nix-community/emacs-overlay#emacs-overlay">README</a> for a complete list of packages provided, and their differences.</p>
+<h6 id="with-flakes">With flakes</h6><p>Using a system flake, one can specify the specific revision of the overlay as a flake input, for example:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">i<span class="hljs-attr">nputs.emacs-overlay.url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:nix-community/emacs-overlay/da2f552d133497abd434006e0cae996c0a282394&quot;</span>;</code></pre>
+      </div><p>This can then be used in the system configuration by using the argument:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">ixpkgs.overlays</span> <span class="hljs-operator">=</span> [ (<span class="hljs-built_in">import</span> self.inputs.emacs-overlay) ];</code></pre>
+      </div><h6 id="without-flakes">Without flakes</h6><p>For installing one of the unstable branches of Emacs, add the following lines to your configuration file:</p>
+<h5 id="darwin-macos">Darwin (macOS)</h5><p>Nixpkgs provides several of the &quot;Mac Port&quot; versions of Emacs, which have been patched to provide better integration with macOS (see the <a href="https://nixos.org/manual/nixos/stable/index.html#module-services-emacs-releases">NixOS manual entry for a full list of packages</a>). However, those packages typically track the stable releases of Emacs.</p>
+<p>If you would like to use the latest version of Emacs on Darwin, one option is to use a package like <code>emacsPgkt</code> from the community overlay (see above), and apply patches yourself via an override. For example, here is a derivation that applies the patches from the <a href="https://github.com/d12frosted/homebrew-emacs-plus"><code>emacs-plus</code> homebrew formula</a>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">pkgs.emacsPgtk.overrideAttrs (<span class="hljs-params">old:</span> {
+      <span class="hljs-attr">patches</span> <span class="hljs-operator">=</span>
+        (old.patches <span class="hljs-keyword">or</span> [])
+        <span class="hljs-operator">++</span> [
+          <span class="hljs-comment"># Fix OS window role (needed for window managers like yabai)</span>
+          (fetchpatch {
+            <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://raw.githubusercontent.com/d12frosted/homebrew-emacs-plus/master/patches/emacs-28/fix-window-role.patch&quot;</span>;
+            <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;0c41rgpi19vr9ai740g09lka3nkjk48ppqyqdnncjrkfgvm2710z&quot;</span>;
+          })
+          <span class="hljs-comment"># Enable rounded window with no decoration</span>
+          (fetchpatch {
+            <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://raw.githubusercontent.com/d12frosted/homebrew-emacs-plus/master/patches/emacs-29/round-undecorated-frame.patch&quot;</span>;
+            <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;111i0r3ahs0f52z15aaa3chlq7ardqnzpwp8r57kfsmnmg6c2nhf&quot;</span>;
+          })
+          <span class="hljs-comment"># Make Emacs aware of OS-level light/dark mode</span>
+          (fetchpatch {
+            <span class="hljs-attr">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;https://raw.githubusercontent.com/d12frosted/homebrew-emacs-plus/master/patches/emacs-28/system-appearance.patch&quot;</span>;
+            <span class="hljs-attr">sha256</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;14ndp2fqqc95s70fwhpxq58y8qqj4gzvvffp77snm2xk76c1bvnn&quot;</span>;
+          })
+        ];
+    });
+  };
+}</code></pre>
+      </div><h4 id="running-xwidgets">Running xwidgets</h4><p>Currently, the xwidgets feature is available for Emacs, but will have some issues with the PGTK build. Indeed, when create a webkit xwidget, the widget will initially show a blank page, for some seconds (usually 4/5 seconds), no matter whether you actually try to load a web page.</p>
+<p>A workaround to this is to way that delay, and then try to load the page. You can do so programmatically by waiting 5 seconds, or from within a webkit widget by waiting for 5 seconds, then pressing <code>g</code>, then <code>RET</code>.</p>
+<p>Otherwise, you can fix the issue by building Emacs with the following patch</p>
+<div class="code-container">
+        
+        <pre><code class="language-diff hljs"><span class="hljs-comment">--- a/src/xwidget.c</span>
+<span class="hljs-comment">+++ b/src/xwidget.c</span>
+<span class="hljs-meta">@@ -362,8 +362,12 @@</span>
+                &quot;download-started&quot;,
+                G_CALLBACK (webkit_download_cb), xw);
+
+<span class="hljs-addition">+#if !defined HAVE_PGTK</span>
+<span class="hljs-addition">+              /* when using pgtk, the about:blank workaround is not needed</span>
+<span class="hljs-addition">+                 would in fact make the initial load fail.  */</span>
+          webkit_web_view_load_uri (WEBKIT_WEB_VIEW (xw-&gt;widget_osr),
+                    &quot;about:blank&quot;);
+<span class="hljs-addition">+#endif</span>
+          /* webkitgtk uses GSubprocess which sets sigaction causing
+         Emacs to not catch SIGCHLD with its usual handle setup in
+         &#x27;catch_child_signal&#x27;.  This resets the SIGCHLD sigaction.  */</code></pre>
+      </div><p>Say you saved this file in <code>xwidget.patch</code>, then you can override emacs with</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">pkgs.emacs-pgtk.overrideAttrs (<span class="hljs-params">old:</span> {
+  <span class="hljs-attr">patches</span> <span class="hljs-operator">=</span> (old.patches <span class="hljs-keyword">or</span> []) <span class="hljs-operator">++</span> [ <span class="hljs-symbol">./xwidget.patch</span> ];
+}</code></pre>
+      </div><p>Beware, this will trigger a full Emacs compilation whenever you update it, because it will not match any cached binary.</p>
+<h2 id="troubleshooting">Troubleshooting</h2><h4 id="plasma-taskbar-grouping">Plasma taskbar grouping</h4><p>To fix/workaround <a href="https://mirror.nixoscn.org/wiki/Emacs/KDE" class="wikilink" title="Plasma">Plasma</a> grouping Emacs incorrectly (confusing emacs.desktop with emacsclient.desktop), perform the following:</p>
+<ul>
+<li>Open Emacs</li>
+<li>Right click title bar</li>
+<li>More Actions &gt; Configure Special Window Settings</li>
+<li>Add Property &gt; Desktop File Name</li>
+<li>Set desktop file name to &quot;/home/<USERNAME>/.nix-profile/share/applications/emacs.desktop&quot;</li>
+<li>Apply the changes</li>
+<li>Restart Emacs if need</li>
+</ul>
+<p>All Emacs instances should now be grouped together, allowing you to pin it and reliably switch to it with Super+<number></p>
+<h4 id="spell-checking">Spell checking</h4><p>Because Emacs expects the dictionaries to be on the same directory as aspell, they won&#39;t be picked up. To fix it install the <code>aspellWithDicts</code> package, specifying the dictionaries you want to use:</p>
+<p>A list of official dictionaries for aspell can be found on <a href="https://ftp.gnu.org/gnu/aspell/dict/0index.html">Aspell Website</a></p>
+<h2 id="see-also">See also</h2><ul>
+<li><a href="https://mirror.nixoscn.org/wiki/Emacs/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> – For declarative Emacs configuration at the user level: <a href="https://nix-community.github.io/home-manager/options.html#opt-programs.emacs.enable">Emacs module in Home Manager</a></li>
+<li><a href="https://www.gnu.org/software/emacs/manual/">Emacs Manuals</a> – Official Emacs documentation.</li>
+<li><a href="https://search.nixos.org/options?channel=unstable&amp;query=services.emacs">NixOS options for Emacs services</a> – System-level Emacs configuration.</li>
+<li><a href="https://discourse.nixos.org/search?q=emacs">Emacs discussions on NixOS Discourse</a> – Community tips, troubleshooting, and use cases.</li>
+<li><a href="https://doomemacs.org/">Doom Emacs</a> – A popular Emacs configuration framework.</li>
+<li><a href="https://github.com/nix-community/emacs-overlay">Emacs Overlay on Nixpkgs</a> – For nightly builds and additional Emacs packages.</li>
+</ul>
+<h2 id="references">References</h2><p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="category:CLI_Applications" class="wikilink" title="Category:CLI Applications">Category:CLI Applications</a> <a href="category:NixOS_Manual" class="wikilink" title="Category:NixOS Manual">Category:NixOS Manual</a> <a href="category:Text_Editor" class="wikilink" title="Category:Text Editor">Category:Text Editor</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p><a href="https://www.gnu.org/software/emacs/">https://www.gnu.org/software/emacs/</a> <a href="https://mirror.nixoscn.org/wiki/Emacs#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+<li id="footnote-2">
+<p><a href="https://github.com/NixOS/nixpkgs/pull/230751">https://github.com/NixOS/nixpkgs/pull/230751</a> <a href="https://mirror.nixoscn.org/wiki/Emacs#footnote-ref-2" data-footnote-backref aria-label="Back to reference 2">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Playwright</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Playwright</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Playwright -->
+
+<p>Playwright Test is an end-to-end test framework for modern web apps. It bundles test runner, assertions, isolation, parallelization and rich tooling.</p>
+<h2 id="installing-browsers-for-playwright-under-nixos">Installing browsers for Playwright under NixOS</h2><p>At first run, Playwright will prompt the user to run <code>playwright install</code> to install browsers. However, the browsers will not function due to missing dependencies.</p>
+<p>The nixpkgs package <code>playwright-driver.browsers</code> provides a packaged form of the browsers that can be assigned to the PLAYWRIGHT_BROWSERS_PATH environment variable.</p>
+<p>An example <code>shell.nix</code> that installs <a href="https://mirror.nixoscn.org/wiki/Playwright/Visual_Studio_Code" class="wikilink" title="Visual Studio Code">Visual Studio Code</a> and Playwright.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs <span class="hljs-operator">?</span> <span class="hljs-built_in">import</span> <span class="hljs-symbol">&lt;nixpkgs&gt;</span> { <span class="hljs-attr">config.allowUnfree</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>; } }:
+  pkgs.mkShell {
+    <span class="hljs-attr">nativeBuildInputs</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+      vscode <span class="hljs-comment"># if you want vscode</span>
+      nodejs_latest
+      playwright-driver.browsers <span class="hljs-comment"># !!! Make sure it has the same version as npm&#x27;s version!!</span>
+    ];
+
+    <span class="hljs-attr">shellHook</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+      export PLAYWRIGHT_BROWSERS_PATH=<span class="hljs-subst">${pkgs.playwright-driver.browsers}</span>
+      export PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=true
+      export PLAYWRIGHT_HOST_PLATFORM_OVERRIDE=&quot;ubuntu-24.04&quot; # Seems like it is not needed?
+    &#x27;&#x27;</span>;
+}</code></pre>
+      </div><h2 id="using-flake">Using flake</h2><p>This can easily be adapted within a flake like:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;A very basic flake&quot;</span>;
+
+  <span class="hljs-attr">inputs</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">flake-parts.url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:hercules-ci/flake-parts&quot;</span>;
+    <span class="hljs-attr">nixpkgs.url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:nixos/nixpkgs&quot;</span>;
+  };
+  
+  <span class="hljs-attr">outputs</span> <span class="hljs-operator">=</span> { flake-parts, ... } @ <span class="hljs-params">inputs:</span> flake-parts.lib.mkFlake { <span class="hljs-keyword">inherit</span> inputs; } {
+    <span class="hljs-attr">perSystem</span> <span class="hljs-operator">=</span> { config, self&#x27;, inputs&#x27;, pkgs, system, ... }: {
+      <span class="hljs-attr">devShells.default</span> <span class="hljs-operator">=</span> pkgs.mkShell {
+        <span class="hljs-attr">nativeBuildInputs</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+          nodejs_latest
+          playwright-driver.browsers
+        ];
+
+        <span class="hljs-attr">shellHook</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+          export PLAYWRIGHT_BROWSERS_PATH=<span class="hljs-subst">${pkgs.playwright-driver.browsers}</span>
+          export PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=true;
+        &#x27;&#x27;</span>;
+      };
+    };
+    <span class="hljs-comment"># Declared systems that your flake supports. These will be enumerated in perSystem</span>
+    <span class="hljs-attr">systems</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;x86_64-linux&quot;</span> <span class="hljs-string">&quot;aarch64-linux&quot;</span> <span class="hljs-string">&quot;x86_64-darwin&quot;</span> <span class="hljs-string">&quot;aarch64-darwin&quot;</span> ];
+  };
+}</code></pre>
+      </div><h2 id="using-devenv">Using Devenv</h2><p>With <a href="https://devenv.sh/">Devenv</a> you can also set certain environment variables and pin packages to make playwright work. Again, make sure to pin to the same version of playwright in <code>devenv.yaml</code> and <code>package.json</code>!</p>
+<h3 id="devenv-nix">devenv.nix</h3><div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ pkgs, lib, config, inputs, ... }:
+
+<span class="hljs-keyword">let</span>
+  <span class="hljs-attr">pkgs-playwright</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> inputs.nixpkgs-playwright { <span class="hljs-attr">system</span> <span class="hljs-operator">=</span> pkgs.stdenv.system; };
+  <span class="hljs-attr">browsers</span> <span class="hljs-operator">=</span> (<span class="hljs-built_in">builtins.fromJSON</span> (<span class="hljs-built_in">builtins.readFile</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs-playwright.playwright-driver}</span>/browsers.json&quot;</span>)).browsers;
+  <span class="hljs-attr">chromium-rev</span> <span class="hljs-operator">=</span> (<span class="hljs-built_in">builtins.head</span> (<span class="hljs-built_in">builtins.filter</span> (<span class="hljs-params">x:</span> x.name <span class="hljs-operator">==</span> <span class="hljs-string">&quot;chromium&quot;</span>) browsers)).revision;
+<span class="hljs-keyword">in</span>
+{
+  <span class="hljs-comment"># https://devenv.sh/basics/</span>
+  <span class="hljs-attr">env</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">PLAYWRIGHT_BROWSERS_PATH</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs-playwright.playwright.browsers}</span>&quot;</span>;
+    <span class="hljs-attr">PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">PLAYWRIGHT_NODEJS_PATH</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.nodejs}</span>/bin/node&quot;</span>;
+    <span class="hljs-attr">PLAYWRIGHT_LAUNCH_OPTIONS_EXECUTABLE_PATH</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs-playwright.playwright.browsers}</span>/chromium-<span class="hljs-subst">${chromium-rev}</span>/chrome-linux/chrome&quot;</span>;
+  };
+
+  <span class="hljs-comment"># https://devenv.sh/packages/</span>
+  <span class="hljs-attr">packages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+    just
+    nodejs
+  ];
+
+  <span class="hljs-comment"># https://devenv.sh/languages/</span>
+  <span class="hljs-attr">languages.javascript.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+  <span class="hljs-attr">dotenv.disableHint</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+  <span class="hljs-attr">cachix.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+
+  <span class="hljs-comment"># https://devenv.sh/scripts/</span>
+  <span class="hljs-attr">scripts.intro.exec</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    playwrightNpmVersion=&quot;$(npm show @playwright/test version)&quot;
+    echo &quot;❄️ Playwright nix version: <span class="hljs-subst">${pkgs-playwright.playwright.version}</span>&quot;
+    echo &quot;📦 Playwright npm version: $playwrightNpmVersion&quot;
+
+    if [ &quot;<span class="hljs-subst">${pkgs-playwright.playwright.version}</span>&quot; != &quot;$playwrightNpmVersion&quot; ]; then
+        echo &quot;❌ Playwright versions in nix (in devenv.yaml) and npm (in package.json) are not the same! Please adapt the configuration.&quot;
+    else
+        echo &quot;✅ Playwright versions in nix and npm are the same&quot;
+    fi
+
+    echo
+    env | grep ^PLAYWRIGHT
+  &#x27;&#x27;</span>;
+
+  <span class="hljs-attr">enterShell</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+    intro
+  &#x27;&#x27;</span>;
+
+  <span class="hljs-comment"># See full reference at https://devenv.sh/reference/options/</span>
+}</code></pre>
+      </div><h3 id="devenv-yaml">devenv.yaml</h3><div class="code-container">
+        
+        <pre><code class="language-yaml hljs"><span class="hljs-comment"># yaml-language-server: $schema=https://devenv.sh/devenv.schema.json</span>
+<span class="hljs-attr">inputs:</span>
+  <span class="hljs-attr">nixpkgs:</span>
+    <span class="hljs-attr">url:</span> <span class="hljs-string">github:NixOS/nixpkgs/nixos-unstable</span>
+  <span class="hljs-comment"># Currently pinned to: playwright@1.52.0</span>
+  <span class="hljs-comment"># See https://search.nixos.org/packages?channel=unstable&amp;from=0&amp;size=50&amp;sort=relevance&amp;type=packages&amp;query=playwright</span>
+  <span class="hljs-attr">nixpkgs-playwright:</span>
+      <span class="hljs-attr">url:</span> <span class="hljs-string">github:NixOS/nixpkgs/979daf34c8cacebcd917d540070b52a3c2b9b16e</span></code></pre>
+      </div><h3 id="package-json">package.json</h3><div class="code-container">
+        
+        <pre><code class="language-json hljs"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;e2e-tests-ng&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;version&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;1.0.0&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;main&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;index.js&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;license&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;MIT&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;devDependencies&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;@playwright/test&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;1.52.0&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;eslint&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;^8.41.0&quot;</span>
+  <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;engines&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;node&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;&gt;=18.0.0&quot;</span>
+  <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;scripts&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;playwright:test&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;playwright test&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;playwright:test:ui&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;playwright test --ui&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;playwright:install&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;playwright install&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;lint&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;eslint .&quot;</span>
+  <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;dependencies&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;dotenv&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;^16.0.3&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;jsrsasign&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;^11.0.0&quot;</span>
+  <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span></code></pre>
+      </div><h2 id="bun-playwright">Bun + Playwright</h2><p>Here is a <code>flake.nix</code> that is working with bun instead of nodejs (working today 2026-01-23). Put <code>flake.nix</code>, <code>playwright.config.ts</code>, <code>package.json</code> and <code>tests/example.spec.ts</code> in the root directory of your project and run</p>
+<ul>
+<li><code>nix develop</code> to install packages and enter the devShell</li>
+<li><code>bun install</code> to download playwright dependencies to node_modules</li>
+<li><code>bun --bun playwright test --headed</code> to test the setup</li>
+<li><code>bun playwright test --headed</code> to verify that without <code>--bun</code> flag the nodejs version is run and bun library is not available.</li>
+</ul>
+<h4 id="flake-nix">flake.nix</h4><div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">description</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Bun + Playwright dev shell&quot;</span>;
+
+  <span class="hljs-attr">inputs</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">nixpkgs.url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:NixOS/nixpkgs&quot;</span>;
+    <span class="hljs-attr">flake-utils.url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;github:numtide/flake-utils&quot;</span>;
+  };
+
+  <span class="hljs-attr">outputs</span> <span class="hljs-operator">=</span>
+    {
+      self,
+      nixpkgs,
+      flake-utils,
+      ...
+    }:
+    flake-utils.lib.eachDefaultSystem (
+      <span class="hljs-params">system:</span>
+      <span class="hljs-keyword">let</span>
+        <span class="hljs-attr">pkgs</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">import</span> nixpkgs { <span class="hljs-keyword">inherit</span> system; };
+        <span class="hljs-attr">browsers</span> <span class="hljs-operator">=</span>
+          (<span class="hljs-built_in">builtins.fromJSON</span> (<span class="hljs-built_in">builtins.readFile</span> <span class="hljs-string">&quot;<span class="hljs-subst">${pkgs.playwright-driver}</span>/browsers.json&quot;</span>)).browsers;
+        <span class="hljs-attr">chromium-rev</span> <span class="hljs-operator">=</span> (<span class="hljs-built_in">builtins.head</span> (<span class="hljs-built_in">builtins.filter</span> (<span class="hljs-params">x:</span> x.name <span class="hljs-operator">==</span> <span class="hljs-string">&quot;chromium&quot;</span>) browsers)).revision;
+      <span class="hljs-keyword">in</span>
+      {
+        <span class="hljs-attr">devShells.default</span> <span class="hljs-operator">=</span> pkgs.mkShell {
+          <span class="hljs-attr">packages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+            bun
+            playwright-driver.browsers
+          ];
+
+          <span class="hljs-attr">shellHook</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+            export PLAYWRIGHT_LAUNCH_OPTIONS_EXECUTABLE_PATH=&quot;<span class="hljs-subst">${pkgs.playwright-driver.browsers}</span>/chromium-<span class="hljs-subst">${chromium-rev}</span>/chrome-linux64/chrome&quot;;
+          &#x27;&#x27;</span>;
+        };
+      }
+    );
+}</code></pre>
+      </div><h4 id="playwright-config-ts">playwright.config.ts</h4><div class="code-container">
+        
+        <pre><code class="language-typescript hljs"><span class="hljs-keyword">import</span> { defineConfig, devices } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@playwright/test&#x27;</span>;
+
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">default</span> <span class="hljs-title function_">defineConfig</span>({
+  <span class="hljs-attr">projects</span>: [
+    {
+      <span class="hljs-attr">name</span>: <span class="hljs-string">&#x27;chromium&#x27;</span>,
+      <span class="hljs-attr">use</span>: {
+        ...devices[<span class="hljs-string">&#x27;Desktop Chrome&#x27;</span>],
+        <span class="hljs-attr">launchOptions</span>: {
+          <span class="hljs-attr">executablePath</span>: process.<span class="hljs-property">env</span>.<span class="hljs-property">PLAYWRIGHT_LAUNCH_OPTIONS_EXECUTABLE_PATH</span>,
+        },
+      },
+    },
+  ],
+});</code></pre>
+      </div><h4 id="package-json">package.json</h4><div class="code-container">
+        
+        <pre><code class="language-json hljs"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;$schema&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;https://json.schemastore.org/package.json&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;playwright_with_bun&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;version&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;1.0.0&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;description&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Playwright tests with Bun&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;scripts&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;test&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;bun --bun playwright test&quot;</span>
+  <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;dependencies&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;@playwright/test&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;^1.58.0&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;playwright-core&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;^1.58.0&quot;</span>
+  <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;devDependencies&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;@types/bun&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;^1.3.6&quot;</span>
+  <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span></code></pre>
+      </div><h4 id="tests-example-spec-ts">tests/example.spec.ts</h4><div class="code-container">
+        
+        <pre><code class="language-typescript hljs"><span class="hljs-keyword">import</span> { test, expect } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@playwright/test&#x27;</span>;
+
+<span class="hljs-title function_">test</span>(<span class="hljs-string">&#x27;basic test&#x27;</span>, <span class="hljs-title function_">async</span> ({ page }) =&gt; {
+  <span class="hljs-keyword">await</span> page.<span class="hljs-title function_">goto</span>(<span class="hljs-string">&#x27;https://example.com&#x27;</span>);
+  <span class="hljs-keyword">await</span> <span class="hljs-title function_">expect</span>(page).<span class="hljs-title function_">toHaveTitle</span>(<span class="hljs-regexp">/Example/</span>);
+});
+
+<span class="hljs-title function_">test</span>(<span class="hljs-string">&#x27;Bun.stripANSI available&#x27;</span>, <span class="hljs-title function_">async</span> () =&gt; {
+  <span class="hljs-title function_">expect</span>(<span class="hljs-keyword">typeof</span> <span class="hljs-title class_">Bun</span>.<span class="hljs-property">stripANSI</span>).<span class="hljs-title function_">toBe</span>(<span class="hljs-string">&#x27;function&#x27;</span>);
+});</code></pre>
+      </div><h4 id="test-output">test output</h4><div class="code-container">
+        
+        <pre><code class="language-shell-session hljs">
+[michi@nixos:~/dev/playwright_with_bun]$ bun --bun playwright test --headed
+
+Running 2 tests using 1 worker
+
+  ✓  1 [chromium] › tests/example.spec.ts:3:0 › basic test (1.1s)
+  ✓  2 [chromium] › tests/example.spec.ts:8:0 › Bun.stripANSI available (3ms)
+
+  2 passed (2.9s)
+
+[michi@nixos:~/dev/playwright_with_bun]$ bun playwright test --headed
+ReferenceError: Bun is not defined
+    at Object.&lt;anonymous&gt; (/home/michi/dev/playwright_with_bun/playwright.config.ts:10:27)
+    at Module._compile (node:internal/modules/cjs/loader:1706:14)
+    at Module.newCompile2 (/home/michi/dev/playwright_with_bun/node_modules/playwright/lib/third_party/pirates.js:46:29)
+    at Object.&lt;anonymous&gt; (node:internal/modules/cjs/loader:1839:10)
+    at Object.newLoader2 [as .ts] (/home/michi/dev/playwright_with_bun/node_modules/playwright/lib/third_party/pirates.js:52:22)
+    at Module.load (node:internal/modules/cjs/loader:1441:32)
+    at Function._load (node:internal/modules/cjs/loader:1263:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+    at Module.require (node:internal/modules/cjs/loader:1463:12)
+    at require (node:internal/modules/helpers:147:16)
+    at requireOrImport (/home/michi/dev/playwright_with_bun/node_modules/playwright/lib/transform/transform.js:225:18)
+    at loadUserConfig (/home/michi/dev/playwright_with_bun/node_modules/playwright/lib/common/configLoader.js:107:89)
+    at loadConfig (/home/michi/dev/playwright_with_bun/node_modules/playwright/lib/common/configLoader.js:119:28)
+    at loadConfigFromFile (/home/michi/dev/playwright_with_bun/node_modules/playwright/lib/common/configLoader.js:331:10)
+    at runTests (/home/michi/dev/playwright_with_bun/node_modules/playwright/lib/program.js:197:18)
+    at i.&lt;anonymous&gt; (/home/michi/dev/playwright_with_bun/node_modules/playwright/lib/program.js:70:7)
+error: &quot;playwright&quot; exited with code 1</code></pre>
+      </div><h3 id="notes">Notes</h3><ul>
+<li>The <a href="https://marketplace.visualstudio.com/items?itemName=ms-playwright.playwright">Playwright Test for VSCode</a> extension does not currently support Bun. The Node.js runtime may be used instead.</li>
+<li>Playwright version 1.58 is the first version where the command <code>bun --bun playwright test</code> works.</li>
+<li>see also <a href="https://github.com/MBanucu/bun-playwright-nix">https://github.com/MBanucu/bun-playwright-nix</a></li>
+</ul>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

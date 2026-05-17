@@ -1,0 +1,759 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WireGuard</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / WireGuard</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: WireGuard -->
+
+<h1 id="configuration-modules">Configuration Modules</h1><p>WireGuard-related NixOS options exist for the following networking modules:</p>
+<ul>
+<li>NetworkManager</li>
+<li>wg-quick</li>
+<li>networking.wireguard</li>
+<li>systemd.network</li>
+</ul>
+<p>Depending on how your computer is configured, you need to refer to the relevant section for setting up WireGuard.</p>
+<p>Different modules have different capabilities. systemd.network support routing traffic on a per user basis. For example, you can route all torrenting traffic through a wireguard tunnel, see below.</p>
+<p>systemd.network is recommended due to its powerful configuration interface. wg-quick is suitable for common usage patterns. networking.wireguard seems to have issues with routing. NetworkManager does not support Proxy server setup, and is cubersome to use.</p>
+<p>Skip to Generate Keys section if you are in a hurry.</p>
+<h1 id="use-cases">Use cases</h1><p>The first use case is Virtual Private Network, which makes several peers available on the same private subnet. This is the basis for the proxy configuration below.</p>
+<p>The second use case is Internet proxy, which allows you to access the Internet via another peer.</p>
+<h2 id="secure-dns-for-the-proxy-client">Secure DNS for the proxy client</h2><p>You can use a secure DNS client such as knot dns resolver, which comes with a set of authenticated dns servers ips built in.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-comment"># knot dns resolver</span>
+  <span class="hljs-attr">services.kresd.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+  <span class="hljs-comment"># disable built-in dns</span>
+  <span class="hljs-attr">services.resolved.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+
+  environment.etc.<span class="hljs-string">&quot;resolv.conf&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">mode</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;0644&quot;</span>;
+    <span class="hljs-attr">text</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nameserver ::1&quot;</span>;
+  };
+}</code></pre>
+      </div><p>Secure DNS hinders usage of captive portals. See <a href="https://mirror.nixoscn.org/wiki/WireGuard/systemd-resolved" class="wikilink" title="systemd-resolved">systemd-resolved</a> for solutions.</p>
+<h1 id="allowedips">AllowedIPs</h1><p>Each peer can handle traffic destined for a certain IP range. This range is called AllowedIP.</p>
+<p>Common forms of allowed IPs include</p>
+<ul>
+<li><p>192.168.26.9/32, a single internal IPv4 address</p>
+</li>
+<li><p>192.168.26.0/24, a subnet</p>
+</li>
+<li><p>fd31:bf08:57cb::9/128, a single internal IPv6 address</p>
+</li>
+<li><p>fd31:bf08:57cb::/60, a subnet</p>
+</li>
+<li><p>0.0.0.0/0, entire IPv4 address space, for proxying</p>
+</li>
+<li></li>
+</ul>
+<p>  /0, entire IPv6 address space, for proxying</p>
+<p>Notice that, in specifying its subnet mask, some configuration modules can automatically configure network routes.</p>
+<p>Allowed IPs should be unique to each peer. If there are peers whose allowed IPs overlap, traffic will only reach one of them.</p>
+<h1 id="udp-port">UDP Port</h1><p>The default port is 51820. Some literature recommends changing this port to circumvent blocking of WireGuard traffic.</p>
+<p>WireGuard will choose a random port, if this option is not set.</p>
+<h1 id="generate-keys">Generate keys</h1><p>WireGuard works with public-private key pairs.</p>
+<p>Computer (peer) is identified by its public key. Only connections from peers with known public keys are accepted. For this reason, you can not reuse keys on multiple peers.</p>
+<p>To generate a private key, and derive the public key from it, you need the <code>wg</code> utility, available in <code>wireguard-tools</code> package.</p>
+<p>After installation, use the following commands to generate keys:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">$ umask 077
+$ wg genkey &gt; privatekey
+$ wg pubkey &lt; privatekey &gt; publickey</code></pre>
+      </div><p>You need to generate a new key for each peer.</p>
+<p>Make sure the private key has the correct file permission as required by the WireGuard service. Wrong file permission may cause the service to fail. Check system log to rule out this scenario.</p>
+<p>You can use ryamtm/agenix to declaratively store and manage the WireGuard key.</p>
+<p>For systemd.network:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">  age.secrets.wg-key-vps = {
+    file = &quot;${inputs.self.outPath}/secrets/wg-key-vps.age&quot;;
+    # for permission, see man systemd.netdev
+    mode = &quot;640&quot;;
+    owner = &quot;systemd-network&quot;;
+    group = &quot;systemd-network&quot;;
+  };</code></pre>
+      </div><h1 id="systemd-network">systemd.network</h1><p>Credit: this section is adapted from ArchWiki. This section should fully support IPv4 and v6 dual stack.</p>
+<h2 id="peer-setup">Peer setup</h2><div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">age.secrets.wg-key-vps</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">file</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;<span class="hljs-subst">${inputs.self.outPath}</span>/secrets/wg-key-vps.age&quot;</span>;
+    <span class="hljs-comment"># for permission, see man systemd.netdev</span>
+    <span class="hljs-attr">mode</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;640&quot;</span>;
+    <span class="hljs-attr">owner</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;systemd-network&quot;</span>;
+    <span class="hljs-attr">group</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;systemd-network&quot;</span>;
+  };
+
+  <span class="hljs-attr">networking.firewall.allowedUDPPorts</span> <span class="hljs-operator">=</span> [ <span class="hljs-number">51820</span> ];
+
+  <span class="hljs-attr">networking.useNetworkd</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+  <span class="hljs-attr">systemd.network</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+    networks.<span class="hljs-string">&quot;50-wg0&quot;</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">matchConfig.Name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;wg0&quot;</span>;
+
+      <span class="hljs-attr">address</span> <span class="hljs-operator">=</span> [
+        <span class="hljs-comment"># /32 and /128 specifies a single address</span>
+        <span class="hljs-comment"># for use on this wg peer machine</span>
+        <span class="hljs-string">&quot;fd31:bf08:57cb::7/128&quot;</span>
+        <span class="hljs-string">&quot;192.168.26.7/32&quot;</span>
+      ];
+    };
+
+    netdevs.<span class="hljs-string">&quot;50-wg0&quot;</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">netdevConfig</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">Kind</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;wireguard&quot;</span>;
+        <span class="hljs-attr">Name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;wg0&quot;</span>;
+      };
+
+      <span class="hljs-attr">wireguardConfig</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">ListenPort</span> <span class="hljs-operator">=</span> <span class="hljs-number">51820</span>;
+
+        <span class="hljs-comment"># ensure file is readable by `systemd-network` user</span>
+        <span class="hljs-attr">PrivateKeyFile</span> <span class="hljs-operator">=</span> config.age.secrets.wg-key-vps.path;
+
+        <span class="hljs-comment"># To automatically create routes for everything in AllowedIPs,</span>
+        <span class="hljs-comment"># add RouteTable=main</span>
+        <span class="hljs-attr">RouteTable</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;main&quot;</span>;
+
+        <span class="hljs-comment"># FirewallMark marks all packets send and received by wg0 </span>
+        <span class="hljs-comment"># with the number 42, which can be used to define policy rules on these packets. </span>
+        <span class="hljs-attr">FirewallMark</span> <span class="hljs-operator">=</span> <span class="hljs-number">42</span>;
+      };
+      <span class="hljs-attr">wireguardPeers</span> <span class="hljs-operator">=</span> [
+        {
+          <span class="hljs-comment"># laptop wg conf</span>
+          <span class="hljs-attr">PublicKey</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ronr+8v670J0CPb0xT5QLGMWDfE7+1g7HmC6YMdCIDk=&quot;</span>;
+          <span class="hljs-attr">AllowedIPs</span> <span class="hljs-operator">=</span> [
+            <span class="hljs-string">&quot;fd31:bf08:57cb::9/128&quot;</span>
+            <span class="hljs-string">&quot;192.168.26.9/32&quot;</span>
+          ];
+          <span class="hljs-attr">Endpoint</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;192.168.1.26:51820&quot;</span>;
+
+          <span class="hljs-comment"># RouteTable can also be set in wireguardPeers</span>
+          <span class="hljs-comment"># RouteTable in wireguardConfig will then be ignored.</span>
+          <span class="hljs-comment"># RouteTable = 1000;</span>
+        }
+      ];
+    };
+  };
+
+}</code></pre>
+      </div><h2 id="proxy-server-setup">Proxy server setup</h2><p>Same as peer setup, skip the endpoint option, with the following addition:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">networking.nat</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">enableIPv6</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">externalInterface</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ens6&quot;</span>;
+    <span class="hljs-attr">internalInterfaces</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;wg0&quot;</span> ];
+  };
+
+  <span class="hljs-attr">systemd.network</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    networks.<span class="hljs-string">&quot;50-wg0&quot;</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">networkConfig</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-comment"># do not use IPMasquerade,</span>
+        <span class="hljs-comment"># unnecessary, causes problems with host ipv6</span>
+        <span class="hljs-attr">IPv4Forwarding</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+        <span class="hljs-attr">IPv6Forwarding</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      };
+    };
+  };
+}</code></pre>
+      </div><h2 id="proxy-client-setup">Proxy client setup</h2><p>Same as peer setup, with the following addition:</p>
+<h3 id="disable-rpfilter">Disable rpfilter</h3><div class="code-container">
+        
+        <pre><code class="language-nix hljs"><span class="hljs-comment"># NixOS firewall will block wg traffic because of rpfilter</span>
+n<span class="hljs-attr">etworking.firewall.checkReversePath</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;loose&quot;</span>; </code></pre>
+      </div><h3 id="route-dns-over-wg0">Route DNS over wg0</h3><p>This applies to systemd-resolved:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">systemd.network</span> <span class="hljs-operator">=</span> {
+    networks.<span class="hljs-string">&quot;50-wg0&quot;</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-comment"># only works with systemd-resolved</span>
+      <span class="hljs-attr">domains</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;~.&quot;</span> ];
+      <span class="hljs-attr">dns</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;{proxy server internal ip}&quot;</span> ];
+      <span class="hljs-attr">networkConfig</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-attr">DNSDefaultRoute</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      };
+    };
+  };</code></pre>
+      </div><p>Note: Routing all DNS over WireGuard (i.e. Domains=~.) will prevent the DNS resolution of endpoints. Unless the peer domain is configured to be resolved on a specific network link.</p>
+<p>To use a peer as a DNS server, specify its WireGuard tunnel&#39;s IP address(es) in the .network file using the DNS= option. For search domains use the Domains= option.</p>
+<p>To use a peer as the only DNS server set DNSDefaultRoute=true and Domains=~. in the [Network] section of .network file&#39;s.</p>
+<h3 id="route-all-traffic-over-wg0-except-endpoint">Route all traffic over wg0, except endpoint</h3><div class="code-container">
+        
+        <pre><code class="language-nix hljs">  <span class="hljs-attr">systemd.network</span> <span class="hljs-operator">=</span> {
+    netdevs.<span class="hljs-string">&quot;50-wg0&quot;</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-comment"># FirewallMark simply marks all packets send and received by this wireguard </span>
+      <span class="hljs-comment"># interface with the number 42, which can be used to define policy rules on these packets. </span>
+      <span class="hljs-attr">wireguardConfig.FirewallMark</span> <span class="hljs-operator">=</span> <span class="hljs-number">42</span>;
+
+      <span class="hljs-attr">wireguardPeers</span> <span class="hljs-operator">=</span> [
+        {
+          <span class="hljs-attr">AllowedIPs</span> <span class="hljs-operator">=</span> [
+            <span class="hljs-comment"># proxy all traffic</span>
+            <span class="hljs-string">&quot;::/0&quot;</span>
+            <span class="hljs-string">&quot;0.0.0.0/0&quot;</span>
+          ];
+          <span class="hljs-comment"># can&#x27;t use domain</span>
+          <span class="hljs-comment"># Routing all DNS over WireGuard (i.e. Domains=~.) will prevent the DNS resolution of endpoints.</span>
+          <span class="hljs-attr">Endpoint</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;[2a01::1]:51820&quot;</span>;
+
+          <span class="hljs-comment"># RouteTable line specifies that a new routing table with id 1000 is created</span>
+          <span class="hljs-comment"># for the wireguard interface, and no rules are set on the main routing table.</span>
+          <span class="hljs-attr">RouteTable</span> <span class="hljs-operator">=</span> <span class="hljs-number">1000</span>;
+        }
+      ];
+    };
+    networks.<span class="hljs-string">&quot;50-wg0&quot;</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">routingPolicyRules</span> <span class="hljs-operator">=</span> [
+        <span class="hljs-comment"># rule 1: redirect traffic</span>
+        {
+          <span class="hljs-comment"># apply rule to both v4 and v6</span>
+          <span class="hljs-attr">Family</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;both&quot;</span>;
+
+          <span class="hljs-comment"># For all packets *not* marked with 42 (i.e. all non-wireguard/normal traffic), </span>
+          <span class="hljs-attr">InvertRule</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+          <span class="hljs-attr">FirewallMark</span> <span class="hljs-operator">=</span> <span class="hljs-number">42</span>;
+
+          <span class="hljs-comment"># (... continued) we specify that the routing table 1000 must be used </span>
+          <span class="hljs-comment"># (which is the wireguard routing table). This rule routes all traffic through wireguard.</span>
+          <span class="hljs-comment"># inside routingPolicyRules section is called Table, not RouteTable</span>
+          <span class="hljs-attr">Table</span> <span class="hljs-operator">=</span> <span class="hljs-number">1000</span>;
+
+          <span class="hljs-comment"># this routing policy rule has a lower priority (10) than</span>
+          <span class="hljs-comment"># endpoint exclusion rule (5).</span>
+          <span class="hljs-attr">Priority</span> <span class="hljs-operator">=</span> <span class="hljs-number">10</span>;
+        }
+
+
+        <span class="hljs-comment"># rule 2: exclude endpoint ip</span>
+        {
+          <span class="hljs-comment"># Use a routing policy rule to exclude the endpoint IP address,</span>
+          <span class="hljs-comment"># so that wireguard can still connect to it.</span>
+          <span class="hljs-comment"># it has a higher priority (5) than (10).</span>
+
+          <span class="hljs-comment"># We exempt our endpoint with a higher priority by routing it</span>
+          <span class="hljs-comment"># through the main table (Table=main is default). </span>
+          <span class="hljs-attr">To</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;2a01::1/128&quot;</span>;
+          <span class="hljs-attr">Priority</span> <span class="hljs-operator">=</span> <span class="hljs-number">5</span>;
+        }
+      ];
+    };
+  };</code></pre>
+      </div><h3 id="exempting-specific-addresses">Exempting specific addresses</h3><p>In order to exempt specific addresses (such as private LAN addresses) from routing over the WireGuard tunnel, add them to another RoutingPolicyRule with higher priority.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  systemd.network.networks.<span class="hljs-string">&quot;50-wg0&quot;</span>.routingPolicyRules <span class="hljs-operator">=</span> 
+  [
+    {
+      <span class="hljs-attr">To</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;192.168.0.0/24&quot;</span>;
+      <span class="hljs-attr">Priority</span> <span class="hljs-operator">=</span> <span class="hljs-number">9</span>;
+    }
+  ]</code></pre>
+      </div><h3 id="manually-start-and-stop-wg0">Manually start and stop wg0</h3><p>The above steps will set up a <code>wg0</code> interface, managed by networkctl command.</p>
+<p>You can start it by typing the following in your terminal:</p>
+<div class="code-container">
+        
+        <pre><code class="language-sh hljs"><span class="hljs-built_in">sudo</span> networkctl up wg0</code></pre>
+      </div><p>To stop the service:</p>
+<div class="code-container">
+        
+        <pre><code class="language-sh hljs"><span class="hljs-built_in">sudo</span> networkctl down wg0</code></pre>
+      </div><h3 id="route-for-specific-user">Route for specific user</h3><p>It may be desirable to route WAN traffic over the tunnel only for a specific user, for example, the transmission user in order to use the tunnel for torrent traffic.</p>
+<p>Replace catch-all rules above, with user-specific rules below.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">  systemd.network.networks.<span class="hljs-string">&quot;50-wg0&quot;</span>.routingPolicyRules <span class="hljs-operator">=</span> 
+  [
+    {
+      <span class="hljs-comment"># The lower priority rule (30001), matches all traffic generated</span>
+      <span class="hljs-comment"># by the transmission user and routes it through table 1000 which is the wireguard table. </span>
+      <span class="hljs-attr">Table</span> <span class="hljs-operator">=</span> <span class="hljs-number">1000</span>;
+      <span class="hljs-attr">User</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;transmission&quot;</span>;
+      <span class="hljs-attr">Priority</span> <span class="hljs-operator">=</span> <span class="hljs-number">30001</span>;
+      <span class="hljs-attr">Family</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;both&quot;</span>;
+    }
+
+    {
+      <span class="hljs-comment"># The higher priority rule (30000), matches all traffic</span>
+      <span class="hljs-comment"># generated by the transmission user</span>
+      <span class="hljs-comment"># and routes it through the main table (no wireguard)</span>
+      <span class="hljs-comment"># BUT only using rules with a prefix length larger than 0.</span>
+      <span class="hljs-comment">#</span>
+      <span class="hljs-comment"># This means the default 0.0.0.0/0 and ::/0 rules still apply</span>
+      <span class="hljs-comment">#</span>
+      <span class="hljs-comment"># Therefore, only traffic matching specific rules with non-zero prefix</span>
+      <span class="hljs-comment"># (such as those defining the subnet of your local home network) of the main table</span>
+      <span class="hljs-comment"># are routed through the main table. </span>
+
+      <span class="hljs-attr">Table</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;main&quot;</span>;
+      <span class="hljs-attr">User</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;transmission&quot;</span>;
+      <span class="hljs-attr">SuppressPrefixLength</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>;
+      <span class="hljs-attr">Priority</span> <span class="hljs-operator">=</span> <span class="hljs-number">30000</span>;
+      <span class="hljs-attr">Family</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;both&quot;</span>;
+    }
+  ];
+  <span class="hljs-comment"># Configure port forwarding for Transmission under NAT</span>
+  <span class="hljs-attr">networking.nat.forwardPorts</span> <span class="hljs-operator">=</span> 
+       [
+         {
+           <span class="hljs-attr">destination</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;10.0.0.1:80&quot;</span>;
+           <span class="hljs-attr">proto</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;tcp&quot;</span>;
+           <span class="hljs-attr">sourcePort</span> <span class="hljs-operator">=</span> <span class="hljs-number">8080</span>;
+         }
+         {
+           <span class="hljs-attr">destination</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;[fc00::2]:80&quot;</span>;
+           <span class="hljs-attr">proto</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;tcp&quot;</span>;
+           <span class="hljs-attr">sourcePort</span> <span class="hljs-operator">=</span> <span class="hljs-number">8080</span>;
+         }
+       ];</code></pre>
+      </div><h2 id="test-and-troubleshooting">Test and Troubleshooting</h2><p>Test the proxy with</p>
+<p><code># ipv4</code><br><code>$ curl -4 zx2c4.com/ip</code>  </p>
+<p><code># ipv6</code><br><code>$ curl -6 zx2c4.com/ip</code></p>
+<p>Check systemd-networkd log for any error and warning messages.</p>
+<p><code>$ journalctl -u systemd-networkd.service</code></p>
+<p>Invoke <code>wg</code> command from <code>wireguard-tools</code>.</p>
+<p>Use <code>ip route</code> to inspect the route table</p>
+<p><code>$ ip route show table 1000</code><br><code>default dev wg0 proto static scope link </code></p>
+<p><code>$ ip route show table all</code><br><code>... many entries ...</code></p>
+<p><code>$ ip rule list</code><br><code>10:    not from all fwmark 0x2a lookup 1000 proto static</code></p>
+<p><code>$ ip route get  136.144.57.121</code><br><code>136.144.57.121 dev wg0 table 1000 src 192.168.26.9 uid 1000 </code></p>
+<p><code>$ ip route get 2600:1406::1</code><br><code>2600:1406::1 from :: dev wg0 table 1000 proto static src fd31:bf08:57cb::9 metric 1024 pref medium</code></p>
+<h1 id="wg-quick">wg-quick</h1><h2 id="peer-setup">Peer setup</h2><div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">networking.wg-quick.interfaces</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">wg0</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">address</span> <span class="hljs-operator">=</span> [ 
+        <span class="hljs-string">&quot;fd31:bf08:57cb::9/128&quot;</span>
+        <span class="hljs-string">&quot;192.168.26.9/32&quot;</span>
+      ];
+      <span class="hljs-comment"># use dnscrypt, or proxy dns as described above</span>
+      <span class="hljs-attr">dns</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;127.0.0.1&quot;</span> ];
+      <span class="hljs-attr">privateKeyFile</span> <span class="hljs-operator">=</span> config.age.secrets.wg-key-laptop.path;
+      <span class="hljs-attr">peers</span> <span class="hljs-operator">=</span> [
+        {
+          <span class="hljs-comment"># bt wg conf</span>
+          <span class="hljs-attr">publicKey</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ejmbag/fcc9OLp8K62zfV0NCbp056DnA0qpNixLXwCo=&quot;</span>;
+          <span class="hljs-attr">allowedIPs</span> <span class="hljs-operator">=</span> [
+            <span class="hljs-string">&quot;fd31:bf08:57cb::8/128&quot;</span>
+            <span class="hljs-string">&quot;192.168.26.8/32&quot;</span>
+          ];
+          <span class="hljs-attr">endpoint</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;192.168.1.56:51820&quot;</span>;
+        }
+      ];
+    };
+  };
+}</code></pre>
+      </div><h2 id="proxy-server-setup">Proxy server setup</h2><p>Same as peer setup, skip the endpoint option, with the following addition:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-comment"># enable NAT</span>
+  <span class="hljs-attr">networking.nat</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">enableIPv6</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">externalInterface</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ens6&quot;</span>;
+    <span class="hljs-attr">internalInterfaces</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;wg0&quot;</span> ];
+  };
+
+  <span class="hljs-attr">networking.wg-quick.interfaces</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">wg0</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-comment"># This allows the wireguard server to route your traffic to the internet and hence be like a VPN</span>
+      <span class="hljs-attr">postUp</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        <span class="hljs-subst">${pkgs.iptables}</span>/bin/iptables -A FORWARD -i wg0 -j ACCEPT
+        <span class="hljs-subst">${pkgs.iptables}</span>/bin/iptables -t nat -A POSTROUTING -s 10.0.0.1/24 -o eth0 -j MASQUERADE
+        <span class="hljs-subst">${pkgs.iptables}</span>/bin/ip6tables -A FORWARD -i wg0 -j ACCEPT
+        <span class="hljs-subst">${pkgs.iptables}</span>/bin/ip6tables -t nat -A POSTROUTING -s fdc9:281f:04d7:9ee9::1/64 -o eth0 -j MASQUERADE
+      &#x27;&#x27;</span>;
+
+      <span class="hljs-comment"># Undo the above</span>
+      <span class="hljs-attr">preDown</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        <span class="hljs-subst">${pkgs.iptables}</span>/bin/iptables -D FORWARD -i wg0 -j ACCEPT
+        <span class="hljs-subst">${pkgs.iptables}</span>/bin/iptables -t nat -D POSTROUTING -s 10.0.0.1/24 -o eth0 -j MASQUERADE
+        <span class="hljs-subst">${pkgs.iptables}</span>/bin/ip6tables -D FORWARD -i wg0 -j ACCEPT
+        <span class="hljs-subst">${pkgs.iptables}</span>/bin/ip6tables -t nat -D POSTROUTING -s fdc9:281f:04d7:9ee9::1/64 -o eth0 -j MASQUERADE
+      &#x27;&#x27;</span>;
+    };
+  };
+}</code></pre>
+      </div><h2 id="proxy-client-setup">Proxy client setup</h2><p>Same as peer setup, specify proxy server ip or domain in the endpoint option. Use <code>[ &quot;0.0.0.0/0&quot; &quot;::/0&quot; ]</code> as allowed IPs.</p>
+<p>Optionally, configure proxy server as DNS server as described above.</p>
+<h3 id="proxy-dns-with-dnsmasq">Proxy DNS with dnsmasq</h3><p>You can also use the proxy server as DNS server with dnsmasq.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">networking.firewall</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">allowedTCPPorts</span> <span class="hljs-operator">=</span> [ <span class="hljs-number">53</span> ];
+    <span class="hljs-attr">allowedUDPPorts</span> <span class="hljs-operator">=</span> [ <span class="hljs-number">53</span> ];
+  };
+  <span class="hljs-attr">services</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">dnsmasq</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+      <span class="hljs-attr">settings.interface</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;wg0&quot;</span>;
+    };
+  };
+}</code></pre>
+      </div><p>For wg-quick peer, use the following option</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-attr">networking.wg-quick.interfaces.wg0.dns</span> <span class="hljs-operator">=</span>
+  [ {internal v4 &amp; v6 ip addr of server} ];
+}</code></pre>
+      </div><h2 id="manually-start-and-stop-wg-quick">Manually start and stop wg-quick</h2><p>The above steps will set up a <code>wg-quick-wg0.service</code> systemd unit.</p>
+<p>You can start it by typing the following in your terminal:</p>
+<div class="code-container">
+        
+        <pre><code class="language-sh hljs"><span class="hljs-built_in">sudo</span> systemctl start wg-quick-wg0.service</code></pre>
+      </div><p>To stop the service:</p>
+<div class="code-container">
+        
+        <pre><code class="language-sh hljs"><span class="hljs-built_in">sudo</span> systemctl stop wg-quick-wg0.service</code></pre>
+      </div><h2 id="reuse-existing-wg-quick-config-file">Reuse existing wg-quick config file</h2><p>If you have WireGuard configuration files that you want to use as-is (similarly how you would configure WireGuard e.g. in <a href="https://wiki.debian.org/WireGuard#Step_2_-_Configuration">Debian</a>), without converting them to a declarative NixOS configuration, you can also configure <code>wg-quick</code> to use them. For example, if you have a configuration file <code>/etc/nixos/wireguard/wg0.conf</code>, add the following line to your <code>configuration.nix</code>:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">etworking.wg-quick.interfaces.wg0.configFile</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/etc/nixos/files/wireguard/wg0.conf&quot;</span>;</code></pre>
+      </div><p>This will set up a <code>wg-quick-wg0.service</code> systemd unit.</p>
+<h1 id="networking-wireguard">networking.wireguard</h1><p>Note: does not automatically configure routes, see comments.</p>
+<h2 id="peer-setup">Peer setup</h2><div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ config, ... }:
+{
+  <span class="hljs-attr">age.secrets.wg-key-peer0</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">file</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;./secrets/wg-key-peer0.age&quot;</span>;
+  };
+
+  <span class="hljs-attr">networking.firewall.allowedUDPPorts</span> <span class="hljs-operator">=</span> [ <span class="hljs-number">51820</span> ];
+
+  <span class="hljs-attr">networking.wireguard</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">interfaces</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-comment"># network interface name.</span>
+      <span class="hljs-comment"># You can name the interface arbitrarily.</span>
+      <span class="hljs-attr">wg0</span> <span class="hljs-operator">=</span> {
+        <span class="hljs-comment"># the IP address and subnet of this peer</span>
+        <span class="hljs-attr">ips</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;fd31:bf08:57cb::9/128&quot;</span> <span class="hljs-string">&quot;192.168.26.9/32&quot;</span> ];
+
+        <span class="hljs-comment"># WireGuard Port</span>
+        <span class="hljs-comment"># Must be accessible by peers</span>
+        <span class="hljs-attr">listenPort</span> <span class="hljs-operator">=</span> <span class="hljs-number">51820</span>;
+
+        <span class="hljs-comment"># Path to the private key file.</span>
+        <span class="hljs-comment">#</span>
+        <span class="hljs-comment"># Note: can also be included inline via the privateKey option,</span>
+        <span class="hljs-comment"># but this makes the private key world-readable;</span>
+        <span class="hljs-comment"># using privateKeyFile is recommended.</span>
+        <span class="hljs-attr">privateKeyFile</span> <span class="hljs-operator">=</span> config.age.secrets.wg-key-laptop.path;
+
+        <span class="hljs-attr">peers</span> <span class="hljs-operator">=</span> [
+          { 
+            <span class="hljs-attr">name</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;home nas&quot;</span>;
+            <span class="hljs-attr">publicKey</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ejmbag/fcc9OLp8K62zfV0NCbp056DnA0qpNixLXwCo=&quot;</span>;
+            <span class="hljs-attr">allowedIPs</span> <span class="hljs-operator">=</span> [
+              <span class="hljs-string">&quot;fd31:bf08:57cb::8/128&quot;</span>
+              <span class="hljs-string">&quot;192.168.26.8/32&quot;</span>
+            ];
+            <span class="hljs-attr">endpoint</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;192.168.1.56:51820&quot;</span>;
+            <span class="hljs-comment">#  ToDo: route to endpoint not automatically configured</span>
+            <span class="hljs-comment"># https://wiki.archlinux.org/index.php/WireGuard#Loop_routing</span>
+            <span class="hljs-comment"># https://discourse.nixos.org/t/solved-minimal-firewall-setup-for-wireguard-client/7577</span>
+            <span class="hljs-comment"># Send keepalives every 25 seconds. Important to keep NAT tables alive.</span>
+            <span class="hljs-comment"># persistentKeepalive = 25;</span>
+          }
+        ];
+      };
+    };
+}
+<span class="hljs-comment"># it’s not imperative but it does not know how to do it :</span>
+<span class="hljs-comment"># sudo ip route add 11.111.11.111 via 192.168.1.11 dev wlo1</span>
+<span class="hljs-comment"># the ip adresse 11: external and 192: local.</span></code></pre>
+      </div><h2 id="proxy-server-setup">Proxy server setup</h2><p>Same as peer setup, skip the endpoint option, with the following addition, Remember to update the internal IP addresses in the script:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{
+  <span class="hljs-comment"># enable NAT</span>
+  <span class="hljs-attr">networking.nat</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">enableIPv6</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+    <span class="hljs-attr">externalInterface</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ens6&quot;</span>;
+    <span class="hljs-attr">internalInterfaces</span> <span class="hljs-operator">=</span> [ <span class="hljs-string">&quot;wg0&quot;</span> ];
+  };
+
+  <span class="hljs-attr">networking.wireguard.interfaces.wg0</span> <span class="hljs-operator">=</span> {
+      <span class="hljs-comment"># This allows the wireguard server to route your traffic to the internet and hence be like a VPN</span>
+      <span class="hljs-attr">postSetup</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        <span class="hljs-subst">${pkgs.iptables}</span>/bin/iptables -A FORWARD -i wg0 -j ACCEPT
+        <span class="hljs-subst">${pkgs.iptables}</span>/bin/iptables -t nat -A POSTROUTING -s 10.0.0.1/24 -o eth0 -j MASQUERADE
+        <span class="hljs-subst">${pkgs.iptables}</span>/bin/ip6tables -A FORWARD -i wg0 -j ACCEPT
+        <span class="hljs-subst">${pkgs.iptables}</span>/bin/ip6tables -t nat -A POSTROUTING -s fdc9:281f:04d7:9ee9::1/64 -o eth0 -j MASQUERADE
+      &#x27;&#x27;</span>;
+
+      <span class="hljs-comment"># Undo the above</span>
+      <span class="hljs-attr">postShutdown</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+        <span class="hljs-subst">${pkgs.iptables}</span>/bin/iptables -D FORWARD -i wg0 -j ACCEPT
+        <span class="hljs-subst">${pkgs.iptables}</span>/bin/iptables -t nat -D POSTROUTING -s 10.0.0.1/24 -o eth0 -j MASQUERADE
+        <span class="hljs-subst">${pkgs.iptables}</span>/bin/ip6tables -D FORWARD -i wg0 -j ACCEPT
+        <span class="hljs-subst">${pkgs.iptables}</span>/bin/ip6tables -t nat -D POSTROUTING -s fdc9:281f:04d7:9ee9::1/64 -o eth0 -j MASQUERADE
+      &#x27;&#x27;</span>;
+  };
+}</code></pre>
+      </div><h2 id="proxy-client-setup">Proxy client setup</h2><p>Same as peer setup, specify proxy server ip or domain in the endpoint option. Use <code>[ &quot;0.0.0.0/0&quot; &quot;::/0&quot; ]</code> as allowed IPs.</p>
+<h1 id="networkmanager-proxy-client-setup">NetworkManager Proxy client setup</h1><p>This is probably only useful on clients. Functionality is present in NetworkManager since version 1.20 but network-manager-applet can show and control wireguard connections since version 1.22 only (available since NixOS 21.05).</p>
+<p>If you intend to route all your traffic through the wireguard tunnel, the default configuration of the NixOS firewall will block the traffic because of rpfilter. You can either disable rpfilter altogether:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ config, pkgs, lib, ... }:{
+  <span class="hljs-attr">networking.firewall.checkReversePath</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>; 
+}</code></pre>
+      </div><p>In some cases not <strong>false</strong> but <strong>&quot;loose&quot;</strong> (with quotes) can work:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ config, pkgs, lib, ... }:{
+  <span class="hljs-attr">networking.firewall.checkReversePath</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;loose&quot;</span>; 
+}</code></pre>
+      </div><p>Or you can adapt the rpfilter to ignore wireguard related traffic (replace 51820 by the port of your wireguard endpoint):</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ config, pkgs, lib, ... }:{
+  <span class="hljs-attr">networking.firewall</span> <span class="hljs-operator">=</span> {
+   <span class="hljs-comment"># if packets are still dropped, they will show up in dmesg</span>
+   <span class="hljs-attr">logReversePathDrops</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+   <span class="hljs-comment"># wireguard trips rpfilter up</span>
+   <span class="hljs-attr">extraCommands</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+     ip46tables -t mangle -I nixos-fw-rpfilter -p udp -m udp --sport 51820 -j RETURN
+     ip46tables -t mangle -I nixos-fw-rpfilter -p udp -m udp --dport 51820 -j RETURN
+   &#x27;&#x27;</span>;
+   <span class="hljs-attr">extraStopCommands</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&#x27;
+     ip46tables -t mangle -D nixos-fw-rpfilter -p udp -m udp --sport 51820 -j RETURN || true
+     ip46tables -t mangle -D nixos-fw-rpfilter -p udp -m udp --dport 51820 -j RETURN || true
+   &#x27;&#x27;</span>;
+  };
+}</code></pre>
+      </div><p>Adding a wireguard connection to NetworkManager is not straightforward to do fully in gui, it is simpler to reuse a configuration file for wg-guick. For example:</p>
+<div class="code-container">
+        
+        <pre><code class="language- hljs">[Interface]
+# your own IP on the wireguard network
+Address = 10.0.0.3/24, fd4:8e3:226:2e0::3/64
+Table = auto
+PrivateKey = 0000000000000000000000000000000000000000000=
+
+[Peer]
+PublicKey = 1111111111111111111111111111111111111111111=
+# restrict this to the wireguard subnet if you don't want to route everything to the tunnel
+AllowedIPs = 0.0.0.0/0, ::/0
+# ip and port of the peer
+Endpoint = 1.2.3.4:51820</code></pre>
+      </div><p>Then run</p>
+<p>The new VPN connection should be available, you still have to click on it to activate it.</p>
+<h1 id="troubleshooting">Troubleshooting</h1><h2 id="tunnel-does-not-automatically-connect-despite-persistentkeepalive-being-set">Tunnel does not automatically connect despite persistentKeepalive being set</h2><p>When using the <i>privateKeyFile</i> instead of <i>privateKey</i> setting, the generated WireGuard config file sets <i>PersistentKeepalive</i> as normal, but instead uses the generated <i>PostUp</i> script to set the private key for the tunnel after the tunnel has been started. Apparently the tunnel only automatically connects when the keepalive is set at the same time (i.e. through the config file) as the private key, or afterwards. A workaround is to also set <i>PersistentKeepalive</i> through the PostUp script using the <i>wg</i> command:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">etworking.wg-quick.interfaces</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">let</span>
+  <span class="hljs-attr">publicKey</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;...&quot;</span>;
+<span class="hljs-keyword">in</span> {
+  <span class="hljs-attr">wg0</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-comment"># ...</span>
+    <span class="hljs-attr">privateKeyFile</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/path/to/keyfile&quot;</span>;
+    <span class="hljs-comment"># this is what we use instead of persistentKeepalive, the resulting PostUp</span>
+    <span class="hljs-comment"># script looks something like the following:</span>
+    <span class="hljs-comment">#     wg set wg0 private-key &lt;(cat /path/to/keyfile)</span>
+    <span class="hljs-comment">#     wg set wg0 peer &lt;public key&gt; persistent-keepalive 25</span>
+    <span class="hljs-attr">postUp</span> <span class="hljs-operator">=</span> [<span class="hljs-string">&quot;wg set wgnet0 peer <span class="hljs-subst">${publicKey}</span> persistent-keepalive 25&quot;</span>];
+    <span class="hljs-attr">peers</span> <span class="hljs-operator">=</span> [{
+      <span class="hljs-keyword">inherit</span> publicKey; <span class="hljs-comment"># set publicKey to the publicKey we&#x27;ve defined above</span>
+      <span class="hljs-comment"># ...</span>
+
+      <span class="hljs-comment"># Use postUp instead of this setting because otherwise it doesn&#x27;t auto</span>
+      <span class="hljs-comment"># connect to the peer, apparently that doesn&#x27;t happen if the private</span>
+      <span class="hljs-comment"># key is set after the PersistentKeepalive setting which happens if</span>
+      <span class="hljs-comment"># we load it from a file</span>
+      <span class="hljs-comment">#persistentKeepalive = 25;</span>
+    }];
+  };
+};</code></pre>
+      </div><h2 id="server-is-reachable-but-only-some-services-are-working">Server is reachable, but only some services are working</h2><p>It might be, that the <a href="https://en.wikipedia.org/wiki/Maximum_transmission_unit">MTU</a> of the network connecting the endpoints is smaller than the default (1500). By default the &quot;option is set to&quot; 1420, with an additional 80 due to wireguard overhead. Try adjusting it to something smaller:</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">etworking.wireguard.interfaces.wg0.mtu</span> <span class="hljs-operator">=</span> <span class="hljs-number">1000</span>; 
+<span class="hljs-comment">#this is extremely small, bigger values can yield better performance.</span>
+<span class="hljs-comment">#networking.wg-quick.interfaces.wg0.mtu = 1000; #if you use wq-quick</span></code></pre>
+      </div><h2 id="wg-quick-issues-with-networkmanager">wg-quick issues with NetworkManager</h2><p>Try <code>systemd-resolved</code></p>
+<p>This fixed the issue of wg connecting to the peer but not being able to access the internet or LAN.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">n<span class="hljs-attr">etworking.networkmanager.dns</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;systemd-resolved&quot;</span>;
+<span class="hljs-attr">services.resolved.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;</code></pre>
+      </div><h1 id="see-also">See also</h1><ul>
+<li><a href="https://www.wireguard.com/">WireGuard homepage</a></li>
+<li><a href="https://wiki.archlinux.org/index.php/WireGuard">Arch Wiki</a> has an exhaustive guide, including troubleshooting tips</li>
+<li><a href="https://search.nixos.org/options?query=wireguard">List of WireGuard options supported by NixOS</a></li>
+<li><a href="https://uint.one/posts/configuring-wireguard-using-systemd-networkd-on-nixos/">Blogpost by uint.one on replicating wg-quick with networkd</a></li>
+<li><a href="https://www.youtube.com/watch?v=us7V2NvsQRA">Talk by @fpletz at NixCon 2018 about networkd and his WireGuard setup</a></li>
+<li><a href="https://web.archive.org/web/20210101230654/https://www.the-digital-life.com/wiki/wireguard-troubleshooting/">WireGuard Troubleshooting (on Web Archive)</a> shows how to enable debug logs</li>
+</ul>
+<h1 id="additional-routing-setups">Additional routing setups</h1><p>For documentation on more routing and topology setups, such as</p>
+<ul>
+<li>Point to Point Configuration,</li>
+<li>Hub and Spoke Configuration,</li>
+<li>Point to Site Configuration,</li>
+<li>Site to Site Configuration,</li>
+</ul>
+<p>see <a href="https://docs.procustodibus.com/guide/wireguard/">Pro Custodibus Documentation</a>, <a href="https://web.archive.org/web/20250920231827/https://docs.procustodibus.com/guide/wireguard/">Mirror on Internet Archive</a>.</p>
+<p><a href="category:Networking" class="wikilink" title="Category:Networking">Category:Networking</a> <a href="category:VPN" class="wikilink" title="Category:VPN">Category:VPN</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

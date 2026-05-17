@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Factoriolab</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / Factoriolab</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Factoriolab -->
+
+<p><a href="https://github.com/factoriolab/factoriolab">Factoriolab</a> is an Angular-based calculator for factory games like Factorio and Dyson Sphere Program. It determines resource and machine requirements for your desired objectives.</p>
+<h2 id="installing-on-nixos">Installing on NixOS</h2><p>Factoriolab is a web-based calculator. Therefore, the Nix package provides only the static files needed to run the application, which you then access via a web server.</p>
+<p>For the following examples we will use Python&#39;s built-in HTTP server, if you prefer to have it always available you can skip installing python and follow the Nginx example.</p>
+<p>To install Factoriolab on NixOS, add the following to your configuration.nix file. This adds the factoriolab and python packages to your system&#39;s global environment.</p>
+<p>After rebuilding your system with nixos-rebuild switch, proceed to the Usage section.</p>
+<h4 id="temporary-installation">Temporary Installation</h4><p>If you only need to use it temporarily, you can install the packages and enter a shell with them using nix-shell:</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nix-shell -p factoriolab python3</code></pre>
+      </div><p>Once you are inside the shell, proceed to the Usage section.</p>
+<h2 id="usage">Usage</h2><p>You must serve the Factoriolab files using a web server. Here are two recommended methods.</p>
+<h4 id="using-python-39-s-http-server-recommended-for-temporary-use">Using Python&#39;s HTTP Server (Recommended for temporary use)</h4><p>First, locate the Factoriolab files within the Nix store and start Python&#39;s built-in HTTP server from that directory.</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs"><span class="hljs-built_in">cd</span> $(nix-build <span class="hljs-string">&quot;&lt;nixpkgs&gt;&quot;</span> -A factoriolab)/share/factoriolab &amp;&amp; python3 -m http.server</code></pre>
+      </div><p>This command will start the server, and you&#39;ll see a message like: &quot;Serving HTTP on 0.0.0.0 port 8000 (<a href="http://0.0.0.0:8000/">http://0.0.0.0:8000/</a>) ...&quot;</p>
+<p>To use the calculator, navigate to <a href="http://localhost:8000/">http://localhost:8000/</a> in your web browser. It will be available until you close your terminal.</p>
+<h4 id="using-nginx-permanent-installation">Using Nginx (Permanent Installation)</h4><p>For a permanent, always-available installation, you can set up Nginx to serve the static files.</p>
+<p>Add the following to your NixOS configuration to enable Nginx and configure a virtual host for Factoriolab:</p>
+<p>After rebuilding your system with nixos-rebuild switch, you will be able to access Factoriolab via <a href="http://localhost/">http://localhost/</a>.</p>
+<p><a href="category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

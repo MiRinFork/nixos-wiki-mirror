@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IOS Emulation</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / IOS Emulation</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: IOS Emulation -->
+
+<p>Following guide describes how to setup iOS emulation using the project <a href="https://github.com/ChefKissInc/QEMUAppleSilicon">QEMU-AppleSilicon</a>. Currently emulation iPhone 11 with iOS 14.0 beta 5 is supported.</p>
+<h2 id="setup">Setup</h2><p>Add <code>qemu-applesilicon</code> package to your <code>environment.systemPackages</code> set and apply it.</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">e<span class="hljs-attr">nvironment.systemPackages</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">with</span> pkgs; [
+  img4
+  qemu-applesilicon
+];</code></pre>
+      </div><h4 id="create-disks">Create disks</h4><p>Run following command to create required disks</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">qemu-img create -f raw root 16G
+qemu-img create -f raw firmware 8M
+qemu-img create -f raw syscfg 128K
+qemu-img create -f raw ctrl_bits 8K
+qemu-img create -f raw nvram  8K
+qemu-img create -f raw effaceable 4K
+qemu-img create -f raw panic_log 1M
+qemu-img create -f raw sep_nvram 2K
+qemu-img create -f raw sep_ssc 128K</code></pre>
+      </div><h4 id="prepare-firmware-images">Prepare firmware images</h4><p>Download iOS 14.0 beta 5 ipsw firmware file for <code>iPhone12,1</code> and extract required files</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">wget https://updates.cdn-apple.com/2020SummerSeed/fullrestores/001-35886/5FE9BE2E-17F8-41C8-96BB-B76E2B225888/iPhone11,8,iPhone12,1_14.0_18A5351d_Restore.ipsw
+<span class="hljs-built_in">mkdir</span> iPhone11_8_iPhone12_1_14.0_18A5351d_Restore
+unzip iPhone11,8,iPhone12,1_14.0_18A5351d_Restore.ipsw -d iPhone11_8_iPhone12_1_14.0_18A5351d_Restore/</code></pre>
+      </div><p>Forge a ticket since the iOS version we&#39;re using is not signed</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">wget https://github.com/ChefKissInc/QEMUAppleSiliconTools/raw/refs/heads/master/ticket.shsh2
+create_apticket n104ap iPhone11_8_iPhone12_1_14.0_18A5351d_Restore/BuildManifest.plist ticket.shsh2 root_ticket.der</code></pre>
+      </div><p>For preparing the SEP firmware, run following commands</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">create_septicket n104ap iPhone11_8_iPhone12_1_14.0_18A5351d_Restore/BuildManifest.plist ticket.shsh2 sep_root_ticket.der
+img4 -i iPhone11_8_iPhone12_1_14.0_18A5351d_Restore/Firmware/all_flash/sep-firmware.n104.RELEASE.im4p -o sep-firmware.n104.RELEASE -k THE_SEP_FW_IV_AND_THE_SEP_FW_KEY_CONCATENATED
+img4 -A -F -o sep-firmware.n104.RELEASE.new.img4 -i sep-firmware.n104.RELEASE -M sep_root_ticket.der -T rsep -V ff86cbb5e06c820266308202621604696d706c31820258ff87a3e8e0730e300c1604747a3073020407d98000ff868bc9da730e300c160461726d73020400d20000ff87a389da7382010e3082010a160474626d730482010039643535663434646630353239653731343134656461653733396135313135323233363864626361653434386632333132313634356261323237326537366136633434643037386439313434626564383530616136353131343863663363356365343365656536653566326364636666336664313532316232623062376464353461303436633165366432643436623534323537666531623633326661653738313933326562383838366339313537623963613863366331653137373730336531373735616663613265313637626365353435626635346366653432356432653134653734336232303661386337373234386661323534663439643532636435ff87a389da7282010e3082010a160474626d720482010064643434643762663039626238333965353763383037303431326562353636343131643837386536383635343337613861303266363464383431346664343764383634336530313335633135396531393062656535643435333133363838653063323535373435333533326563303163363530386265383236333738353065623761333036343162353464313236306663313434306562663862343063306632646262616437343964643461656339376534656238646532346330663265613432346161613438366664663631363961613865616331313865383839383566343138643263366437363364303434363063393531386164353766316235636664</code></pre>
+      </div><p>You can find the keys by googling &quot;iOS firmware keys&quot;.</p>
+<h4 id="starting-restore">Starting restore</h4><p>Prepare and run the companion VM, required for the restore process. Create the file <code>configuration.nix</code></p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">{ config, pkgs, ... }:
+
+{
+  <span class="hljs-attr">imports</span> <span class="hljs-operator">=</span> [ <span class="hljs-operator">&lt;</span>nixpkgs<span class="hljs-operator">/</span>nixos<span class="hljs-operator">/</span>modules<span class="hljs-operator">/</span>virtualisation<span class="hljs-operator">/</span>qemu-vm.nix<span class="hljs-operator">&gt;</span> ];
+
+  <span class="hljs-attr">boot.loader.grub.device</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/dev/vda&quot;</span>;
+  fileSystems.<span class="hljs-string">&quot;/&quot;</span> <span class="hljs-operator">=</span> {
+    <span class="hljs-attr">device</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;/dev/vda1&quot;</span>;
+    <span class="hljs-attr">fsType</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ext4&quot;</span>;
+  };
+
+  <span class="hljs-attr">networking.hostName</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;nixos-companionvm&quot;</span>;
+  <span class="hljs-attr">services.openssh.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;
+
+  <span class="hljs-attr">users.users.root.initialPassword</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;root&quot;</span>;
+
+  <span class="hljs-attr">environment.systemPackages</span> <span class="hljs-operator">=</span> [ pkgs.idevicerestore ];
+
+  <span class="hljs-attr">documentation.enable</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+}</code></pre>
+      </div><p>Build the VM image</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">nix-build <span class="hljs-string">&#x27;&lt;nixpkgs/nixos&gt;&#x27;</span> -A config.system.build.qcow2Image -I nixos-config=./configuration.nix</code></pre>
+      </div><p>Run the companion VM</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">qemu-system-x86_64 -m 2024 -nic user -hda ./result/nixos.qcow2 -nographic -usb -device usb-ehci,<span class="hljs-built_in">id</span>=ehci -device usb-tcp-remote,conn-type=ipv4,conn-addr=127.0.0.1,conn-port=8030,bus=ehci.0 -nic user,model=virtio-net-pci,hostfwd=tcp::32222-:22</code></pre>
+      </div><p>Some parts in this documentation is missing, so please consult <a href="https://github.com/ChefKissInc/QEMUAppleSilicon/wiki/Running-&amp;-Restoring">upstream documentation</a>.The companion VM must always be started before the emulated iPhone otherwise no USB connection is established.</p>
+<p>Now run the iOS emulator on your host</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">qemu-system-aarch64 -M t8030,trustcache=iPhone11_8_iPhone12_1_14.0_18A5351d_Restore/Firmware/038-44135-124.dmg.trustcache,ticket=root_ticket.der,sep-fw=sep-firmware.n104.RELEASE.new.img4,sep-rom=AppleSEPROM-Cebu-B1,kaslr-off=<span class="hljs-literal">true</span> \
+-kernel iPhone11_8_iPhone12_1_14.0_18A5351d_Restore/kernelcache.research.iphone12b -dtb iPhone11_8_iPhone12_1_14.0_18A5351d_Restore/Firmware/all_flash/DeviceTree.n104ap.im4p \
+-append <span class="hljs-string">&quot;tlto_us=-1 mtxspin=-1 agm-genuine=1 agm-authentic=1 agm-trusted=1 serial=3 launchd_unsecure_cache=1 wdt=-1 -vm_compressor_wk_sw&quot;</span> \
+-smp 7 -m 4G -serial mon:stdio \
+-drive file=sep_nvram,<span class="hljs-keyword">if</span>=pflash,format=raw \
+-drive file=sep_ssc,<span class="hljs-keyword">if</span>=pflash,format=raw \
+-drive file=root,format=raw,<span class="hljs-keyword">if</span>=none,<span class="hljs-built_in">id</span>=root -device nvme-ns,drive=root,bus=nvme-bus.0,nsid=1,nstype=1,logical_block_size=4096,physical_block_size=4096 \
+-drive file=firmware,format=raw,<span class="hljs-keyword">if</span>=none,<span class="hljs-built_in">id</span>=firmware -device nvme-ns,drive=firmware,bus=nvme-bus.0,nsid=2,nstype=2,logical_block_size=4096,physical_block_size=4096 \
+-drive file=syscfg,format=raw,<span class="hljs-keyword">if</span>=none,<span class="hljs-built_in">id</span>=syscfg -device nvme-ns,drive=syscfg,bus=nvme-bus.0,nsid=3,nstype=3,logical_block_size=4096,physical_block_size=4096 \
+-drive file=ctrl_bits,format=raw,<span class="hljs-keyword">if</span>=none,<span class="hljs-built_in">id</span>=ctrl_bits -device nvme-ns,drive=ctrl_bits,bus=nvme-bus.0,nsid=4,nstype=4,logical_block_size=4096,physical_block_size=4096 \
+-drive file=nvram,<span class="hljs-keyword">if</span>=none,format=raw,<span class="hljs-built_in">id</span>=nvram -device apple-nvram,drive=nvram,bus=nvme-bus.0,nsid=5,nstype=5,<span class="hljs-built_in">id</span>=nvram,logical_block_size=4096,physical_block_size=4096 \
+-drive file=effaceable,format=raw,<span class="hljs-keyword">if</span>=none,<span class="hljs-built_in">id</span>=effaceable -device nvme-ns,drive=effaceable,bus=nvme-bus.0,nsid=6,nstype=6,logical_block_size=4096,physical_block_size=4096 \
+-drive file=panic_log,format=raw,<span class="hljs-keyword">if</span>=none,<span class="hljs-built_in">id</span>=panic_log -device nvme-ns,drive=panic_log,bus=nvme-bus.0,nsid=7,nstype=8,logical_block_size=4096,physical_block_size=4096 \
+-initrd iPhone11_8_iPhone12_1_14.0_18A5351d_Restore/038-44135-124.dmg \
+-M t8030,usb-conn-type=ipv4,usb-conn-addr=127.0.0.1,usb-conn-port=8030 \
+-display gtk,zoom-to-fit=on,show-cursor=on</code></pre>
+      </div><p>On the companion VM, start recovery with following command as soon the iOS device is ready to receive images</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">idevicerestore --erase --restore-mode -i 0x1122334455667788 iPhone11,8,iPhone12,1_14.0_18A5351d_Restore.ipsw -T root_ticket.der</code></pre>
+      </div><p>To complete data migration, the iOS VM must currently be closed after first stage restore is complete, and have filesystem patches applied. You must close it in time to ensure data migration will be able to finish properly with the workarounds applied. You will know that restore has been completed from idevicerestore finishing and the screen of the iOS VM going blank.</p>
+<h4 id="patch-filesystem">Patch filesystem</h4><p>To be done, see <a href="https://github.com/ChefKissInc/QEMUAppleSilicon/wiki/Filesystem-Patches">upstream documentation</a> on how to continue.</p>
+<h2 id="usage">Usage</h2><p>To start the iOS emulator, run</p>
+<div class="code-container">
+        
+        <pre><code class="language-bash hljs">QEMUAppleSilicon/build/qemu-system-aarch64 -M t8030,trustcache=iPhone11_8_iPhone12_1_14.0_18A5351d_Restore/Firmware/038-44135-124.dmg.trustcache,ticket=root_ticket.der,sep-fw=sep-firmware.n104.RELEASE.new.img4,sep-rom=AppleSEPROM-Cebu-B1,kaslr-off=<span class="hljs-literal">true</span> \
+-kernel iPhone11_8_iPhone12_1_14.0_18A5351d_Restore/kernelcache.research.iphone12b -dtb iPhone11_8_iPhone12_1_14.0_18A5351d_Restore/Firmware/all_flash/DeviceTree.n104ap.im4p \
+-append <span class="hljs-string">&quot;tlto_us=-1 mtxspin=-1 agm-genuine=1 agm-authentic=1 agm-trusted=1 serial=3 launchd_unsecure_cache=1 wdt=-1 -vm_compressor_wk_sw&quot;</span> \
+-smp 7 -m 4G -serial mon:stdio \
+-drive file=sep_nvram,<span class="hljs-keyword">if</span>=pflash,format=raw \
+-drive file=sep_ssc,<span class="hljs-keyword">if</span>=pflash,format=raw \
+-drive file=root,format=raw,<span class="hljs-keyword">if</span>=none,<span class="hljs-built_in">id</span>=root -device nvme-ns,drive=root,bus=nvme-bus.0,nsid=1,nstype=1,logical_block_size=4096,physical_block_size=4096 \
+-drive file=firmware,format=raw,<span class="hljs-keyword">if</span>=none,<span class="hljs-built_in">id</span>=firmware -device nvme-ns,drive=firmware,bus=nvme-bus.0,nsid=2,nstype=2,logical_block_size=4096,physical_block_size=4096 \
+-drive file=syscfg,format=raw,<span class="hljs-keyword">if</span>=none,<span class="hljs-built_in">id</span>=syscfg -device nvme-ns,drive=syscfg,bus=nvme-bus.0,nsid=3,nstype=3,logical_block_size=4096,physical_block_size=4096 \
+-drive file=ctrl_bits,format=raw,<span class="hljs-keyword">if</span>=none,<span class="hljs-built_in">id</span>=ctrl_bits -device nvme-ns,drive=ctrl_bits,bus=nvme-bus.0,nsid=4,nstype=4,logical_block_size=4096,physical_block_size=4096 \
+-drive file=nvram,<span class="hljs-keyword">if</span>=none,format=raw,<span class="hljs-built_in">id</span>=nvram -device apple-nvram,drive=nvram,bus=nvme-bus.0,nsid=5,nstype=5,<span class="hljs-built_in">id</span>=nvram,logical_block_size=4096,physical_block_size=4096 \
+-drive file=effaceable,format=raw,<span class="hljs-keyword">if</span>=none,<span class="hljs-built_in">id</span>=effaceable -device nvme-ns,drive=effaceable,bus=nvme-bus.0,nsid=6,nstype=6,logical_block_size=4096,physical_block_size=4096 \
+-drive file=panic_log,format=raw,<span class="hljs-keyword">if</span>=none,<span class="hljs-built_in">id</span>=panic_log -device nvme-ns,drive=panic_log,bus=nvme-bus.0,nsid=7,nstype=8,logical_block_size=4096,physical_block_size=4096 \
+-display gtk,zoom-to-fit=on,show-cursor=on</code></pre>
+      </div><p><a href="category:Virtualization" class="wikilink" title="Category:Virtualization">Category:Virtualization</a></p>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>

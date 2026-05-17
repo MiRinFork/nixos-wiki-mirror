@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GStreamer</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://mirror.nixoscn.org/photo_2026-05-14_19-41-31.jpg"
+    />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-base.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-light.css" />
+    <link rel="stylesheet" href="https://mirror.nixoscn.org/styles-code-dark.css" />
+    <script src="https://mirror.nixoscn.org/toc.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+      defer
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof mermaid !== "undefined") {
+          mermaid.initialize({ startOnLoad: true, theme: "default" });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1 class="autoInject"><a href="https://mirror.nixoscn.org/">Mirror from wiki.nixos.org</a> / GStreamer</h1>
+    <hr class="autoInject" />
+    <nav id="toc" class="toc"></nav>
+    <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: GStreamer -->
+
+<p><a href="https://gstreamer.freedesktop.org/">GStreamer</a> is a popular multimedia framework to handle a variety of video and audio formats on different platforms in a uniform way through a powerful and convenient API in order to build multimedia apps, video/audio editors and streaming services. It consists of a huge amount low-level plugins like &quot;videotestsrc&quot;, &quot;videoconvert&quot; and &quot;autovideosink&quot; as well as a few higher level test-and-combine framework tools like &quot;gst-inspect&quot;, &quot;gst-launch&quot; etc.</p>
+<h2 id="installing-via-nixpkgs">Installing via nixpkgs</h2><p>In Nix as in other Linux distributions those tools and plugins are split into separate packages, which you can bring together with a custom Nix shell environment:</p>
+<p>To activate this environment in your terminal run</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">$ nix develop </code></pre>
+      </div><p>You can find all available Nix package names through the [<a href="https://search.nixos.org/packages?query=gst_all_1">https://search.nixos.org/packages?query=gst_all_1</a>. Nix search page].</p>
+<h2 id="test-the-installation">Test the installation</h2><p>You can test that the <code>gst_all_1.gstreamer</code> tools are available by running a dummy pipeline</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">$ gst-launch-<span class="hljs-number">1.0</span> videotestsrc <span class="hljs-operator">!</span> videoconvert <span class="hljs-operator">!</span> autovideosink</code></pre>
+      </div><p>which should open a colored video window.</p>
+<p>You can test that the plugins like from <code>gst_all_1.gst-plugins-base</code> are available to the higher level tools by inspecting such a base plugin like <code>filesrc</code> with</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">$ gst-inspect-<span class="hljs-number">1.0</span> filesrc
+Factory <span class="hljs-params">Details:</span>
+  ...
+  Long-name                File Source
+  Description              Read from arbitrary point <span class="hljs-keyword">in</span> a file
+  ...
+Plugin <span class="hljs-params">Details:</span>
+  Name                     coreelements
+  Description              GStreamer core elements
+  Filename                 <span class="hljs-symbol">/nix/store/p39g1.../libgstcoreelements.so</span>
+  ...</code></pre>
+      </div><p>or by using it in a pipeline. Here, we could play a video from the local machine with</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">$ gst-launch-<span class="hljs-number">1.0</span> filesrc location<span class="hljs-operator">=</span>my_video.mp4 <span class="hljs-operator">!</span> videoconvert <span class="hljs-operator">!</span> autovideosink</code></pre>
+      </div><p>If the plugins are not correctly made available to the higher level tools, you&#39;ll get an error</p>
+<div class="code-container">
+        
+        <pre><code class="language-nix hljs">$ gst-inspect-<span class="hljs-number">1.0</span> filesrc
+No such element <span class="hljs-keyword">or</span> plugin &#x27;filesrc&#x27;</code></pre>
+      </div><h2 id="troubleshooting">Troubleshooting</h2><h4 id="erroneous-pipeline-no-element-quot-filesrc-quot">erroneous pipeline: no element &quot;filesrc&quot;</h4><p>In some cases while creating a shell using &quot;mkShell&quot; or &quot;writeShellApplication&quot; just setting the &quot;runtimeInputs&quot; is not enough. It&#39;s necessary to manually set the &quot;GST_PLUGIN_SYSTEM_PATH_1_0&quot; environment variable.<sup><a id="footnote-ref-1" href="https://mirror.nixoscn.org/wiki/GStreamer#footnote-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup></p>
+<p>Adding the following export to your script, sets &quot;gstreamer&quot; and &quot;gst-plugins-base&quot; and &quot;gst-plugins-good&quot; paths. Similarly you can add any other &quot;gst-plugins&quot; package as well.</p>
+<div class="code-container">
+        
+        <pre><code class="language-shell hljs">export GST_PLUGIN_SYSTEM_PATH_1_0=&quot;${gst_all_1.gstreamer.out}/lib/gstreamer-1.0:${gst_all_1.gst-plugins-base}/lib/gstreamer-1.0:${gst_all_1.gst-plugins-good}/lib/gstreamer-1.0&quot;</code></pre>
+      </div><p>Note: &quot;gstreamer.out&quot; is the derivative that contains &quot;/lib&quot; directory for that package.</p>
+<references />
+
+<h4 id="nautilus-quot-your-gstreamer-installation-is-missing-a-plug-in-quot">nautilus: &quot;Your GStreamer installation is missing a plug-in.&quot;</h4><p>![nautilus: &quot;Your GStreamer installation is missing a plug-in.&quot;](Screenshot_From_2025-03-28_09-58-50.png &quot;nautilus: &quot;Your GStreamer installation is missing a plug-in.&quot;&quot;) To fix the issue I found the following solutions:</p>
+<ul>
+<li>Using <code>nix-shell</code>:</li>
+</ul>
+<p>nix-shell -p gst_all_1.gstreamer gst_all_1.gst-plugins-base gst_all_1.gst-plugins-good gst_all_1.gst-plugins-bad gst_all_1.gst-plugins-ugly gst_all_1.gst-libav gst_all_1.gst-vaapi --run &quot;nautilus&quot;</p>
+</syntaxhighlight>
+
+<ul>
+<li>Using the environment variable &quot;<code>GST_PLUGIN_PATH</code>&quot;:![&quot;Audio and Video Properties&quot; of &quot;Properties&quot; window of nautilus after fix](Screenshot_From_2025-03-28_12-51-31.png &quot;&quot;Audio and Video Properties&quot; of &quot;Properties&quot; window of nautilus after fix&quot;)</li>
+</ul>
+<p><a href="category:Video" class="wikilink" title="Category:Video">Category:Video</a> <a href="category:Audio" class="wikilink" title="Category:Audio">Category:Audio</a></p>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">脚注</h2>
+<ol>
+<li id="footnote-1">
+<p><a href="https://discourse.nixos.org/t/how-to-use-gst-plugins/6345">https://discourse.nixos.org/t/how-to-use-gst-plugins/6345</a> <a href="https://mirror.nixoscn.org/wiki/GStreamer#footnote-ref-1" data-footnote-backref aria-label="Back to reference 1">↩</a></p>
+</li>
+</ol>
+</section>
+
+    
+    <script>
+      (function () {
+        const HIGHLIGHT_FILTER = "drop-shadow(0 0 10px #ff8205)";
+        const HOLD_DURATION = 5000;
+        const FADEOUT_DURATION = 2000;
+
+        function highlightTarget(target) {
+          target.style.transition = "filter 0.3s ease-out";
+          target.style.filter = HIGHLIGHT_FILTER;
+
+          setTimeout(() => {
+            target.style.transition = `filter ${FADEOUT_DURATION}ms ease-out`;
+            target.style.filter = "";
+          }, HOLD_DURATION);
+
+          setTimeout(
+            () => {
+              target.style.transition = "";
+            },
+            HOLD_DURATION + FADEOUT_DURATION + 100,
+          );
+        }
+
+        function maxScrollTop() {
+          return Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight,
+          );
+        }
+
+        function clampScrollTop(top) {
+          return Math.min(Math.max(0, top), maxScrollTop());
+        }
+
+        let scrollEndTimer = null;
+
+        function setProgrammaticScroll(active) {
+          window.__wikiProgrammaticScroll = active;
+          document.dispatchEvent(
+            new CustomEvent("wiki:programmatic-scroll", {
+              detail: { active },
+            }),
+          );
+        }
+
+        function finishProgrammaticScroll() {
+          window.removeEventListener("scroll", resetProgrammaticScrollTimer);
+          setProgrammaticScroll(false);
+        }
+
+        function resetProgrammaticScrollTimer() {
+          window.clearTimeout(scrollEndTimer);
+          scrollEndTimer = window.setTimeout(finishProgrammaticScroll, 180);
+        }
+
+        function scrollToHash(hash) {
+          if (!hash || hash === "#") return;
+          const id = decodeURIComponent(hash.slice(1));
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const top = clampScrollTop(
+            target.getBoundingClientRect().top +
+              window.scrollY -
+              window.innerHeight * 0.25,
+          );
+
+          setProgrammaticScroll(true);
+          window.addEventListener("scroll", resetProgrammaticScrollTimer, {
+            passive: true,
+          });
+          resetProgrammaticScrollTimer();
+          window.scrollTo({ top, behavior: "smooth" });
+          highlightTarget(target);
+        }
+
+        window.wikiScrollToHash = scrollToHash;
+        window.wikiIsProgrammaticScrollActive = function () {
+          return Boolean(window.__wikiProgrammaticScroll);
+        };
+
+        // Intercept anchor clicks
+        document.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (!link) return;
+          const raw = link.getAttribute("href");
+          if (!raw) return;
+
+          let hash = null;
+          if (raw.startsWith("#")) {
+            if (raw === "#") return;
+            hash = raw;
+          } else {
+            const hashIdx = raw.indexOf("#");
+            if (hashIdx < 0) return;
+            const tmp = document.createElement("a");
+            tmp.href = raw;
+            if (tmp.pathname !== location.pathname) return;
+            hash = "#" + raw.substring(hashIdx + 1);
+          }
+          if (!hash) return;
+
+          e.preventDefault();
+          history.pushState(null, null, hash);
+          scrollToHash(hash);
+        });
+
+        // Handle initial hash on page load
+        if (location.hash) {
+          scrollToHash(location.hash);
+        }
+      })();
+    </script>
+  </body>
+</html>
