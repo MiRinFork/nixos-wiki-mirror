@@ -235,30 +235,7 @@ function buildFaviconLink(assetPrefix) {
 }
 
 function buildFooterHtml(editUrl) {
-  const items = [];
-
-  if (editUrl) {
-    items.push(
-      `<a
-        class="autoInject"
-        href="${escapeAttribute(editUrl)}"
-        target="_blank"
-        rel="noreferrer"
-        >${escapeHtml(siteConfig.editLinkLabel)}</a
-      >`,
-    );
-  }
-
-  items.push(defaultFooterHtml);
-
-  if (items.length === 0) {
-    return "";
-  }
-
-  return `<hr class="autoInject" />
-    <footer class="autoInject">
-      ${items.join("\n      ")}
-    </footer>`;
+  return ``;
 }
 
 function renderPage(template, title, content, editUrl, pageSegments = [], assetPrefix = '', heading = escapeHtml(title), entryTopLevelSegments = new Set()) {
