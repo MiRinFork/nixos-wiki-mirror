@@ -1,0 +1,146 @@
+<!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
+
+<!-- Source page: Internet Connection Sharing -->
+
+The following example will describe how to share an active internet connection over a WiFi hotspot or alternatively via ethernet.
+
+## Share via WiFi
+
+### Usage
+
+Share an existing internet connection of a wired interface `eth0` using a wifi hotspot on `wlan0` with the access point name `MyAccessPoint`.
+
+``` bash
+nix shell nixpkgs#linux-wifi-hotspot
+sudo create_ap wlan0 eth0 MyAccessPoint
+```
+
+Here `eth0` is the ethernet interface connected to the internet, and `wlan0` is the wifi interface to share the internet connection with a wifi hotspot. However, these names may not be the same on your system. To check the name of your hardware interface use the command `ifconfig` or `ifconfig | grep ^[^:]*:` It will list network adapters on your system. Then modify command accordingly `sudo create_ap `<wifiInterfaceName>` `<ethernetInterfaceName>` MyAccessPoint `<Password>
+
+### Configuration
+
+Persistently share an existing internet connection of a wired interface `eth0` using a wifi hotspot on `wlan0` with the access point name `My Wifi Hotspot`. The network is protected with a simple WPA2 pre-shared key `12345678`.
+
+``` nix
+services.create_ap = {
+  enable = true;
+  settings = {
+    INTERNET_IFACE = "eth0";
+    WIFI_IFACE = "wlan0";
+    SSID = "My Wifi Hotspot";
+    PASSPHRASE = "12345678";
+  };
+};
+```
+
+## Share via ethernet
+
+### Method 1: NetworkManager
+
+In NetworkManager, you can share an existing internet connection of a wireless interface `wlan0` to clients connected on a ethernet device `eth0` by setting the connection type of the `eth0` interface to 'Shared'. This will start a dnsmasq DHCP server. You'll have to expose ports 53 and 67 in `networking.firewall.allowedUDPPorts`, and then you can connect using regular DHCP from the device connected via the cable in `eth0`.
+
+### Method 2: manual setup
+
+Share an existing internet connection of a wireless interface `wlan0` to clients connected on a ethernet device `eth0`. Make sure you've got TCP and UDP port `53` for the dnsmasq DHCP server opened in your <a href="Firewall" class="wikilink" title="Firewall">Firewall</a>.
+
+``` bash
+# Setup ethernet device
+ip link set up eth0
+ip addr add 10.0.0.1/24 dev eth0
+
+# Enable packet forwarding
+sysctl net.ipv4.ip_forward=1
+
+# Enable NAT for leaving packets
+nft add table ip nat
+nft add chain ip nat POSTROUTING { type nat hook postrouting priority 100 \; }
+nft add rule nat POSTROUTING oifname wlan0 masquerade
+
+# Start dnsmasq for DHCP
+dnsmasq -d -i eth0 --dhcp-range=10.0.0.2,10.0.0.255,255.255.255.0,24h
+```
+
+To cleanup the configured interface run following commands
+
+``` bash
+ip addr del 10.0.0.1/24 dev eth0
+ip link set down eth0
+# Get handle_number with: nft -a list table nat
+nft delete rule nat POSTROUTING handle <handle_number>
+```
+
+### Method 3: declarative setup
+
+Persistently share an existing internet connection on interface `wlan0` to clients connected on an ethernet interface `eth0`. Tested where `wlan0` is a wireless interface, but it should work with a different ethernet interface as well. You do not need to manually open port 53.
+
+``` nix
+# Set a static IP on the "downstream" interface
+networking.interfaces."eth0" = {
+  useDHCP = false;
+  ipv4.addresses = [{
+    address = "10.0.0.1";
+    prefixLength = 24;
+  }];
+};
+networking.firewall.extraCommands = ''
+  # Set up SNAT on packets going from downstream to the wider internet
+  iptables -t nat -A POSTROUTING -o wlan0 -j MASQUERADE
+
+  # Accept all connections from downstream. May not be necessary
+  iptables -A INPUT -i enp2s0 -j ACCEPT
+'';
+# Run a DHCP server on the downstream interface
+services.kea.dhcp4 = {
+  enable = true;
+  settings = {
+    interfaces-config = {
+      interfaces = [
+        "eth0"
+      ];
+    };
+    lease-database = {
+      name = "/var/lib/kea/dhcp4.leases";
+      persist = true;
+      type = "memfile";
+    };
+    rebind-timer = 2000;
+    renew-timer = 1000;
+    subnet4 = [
+      {
+        id = 1;
+        pools = [
+          {
+            pool = "10.0.0.2 - 10.0.0.255";
+          }
+        ];
+        subnet = "10.0.0.1/24";
+      }
+    ];
+    valid-lifetime = 4000;
+    option-data = [{
+      name = "routers";
+      data = "10.0.0.1";
+    }];
+  };
+};
+```
+
+For nftables, the equivalent of the iptables rules in `networking.firewall.extraCommands` above is the following.
+
+``` nix
+networking.nftables.ruleset = ''
+  table ip nat {
+    chain POSTROUTING {
+      type nat hook postrouting priority 100;
+      oifname "wlp2s0" counter masquerade
+    }
+  }
+  table ip filter {
+    chain INPUT {
+      iifname "enp3s0" counter accept
+    }
+  }
+'';
+```
+
+<a href="Category:Networking" class="wikilink" title="Category:Networking">Category:Networking</a> <a href="Category:Tutorial" class="wikilink" title="Category:Tutorial">Category:Tutorial</a>
