@@ -35,7 +35,10 @@
       in {
         default = pkgs.mkShell {
           packages = [
+            pkgs.curl
             pkgs.nodejs_22
+            pkgs.pandoc
+            pkgs.zstd
           ];
 
           shellHook = ''

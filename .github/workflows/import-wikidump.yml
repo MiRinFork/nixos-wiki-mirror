@@ -1,0 +1,46 @@
+name: Import NixOS Wiki Dump
+
+on:
+  schedule:
+    - cron: "17 3 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+
+      - name: Download and import dump
+        run: |
+          nix develop --command bash -euo pipefail -c '
+            npm ci
+            mkdir -p .wiki-dump
+            curl -L --fail --retry 5 --retry-delay 10 \
+              -o .wiki-dump/wikidump.xml.zst \
+              https://wiki.nixos.org/wikidump.xml.zst
+            zstd -dc .wiki-dump/wikidump.xml.zst > .wiki-dump/wikidump.xml
+            npm run import-dump -- --input .wiki-dump/wikidump.xml --output entries --clean
+            npm run build
+            rm -rf .wiki-dump
+          '
+
+      - name: Commit generated entries
+        run: |
+          if [ -z "$(git status --porcelain -- entries)" ]; then
+            echo "No entry changes to commit."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add entries
+          git commit -m "Update entries from NixOS wiki dump"
+          git push
