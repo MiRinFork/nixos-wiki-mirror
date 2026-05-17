@@ -975,7 +975,14 @@ async function expandTemplateParameter(inner, context) {
 }
 
 async function expandTemplateCall(inner, context) {
-  const call = parseTemplateCall(inner, context);
+  let call;
+
+  try {
+    call = parseTemplateCall(inner, context);
+  } catch (error) {
+    console.warn(`⚠ 警告: ${describeContext(context)}: 无法解析模板调用 "${inner.slice(0, 40)}"，已降级为代码块（${error.message}）`);
+    return "```\n{{" + inner + "}}\n```";
+  }
 
   if (call.name === "entries") {
     if (call.rawPartCount !== 1) {
