@@ -25,6 +25,14 @@ const rootDir = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const defaultInputPath = path.join(rootDir, "wikidump.xml");
 const defaultOutputDir = path.join(rootDir, "entries");
 
+class PandocError extends Error {
+  constructor(message, stderr) {
+    super(message);
+    this.name = "PandocError";
+    this.stderr = stderr;
+  }
+}
+
 function usage() {
   return `Usage: node scripts/import-wikidump.mjs [options]
 
@@ -151,6 +159,13 @@ function extractPage(pageXml, namespaceIds) {
   return { title, segments, source };
 }
 
+function repairMediaWikiSource(source) {
+  return source
+    .split("\n")
+    .map((line) => line.replace(/^([|!][^|\n]*\bstyle="[^"\n|]*)(\|)/, '$1"$2'))
+    .join("\n");
+}
+
 async function* readPages(inputPath) {
   const stream = createReadStream(inputPath, { encoding: "utf8" });
   let buffer = "";
@@ -207,12 +222,66 @@ async function runPandoc(pandocCommand, source, title) {
       if (code === 0) {
         resolve(stdout.trim());
       } else {
-        reject(new Error(`pandoc failed for "${title}" with exit code ${code}: ${stderr.trim()}`));
+        const trimmedStderr = stderr.trim();
+        reject(new PandocError(`pandoc failed for "${title}" with exit code ${code}: ${trimmedStderr}`, trimmedStderr));
       }
     });
 
+    child.stdin.on("error", () => {
+      // The process may exit before consuming stdin. The close handler will
+      // report that as a pandoc failure and the caller can use the fallback.
+    });
     child.stdin.end(source);
   });
+}
+
+async function convertPageToMarkdown(options, page) {
+  try {
+    return {
+      markdown: await runPandoc(options.pandocCommand, page.source, page.title),
+      usedFallback: false,
+    };
+  } catch (error) {
+    if (!(error instanceof PandocError)) {
+      throw error;
+    }
+
+    const repairedSource = repairMediaWikiSource(page.source);
+    if (repairedSource !== page.source) {
+      try {
+        console.warn(`WARNING: pandoc failed for "${page.title}", retrying with repaired MediaWiki table attributes.`);
+        return {
+          markdown: await runPandoc(options.pandocCommand, repairedSource, page.title),
+          usedFallback: false,
+        };
+      } catch (retryError) {
+        if (!(retryError instanceof PandocError)) {
+          throw retryError;
+        }
+        console.warn(`WARNING: repaired conversion also failed for "${page.title}": ${retryError.stderr}`);
+      }
+    } else {
+      console.warn(`WARNING: pandoc failed for "${page.title}": ${error.stderr}`);
+    }
+
+    return {
+      markdown: fallbackMarkdown(page.source),
+      usedFallback: true,
+    };
+  }
+}
+
+function fallbackMarkdown(source) {
+  const escapedSource = source.replaceAll("```", "`` `");
+
+  return [
+    "> [!WARNING]",
+    "> Automatic MediaWiki-to-Markdown conversion failed for this page. The raw source from the dump is preserved below.",
+    "",
+    "```mediawiki",
+    escapedSource,
+    "```",
+  ].join("\n");
 }
 
 function generatedMarkdown(title, convertedMarkdown) {
@@ -240,6 +309,7 @@ async function main() {
   const temporaryOutputDir = await fs.mkdtemp(path.join(os.tmpdir(), "nixos-wiki-entries-"));
   let imported = 0;
   let skipped = 0;
+  let fallbackImported = 0;
 
   for await (const pageXml of readPages(options.inputPath)) {
     const page = extractPage(pageXml, options.namespaceIds);
@@ -249,9 +319,12 @@ async function main() {
       continue;
     }
 
-    const markdown = await runPandoc(options.pandocCommand, page.source, page.title);
+    const { markdown, usedFallback } = await convertPageToMarkdown(options, page);
     await writeEntry(temporaryOutputDir, page, markdown);
     imported += 1;
+    if (usedFallback) {
+      fallbackImported += 1;
+    }
 
     if (imported % 100 === 0) {
       console.log(`Imported ${imported} pages...`);
@@ -268,6 +341,9 @@ async function main() {
 
   console.log(`Imported ${imported} pages into ${path.relative(rootDir, options.outputDir) || options.outputDir}.`);
   console.log(`Skipped ${skipped} pages outside selected namespaces or redirects.`);
+  if (fallbackImported > 0) {
+    console.log(`Imported ${fallbackImported} pages with raw-source fallback because pandoc could not parse them.`);
+  }
 }
 
 main().catch((error) => {
