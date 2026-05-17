@@ -1000,7 +1000,8 @@ async function expandTemplateCall(inner, context) {
     source = await fs.readFile(sourcePath, "utf8");
   } catch (error) {
     if (error.code === "ENOENT") {
-      templateError(context, `缺少模板：template/${call.name}.md`);
+      console.warn(`⚠ 警告: ${describeContext(context)}: 缺少模板 template/${call.name}.md，已降级为代码块`);
+      return "```\n{{" + inner + "}}\n```";
     }
     throw error;
   }
