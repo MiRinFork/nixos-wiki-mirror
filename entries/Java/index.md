@@ -2,7 +2,7 @@
 
 <!-- Source page: Java -->
 
-This article is about [Java](https://en.wikipedia.org/wiki/Java_(programming_language)), the programming language.
+This article is about <a href="Wikipedia:Java_(programming_language)" class="wikilink" title="Java">Java</a>, the programming language.
 
 \_\_TOC\_\_
 
@@ -12,7 +12,7 @@ Available as `javaws` in package `adoptopenjdk-icedtea-web`.
 
 ## JDK options
 
-Your default choice should probably be to install `jdk`, which is an alias to the latest [LTS](https://en.wikipedia.org/wiki/Long-term_support). If you're in a server environment, go for `jdk21_headless`. Java 21 is the currently-maintained LTS version of OpenJDK as of April 2024.
+Your default choice should probably be to install `jdk`, which is an alias to the latest <a href="Wikipedia:Long-term_support" class="wikilink" title="LTS">LTS</a>. If you're in a server environment, go for `jdk21_headless`. Java 21 is the currently-maintained LTS version of OpenJDK as of April 2024.
 
 As you might expect, though, many flavors of Java are available in NixOS.
 
@@ -28,7 +28,7 @@ As you might expect, though, many flavors of Java are available in NixOS.
 
 ## VSCode + Language Support for Java (TM) by Red Hat extension
 
-Unfortunately the extension contains and uses a version of the JRE which makes use of dynamically loaded libraries, which nix cannot accomodate out-of-the-box. Fortunately there's a simple solution in the use of [nix-ld](https://github.com/Mic92/nix-ld). Here's a simple `flake.nix` snippet to get you started (I'll focus on the `devShell` part for brevity):
+Unfortunately the extension contains and uses a version of the JRE which makes use of dynamically loaded libraries, which nix cannot accomodate out-of-the-box. Fortunately there's a simple solution in the use of [nix-ld](https://github.com/nix-community/nix-ld). Here's a simple `flake.nix` snippet to get you started (I'll focus on the `devShell` part for brevity):
 
 ``` nix
 # flake.nix
@@ -124,7 +124,7 @@ By default java does not enable anti-aliasing for font rendering. By exporting e
 $ export _JAVA_OPTIONS='-Dawt.useSystemAAFontSettings=lcd'
 ```
 
-More options can be found in the [archlinux wiki](https://wiki.archlinux.org/index.php/Java_Runtime_Environment_fonts)
+More options can be found in the [ArchWiki](https://wiki.archlinux.org/title/Java_Runtime_Environment_fonts)
 
 ## Overriding java jks Certificate Store
 

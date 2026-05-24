@@ -2,7 +2,7 @@
 
 <!-- Source page: Niri -->
 
-<translate> [Niri](https://github.com/YaLTeR/niri) is a scrollable-tiling <a href="Wayland" class="wikilink" title="Wayland">Wayland</a> compositor.
+<translate> [Niri](https://github.com/niri-wm/niri) is a scrollable-tiling <a href="Wayland" class="wikilink" title="Wayland">Wayland</a> compositor.
 
 ## Installation
 
@@ -14,17 +14,17 @@ Simply enable : </translate>
 
 The configuration path for niri is . Therefore <a href="Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> can be used for configuration: </translate>
 
-<translate> You might want to start from [the default configuration file](https://github.com/YaLTeR/niri/blob/main/resources/default-config.kdl) described at [1](https://github.com/YaLTeR/niri/wiki/Getting-Started#main-default-hotkeys).
+<translate> You might want to start from [the default configuration file](https://github.com/niri-wm/niri/blob/main/resources/default-config.kdl) described at [1](https://github.com/niri-wm/niri/wiki/Getting-Started#main-default-hotkeys).
 
-See [the wiki](https://yalter.github.io/niri/) for configuration options for niri.
+See [the wiki](https://niri-wm.github.io/niri/) for configuration options for niri.
 
 ### Greetd
 
-You can start \`niri\` with greetd configuration:
+You can start niri with greetd configuration:
 
 ## Additional Setup
 
-As described in [Example systemd Setup (niri wiki)](https://github.com/YaLTeR/niri/wiki/Example-systemd-Setup), you might want to set up some additional services including <a href="Swayidle" class="wikilink" title="Swayidle">Swayidle</a>, <a href="Swaylock" class="wikilink" title="Swaylock">Swaylock</a>, <a href="Waybar" class="wikilink" title="Waybar">Waybar</a>, <a href="Polkit" class="wikilink" title="Polkit">Polkit</a> and <a href="Secret_Service" class="wikilink" title="Secret Service">Secret Service</a> as follows to complement the functionality of a regular window manager. Some of the these settings are also required to enable all the features of [the default configuration file](https://github.com/YaLTeR/niri/blob/main/resources/default-config.kdl). </translate>
+As described in [Example systemd Setup (niri wiki)](https://github.com/niri-wm/niri/wiki/Example-systemd-Setup), you might want to set up some additional services including <a href="Swayidle" class="wikilink" title="Swayidle">Swayidle</a>, <a href="Swaylock" class="wikilink" title="Swaylock">Swaylock</a>, <a href="Waybar" class="wikilink" title="Waybar">Waybar</a>, <a href="Polkit" class="wikilink" title="Polkit">Polkit</a> and <a href="Secret_Service" class="wikilink" title="Secret Service">Secret Service</a> as follows to complement the functionality of a regular window manager. Some of the these settings are also required to enable all the features of [the default configuration file](https://github.com/niri-wm/niri/blob/main/resources/default-config.kdl). </translate>
 
 Or using <a href="Home_Manager" class="wikilink" title="Home Manager">Home Manager</a>:
 
@@ -38,13 +38,17 @@ There is a general workaround to set as described in <a href="Wayland#Electron_a
 
 <translate> However, since niri does not support text-input-v1, sometimes enabling text-input-v3 by manually adding flag is necessary for IME to work: </translate>
 
+``` console
+$ slack --wayland-text-input-version=3
+```
+
 <translate> `wrapProgram` may be used to add the flag automatically: </translate>
 
 <translate>
 
 ### XWayland apps not working
 
-There is a optional dependency for niri which is highly recommended to install (you can read [this](https://github.com/YaLTeR/niri/wiki/Xwayland) article to learn more about this) </translate>
+There is a optional dependency for niri which is highly recommended to install (you can read [this](https://github.com/niri-wm/niri/wiki/Xwayland) article to learn more about this) </translate>
 
 <translate> Or using <a href="Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> </translate>
 

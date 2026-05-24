@@ -6,13 +6,17 @@ Tips on using [Logitech MX Master](https://www.logitech.com/en-us/mx/master-seri
 
 There are 2 main configuration paths for specific MX Master options:
 
-- [Solaar](https://search.nixos.org/packages?channel=unstable&query=solaar) - GUI
+- [Solaar](https://search.nixos.org/packages?query=solaar) - GUI application using the `hidapi` library
 
 <!-- -->
 
-- [LogiOps](https://search.nixos.org/packages?channel=unstable&query=Logio) - Command Line
+- [LogiOps](https://search.nixos.org/packages?query=logiops) - Command Line controlled systemd service
 
-## [Solaar](https://search.nixos.org/packages?channel=unstable&query=solaar)
+## Solaar
+
+[Solaar](https://search.nixos.org/packages?query=solaar) is a program that runs as a user process for configuring devices using Logitech's HID++ protocol.
+
+### Installation
 
 It is possible to quickly test Solaar with nix run. Settings will not persist across reboots without proper installation.
 
@@ -70,9 +74,9 @@ LABEL="solaar_end"
 
 For further configuration, see: [project documentation](https://pwr-solaar.github.io/Solaar/index) or section on udev rule specifically [installing udev rule manually](https://pwr-solaar.github.io/Solaar/installation/#installing-solaars-udev-rule-manually)
 
-## [LogiOps](https://search.nixos.org/packages?channel=unstable&query=Logio)
+## LogiOps
 
-Is a userspace driver running as a systemd service. Default location for the configuration file is /etc/logid.cfg, but another can be specified using the `-c` flag.
+[LogiOps](https://search.nixos.org/packages?query=LogiOps) a userspace driver running as a <a href="Systemd/User_Services" class="wikilink" title="systemd service">systemd service</a>. Default location for the configuration file is /etc/logid.cfg, but another can be specified using the `-c` flag.
 
 See [project documentation](https://github.com/PixlOne/logiops/wiki/Configuration) and [Arch Wiki](https://wiki.archlinux.org/title/Logitech_MX_Master) for usage and configuration details.
 

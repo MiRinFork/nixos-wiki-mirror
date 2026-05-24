@@ -8,7 +8,13 @@ For additional details, see .
 
 ## Checking for Wayland
 
-To check if you are using Wayland, run the following command If is returned, you are running Wayland
+To check if you are using Wayland, run the following command
+
+``` console
+$ echo $XDG_SESSION_TYPE
+```
+
+If is returned, you are running Wayland
 
 ## Setup
 
@@ -64,7 +70,7 @@ As of NixOS 25.05 ("Warbler"), if `XDG_SESSION_TYPE` is unset or set to "wayland
 Example: to launch `code` *()*
 
 ``` console
-NIXOS_OZONE_WL=1 code
+$ NIXOS_OZONE_WL=1 code
 ```
 
 ## Virtualization

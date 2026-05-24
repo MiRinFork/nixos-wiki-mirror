@@ -24,6 +24,7 @@ For desktop:
 ``` nix
 services.xserver.xkb = {
   layout = "us,ru";
+  # Note that the trailing comma is required: https://github.com/NixOS/nixpkgs/issues/359830
   variant = "workman,";
   options = "grp:win_space_toggle";
 };
@@ -97,5 +98,9 @@ You may need to add some delay to make xmodmap command work.
 ``` nix
   services.xserver.displayManager.sessionCommands = "sleep 5 && ${pkgs.xorg.xmodmap}/bin/xmodmap -e 'keycode 43 = h H Left H' &";
 ```
+
+## Using keyd
+
+<a href="keyd" class="wikilink" title="keyd">keyd</a> is another option to customize keyboard behavior, and may be useful when a single keypress should produce multiple characters at once, e.g. a letter with a combining diacritic.
 
 <a href="Category:Desktop" class="wikilink" title="Category:Desktop">Category:Desktop</a> <a href="Category:Hardware" class="wikilink" title="Category:Hardware">Category:Hardware</a>

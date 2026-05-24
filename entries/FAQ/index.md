@@ -48,14 +48,14 @@ Mainly because Nix is intended to be lightweight, easy to learn, and portable (z
 
 <translate> Check 'man configuration.nix' for these options. Rebuild for these options to take effect: </translate>
 
-``` bash
-nixos-rebuild switch
+``` console
+$ nixos-rebuild switch
 ```
 
 <translate> List all store paths that form the system closure and realise them: </translate>
 
-``` bash
-nix-store -qR $(nix-instantiate '<nixpkgs/nixos>' -A system) | xargs nix-store -r
+``` console
+$ nix-store -qR $(nix-instantiate '<nixpkgs/nixos>' -A system) | xargs nix-store -r
 warning: you did not specify `--add-root'; the result might be removed by the garbage collector
 
 <build output and list of successfully realised paths>
@@ -63,8 +63,8 @@ warning: you did not specify `--add-root'; the result might be removed by the ga
 
 <translate> Repeat for your user and further profiles: </translate>
 
-``` bash
-nix-store -qR ~/.nix-profile | xargs nix-store -r
+``` console
+$ nix-store -qR ~/.nix-profile | xargs nix-store -r
 ```
 
 <translate> The warning can be ignored for profiles that are listed/linked in */nix/var/nix/profiles/* or one of its subdirectories.
@@ -81,17 +81,15 @@ If you still wonder why, run `ls -1 /nix/store | sort -R -t - -k 2 | less` in yo
 
 This is what might happen if you don't garbage collect frequently, or if you are testing compilation variants: </translate>
 
-``` bash
-q0yi2nr8i60gm2zap46ryysydd2nhzhp-automake-1.11.1/
-vbi4vwwidvd6kklq2kc0kx3nniwa3acl-automake-1.11.1/
-wjgzir57hcbzrq3mcgxiwkyiqss3r4aq-automake-1.11.1/
-1ch5549xnck37gg2w5fh1jgk6lkpq5mc-nixos-build-vms/
-4cmjlxknzlvcdmfwj0ih0ggqsj5q73hb-nixos-build-vms/
-7fv4kwi5wwwzd11ili3qwg28xrj8rxw2-nixos-build-vms/
-8jij13smq9kdlqv96hm7y8xmbh2c54iy-nixos-build-vms/
-j714mv53xi2j4ab4g2i08knqr137fd6l-nixos-build-vms/
-xvs7y09jf7j48p6l0p87iypgpq470jqw-nixos-build-vms/
-```
+    q0yi2nr8i60gm2zap46ryysydd2nhzhp-automake-1.11.1/
+    vbi4vwwidvd6kklq2kc0kx3nniwa3acl-automake-1.11.1/
+    wjgzir57hcbzrq3mcgxiwkyiqss3r4aq-automake-1.11.1/
+    1ch5549xnck37gg2w5fh1jgk6lkpq5mc-nixos-build-vms/
+    4cmjlxknzlvcdmfwj0ih0ggqsj5q73hb-nixos-build-vms/
+    7fv4kwi5wwwzd11ili3qwg28xrj8rxw2-nixos-build-vms/
+    8jij13smq9kdlqv96hm7y8xmbh2c54iy-nixos-build-vms/
+    j714mv53xi2j4ab4g2i08knqr137fd6l-nixos-build-vms/
+    xvs7y09jf7j48p6l0p87iypgpq470jqw-nixos-build-vms/
 
 <translate>
 
@@ -99,8 +97,8 @@ xvs7y09jf7j48p6l0p87iypgpq470jqw-nixos-build-vms/
 
 View the available generations of your channel: </translate>
 
-``` bash
-nix-env --list-generations -p /nix/var/nix/profiles/per-user/root/channels
+``` console
+$ nix-env --list-generations -p /nix/var/nix/profiles/per-user/root/channels
 18   2014-04-17 09:16:28
 19   2014-06-13 10:31:24 
 20   2014-08-12 19:09:20   (current)
@@ -108,15 +106,15 @@ nix-env --list-generations -p /nix/var/nix/profiles/per-user/root/channels
 
 <translate> To rollback to the previous generation: </translate>
 
-``` bash
-nix-env --rollback -p /nix/var/nix/profiles/per-user/root/channels
+``` console
+$ nix-env --rollback -p /nix/var/nix/profiles/per-user/root/channels
 switching from generation 20 to 19
 ```
 
 <translate> To switch to a particular generation: </translate>
 
-``` bash
-nix-env --switch-generation 18 -p /nix/var/nix/profiles/per-user/root/channels
+``` console
+$ nix-env --switch-generation 18 -p /nix/var/nix/profiles/per-user/root/channels
 switching from generation 20 to 18
 ```
 
@@ -126,8 +124,8 @@ switching from generation 20 to 18
 
 </translate>
 
-``` bash
-nix-build -E 'with import <nixpkgs> { }; callPackage ./mypackage.nix { }'
+``` console
+$ nix-build -E 'with import <nixpkgs> { }; callPackage ./mypackage.nix { }'
 ```
 
 <translate> You can replace callPackage with callPackage_i686 to build the 32-bit version of your package on a 64-bit system if you want to test that.
@@ -136,8 +134,8 @@ nix-build -E 'with import <nixpkgs> { }; callPackage ./mypackage.nix { }'
 
 To build a package with -Og and -g, and without stripping debug symbols use: </translate>
 
-``` bash
-nix-build -E 'with import <nixpkgs> { }; enableDebugging fooPackage'
+``` console
+$ nix-build -E 'with import <nixpkgs> { }; enableDebugging fooPackage'
 ```
 
 <translate> See also <a href="Debug_Symbols" class="wikilink" title="Debug Symbols">Debug Symbols</a>
@@ -146,8 +144,8 @@ nix-build -E 'with import <nixpkgs> { }; enableDebugging fooPackage'
 
 As root you can run nix-build with the --check flag: </translate>
 
-``` bash
-sudo nix-build --check -A ncdu
+``` console
+$ sudo nix-build --check -A ncdu
 ```
 
 <translate>
@@ -172,8 +170,8 @@ There are many ways, one is the following: </translate>
     }
     ```
 2.  <translate> Install all specified packages using this command:</translate>
-    ``` bash
-    nix-env -iA userPackages -f '<nixpkgs>'
+    ``` console
+    $ nix-env -iA userPackages -f '<nixpkgs>'
     ```
 
 <translate> Now you can add and remove packages from the paths list and rerun nix-env to update your user local packages.
@@ -235,14 +233,14 @@ stdenv.mkDerivation rec {
 
 <translate> This can be built with: </translate>
 
-``` bash
-nix-build mybinaryprogram.nix
+``` console
+$ nix-build mybinaryprogram.nix
 ```
 
 <translate> And run with: </translate>
 
-``` bash
-./result/bin/mybinaryprogram
+``` console
+$ ./result/bin/mybinaryprogram
 ```
 
 <translate> Another possibility is using a FHS-compatible Sandbox with [buildFHSUserEnv](https://nixos.org/nixpkgs/manual/#sec-fhs-environments) </translate>
@@ -272,8 +270,8 @@ nix-build mybinaryprogram.nix
 
 <translate> the sandbox can be entered with </translate>
 
-``` bash
-nix-shell fhsUser.nix
+``` console
+$ nix-shell fhsUser.nix
 ```
 
 <translate> If your target application can't find shared libraries inside buildFHSUserEnv, you may run [nix-de-generate](https://github.com/lexleogryfon/de-generate) for target application inside FHS, which will generate newenv.nix file, an nix-expression of buildFHSUserEnv with resolved dependencies for shared libraries.
@@ -321,8 +319,8 @@ First `echo $NIX_PATH` to see where nix looks for the expressions. Note that nix
 
 If you want to know where <nixpkgs> is located: </translate>
 
-``` bash
-nix-instantiate --find-file nixpkgs
+``` console
+$ nix-instantiate --find-file nixpkgs
 ```
 
 <translate> To know the commit, open the .version-suffix file in the nixpkgs location. The hash after the dot is the git commit.
@@ -342,8 +340,8 @@ So in short, the `release-XX.YY` branches have not been run through Hydra yet, w
 
 You can jump the queue and use `nix-shell` with a `NIX_PATH` pointing to a tarball of the channel to get a shell for that software. Some building may occur. This will not work for system services. </translate>
 
-``` command
-NIX_PATH=nixpkgs=https://github.com/NixOS/nixpkgs/archive/release-17.09.tar.gz nix-shell -p $software
+``` console
+$ NIX_PATH='nixpkgs=https://github.com/NixOS/nixpkgs/archive/release-17.09.tar.gz' nix-shell -p $software
 ```
 
 <translate>
@@ -462,26 +460,26 @@ If the shell complains that you do not have write privileges for the file system
 
 start a new shell with a private mount namespace (Linux-only) </translate>
 
-``` bash
-sudo unshare -m bash
+``` console
+$ sudo unshare -m bash
 ```
 
 <translate> remount the filesystem with write privileges (as root) </translate>
 
-``` bash
-mount -o remount,rw /nix/store
+``` console
+$ mount -o remount,rw /nix/store
 ```
 
 <translate> update the file </translate>
 
-``` bash
-nano <PATH_TO_PACKAGE>/default.nix
+``` console
+$ nano <PATH_TO_PACKAGE>/default.nix
 ```
 
 <translate> exit to shell where /nix/store is still mounted read-only </translate>
 
-``` bash
-exit
+``` console
+$ exit
 ```
 
 <translate> Be sure to [report the incorrect url](https://github.com/NixOS/nixpkgs/issues) or [fix it yourself](https://github.com/NixOS/nixpkgs/pulls).
@@ -492,8 +490,8 @@ Install `nix-prefetch-scripts` and use the corresponding nix prefetch helper.
 
 For instance to get the checksum of a git repository use: </translate>
 
-``` bash
-nix-prefetch-git https://git.zx2c4.com/password-store
+``` console
+$ nix-prefetch-git https://git.zx2c4.com/password-store
 ```
 
 <translate> Or, use `lib.fakeHash` as the fetcher's hash argument, and attempt to build; Nix will tell you the actual and expected hash's mismatch, and you may copy the actual hash.
@@ -516,8 +514,8 @@ Set the binary caches to an empty list: `nix.binaryCaches = [];` in `configurati
 
 This is also useful to make simple configuration changes in NixOS (ex.: network related), when no network connectivity is available: </translate>
 
-``` bash
-nixos-rebuild switch --option binary-caches ''
+``` console
+$ nixos-rebuild switch --option binary-caches ''
 ```
 
 <translate>
@@ -544,20 +542,20 @@ nix.settings.sandbox = true;
 
 If you simply want to run a *nix-shell* with a package from unstable, you can run a command like the following: </translate>
 
-``` bash
-nix-shell -I nixpkgs=channel:nixpkgs-unstable -p somepackage
+``` console
+$ nix-shell -I nixpkgs=channel:nixpkgs-unstable -p somepackage
 ```
 
 <translate> It is possible to have multiple nix-channels simultaneously. To add the unstable channel with the specifier *unstable*, </translate>
 
-``` bash
-sudo nix-channel --add https://nixos.org/channels/nixos-unstable nixos-unstable
+``` console
+$ sudo nix-channel --add https://nixos.org/channels/nixos-unstable nixos-unstable
 ```
 
 <translate> After updating the channel </translate>
 
-``` bash
-sudo nix-channel --update nixos-unstable
+``` console
+$ sudo nix-channel --update nixos-unstable
 ```
 
 <translate> queries via `nix-env` will show packages from both *stable* and *unstable*. Use this to install unstable packages into your user environment. The following snippet shows how this can be done in *configuration.nix*. </translate>
@@ -602,20 +600,20 @@ import <nixos-unstable> { config = { allowUnfree = true; }; }
 
 exfat is not supported in NixOS by default - since there are legality issues still with exFAT filesystem. </translate>
 
-``` bash
-su nano /etc/nixos/configuration.nix
+``` console
+$ su nano /etc/nixos/configuration.nix
 ```
 
 <translate> Add this line to your configuration file. </translate>
 
-``` bash
+``` nix
 boot.extraModulePackages = [ config.boot.kernelPackages.exfat-nofuse ];
 ```
 
 <translate> After saving the file rebuild NixOS: </translate>
 
-``` bash
-nixos-rebuild switch
+``` console
+$ nixos-rebuild switch
 ```
 
 <translate> Restart NixOS.

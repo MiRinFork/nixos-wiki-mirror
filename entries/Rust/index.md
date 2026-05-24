@@ -173,7 +173,7 @@ channel = "stable" # This can also be "nightly" if you want a nightly rust
 
 The [Nixpkgs manual](https://nixos.org/manual/nixpkgs/stable/#rust) uses `buildRustPackage`.
 
-[This](https://srid.ca/rust-nix) blog post shows how to do it using `dream2nix`. A template repo is available here: <https://github.com/srid/rust-nix-template>
+[This](https://web.archive.org/web/20260108165619/https://srid.ca/rust-nix) blog post shows how to do it using `dream2nix`. A template repo is available here: <https://github.com/srid/rust-nix-template>
 
 ## Using overrideAttrs with Rust Packages
 
@@ -285,7 +285,7 @@ pkgs.callPackage (
 ) { }
 ```
 
-This will have the stable Rust compiler + the official formatter and linter inside the ephemeral shell. It'll also set the RUST_SRC_PATH environment variable to point to the right location, which tools, such as rust-analyzer, require to be set.
+This will have the stable Rust compiler + the official formatter and linter inside the ephemeral shell. It'll also set the `RUST_SRC_PATH` environment variable to point to the right location, which tools, such as rust-analyzer, require to be set.
 
 ### Custom Rust version or targets
 

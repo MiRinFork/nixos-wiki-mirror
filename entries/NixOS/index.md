@@ -117,46 +117,46 @@ Every time the system state is rebuilt using `nixos-rebuild switch`, a new gener
 
 You can roll back via:
 
-``` shell
+``` console
 $ nix-env --rollback               # roll back a user environment
 $ nixos-rebuild switch --rollback  # roll back a system environment
 ```
 
 NixOS also places entries for previous generations in the bootloader menu, so as a last resort you can always revert to a previous configuration by rebooting. To set the currently booted generation as the default run </translate>
 
-``` shell
+``` console
 $ /run/current-system/bin/switch-to-configuration boot
 ```
 
 <translate> Because NixOS keeps previous generations of system state available in case rollback is desired, old package versions aren't deleted from your system immediately after an update. You can delete old generations manually:
 
-``` shell
-# delete generations older than 30 days
+``` console
+$ # delete generations older than 30 days
 $ nix-collect-garbage --delete-older-than 30d
 
 <!--T:57-->
-# delete ALL previous generations - you can no longer rollback after running this
+$ # delete ALL previous generations - you can no longer rollback after running this
 $ nix-collect-garbage -d                       
 ```
 
 List generations:
 
-``` shell
-# as root
+``` console
+$ # as root
 $ nix-env --list-generations --profile /nix/var/nix/profiles/system
 ```
 
 Switch generations:
 
-``` shell
-# as root switch to generation 204
+``` console
+$ # as root switch to generation 204
 $ nix-env --profile /nix/var/nix/profiles/system --switch-generation 204
 ```
 
 delete broken generation(s):
 
-``` shell
-# as root delete broken generations 205 and 206 
+``` console
+$ # as root delete broken generations 205 and 206 
 $ nix-env --profile /nix/var/nix/profiles/system --delete-generations 205 206
 ```
 

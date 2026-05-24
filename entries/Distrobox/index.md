@@ -103,6 +103,23 @@ environment.etc."distrobox/distrobox.conf".text = ''
 
 This is a cross-distro (not NixOS-specific) issue resulting from a [util-linux](https://github.com/util-linux/util-linux/) runuser regression.[^1][^2] A fix has recently been merged, and the issue should be resolved in the next release (v2.43).[^3].
 
+### Distrobox is not location independent
+
+The symptom is that a distrobox container created in the past can not run, because it references a non-existing "distrobox-init" script as a necessary bind mount.
+
+Historically, this was a known issue[^4] affecting users who have created a container with a different version of distrobox than the one that is currently running. It can surface after running GC. The root cause is that the container is created with bind mounts for essential scripts, one of which is the entrypoint itself, the source of which is often an absolute path, such as: `/nix/store/XXXXX-distrobox/bin/distrobox-init`. The problem is that once a container was created with a bind mount, its source has to be available every time the container is re-executed.
+
+This issue was solved 2 times upstream, both in 2022:
+
+The first solution[^5] replaces the bind-mount with copying the scripts into the container during distrobox-enter.
+
+The second solution[^6] reverts the first solution, due to problems the former had introduced with btrfs. In order to avoid regressions for Nix users, it introduces a weaker solution for mounting the scripts: instead of `realpath`, it makes use of: `cd "$(dirname "${0}")" && pwd`. That works, but only as long as:
+
+1.  The "\$0" argument is preserved. There was an [issue in nixpkgs](https://github.com/NixOS/nixpkgs/issues/478154), fixed in 2026[^7], with non-preservation of "\$0" in the "distrobox" command wrapper. Direct calls to `distrobox-create` were unaffected.
+2.  In every future execution of the container, the distrobox utilities will remain in the same path. This is workable when the installation is fixed on a path like `/run/current-system/sw/bin/distrobox-init`.
+
+Notably, if you were affected by the first issue, then your container will not work even after the fixes that have since come out. The second issue is not resolved due to decisions upstream.
+
 ## References
 
 <references/>
@@ -114,3 +131,11 @@ This is a cross-distro (not NixOS-specific) issue resulting from a [util-linux](
 [^2]: <https://github.com/89luca89/distrobox/issues/2065>
 
 [^3]: <https://github.com/util-linux/util-linux/pull/4185>
+
+[^4]: <https://github.com/89luca89/distrobox/issues/315>
+
+[^5]: <https://github.com/89luca89/distrobox/commit/52a34fbd52e1f0f035657b167ebe997d41db0993>
+
+[^6]: <https://github.com/89luca89/distrobox/commit/1ad3204ee78dfb8ee772cdd81788f3cbb3f4bd1b>
+
+[^7]: <https://github.com/NixOS/nixpkgs/commit/2f87ef8fdbabc6df0fbaf59ad14598864711ed4c>

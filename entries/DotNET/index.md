@@ -2,7 +2,7 @@
 
 <!-- Source page: DotNET -->
 
-From [Wikipedia](https://en.wikipedia.org/wiki/.NET)
+From <a href="Wikipedia:.NET" class="wikilink" title="Wikipedia">Wikipedia</a>
 
 > The .NET platform (formerly named .NET Core) is a free and open-source, managed computer software framework for Windows, Linux, and macOS operating systems. It is a cross-platform successor to the .NET Framework. The project is mainly developed by Microsoft employees by way of the .NET Foundation and is today released under an MIT License.
 
@@ -10,7 +10,7 @@ From [Wikipedia](https://en.wikipedia.org/wiki/.NET)
 
 This is relevant for NixOS only.
 
-[nix-ld](https://github.com/Mic92/nix-ld) is needed:
+[nix-ld](https://github.com/nix-community/nix-ld) is needed:
 
 ``` nix
 {
@@ -253,9 +253,9 @@ If this still does not work, it might indicate a good time to update target fram
 - [buildDotnetModule references in nixpkgs](https://github.com/search?q=repo%3ANixOS%2Fnixpkgs%20buildDotnetModule&type=code)
 - [NixOS.NET community on Reddit](https://www.reddit.com/r/NixOS_dotnet)
 - [NixOS.NET community on Discord](https://discord.gg/pTpq7Qfs)
-- [The journey of packaging a .NET app on Nix](https://sgt.hootr.club/molten-matter/dotnet-on-nix/)
-- <https://en.wikipedia.org/wiki/.NET_Framework> - The old, windows-only version of .NET. Newer versions (ie. .NET Core) are multiplatform.
-  - <https://en.wikipedia.org/wiki/Mono_(software)> is the open source reimplementation of .NET Framework. Its runtime/JIT has been merged into .NET Core, and now it only receives bugfixes.
+- [The journey of packaging a .NET app on Nix](https://sgt.hootr.club/blog/dotnet-on-nix/)
+- <a href="Wikipedia:.NET_Framework" class="wikilink" title=".NET Framework">.NET Framework</a> - The old, windows-only version of .NET. Newer versions (ie. .NET Core) are multiplatform.
+  - <a href="Wikipedia:Mono_(software)" class="wikilink" title="Mono">Mono</a> is the open source reimplementation of .NET Framework. Its runtime/JIT has been merged into .NET Core, and now it only receives bugfixes.
 - <https://learn.microsoft.com/en-us/dotnet/core/introduction>
 
 <a href="Category:Languages" class="wikilink" title="Category:Languages">Category:Languages</a>

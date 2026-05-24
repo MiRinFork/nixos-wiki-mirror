@@ -13,14 +13,14 @@ Nixpkgs provides a variety of different (and partially complementing) packages t
 
 TeX-documents are not What-you-see-is-what-you-get, but written in plain text, containing tags, commands and functions that instruct the TeX-engine how to lay out the text (or figures or anything else) on the page.
 
-A minimal TeX-document can be created on the commandline using this shell-snippet:
-
-    cat > minimal.tex <<'EOF'
-    \documentclass{article}
-    \begin{document}
-    Hello, Nix.
-    \end{document}
-    EOF
+``` bash
+$ cat > minimal.tex <<EOF
+\documentclass{article}
+\begin{document}
+Hello, Nix.
+\end{document}
+EOF
+```
 
 The Nixpkgs-repository contains several TeX-compilers that have different advantages and disadvantages, support various output formats, encodings and have varying degrees of extensibility.
 
@@ -28,7 +28,9 @@ For the sake of this text we will assume that you you want to create a PDF from 
 
 A good starting point is to install the TeX-Live basic setup:
 
-`nix-env -iA nixpkgs.texlive.combined.scheme-basic`
+``` console
+$ nix-env -iA nixpkgs.texlive.combined.scheme-basic
+```
 
 After installation, the command `pdflatex` should be available. Save the minimal example above in a file called minimal.tex and compile it with `pdflatex minimal.tex`
 
@@ -59,11 +61,15 @@ From here on, we will assume that the "Full" scheme is installed.
 
 Let's fetch an a little more complex example:
 
-`curl -O `[`https://raw.githubusercontent.com/latex3/latex2e/master/base/sample2e.tex`](https://raw.githubusercontent.com/latex3/latex2e/master/base/sample2e.tex)
+``` console
+$ curl -O https://raw.githubusercontent.com/latex3/latex2e/master/base/sample2e.tex
+```
 
 and process it
 
-`pdflatex sample2e`
+``` console
+$ pdflatex sample2e
+```
 
 You can then use any PDF viewer to display it, e.g. `evince` in GNOME, `okular` in KDE, `xpdf` or `zathura` lightweight X11-viewer.
 
@@ -119,7 +125,9 @@ Example code:
 
 As noted on <a href="TexLive" class="wikilink" title="TexLive">TexLive</a> there are several schemas available. If you know exactly which packages you are going to need you can follow the recipe on the <a href="TexLive" class="wikilink" title="TexLive">TexLive</a> page. Installing the Full-schema is always an option to be sure that you have everything you need, like so:
 
-`nix-env -iA nixpkgs.texlive.combined.scheme-full`
+``` console
+$ nix-env -iA nixpkgs.texlive.combined.scheme-full
+```
 
 If you are looking for a smaller package, you need to go the [Nixpkg's package specification](https://raw.githubusercontent.com/NixOS/nixpkgs/refs/heads/master/pkgs/tools/typesetting/tex/texlive/tlpdb.nix) and search for the scheme-name. For each scheme the list of packages is listed there. Since the inclusion of packages is organized hierarchically, this will require some digging. (TODO: Is there a nix-command to find out?)
 

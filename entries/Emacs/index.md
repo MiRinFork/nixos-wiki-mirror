@@ -12,7 +12,13 @@ There is an official Matrix room for Nix/Emacs: [\#emacs:nixos.org](https://matr
 
 #### Shell
 
-To temporarily use Emacs in a shell environment without modifying your system configuration, you can run: This makes the Emacs editor available in your current shell. You can then launch Emacs by typing `emacs`.
+To temporarily use Emacs in a shell environment without modifying your system configuration, you can run:
+
+``` console
+$ nix-shell -p emacs
+```
+
+This makes the Emacs editor available in your current shell. You can then launch Emacs by typing `emacs`.
 
 #### System setup
 
@@ -150,6 +156,12 @@ or manual package management like so:
 Emacs packages can be defined and tested like other nixpkgs. They can be obtained from melpa, elpa or other sources such as github.
 
 They are located at `pkgs/applications/editors/emacs/elisp-packages/manual-packages/` [1](https://github.com/NixOS/nixpkgs/tree/master/pkgs/applications/editors/emacs/elisp-packages/manual-packages) and a new pkg must be added under `pkgs/applications/editors/elisp-packages/manual-packages.nix` [2](https://github.com/NixOS/nixpkgs/blob/master/pkgs/applications/editors/emacs/elisp-packages/manual-packages.nix). Once the nixpkg is ready, it can be tested using the following command. This inserts the nixpkg into the load-path of Emacs.
+
+``` console
+$ nix-shell -I nixpkgs=<path_to_nixpkgs_copy> -p "(emacsPackagesFor pkgs.emacs28).emacsWithPackages (epkgs: [ epkgs.<package> ])"
+```
+
+}}
 
 #### Window Manager Integration
 

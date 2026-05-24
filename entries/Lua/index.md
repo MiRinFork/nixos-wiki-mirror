@@ -78,4 +78,6 @@ in {
 
 - [Lua user guide in the nixpkgs manual](https://nixos.org/manual/nixpkgs/stable/#users-guide-to-lua-infrastructure)
 
+<a href="Category:Languages" class="wikilink" title="Category:Languages">Category:Languages</a>
+
 [^1]: <https://reddit.com/r/NixOS/comments/q7ns3l/interpreter_with_lua/>

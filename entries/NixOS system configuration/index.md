@@ -20,7 +20,7 @@ To find NixOS module options, see <https://search.nixos.org/options>.
 
 ## Defining NixOS as a flake
 
-<a href="Flakes" class="wikilink" title="Flakes">Flakes</a> offer an alternative, modern way to configure NixOS systems using a standardized and reproducible structure. With flakes, the system configuration — along with any additional inputs such as Nixpkgs or external modules — is managed declaratively within a `flake.nix` file.
+<a href="Flakes" class="wikilink" title="Flakes">Flakes</a> offer an alternative way to configure NixOS systems using a standardized and reproducible structure. With flakes, the system configuration — along with any additional inputs such as Nixpkgs or external modules — is managed declaratively within a `flake.nix` file.
 
 Unlike the traditional configuration model, which relies on `/etc/nixos/configuration.nix` and channels, flakes explicitly define their dependencies and configurations, making it easier to share, version, and reproduce complete NixOS system setups.
 
@@ -116,7 +116,7 @@ This has the unfortunate side-effect of requiring import-from-derivation and slo
 
 How to get a nix repl out of your system flake:
 
-``` text
+``` nix
 $ nix repl
 
 nix-repl> :lf /path/to/flake

@@ -6,12 +6,11 @@ The Arduino ecosystem offers two Versions of the Arduino IDE and an Arduino CLI 
 
 ## Arduino IDE 2.x
 
-The Arduino IDE 2.x is available in nixpkgs as `arduino-ide`
+The Arduino IDE 2.x is available in nixpkgs as
 
 When trying to upload to your board, you may get the following error:
 
-<code>`Cannot perform port reset: 1200-bps touch: opening port at 1200bps: Permission denied`  
-`No device found on ttyACM0`</code>
+`Cannot perform port reset: 1200-bps touch: opening port at 1200bps: Permission denied No device found on ttyACM0`
 
 This is a serial port permissions issue. Add your user to the `dialout` group, rebuild your system, then log out and back in or reboot to apply:
 
@@ -23,7 +22,7 @@ This is a serial port permissions issue. Add your user to the `dialout` group, r
 
 ## Arduino IDE 1.x
 
-This is the old Arduino IDE and it is available as `arduino` in nixpkgs. It is still used for many projects.
+This is the old Arduino IDE and it is available as in nixpkgs. It is still used for many projects.
 
 ### shell.nix
 
@@ -62,7 +61,7 @@ Upload to an `Arduino Nano` board
 
 ## Arduino CLI
 
-The Arduino CLI is available as `arduino-cli` in nixpkgs.
+The Arduino CLI is available as in nixpkgs.
 
 ### Build Arduino project with Nix
 

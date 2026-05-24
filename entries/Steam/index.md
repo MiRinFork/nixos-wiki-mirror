@@ -35,6 +35,8 @@ Basic Steam features can be enabled directly within the <tvar name=steam_option>
 
 true;</code> which sets to true.</translate>}}
 
+\[pkgs.hidapi\];</code></translate>}}
+
 <translate>
 
 ## Tips and tricks
@@ -90,7 +92,7 @@ programs.gamescope = {
   capSysNice = false;
 };
 environment.systemPackages = with pkgs; [
-  gamescope-wsi # HDR won't work without this
+  gamescope-wsi # HDR might not work without this
 ];
 ```
 
@@ -338,6 +340,18 @@ The following example is for the 8bitdo Ultimate Bluetooth controller, different
 ```
 
 <translate> To find the vendor and product ID of a device <tvar name=usbutils>[usbutils](https://search.nixos.org/packages?channel=unstable&show=usbutils&from=0&size=50&sort=relevance&type=packages&query=usbutils)</tvar> might be useful
+
+### Steam controller mouse input issues
+
+Mouse input on the controller may fail to take control of the visual cursor. In this instance, the input is still registered, but the cursor does not move. A fix for this is to preload Steam with extest. The Steam package already has an option for it: </translate>
+
+``` nix
+  programs.steam = {
+    extest.enable = true;
+  };
+```
+
+<translate>
 
 ### Known issues
 

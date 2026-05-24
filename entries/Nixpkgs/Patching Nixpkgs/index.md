@@ -6,15 +6,15 @@ Sometimes it may be required to patch a copy of Nixpkgs directly, rather than us
 
 There are many ways to patch Nixpkgs, each with its own advantages and disadvantages. We will go through the most popular ones:
 
-| Name            | Method          | IFD | Requires Flakes |
-|-----------------|-----------------|-----|-----------------|
-| applyPatch      | .patch files    | X   |                 |
-| nixpkgs-patcher | .patch files    | X   | X               |
-| nix-patcher     | .patch files    |     | X               |
-| gh-cherry-pick  | git cherry-pick |     |                 |
-| Nixtamal        | .patch files    | X   |                 |
+| Name | Method | [IFD](https://nixos.org/manual/nix/unstable/language/import-from-derivation) | Requires Flakes |
+|----|----|----|----|
+| applyPatch | .patch files | X |  |
+| nixpkgs-patcher | .patch files | X | X |
+| nix-patcher | .patch files |  | X |
+| gh-cherry-pick | git cherry-pick |  |  |
+| Nixtamal | .patch files | X |  |
 
-Most of the solutions work on the `.patch` files, but those have a huge disadvantage - they quickly go out of date and have to be constantly rebased. This is especially true for solutions that use Git to apply patches. Another disadvantage may be [IFD](https://nixos.org/manual/nix/unstable/language/import-from-derivation), which may result in [performance and runtime issues](https://nixcademy.com/posts/what-is-ifd-ups-and-downs/).
+Most of the solutions work on the `.patch` files, but those have a huge disadvantage - they quickly go out of date and have to be constantly rebased. This is especially true for solutions that use Git to apply patches. Another disadvantage may be [IFD](https://nixos.org/manual/nix/stable/language/import-from-derivation), which may result in [performance and runtime issues](https://nixcademy.com/posts/what-is-ifd-ups-and-downs/).
 
 ## Usage
 

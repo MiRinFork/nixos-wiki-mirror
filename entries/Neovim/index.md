@@ -19,6 +19,10 @@ It introduces a powerful plugin architecture that allows for asynchronous plugin
 
 To temporarily use Neovim in a shell environment without modifying your system configuration, you can run: </translate>
 
+``` console
+$ nix-shell -p neovim
+```
+
 <translate> This makes the Neovim editor available in your current shell. You can then launch Neovim by typing `nvim`.
 
 #### System setup
@@ -41,23 +45,31 @@ To install Neovim system-wide, making it available to all users, add the followi
 
 <translate>
 
-## Tips and Tricks
+## Tips and tricks
 
-#### Package Variations
+#### Nix configuration frameworks
+
+[Nixvim](https://github.com/nix-community/nixvim) and [nvf](https://github.com/NotAShelf/nvf) provide a framework for declaratively configuring neovim with <a href="Nix_(language)" class="wikilink" title="Nix">Nix</a>. They support, among the other things, plugin configuration, as well as mixing in plain Lua config snippets. Linux and Darwin platforms are supported using standalone Nix, <a href="NixOS" class="wikilink" title="NixOS">NixOS</a> or <a href="Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> modules.
+
+#### Package variations
 
 Have a look at the [Neovim Nightly Overlay](https://github.com/nix-community/neovim-nightly-overlay)[^3] to install the most recent current nightly version of Neovim.
 
 You can run the master version via the following command: </translate>
 
+``` console
+$ nix run "github:nix-community/neovim-nightly-overlay"
+```
+
 <translate>
 
-#### Plugin Management
+#### Plugin management
 
 </translate>
 
 <translate>
 
-#### Frameworks
+#### Pre-made distributions
 
 If you prefer not to configure your system manually, NixOS offers several predefined configurations and community-supported options. Here are a few of them:
 
@@ -89,7 +101,6 @@ In your `~/.local/state/nvim/lsp.log`, you have the following error: </translate
 - [Official Documentation](https://neovim.io/doc/) – Official Neovim documentation.
 - [NixOS options for Neovim](https://search.nixos.org/options?channel=unstable&query=programs.neovim) – System-level Neovim configuration.
 - [Neovim discussions on NixOS Discourse](https://discourse.nixos.org/search?q=neovim) – Community tips, troubleshooting, and use cases.
-- [Neovim Overlay on Nixpkgs](https://github.com/nix-community/neovim-overlay) – For nightly builds and additional Neovim packages.
 
 ## References
 

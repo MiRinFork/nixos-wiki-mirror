@@ -16,8 +16,10 @@ If you don’t have a `nixpkgs` checkout at hand, you can use the repo search at
 
 Another trick that only works for functions, is evaluating the function on the `nix repl`:
 
-    nix-repl> pkgs.lib.strings.makeBinPath
-    «lambda @ /home/user/nixpkgs/lib/strings.nix:94:42»
+``` nix
+nix-repl> pkgs.lib.strings.makeBinPath
+«lambda @ /home/user/nixpkgs/lib/strings.nix:94:42»
+```
 
 This doesn't work for non-functions or builtin functions, which show `«primop»`. It will always find the actual lambda, not an attribute that reexports a partial application, for example.
 
@@ -123,18 +125,20 @@ If the file `../foo.txt` are needed by evaluation, it is copied to the nix store
 
 Notice the `/nix/store` path of `foo.txt`. When we build the file:
 
-    $ nix-build code.nix
-    these derivations will be built:
-      /nix/store/bfv13hxqlwll398y5vi3wn44raw48yva-alldata.drv
-    building '/nix/store/bfv13hxqlwll398y5vi3wn44raw48yva-alldata.drv'...
-    /nix/store/9fav4aw2fs8ybaj06gg6cjzz7bkqf461-alldata
+``` console
+$ nix-build code.nix
+these derivations will be built:
+  /nix/store/bfv13hxqlwll398y5vi3wn44raw48yva-alldata.drv
+building '/nix/store/bfv13hxqlwll398y5vi3wn44raw48yva-alldata.drv'...
+/nix/store/9fav4aw2fs8ybaj06gg6cjzz7bkqf461-alldata
 
-    $ cat /nix/store/9fav4aw2fs8ybaj06gg6cjzz7bkqf461-alldata
-    =this is a header=
-    this
-    is
-    some
-    data
+$ cat /nix/store/9fav4aw2fs8ybaj06gg6cjzz7bkqf461-alldata
+=this is a header=
+this
+is
+some
+data
+```
 
 Now, what if we don’t want to import the data file into the store, but still reference the absolute path of that file? We use `toString`:
 
@@ -149,19 +153,21 @@ in writeScript "update-foo.sh" ''
 
 In this example we use the actual absolute path of the file to write a script (notice the change from `runCommand` to `writeScript`, which are both helper functions from `nixpkgs`). This script can update the `foo.txt` file when it is run by bash:
 
-    $ cat $(nix-build code.nix)
-    echo "updating foo.txt!"
-    echo "additional new data" >> '/home/philip/tmp/foo.txt'
+``` console
+$ cat $(nix-build code.nix)
+echo "updating foo.txt!"
+echo "additional new data" >> '/home/philip/tmp/foo.txt'
 
-    $ bash $(nix-build code.nix)
-    updating foo.txt!
+$ bash $(nix-build code.nix)
+updating foo.txt!
 
-    $ cat foo.txt
-    this
-    is
-    some
-    data
-    additional new data
+$ cat foo.txt
+this
+is
+some
+data
+additional new data
+```
 
 Bear in mind that this makes the absolute path vary between different systems. The users Bob and Alice are going to get different scripts, because the paths of their home folders differ: `/home/bob/foo.txt` and `/home/alice/foo.txt`; so it’s not reproducible.
 

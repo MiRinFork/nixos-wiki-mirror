@@ -66,7 +66,9 @@ environment.systemPackages = with pkgs; [
 
 ### Using Nix shell (new command line)
 
-`nix shell --impure --expr '(import `<nixpkgs>` {}).python3.withPackages (ps: with ps; [ swh-core swh-scanner ])'`
+``` console
+$ nix shell --impure --expr '(import <nixpkgs> {}).python3.withPackages (ps: with ps; [ swh-core swh-scanner ])'
+```
 
 If you don't use the channels any more, you can replace <nixpkgs> by an instance of the `NixOS/nixpkgs` repository using its absolute path.
 
@@ -200,7 +202,7 @@ After doing one of the following, you should be able to install compiled librari
 }
 ```
 
-#### Using [nix-ld](https://github.com/Mic92/nix-ld)
+#### Using [nix-ld](https://github.com/nix-community/nix-ld)
 
 ``` nix
 {
@@ -232,14 +234,14 @@ After doing one of the following, you should be able to install compiled librari
 
 Install with:
 
-``` shell
-nix profile install github:GuillaumeDesforges/fix-python
+``` console
+$ nix profile install github:GuillaumeDesforges/fix-python
 ```
 
 Enter the venv and run:
 
-``` shell
-fix-python --venv .venv
+``` console
+$ fix-python --venv .venv
 ```
 
 #### Using `buildFHSEnv` (Recommended)
@@ -379,8 +381,8 @@ home.packages = with pkgs; [
 
 If you use uv it's recommended that you install the Python versions you need using the `uv python install` command, e.g.
 
-``` python
-uv python install 3.14 --preview --default
+``` console
+$ uv python install 3.14 --preview --default
 ```
 
 You may want to set the `UV_PYTHON_DOWNLOADS=never` environment variable in your shell to stop uv from downloading Python binaries automatically if needed. Setting `environment.localBinInPath = true;` is highly recommended, because uv will install binaries in `~/.local/bin`.
@@ -732,6 +734,10 @@ buildPythonApplication {
 
 `gobject-introspection` based python modules need some environment variables to work correctly. For standalone applications, `wrapGAppsHook` (see the [relevant documentation](https://nixos.org/nixpkgs/manual/#sec-language-gnome)) wraps the executable with the necessary variables. But this is not fit for development. In this case use a `nix-shell` with `gobject-introspection` and all the libraries you are using (gtk and so on) as `buildInputs`. For example:
 
+``` console
+$ nix-shell -p gobjectIntrospection gtk3 'python2.withPackages (ps: with ps; [ pygobject3 ])' --run "python -c \"import pygtkcompat; pygtkcompat.enable_gtk(version='3.0')\""
+```
+
 Or, if you want to use matplotlib interactively:
 
 ``` console
@@ -755,7 +761,9 @@ See [python wiki on debug build](https://docs.python.org/3/using/configure.html#
 
 In order to use a CPython interpreter built using `--with-pydebug` during configure phase, override any of the python packages passing `enableDebug = true` argument:
 
-`pythonDebug = pkgs.python310.override { enableDebug = true; };`
+``` nix
+pythonDebug = pkgs.python310.override { enableDebug = true; };
+```
 
 ## Installing Multiple Versions
 
@@ -773,13 +781,12 @@ At the time of writing certain optimizations cause Python wheels to be non-repro
 
 With the `nixpkgs` version of Python you can expect anywhere from a 30-40% regression on synthetic benchmarks. For example:
 
-``` python
+``` console
 ## Ubuntu's Python 3.8
-username:dir$ python3.8 -c "import timeit; print(timeit.Timer('for i in range(100): oct(i)', 'gc.enable()').repeat(5))"
+$ python3.8 -c "import timeit; print(timeit.Timer('for i in range(100): oct(i)', 'gc.enable()').repeat(5))"
 [7.831622750498354, 7.82998560462147, 7.830805554986, 7.823807033710182, 7.84282516874373]
-
 ## nix-shell's Python 3.8
-[nix-shell:~/src]$ python3.8 -c "import timeit; print(timeit.Timer('for i in range(100): oct(i)', 'gc.enable()').repeat(5))"
+[nix-shell:~]$ python3.8 -c "import timeit; print(timeit.Timer('for i in range(100): oct(i)', 'gc.enable()').repeat(5))"
 [10.431915327906609, 10.435049421153963, 10.449542525224388, 10.440207410603762, 10.431304694153368]
 ```
 
@@ -799,13 +806,13 @@ If you run code that heavily depends on Python performance, and you desire the m
 
 ### My module cannot be imported
 
-If you are unable to do \`import yourmodule\` there are a number of reasons that could explain that.
+If you are unable to do `import yourmodule` there are a number of reasons that could explain that.
 
 First, make sure that you installed/added your module to python. Typically you would use something like `(python3.withPackages (ps: with ps; [ yourmodule ]))` in the list of installed applications.
 
 It is also still possible (e.g. when using nix-shell) that you aren't using the python interpreter you want because another package provides its own `python3.withPackages` in buildInputs, for example, yosys. In this case, you should either include that package (or all needed packages) in your withPackages list to only have a single Python interpreter. Or you can change the order of your packages, such that the `python3.withPackages` comes first, and becomes the Python interpreter that you get.
 
-If you packaged yourself your application, make sure to use `buildPythonPackage` and \*\*not\*\* `buildPythonApplication` or `stdenv.mkDerivation`. The reason is that `python3.withPackages` [filters](https://github.com/NixOS/nixpkgs/blob/91d1eb9f2a9c4e3c9d68a59f6c0cada8c63d5340/pkgs/top-level/python-packages.nix#L57) the packages to check that they are built using the appropriate python interpreter: this is done by verifying that the derivation has a `pythonModule` attribute and only buildPythonPackage [sets this value](https://github.com/NixOS/nixpkgs/blob/91d1eb9f2a9c4e3c9d68a59f6c0cada8c63d5340/pkgs/top-level/python-packages.nix#L43) (passthru [here](https://github.com/NixOS/nixpkgs/blob/91d1eb9f2a9c4e3c9d68a59f6c0cada8c63d5340/pkgs/top-level/python-packages.nix#L75)) thanks to, notably `passthru = { pythonModule = python; }`. If you used `stdenv.mkDerivation` then you can maybe set this value manually, but it's safer to simply use `buildPythonPackage {format = "other"; … your derivation …}` instead of `mkDerivation`.
+If you packaged yourself your application, make sure to use `buildPythonPackage` and <b>not</b> `buildPythonApplication` or `stdenv.mkDerivation`. The reason is that `python3.withPackages` [filters](https://github.com/NixOS/nixpkgs/blob/91d1eb9f2a9c4e3c9d68a59f6c0cada8c63d5340/pkgs/top-level/python-packages.nix#L57) the packages to check that they are built using the appropriate python interpreter: this is done by verifying that the derivation has a `pythonModule` attribute and only buildPythonPackage [sets this value](https://github.com/NixOS/nixpkgs/blob/91d1eb9f2a9c4e3c9d68a59f6c0cada8c63d5340/pkgs/top-level/python-packages.nix#L43) (passthru [here](https://github.com/NixOS/nixpkgs/blob/91d1eb9f2a9c4e3c9d68a59f6c0cada8c63d5340/pkgs/top-level/python-packages.nix#L75)) thanks to, notably `passthru = { pythonModule = python; }`. If you used `stdenv.mkDerivation` then you can maybe set this value manually, but it's safer to simply use `buildPythonPackage {format = "other"; … your derivation …}` instead of `mkDerivation`.
 
 ## See also
 

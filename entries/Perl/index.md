@@ -9,7 +9,7 @@
 Perl scripts normally start something like this:
 
 ``` shell
-  #!/usr/bin/env perl
+#!/usr/bin/env perl
 ```
 
 In Nix, we often make isolated environments using [nix-shell](https://nixos.org/manual/nix/unstable/command-ref/nix-shell.html). You can do this in the `#!` (shabang) section directly in the script too. Here is an example from the manual — a Perl script that specifies that it requires Perl and the HTML::TokeParser::Simple and LWP packages:
@@ -31,27 +31,19 @@ while (my $token = $p->get_tag("a")) {
 
 ### Invoking nix-shell on command-line
 
-If you run a perl script and encounter a dependency error like this:
-
-``` shell
-Can't locate DB_File.pm in @INC (you may need to install the DB_File module)
-```
+If you run a perl script and encounter a dependency error like this: `Can't locate DB_File.pm in @INC (you may need to install the DB_File module)`
 
 ... use `nix-shell` to create a shell environment which includes the dependency. Here we searched NixOS packages and found an existing perl package which suits, [like so](https://search.nixos.org/packages?channel=unstable&from=0&size=30&sort=relevance&type=packages&query=dbfile).
 
-``` shell
-nix-shell -p perl perl534Packages.DBFile --run ./myscript.pl
+``` console
+$ nix-shell -p perl perl534Packages.DBFile --run ./myscript.pl
 ```
 
 ### There is no /usr/bin/perl
 
 By design, there is no `/usr/bin/perl` in Nix. So you may encounter messages like:
 
-``` shell
-./myscript.pl: bad interpreter: /usr/bin/perl: no such file or directory
-```
-
-Change the first line of the script to
+`./myscript.pl: bad interpreter: /usr/bin/perl: no such file or directory` Change the first line of the script to
 
 ``` shell
 #!/usr/bin/env -S perl
@@ -62,15 +54,13 @@ or start it with `perl ./myscript.pl`
 ## Adding something from CPAN to nixpkgs
 
 1.  Enter a `nix-shell` that provides the necessary dependencies:
-    ``` shell
-    nix-shell -p perl perlPackages.CPANPLUS perlPackages.GetoptLongDescriptive perlPackages.LogLog4perl perlPackages.Readonly
+    ``` console
+    $ nix-shell -p perl perlPackages.CPANPLUS perlPackages.GetoptLongDescriptive perlPackages.LogLog4perl perlPackages.Readonly
     ```
-
-    .
 2.  Use the `nix-generate-from-cpan.pl` script (see `nixpkgs/maintainers/scripts/`) to generate something appropriate.  
     Example usage:
-    ``` shell
-    nix-generate-from-cpan.pl Devel::REPL
+    ``` console
+    $ nix-generate-from-cpan.pl Devel::REPL
     ```
 3.  After reviewing the result from the previous step and making appropriate modifications, add it to `pkgs/top-level/perl-packages.nix`. Note that some things use `buildPerlPackage` while some use `buildPerlModule`. Also note the mostly-followed naming convention as well as the mostly-followed alphabetical ordering. There are plenty of examples in `perl-packages.nix` — use the source, Luke!
 4.  Build and test.

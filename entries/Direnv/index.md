@@ -41,6 +41,15 @@ For a full list of Direnv module options, see .
 
 The NixOS module uses `nix-direnv` by default when Direnv is enabled. This behavior can be overridden by setting the option.
 
+## User Customization & Repositories
+
+Direnv is meant to be used as a personalized environment file so each user can set any necessary environment variables and/or run some setup scripts. As every user can have different environment needs (such as changing ports, location of `$TMPDIR`, project-specific VCS/PGP/SSH credentials) it’s recommended <strong>not</strong> to track or commit the `.envrc` so users may make adjustments for themselves. In fact, it’s best to add both to your ignorefile
+
+    .direnv
+    .envrc
+
+to avoid accidentally checking in your personal setup (as seen in Nixpkgs’s repository). If you have a complex `.envrc` you wish to share, create a `.envrc.example` file that users can copy, symlink, or source depending on what works for them.
+
 ## Troubleshooting
 
 ### Hooking Shells

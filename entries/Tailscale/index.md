@@ -32,7 +32,7 @@ This configuration forces the \`nftables\` backend and optimizes the service sta
   networking.firewall = {
     enable = true;
     # Always allow traffic from your Tailscale network
-    trustedInterfaces = [ "tailscale0" ];
+    trustedInterfaces = [ config.services.tailscale.interfaceName ];
     # Allow the Tailscale UDP port through the firewall
     allowedUDPPorts = [ config.services.tailscale.port ];
   };

@@ -2,33 +2,33 @@
 
 <!-- Source page: Go -->
 
-[Go](https://golang.org/) is a statically-typed language with syntax loosely derived from that of C, adding garbage collected memory management, type safety, some dynamic-typing capabilities, additional built-in types such as variable-length arrays and key-value maps, and a large standard library.
+[Go](https://go.dev/) is a statically-typed language with syntax loosely derived from that of C, adding garbage collected memory management, type safety, some dynamic-typing capabilities, additional built-in types such as variable-length arrays and key-value maps, and a large standard library.
 
 ## buildGoModule
 
 nixpkgs includes a library function called **buildGoModule** ([implementation](https://github.com/NixOS/nixpkgs/blob/master/pkgs/build-support/go/module.nix)) See [nixpkgs manual **Language: Go**](https://nixos.org/manual/nixpkgs/stable/#sec-language-go)
 
-\`buildGoModule\` uses the version of Go that's included in \`nixpkgs\` to build the software.
+`buildGoModule` uses the version of Go that's included in `nixpkgs` to build the software.
 
 #### Using a specific version of Go
 
-To build for a specific version of Go, you may need to find the appropriate \`pkgs.buildGoXXXModule\` function to use.
+To build for a specific version of Go, you may need to find the appropriate `pkgs.buildGoXXXModule` function to use.
 
-This function may not be present in the version of nixpkgs that you're using, for example, \`buildGo122Module\` is not available in \`github:NixOS/nixpkgs/nixos-23.05\`, but is available in \`github:NixOS/nixpkgs/nixos-unstable\`.
+This function may not be present in the version of nixpkgs that you're using, for example, `buildGo122Module` is not available in `github:NixOS/nixpkgs/nixos-23.05`, but is available in `github:NixOS/nixpkgs/nixos-unstable`.
 
 #### Subpackages
 
-By default, \`buildGoModule\` will attempt to build the \`main\` package that's in the root of the source code location.
+By default, `buildGoModule` will attempt to build the `main` package that's in the root of the source code location.
 
-However, it's a common pattern in Go applications to have binaries within the \`./cmd/binary-name\` directory instead.
+However, it's a common pattern in Go applications to have binaries within the `./cmd/binary-name` directory instead.
 
-Setting the \`subPackages\` attribute to be a list of the packages to build supports this pattern.
+Setting the `subPackages` attribute to be a list of the packages to build supports this pattern.
 
 #### Example (downloading source code from Github)
 
-The following \`flake.nix\` demonstrates how to build a Go module, where the source code is located in Github. To use it, copy this file as \`flake.nix\` into an empty directory on your computer, and run \`nix build\`. Nix will download the source code, including dependencies, and produce a \`./result\` folder containing a \`ziti\` binary.
+The following `flake.nix` demonstrates how to build a Go module, where the source code is located in Github. To use it, copy this file as `flake.nix` into an empty directory on your computer, and run `nix build`. Nix will download the source code, including dependencies, and produce a `./result` folder containing a `ziti` binary.
 
-Running \`nix shell\` will create a shell, where you can execute the \`ziti\` binary.
+Running `nix shell` will create a shell, where you can execute the `ziti` binary.
 
 ``` nix
 {
@@ -71,7 +71,7 @@ Running \`nix shell\` will create a shell, where you can execute the \`ziti\` bi
 
 #### Example (local source)
 
-If you want to build a local project with Nix, replace the \`src\` attribute to be the local directory, e.g.:
+If you want to build a local project with Nix, replace the `src` attribute to be the local directory, e.g.:
 
 ``` nix
   some-package = buildGoModule {
@@ -105,7 +105,7 @@ If no `go.mod` file is available, **buildGoPackage** ([implementation](https://g
 
 ## Using cgo on NixOS
 
-On NixOS, include files and libraries aren't kept in a system-wide search path. If a Go program uses cgo and attempts to include C header files, or link against libraries, compilation is likely to fail.
+On NixOS, include files and libraries aren't kept in a system-wide search path. If a Go program uses [cgo](https://go.dev/wiki/cgo) and attempts to include <a href="C" class="wikilink" title="C">C</a> header files, or link against libraries, compilation is likely to fail.
 
 In order to expose header files and libraries in environment variable search paths, `nix-shell` can be used to enter an environment which provides the requested development dependencies.
 
@@ -123,7 +123,7 @@ $ export | egrep 'NIX_.*(LDFLAGS|COMPILE|LINK)'
 
 If you intend to compile against glibc statically (such as via `go build -ldflags "-s -w -linkmode external -extldflags -static"`), add `glibc.static` to the list of packages passed to `nix-shell`.
 
-If you encounter [this issue](https://github.com/go-delve/delve/issues/3085) and receive an error about \_FORTIFY_SOURCE when running delve (for example in VSCode), put `hardeningDisable = [ "fortify" ];` inside shell.nix or in the `mkShell` invocation argument like this:
+If you encounter [this issue](https://github.com/go-delve/delve/issues/3085) and receive an error about `_FORTIFY_SOURCE` when running delve (for example in <a href="Visual_Studio_Code" class="wikilink" title="VSCode">VSCode</a>), put `hardeningDisable = [ "fortify" ];` inside `shell.nix` or in the `mkShell` invocation argument like this:
 
 ``` nix
 pkgs.mkShell {
@@ -134,7 +134,7 @@ pkgs.mkShell {
 
 ## Compile go program with static compile flag
 
-If `go build -ldflags "-s -w -linkmode external -extldflags -static"` fails on NixOS, with the error message `` cannot find `-lpthread `` and `cannot find -lc` - it is because the linker cannot find static glibc to link with. You need to have glibc.static in your environment (and have CFLAGS/LDFLAGS adjusted accordingly). One way to achieve this is to have something like the following as `shell.nix` and run the compilation in a nix-shell:
+If `go build -ldflags "-s -w -linkmode external -extldflags -static"` fails on NixOS, with the error message `` cannot find `-lpthread `` and `cannot find -lc` - it is because the linker cannot find static glibc to link with. You need to have `glibc.static` in your environment (and have `CFLAGS`/`LDFLAGS` adjusted accordingly). One way to achieve this is to have something like the following as `shell.nix` and run the compilation in a `nix-shell`:
 
 ``` nix
 with import <nixpkgs> {}; {
@@ -149,7 +149,7 @@ with import <nixpkgs> {}; {
 
 ## Compile go program with static compile flag (take 2)
 
-Linking against glibc.static does not really work because glibc does not really like static linking. You get a warning like `warning: Using 'getaddrinfo' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking`. To really create a static build, use musl. Example based on buildGoModule example from documentation:
+Linking against `glibc.static` does not really work because glibc does not really like static linking. You get a warning like `warning: Using 'getaddrinfo' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking`. To really create a static build, use musl. Example based on `buildGoModule` example from documentation:
 
 ``` nix
 pet = buildGoModule rec {

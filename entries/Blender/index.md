@@ -148,7 +148,7 @@ If nothing else works for your situation, you can also download the Blender bina
 
 ### UI is dim on Vulkan backend and KDE Plasma
 
-This is a cross-distro issue on current KDE Plasma with NVIDIA, (confirmed issue on KDE Version 6.6.2-6.6.4 Wayland Session with NVIDIA drivers Versions 595.XX, though may affect others too). A workaround option that doesn't require downgrading is to force XWayland by running Blender with the following command. See more information at the related on Blender's repo.
+A cross-distro issue on KDE Plasma with NVIDIA. A workaround option that doesn't require downgrading is to force XWayland by running Blender with the following command. See more information at the related on Blender's repo.
 
 ``` sh
 WAYLAND_DISPLAY=0 blender

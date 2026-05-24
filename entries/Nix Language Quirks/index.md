@@ -170,8 +170,10 @@ error: invalid integer '9223372036854775808'
 
 Negative numbers are parsed as "zero minus positive"
 
-    nix-instantiate --parse --expr '(-1)'
-    (__sub 0 1)
+``` console
+$ nix-instantiate --parse --expr '(-1)'
+  (__sub 0 1)
+```
 
 So this throws, because the positive number is out of range
 

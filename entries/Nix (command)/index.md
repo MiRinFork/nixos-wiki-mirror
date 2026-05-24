@@ -13,7 +13,7 @@ In nix 2.4, the nix command must be explicitly enabled. You can do this in a few
 ### As an individual invocation
 
 ``` console
-nix --experimental-features nix-command build ...
+$ nix --experimental-features nix-command build ...
 ```
 
 ### By setting it in the nix configuration

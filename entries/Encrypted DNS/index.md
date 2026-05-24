@@ -86,27 +86,6 @@ See [the upstream example configuration file](https://github.com/DNSCrypt/dnscry
 
 Fetch a blocklist file (e.g. oisd) as a flake input:
 
-``` nix
-# flake.nix
-
-{
-  inputs = {
-    oisd = {
-      url = "https://big.oisd.nl/domainswild";
-      flake = false;
-    };
-
-    # Your configuration
-  };
-
-  outputs =
-    { self, nixpkgs, oisd, ... }@inputs:
-    {
-      # Your configuration
-    };
-}
-```
-
 ``` nixos
 { config, lib, pkgs, inputs, ... }:
 let
@@ -239,14 +218,14 @@ Example configuration for Cloudflare. Note that digests change and need to be up
 
 To update digests get the TLS certificate that signs the responses and calculate the digest:
 
-``` bash
-echo | openssl s_client -connect '1.1.1.1:853' 2>/dev/null | openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | openssl enc -base64
+``` console
+$ echo | openssl s_client -connect '1.1.1.1:853' 2>/dev/null | openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | openssl enc -base64
 ```
 
 Or using `kdig` from `knot-dns`
 
-``` bash
-kdig -d @1.1.1.1 +tls-ca +tls-host=one.one.one.one example.com
+``` console
+$ kdig -d @1.1.1.1 +tls-ca +tls-host=one.one.one.one example.com
 ```
 
 <a href="Category:Networking" class="wikilink" title="Category:Networking">Category:Networking</a> <a href="Category:DNS" class="wikilink" title="Category:DNS">Category:DNS</a>

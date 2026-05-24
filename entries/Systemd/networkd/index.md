@@ -54,10 +54,10 @@ The configuration of networkd happens through one or multiple configuration file
 The following declaration in your NixOS configuration
 
 ``` nix
-  systemd.network.networks."10-lan" = {
-    matchConfig.Name = "lan";
-    networkConfig.DHCP = "ipv4";
-  };
+systemd.network.networks."10-lan" = {
+  matchConfig.Name = "lan";
+  networkConfig.DHCP = "ipv4";
+};
 ```
 
 renders the following network configuration:
@@ -74,9 +74,9 @@ systemd.services."systemd-networkd".environment.SYSTEMD_LOG_LEVEL = "debug";
 
 Log level can also be changed at runtime with
 
-``` bash
+``` console
 $ systemctl service-log-level systemd-networkd.service debug
-# or
+$ # or
 $ systemctl service-log-level systemd-networkd.service info
 ```
 
@@ -98,8 +98,8 @@ When networkd is enabled, the `network-online.target` is implemented through the
 
 The current operational state of network interfaces can be learned from `networkctl`.
 
-``` bash
-❯ networkctl
+``` console
+$ networkctl
 IDX LINK          TYPE     OPERATIONAL SETUP     
   1 lo            loopback carrier     unmanaged
   2 enp10s0       ether    routable    unmanaged
@@ -139,11 +139,11 @@ Examples should be concise and give proper hints on how to achieve a reliably wo
 The name of an interface can be changed based on different matches. This is useful for pretty names (e.g. wan, lan), but also if you want to make sure that your interface name never changes. This might be useful because even with predictable interface naming your interface name can change, for example when you add a new PCIe card and indexing changes, or due to kernel changes the way your mainboard gets interpreted changes.
 
 ``` nix
-  systemd.network.links."10-wan" = {
-    # Check systemd.link(5) for other matchers
-    matchConfig.Path = "pci-0000:09:00.0";
-    linkConfig.Name = "wan";
-  };
+systemd.network.links."10-wan" = {
+  # Check systemd.link(5) for other matchers
+  matchConfig.Path = "pci-0000:09:00.0";
+  linkConfig.Name = "wan";
+};
 ```
 
 ### DHCP/RA
@@ -151,17 +151,17 @@ The name of an interface can be changed based on different matches. This is usef
 Common scenario for dynamic configuration, DHCP for IPv4 and router advertisements for IPv6 connectivity. Make `network-online.target` wait until addresses and routes are configured.
 
 ``` nix
-  systemd.network.networks."10-wan" = {
-    matchConfig.Name = "enp1s0";
-    networkConfig = {
-      # start a DHCP Client for IPv4 Addressing/Routing
-      DHCP = "ipv4";
-      # accept Router Advertisements for Stateless IPv6 Autoconfiguraton (SLAAC)
-      IPv6AcceptRA = true;
-    };
-    # make routing on this interface a dependency for network-online.target
-    linkConfig.RequiredForOnline = "routable";
+systemd.network.networks."10-wan" = {
+  matchConfig.Name = "enp1s0";
+  networkConfig = {
+    # start a DHCP Client for IPv4 Addressing/Routing
+    DHCP = "ipv4";
+    # accept Router Advertisements for Stateless IPv6 Autoconfiguraton (SLAAC)
+    IPv6AcceptRA = true;
   };
+  # make routing on this interface a dependency for network-online.target
+  linkConfig.RequiredForOnline = "routable";
+};
 ```
 
 ### Static
@@ -171,27 +171,27 @@ Apply a static address and routing configuration onto `enp1s0`.
 When the gateway is not on the same prefix as the address configured, as is customary on some cloud providers, you usually also need to set `GatewayOnLink`, to indicate the gateway is directly reachable on the interface.
 
 ``` nix
-  systemd.network.networks."10-wan" = {
-    # match the interface by name
-    matchConfig.Name = "enp1s0";
-    address = [
-      # configure addresses including subnet mask
-      "192.0.2.100/24"
-      "2001:DB8::2/64"
-    ];
-    routes = [
-      # create default routes for both IPv6 and IPv4
-      { Gateway = "fe80::1"; }
-      { Gateway = "192.0.2.1"; }
-      # or when the gateway is not on the same network
-      {
-        Gateway = "172.31.1.1";
-        GatewayOnLink = true;
-      }
-    ];
-    # make the routes on this interface a dependency for network-online.target
-    linkConfig.RequiredForOnline = "routable";
-  };
+systemd.network.networks."10-wan" = {
+  # match the interface by name
+  matchConfig.Name = "enp1s0";
+  address = [
+    # configure addresses including subnet mask
+    "192.0.2.100/24"
+    "2001:DB8::2/64"
+  ];
+  routes = [
+    # create default routes for both IPv6 and IPv4
+    { Gateway = "fe80::1"; }
+    { Gateway = "192.0.2.1"; }
+    # or when the gateway is not on the same network
+    {
+      Gateway = "172.31.1.1";
+      GatewayOnLink = true;
+    }
+  ];
+  # make the routes on this interface a dependency for network-online.target
+  linkConfig.RequiredForOnline = "routable";
+};
 ```
 
 ### VLAN
@@ -201,45 +201,45 @@ VLANs can be configured on top of hardlinks as well as virtual links, like bondi
 In this example we tag two VLANs with Ids 10 and 20 on a physical link `enp1s0`. The VLAN interfaces become available as `vlan10` and `vlan20` and can receive additional configuration.
 
 ``` nix
-  systemd.network = {
-    netdevs = {
-      "20-vlan10" = {
-        netdevConfig = {
-          Kind = "vlan";
-          Name = "vlan10";
-        };
-        vlanConfig.Id = 10;
+systemd.network = {
+  netdevs = {
+    "20-vlan10" = {
+      netdevConfig = {
+        Kind = "vlan";
+        Name = "vlan10";
       };
-      "20-vlan20" = {
-        netdevConfig = {
-          Kind = "vlan";
-          Name = "vlan20";
-        };
-        vlanConfig.Id = 20;
-      };
+      vlanConfig.Id = 10;
     };
-
-    networks = {
-      "30-enp1s0" = {
-        matchConfig.Name = "enp1s0";
-        # tag vlan on this link
-        vlan = [
-          "vlan10"
-          "vlan20"
-        ];
-        networkConfig.LinkLocalAddressing = "no";
-        linkConfig.RequiredForOnline = "carrier";
+    "20-vlan20" = {
+      netdevConfig = {
+        Kind = "vlan";
+        Name = "vlan20";
       };
-      "40-vlan10" = {
-        matchConfig.Name = "vlan10";
-        # add relevant configuration here
-      };
-      "40-vlan20" = {
-        matchConfig.Name = "vlan20";
-        # add relevant configuration here
-      };
+      vlanConfig.Id = 20;
     };
   };
+
+  networks = {
+    "30-enp1s0" = {
+      matchConfig.Name = "enp1s0";
+      # tag vlan on this link
+      vlan = [
+        "vlan10"
+        "vlan20"
+      ];
+      networkConfig.LinkLocalAddressing = "no";
+      linkConfig.RequiredForOnline = "carrier";
+    };
+    "40-vlan10" = {
+      matchConfig.Name = "vlan10";
+      # add relevant configuration here
+    };
+    "40-vlan20" = {
+      matchConfig.Name = "vlan20";
+      # add relevant configuration here
+    };
+  };
+};
 ```
 
 ### Bridge
@@ -253,41 +253,41 @@ Recommended documentation:
 - [\[Bridge\] configuration reference](https://www.freedesktop.org/software/systemd/man/systemd.network.html#%5BBridge%5D%20Section%20Options)
 
 ``` nix
-  systemd.network = {
-    netdevs = {
-       # Create the bridge interface
-       "20-br0" = {
-         netdevConfig = {
-           Kind = "bridge";
-           Name = "br0";
-         };
+systemd.network = {
+  netdevs = {
+     # Create the bridge interface
+     "20-br0" = {
+       netdevConfig = {
+         Kind = "bridge";
+         Name = "br0";
        };
+     };
+  };
+  networks = {
+    # Connect the bridge ports to the bridge
+    "30-enp1s0" = {
+      matchConfig.Name = "enp1s0";
+      networkConfig.Bridge = "br0";
+      linkConfig.RequiredForOnline = "enslaved";
     };
-    networks = {
-      # Connect the bridge ports to the bridge
-      "30-enp1s0" = {
-        matchConfig.Name = "enp1s0";
-        networkConfig.Bridge = "br0";
-        linkConfig.RequiredForOnline = "enslaved";
-      };
-      "30-enp2s0" = {
-        matchConfig.Name = "enp2s0";
-        networkConfig.Bridge = "br0";
-        linkConfig.RequiredForOnline = "enslaved";
-      };
-      # Configure the bridge for its desired function
-      "40-br0" = {
-        matchConfig.Name = "br0";
-        bridgeConfig = {};
-        # Disable address autoconfig when no IP configuration is required
-        #networkConfig.LinkLocalAddressing = "no";
-        linkConfig = {
-          # or "routable" with IP addresses configured
-          RequiredForOnline = "carrier";
-        };
+    "30-enp2s0" = {
+      matchConfig.Name = "enp2s0";
+      networkConfig.Bridge = "br0";
+      linkConfig.RequiredForOnline = "enslaved";
+    };
+    # Configure the bridge for its desired function
+    "40-br0" = {
+      matchConfig.Name = "br0";
+      bridgeConfig = {};
+      # Disable address autoconfig when no IP configuration is required
+      #networkConfig.LinkLocalAddressing = "no";
+      linkConfig = {
+        # or "routable" with IP addresses configured
+        RequiredForOnline = "carrier";
       };
     };
   };
+};
 ```
 
 ### Bonding
@@ -301,37 +301,37 @@ Recommended documentation:
 Given two hardlinks `enp2s0` and `enp3s0` create a virtual `bond0` interface using Dynamic LACP (802.3ad), hashing outgoing packets using a packet's layer 3/4 (network/transport layer in the OSI model) information.
 
 ``` nix
-  systemd.network = {
-    netdevs = {
-      "10-bond0" = {
-        netdevConfig = {
-          Kind = "bond";
-          Name = "bond0";
-        };
-        bondConfig = {
-          Mode = "802.3ad";
-          TransmitHashPolicy = "layer3+4";
-        };
+systemd.network = {
+  netdevs = {
+    "10-bond0" = {
+      netdevConfig = {
+        Kind = "bond";
+        Name = "bond0";
       };
-    };
-    networks = {
-      "30-enp2s0" = {
-        matchConfig.Name = "enp2s0";
-        networkConfig.Bond = "bond0";
-      };
-      "30-enp3s0" = {
-        matchConfig.Name = "enp3s0";
-        networkConfig.Bond = "bond0";
-      };
-      "40-bond0" = {
-        matchConfig.Name = "bond0";
-        linkConfig = {
-          RequiredForOnline = "carrier";
-        };
-        networkConfig.LinkLocalAddressing = "no";
+      bondConfig = {
+        Mode = "802.3ad";
+        TransmitHashPolicy = "layer3+4";
       };
     };
   };
+  networks = {
+    "30-enp2s0" = {
+      matchConfig.Name = "enp2s0";
+      networkConfig.Bond = "bond0";
+    };
+    "30-enp3s0" = {
+      matchConfig.Name = "enp3s0";
+      networkConfig.Bond = "bond0";
+    };
+    "40-bond0" = {
+      matchConfig.Name = "bond0";
+      linkConfig = {
+        RequiredForOnline = "carrier";
+      };
+      networkConfig.LinkLocalAddressing = "no";
+    };
+  };
+};
 ```
 
 ### Router Advertisement
@@ -345,28 +345,28 @@ Recommended documentation:
 - [\[IPv6SendRa\] configuration reference](https://www.freedesktop.org/software/systemd/man/systemd.network.html#%5BIPv6SendRA%5D%20Section%20Options)
 
 ``` nix
-  systemd.network = {
-    networks = {
-      "30-lan" = {
-        matchConfig.Name = "lan";
-        address = [ "2001:db8:1122:3344::1/64" ];
-        networkConfig = {
-          IPv6SendRA = true;
-        };
-        ipv6Prefixes = [
-          {
-            # Announce a static prefix
-            ipv6PrefixConfig.Prefix = "2001:db8:1122:3344::/64";
-          }
-        ];
-        ipv6SendRAConfig = {
-          # Provide a DNS resolver
-          EmitDNS = true;
-          DNS = "2001:db8:1122:3344::1";
-        };
+systemd.network = {
+  networks = {
+    "30-lan" = {
+      matchConfig.Name = "lan";
+      address = [ "2001:db8:1122:3344::1/64" ];
+      networkConfig = {
+        IPv6SendRA = true;
+      };
+      ipv6Prefixes = [
+        {
+          # Announce a static prefix
+          ipv6PrefixConfig.Prefix = "2001:db8:1122:3344::/64";
+        }
+      ];
+      ipv6SendRAConfig = {
+        # Provide a DNS resolver
+        EmitDNS = true;
+        DNS = "2001:db8:1122:3344::1";
       };
     };
   };
+};
 ```
 
 An extended form of this setup uses DHCPv6 prefix delegation to acquire a dynamic prefix over a WAN link, which then gets distributed onto designated LAN segments.

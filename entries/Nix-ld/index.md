@@ -54,7 +54,7 @@ It is however a bit long to find all these libraries, so you may want to just co
   programs.nix-ld = {
     enable = true;
     libraries = with pkgs; [
-      # List by default
+        # List by default
       zlib
       zstd
       stdenv.cc.cc
@@ -69,21 +69,21 @@ It is however a bit long to find all these libraries, so you may want to just co
       util-linux
       xz
       systemd
-      
+
       # My own additions
-      xorg.libXcomposite
-      xorg.libXtst
-      xorg.libXrandr
-      xorg.libXext
-      xorg.libX11
-      xorg.libXfixes
+      libxcomposite
+      libxtst
+      libxrandr
+      libxext
+      libx11
+      libxfixes
       libGL
       libva
       pipewire
-      xorg.libxcb
-      xorg.libXdamage
-      xorg.libxshmfence
-      xorg.libXxf86vm
+      libxcb
+      libxdamage
+      libxshmfence
+      libxxf86vm
       libelf
 
       # Required
@@ -92,7 +92,7 @@ It is however a bit long to find all these libraries, so you may want to just co
 
       # Inspired by steam
       # https://github.com/NixOS/nixpkgs/blob/master/pkgs/by-name/st/steam/package.nix#L36-L85
-      networkmanager      
+      networkmanager
       vulkan-loader
       libgbm
       libdrm
@@ -101,15 +101,15 @@ It is however a bit long to find all these libraries, so you may want to just co
       pciutils
       zenity
       # glibc_multi.bin # Seems to cause issue in ARM
-      
+
       # # Without these it silently fails
-      xorg.libXinerama
-      xorg.libXcursor
-      xorg.libXrender
-      xorg.libXScrnSaver
-      xorg.libXi
-      xorg.libSM
-      xorg.libICE
+      libxinerama
+      libxcursor
+      libxrender
+      libxscrnsaver
+      libxi
+      libSM
+      libICE
       gnome2.GConf
       nspr
       nss
@@ -121,7 +121,7 @@ It is however a bit long to find all these libraries, so you may want to just co
       ffmpeg
       # Only libraries are needed from those two
       libudev0-shim
-      
+
       # needed to run unity
       gtk3
       icu
@@ -133,18 +133,18 @@ It is however a bit long to find all these libraries, so you may want to just co
       # it will segfault when opening files if you don’t do:
       # export XDG_DATA_DIRS=/nix/store/0nfsywbk0qml4faa7sk3sdfmbd85b7ra-gsettings-desktop-schemas-43.0/share/gsettings-schemas/gsettings-desktop-schemas-43.0:/nix/store/rkscn1raa3x850zq7jp9q3j5ghcf6zi2-gtk+3-3.24.35/share/gsettings-schemas/gtk+3-3.24.35/:$XDG_DATA_DIRS
       # other issue: (Unity:377230): GLib-GIO-CRITICAL **: 21:09:04.706: g_dbus_proxy_call_sync_internal: assertion 'G_IS_DBUS_PROXY (proxy)' failed
-      
+
       # Verified games requirements
-      xorg.libXt
-      xorg.libXmu
+      libxt
+      libxmu
       libogg
       libvorbis
       SDL
       SDL2_image
-      glew110
+      glew_1_10
       libidn
       tbb
-      
+
       # Other things from runtime
       flac
       freeglut
@@ -170,7 +170,7 @@ It is however a bit long to find all these libraries, so you may want to just co
       libgcrypt
       libvpx
       librsvg
-      xorg.libXft
+      libxft
       libvdpau
       # ...
       # Some more libraries that I needed to run programs

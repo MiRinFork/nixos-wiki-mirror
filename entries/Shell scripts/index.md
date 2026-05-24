@@ -156,6 +156,7 @@ on nixos, posix shells are provided by the packages `dash` and `posh`
 
 ## See also
 
+- <a href="Nix-shell_shebang" class="wikilink" title="Nix-shell shebang">Nix-shell shebang</a>
 - [Shell functions section in the Nixpkgs manual](https://nixos.org/manual/nixpkgs/stable/#ssec-stdenv-functions)
 - [nix-shell and Shebang Lines](https://gist.github.com/travisbhartwell/f972aab227306edfcfea)
 - [Shell Scripts with Nix](https://ertt.ca/nix/shell-scripts/)

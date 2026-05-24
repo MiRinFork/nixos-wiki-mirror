@@ -18,8 +18,8 @@ and then you can put `R-with-my-packages` into your `environment.systemPackages`
 
 If you with to use \`nix-shell\` to generate an on-the-fly environment with some R packages, the command is similar:
 
-``` sh
-nix-shell --packages 'rWrapper.override{packages = [ rPackages.ggplot2 ];}'
+``` console
+$ nix-shell --packages 'rWrapper.override{packages = [ rPackages.ggplot2 ];}'
 ```
 
 ## RStudio
@@ -240,7 +240,14 @@ If `R` is included (using wrapper) but `pandoc` is not wanted in the user enviro
 
 When the R package "officer" has been installed from the Nix package manager, "save_as_docx" does not work:
 
-Error in write_xml.xml_document(private\$doc, file = private\$filename) : Error closing file Calls: save_as_docx ... print.rdocx -\> <Anonymous> -\> write_xml -\> write_xml.xml_document In addition: Warning messages: 1: In write_xml.xml_document(private\$doc, file = private\$filename) : Permission denie \[1501\] 2: In write_xml.xml_document(private\$doc, file = private\$filename) : Permission denie \[1501\]
+    Error in write_xml.xml_document(private$doc, file = private$filename) : 
+    Error closing file
+    Calls: save_as_docx ... print.rdocx -> <Anonymous> -> write_xml -> write_xml.xml_document
+    In addition: Warning messages:
+    1: In write_xml.xml_document(private$doc, file = private$filename) :
+    Permission denie [1501]
+    2: In write_xml.xml_document(private$doc, file = private$filename) :
+    Permission denie [1501]
 
 However officer does work if installed using the conventional install.packages() which can be enabled as discussed in <https://churchman.nl/tag/r/>
 

@@ -320,4 +320,18 @@ As the name indicates the former two require a license, while the latter is free
 
 For easy deployment, there's the [richdocumentscode app](https://apps.nextcloud.com/apps/richdocumentscode) which bundles the CODE server. While being less performant than a standalone deployment of the CODE server, this solution does not require an additional service to be deployed and managed externally from NextCloud. Unfortunately the richdocumentscode app bundles the CODE server as an AppImage and therefore does not work out of the box on NixOS. Follow <https://github.com/NixOS/nixpkgs/issues/339798> if you want to get informed about packaging progress. Also CODE standalone is currently not packaged in nixpkgs (https://github.com/NixOS/nixpkgs/issues/218878).
 
+### Memories
+
+To enable hardware acceleration, nextcloud will need access to the graphics card with e.g:
+
+``` nix
+  users.users.nextcloud.extraGroups = [ "video" ];
+  systemd.services.phpfpm-nextcloud.serviceConfig = {
+    DeviceAllow = "/dev/dri/renderD128 rw";
+    PrivateDevices = lib.mkForce false;
+  };
+```
+
+You will still need to enable the relevant app configuration through "Administration Settings \> Memories \> HW Acceleration".
+
 <a href="Category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="Category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="Category:Web_Applications" class="wikilink" title="Category:Web Applications">Category:Web Applications</a> <a href="Category:NixOS_Manual" class="wikilink" title="Category:NixOS Manual">Category:NixOS Manual</a>

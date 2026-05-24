@@ -78,7 +78,9 @@ To workaround the `CAP_SYS_NICE` requirement, we can apply a kernel patch using 
 
 ### Patching bubblewrap to allow capabilities
 
-By modifying the bubblewrap binary used for running Steam, you can allow processes in that FHS environment to acquire capabilities. This removes the need for patching the kernel directly. </translate>
+By modifying the bubblewrap binary used for running Steam, you can allow processes in that FHS environment to acquire capabilities. This removes the need for patching the kernel directly. This may become unnecessary if [bubblewrap \#653](https://github.com/containers/bubblewrap/issues/653) is merged and the flag is added to Steam's tooling.
+
+**As of 2026-05, this may no longer be viable:** Steam now aggressively restores its own pressure vessel srt-bwrap on startup, however deleting `~/.local/share/Steam/` has been [reported](https://discourse.nixos.org/t/steam-fails-to-launch-with-patched-bwrap/75167) to help. </translate>
 
 <translate> as an additional change, you may also need to replace Steam's own bwrap binary with a symbolic link to this modified bwrap binary, found at `~/.local/share/Steam/ubuntu12_32/steam-runtime/usr/libexec/steam-runtime-tools-0/srt-bwrap`.
 

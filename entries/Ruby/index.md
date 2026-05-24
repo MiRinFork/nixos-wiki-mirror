@@ -44,7 +44,7 @@ index 316e0ab979d243d03a967fda962a43b59a1bbdec..062e91d1023a3363962531fc8a54e7f0
 ## See also
 
 - <a href="Packaging/Ruby" class="wikilink" title="Packaging/Ruby">Packaging/Ruby</a>
-- [manveru/bundix](https://github.com/manveru/bundix) Generates a Nix expression for your Bundler-managed application
+- [nix-community/bundix](https://github.com/nix-community/bundix) Generates a Nix expression for your Bundler-managed application
 - [Chapter 9.14 Ruby of the nixpkgs manual](https://nixos.org/nixpkgs/manual/#sec-language-ruby)
 - [nixpkgs ruby](https://github.com/bobvanderlinden/nixpkgs-ruby) A Nix repository with all Ruby versions being kept up-to-date automatically
 

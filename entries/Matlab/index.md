@@ -62,10 +62,10 @@ There is a great answer about that here on Matlab answers[8](https://www.mathwor
 
 Summarizing this answer:
 
-``` bash
-cd <your_matlab_location>/sys/os/glnxa64/
-sudo mv libstdc++.so.6 libstdc++.so.6.bak
-sudo ln -s /usr/lib64/libstdc++.so.6  libstdc++.so.6
+``` console
+$ cd <your_matlab_location>/sys/os/glnxa64/
+$ sudo mv libstdc++.so.6 libstdc++.so.6.bak
+$ sudo ln -s /usr/lib64/libstdc++.so.6  libstdc++.so.6
 ```
 
 You will not have `/usr/lib64/libstdc++.so.6` at the time of following the steps, but Matlab will be run in FHS env, and this path will be visible for it.

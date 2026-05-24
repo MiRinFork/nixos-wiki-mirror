@@ -86,7 +86,7 @@ systemctl hibernate
 
 ## Tips and tricks
 
-### Go into hibernate after specific suspend time
+### Hibernate after specified time
 
 Using following configuration, your system will go from suspend into hibernate after 1 hour:
 
@@ -96,15 +96,17 @@ systemd.sleep.extraConfig = ''
 '';
 ```
 
-Or, to disable suspend entirely, consider a configuration like this:
+### Disable all sleep functionality
+
+Some desktop environment and display manager combinations might attempt to put your machine to sleep as default behavior (i.e. SDDM and KDE Plasma 6 under Wayland). If this is not what you want, you can define the following to block any service attempting to put your machine to sleep via systemd:
 
 ``` nix
-systemd.sleep.extraConfig = ''
-  AllowSuspend=no
-  AllowHibernation=no
-  AllowHybridSleep=no
-  AllowSuspendThenHibernate=no
-'';
+systemd.sleep.settings.Sleep = {
+  AllowHibernation = "no";
+  AllowHybridSleep = "no";
+  AllowSuspend = "no";
+  AllowSuspendThenHibernate = "no";
+};
 ```
 
 ## Troubleshooting

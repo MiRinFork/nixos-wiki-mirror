@@ -6,10 +6,6 @@ Setup native [systemd-nspawn](https://wiki.archlinux.org/title/systemd-nspawn) c
 
 See <a href="Docker" class="wikilink" title="Docker">Docker</a> page for OCI container (Docker, Podman) configuration.
 
-### Host Configuration
-
-For all of the examples below to work, you'll have to enable virtualization and the use of containers in your host systems nix configuration.
-
 ### Configuration
 
 The following example creates a container called webserver running a httpd web server. It will start automatically at boot and has its private network subnet.
@@ -22,51 +18,11 @@ By default, if `privateNetwork` is not set, the container shares the network wit
 
 **NAT (Network Address Translation)**
 
-``` nix
-```
+In order to allow the container to connect to the internet, you have to configure NAT through `networking.nat`. **Bridge**
 
-**Bridge**
-
-``` nix
-networking = {
-  bridges.br0.interfaces = [ "eth0s31f6" ]; # Adjust interface accordingly
-  
-  # Get bridge-ip with DHCP
-  useDHCP = false;
-  interfaces."br0".useDHCP = true;
-
-  # Set bridge-ip static
-  interfaces."br0".ipv4.addresses = [{
-    address = "192.168.100.3";
-    prefixLength = 24;
-  }];
-  defaultGateway = "192.168.100.1";
-  nameservers = [ "192.168.100.1" ];
-};
-
-containers.<name> = {
-  privateNetwork = true;
-  hostBridge = "br0"; # Specify the bridge name
-  localAddress = "192.168.100.5/24";
-  config = { };
-};
-```
-
-#### Without privateNetwork (simpler)
+Connect a container to a bridge using Network Manager interfaces: **Without privateNetwork (simpler)**
 
 If the service can be accessed by changing its port, the private network is not needed necessarily. Be careful to not use occupied ports. This example runs an <a href="Actual" class="wikilink" title="Actual">Actual</a> server on port 3003. It can be accessed through the host at [`http://localhost:3003`](http://localhost:3003). Since `privateNetwork` is not defined, it defaults to `false`.
-
-``` nix
-containers.actualContainer = {
-  autoStart = true;
-  config = {...}: {
-    services.actual = {
-      enable = true;
-      settings.port = 3003;
-    };
-  };
-};
-```
 
 ### Usage
 
@@ -111,35 +67,9 @@ Further informations are available in the .
 
 ## Tips and tricks
 
-#### Define and create nixos-container from a Flake file
+### Define and create nixos-container from a Flake file
 
 We can define and create a custom container called `container` from a file stored as `flake.nix`. In this case we use the unstable branch of the nixpkgs repository as a source.
-
-``` nix
-{
-  inputs.nixpkgs.url = "nixpkgs/nixos-unstable";
-
-  outputs = { self, nixpkgs }: {
-
-    nixosConfigurations.container = nixpkgs.lib.nixosSystem {
-      system = "x86_64-linux";
-      modules =
-        [ ({ pkgs, ... }: {
-            boot.isContainer = true;
-
-            networking.firewall.allowedTCPPorts = [ 80 ];
-
-            services.httpd = {
-              enable = true;
-              adminAddr = "morty@example.org";
-            };
-          })
-        ];
-    };
-
-  };
-}
-```
 
 To create and run that container, enter following commands. In this example the `flake.nix` file is in the same directory.
 
@@ -150,42 +80,57 @@ host IP is 10.233.4.1, container IP is 10.233.4.2
 # nixos-container start flake-test
 ```
 
-#### Use agenix secrets in container
+### Use agenix secrets in container
 
 To add `agenix` secrets to a container bind mount the `ssh-host.key` and import the `agenix.nixosModule` and set `age.identityPaths` [Source](https://discourse.nixos.org/t/secrets-inside-nixos-containers/34403/6)
 
-``` nix
-{ agenix, ... }:
-{
+### Bridge together two nixos-containers
 
-  containers."withSecret" = {
+**Target:**
 
-    # pass the private key to the container for agenix to decrypt the secret
-    bindMounts."/etc/ssh/ssh_host_ed25519_key".isReadOnly = true;
+Create two containers, both with `privateNetwork = true;`:
 
-    config =
-      {
-        config,
-        lib,
-        pkgs,
-        ...
-      }:
-      {
-        imports = [ agenix.nixosModules.default ]; # import agenix-module into the nixos-container
+- `containerA` at 192.168.100.2
+  - which will access `containerB`
+- `containerB` at 192.168.100.3
+  - which runs an httpd server at <http://localhost:80>
 
-        age.identityPaths = [ "/etc/ssh/ssh_host_ed25519_key" ]; # isn't set automatically when openssh is not setup
-        # import the secret
-        age.secrets."secret-name" = {
-          file = ../secrets/secret.age;
-        };
-      };
-  };
-}
+They should be connected with a bridge `br0` and both should have internet address.
+
+Assuming Network Manager is used, so the introduction of `systemd.network` should not interfere with the rest of the setup.
+
+**Configuration:**
+
+Create and configure the internet connection and the bridge:
+
+Create and configure `containerA`:
+
+Create and configure `containerB`:
+
+You can test the connection between `containerA` and `containerB` by loggining into `containerA` and pinging `containerB`, curling to `containerB`'s httpd server or pinging an internet website:
+
+``` console
+# nixos-container root-login containerA
+[root@containerA:~]# ping 192.168.100.3 -c3       # Ping containerB
+[root@containerA:~]# curl http://192.168.100.3:80 # Curl to containerB's httpd server
+[root@containerA:~]# ping nixos.org -c3           # Ping an internet website
 ```
+
+You can test the connection between the host machine and `containerA` or `containerB` by pinging `containerA`, pinging `containerB` and curling to `containerB`'s httpd server:
+
+``` console
+$ ping 192.168.100.2 -c3       # Ping containerA
+$ ping 192.168.100.3 -c3       # Ping containerB
+$ curl http://192.168.100.3:80 # Curl to containerB's httpd server
+```
+
+Note that with the command `ip address`, even if the interfaces of the containers are displayed (`vb-containerA` and `vb-containerB`), they only have a MAC address assigned, they do not have a separate ip address displayed. For extra configuring, maybe use the option `containers.`<name>`.extraVeths`.
+
+Made with help of the `systemd.network` wiki page[^1] and this discourse post[^2].
 
 ## Troubleshooting
 
-#### I have changed the host's channel and some services are no longer functional
+### I have changed the host's channel and some services are no longer functional
 
 **Symptoms:**
 
@@ -215,3 +160,7 @@ If you did not have a option set inside your declarative container configuration
 - MicroVMs as a more isolated alternative, e.g. with <https://github.com/astro/microvm.nix>
 
 <a href="Category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="Category:NixOS" class="wikilink" title="Category:NixOS">Category:NixOS</a> <a href="Category:Container" class="wikilink" title="Category:Container">Category:Container</a>
+
+[^1]: <a href="Systemd/networkd" class="wikilink" title="Systemd/networkd">Systemd/networkd</a>
+
+[^2]: <https://discourse.nixos.org/t/how-to-connect-two-or-more-nixos-containers-together-their-internet-ports/77674/9?u=blastboomstrice>

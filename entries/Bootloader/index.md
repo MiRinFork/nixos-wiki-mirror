@@ -30,8 +30,8 @@ For more detailed information on NixOS and ARM architecture, refer to the [NixOS
 
 The following command will print which boot mode you are using. This can be used on the NixOS installation image to determine which steps to follow in the guide.
 
-``` bash
-[ -d /sys/firmware/efi/efivars ] && echo "UEFI" || echo "Legacy"
+``` console
+$ [ -d /sys/firmware/efi/efivars ] && echo "UEFI" || echo "Legacy"
 ```
 
 ### How do I remove older generations from the bootloader?
@@ -40,12 +40,12 @@ First, remove some system generations of your system, then rebuild. The rebuild 
 
 The first command, in the example below, removes system generations older than 14 days.
 
-``` bash
-sudo nix-env --delete-generations --profile /nix/var/nix/profiles/system 14d
+``` console
+$ sudo nix-env --delete-generations --profile /nix/var/nix/profiles/system 14d
 ```
 
-``` bash
-sudo nixos-rebuild boot
+``` console
+$ sudo nixos-rebuild boot
 ```
 
 ### Limiting amount of entries with grub or systemd-boot
@@ -89,32 +89,32 @@ You can add these flags to systemd-boot and grub boot entries via using the `e` 
 
 #### From a running system
 
-``` bash
-sudo nixos-rebuild --install-bootloader boot
+``` console
+$ sudo nixos-rebuild --install-bootloader boot
 ```
 
 #### From an installation media
 
 Booting from the installation media, mount the root partition under `/mnt` and the boot partition under `/mnt/boot`. Next, enter the installed system with `nixos-enter`, or by manually binding the virtual filesystems and then calling `chroot`. Finally, run the [command that the installer would run](https://github.com/NixOS/nixpkgs/blob/e140d71d6330786c40b4bd9c0d59af7ad1a5e86a/nixos/modules/installer/tools/nixos-install.sh#L191-L192). This will re-install the bootloader.
 
-``` bash
-mount /dev/[root partition] /mnt
-mount /dev/[boot partition] /mnt/boot
+``` console
+$ mount /dev/[root partition] /mnt
+$ mount /dev/[boot partition] /mnt/boot
 ```
 
 With `nixos-enter`:
 
-``` bash
-nixos-enter
-NIXOS_INSTALL_BOOTLOADER=1 /nix/var/nix/profiles/system/bin/switch-to-configuration boot
+``` console
+$ nixos-enter
+$ NIXOS_INSTALL_BOOTLOADER=1 /nix/var/nix/profiles/system/bin/switch-to-configuration boot
 ```
 
 Or manually:
 
-``` bash
-for i in dev proc sys; do mount --rbind /$i /mnt/$i; done
-NIXOS_INSTALL_BOOTLOADER=1 chroot /mnt \
-    /nix/var/nix/profiles/system/bin/switch-to-configuration boot
+``` console
+$ for i in dev proc sys; do mount --rbind /$i /mnt/$i; done
+$ NIXOS_INSTALL_BOOTLOADER=1 chroot /mnt \
+      /nix/var/nix/profiles/system/bin/switch-to-configuration boot
 ```
 
 Tip: Be patient, it may take some times to re-install the bootloader for you.
@@ -181,8 +181,8 @@ to the grub section of your configuration.
 
 If you somehow lost all EFI boot entries (e.g. by resetting your BIOS), then you can manually add it again. Firstly, find out which disk and partition `/EFI/NixOS-boot/grubx64.efi` is located (can be x86 or something else), which in the example will be `/dev/sda1`. Then use efibootmgr to add the entry again, where the disk device is specified, with the partition number followed by the index and finally the path to the grub boot loader.
 
-``` bash
-efibootmgr -c -d /dev/sda -p 1 -L NixOS-boot -l '\EFI\NixOS-boot\grubx64.efi'
+``` console
+$ efibootmgr -c -d /dev/sda -p 1 -L NixOS-boot -l '\EFI\NixOS-boot\grubx64.efi'
 ```
 
 Remember to specify the location using single quotes, otherwise it might try to escape them instead.

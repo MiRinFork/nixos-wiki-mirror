@@ -1,6 +1,6 @@
 <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
 
-<!-- Source page: OpenProjekt -->
+<!-- Source page: OpenProject -->
 
 [OpenProject](https://www.openproject.org/) is an open-source project management web-app.
 

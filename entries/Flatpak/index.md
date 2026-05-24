@@ -125,4 +125,20 @@ To support emulation with Qemu, <a href="QEMU#Run_binaries_of_different_architec
 
 If you have issues with cursors or themes in general, take a look at <a href="Fonts#Flatpak_applications_can&#39;t_find_system_fonts" class="wikilink" title="Fonts#Flatpak_applications_can&#39;t_find_system_fonts">Fonts#Flatpak_applications_can't_find_system_fonts</a>
 
+### Uninstalling an application and wiping its data
+
+Sometimes, flatpak applications may glitch (like fonts in Flatseal[^1]) and wiping their data may solve the issue. To do so, you have two options.
+
+#### Option 1: Delete application and its data in a single command
+
+This is useful if you have installed the flatpak application **imperatively**. Use the `--delete-data` flag when uninstalling the offending application, (like `flatpak uninstall `<application>` --delete-data` ). Then re-install the offending application (like `flatpak install `<application> ).
+
+#### Option 2: Delete application and then delete its data
+
+This is useful if you have set up flatpak **declaratively**[^2]. First remove the application from your configuration and rebuild. Then run `flatpak uninstall --unused --delete-data` to both delete **all** leftover applications and wipe the data of anything previously deleted. This will ask you to delete the data of each application individually, delete only the data of the offending application. Then re-add the offending application in your configuration and rebuild.
+
 <a href="Category:Software" class="wikilink" title="Category:Software">Category:Software</a> <a href="Category:NixOS_Manual" class="wikilink" title="Category:NixOS Manual">Category:NixOS Manual</a>
+
+[^1]: <https://github.com/tchx84/Flatseal/issues/501>
+
+[^2]: <a href="Flatpak#Declarative" class="wikilink" title="Flatpak#Declarative">Flatpak#Declarative</a>

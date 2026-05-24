@@ -18,8 +18,10 @@ In the opening of the :
 
 This would look like:
 
-` ❯ ls -l ~/.nix-profile`  
-` lrwxrwxrwx ... /home/username/.nix-profile -> /nix/var/nix/profiles/per-user/username/profile`
+``` console
+$ ls -l ~/.nix-profile
+lrwxrwxrwx ... /home/username/.nix-profile -> /nix/var/nix/profiles/per-user/username/profile
+```
 
 ### Package management section
 

@@ -80,11 +80,9 @@ yarn2nix uses the yarn nodejs tool to create a file called yarn.lock, which in r
 
 ``` console
 $ nix-shell -p yarn yarn2nix
-$ yarn install
-# creates yarn.lock
+$ yarn install # creates yarn.lock
 $ yarn2nix > yarn.nix
-$ vim package.json
-# add:    "bin": "app.js",
+$ vim package.json # add:  "bin": "app.js",
 $ cat > default.nix <<EOF
 with (import <nixpkgs> {});
 rec {
@@ -131,7 +129,9 @@ There are a couple solutions, none of them are strictly wrong. You can either co
 
 This is done through configuring npm and amending your `PATH`.[^1]
 
-     $ npm set prefix ~/.npm-global
+``` console
+$ npm set prefix ~/.npm-global
+```
 
 Then, amend your `PATH` so it looks into `$HOME/.npm-global`.
 
@@ -139,15 +139,17 @@ Then, amend your `PATH` so it looks into `$HOME/.npm-global`.
 
 This is a bit harder to implement, but creates a bit more strictness in your environment; it will be impossible accidentally make use of what would have been a globally installed package. The idea is to install it to either a temporary transitory folder or to the project folder, then run the locally installed instance of the package, the binaries are found under `node_packages/.bin/`.[^2]
 
-     $ npm install uglify-es
-    [ ... ]
+``` console
+$ npm install uglify-es
+[ ... ]
 
-     $ ls -l node_modules/.bin/
-    total 0
-    lrwxrwxrwx 1 user users 25 Jul 17 15:34 uglifyjs -> ../uglify-es/bin/uglifyjs
+$ ls -l node_modules/.bin/
+total 0
+lrwxrwxrwx 1 user users 25 Jul 17 15:34 uglifyjs -> ../uglify-es/bin/uglifyjs
 
-     $ node_modules/.bin/uglifyjs --help
-      Usage: uglifyjs [options] [files...]
+$ node_modules/.bin/uglifyjs --help
+  Usage: uglifyjs [options] [files...]
+```
 
 ##### direnv
 
@@ -159,12 +161,14 @@ direnv then adds your "node_modules/.bin" to your path whenever you enter the di
 
 #### Using `npx`
 
-     $ nix-shell -p nodejs-8_x
+``` console
+$ nix-shell -p nodejs-8_x
 
-     $ npx create-react-app --help
-    npx: installed 67 in 1.671s
-      Usage: create-react-app <project-directory> [options]
-    [...]
+$ npx create-react-app --help
+npx: installed 67 in 1.671s
+  Usage: create-react-app <project-directory> [options]
+[...]
+```
 
 #### Using `npx` with binaries
 
@@ -172,23 +176,27 @@ Some binaries obtained via npm will not work out of the box with NixOS, as they'
 
 They'll typically give some kind of `ENOENT` error. For example, `npx cypress open` might give an error like:
 
-    $ npx cypress open
+``` console
+$ npx cypress open
 
-    Cypress failed to start.
-    This is usually caused by a missing library or dependency.
-    The error below should indicate which dependency is missing.
-    https://on.cypress.io/required-dependencies
-    If you are using Docker, we provide containers with all required dependencies installed.
-    ----------
-    spawn /home/rkb/.cache/Cypress/4.10.0/Cypress/Cypress ENOENT
+Cypress failed to start.
+This is usually caused by a missing library or dependency.
+The error below should indicate which dependency is missing.
+https://on.cypress.io/required-dependencies
+If you are using Docker, we provide containers with all required dependencies installed.
+----------
+spawn /home/rkb/.cache/Cypress/4.10.0/Cypress/Cypress ENOENT
+```
 
 One quick workaround for this is <a href="Steam#FHS_environment_only" class="wikilink" title=" to use steam-run"> to use <code>steam-run</code></a> to provide a placeholder FHS environment that \*should\* work; e.g. for the Cypress example above:
 
-    $ nix-env -iA nixos.steam-run
+``` console
+$ nix-env -iA nixos.steam-run
 
-    $ steam-run npx cypress open
+$ steam-run npx cypress open
 
-    -- Cypress opens successfully!
+-- Cypress opens successfully!
+```
 
 (Inspired by [this discussion on discourse.nixos.org](https://discourse.nixos.org/t/how-to-make-nixos-so-easy-that-people-can-be-productive-up-front-without-having-to-first-learn-the-nix-language/5625))
 
@@ -196,8 +204,8 @@ One quick workaround for this is <a href="Steam#FHS_environment_only" class="wik
 
 Nextjs is a popular React framework and comes with built-in support with support for Google fonts. If a NPM project uses it,
 
-``` shell
-npm run build # which calls "next build"
+``` console
+$ npm run build # which calls "next build"
 ```
 
 will try to fetch and optimize the Google fonts during a nix build run, which will fail in Nix's isolated sandbox without internet:
@@ -239,12 +247,12 @@ ERROR: `npm build` failed
 You have to patch the Javascript code
 
 ``` javascript
-# In layout.tsx file replace
-#
-# import {Inter} from "next/font/google"; #or any other Google font like Inter
-# const inter = Inter({ subsets: ["latin"] });
-# 
-# with ("src:" must be relative to the src/app/layout.tsx file):
+// In layout.tsx file replace
+//
+// import {Inter} from "next/font/google"; // or any other Google font like Inter
+// const inter = Inter({ subsets: ["latin"] });
+// 
+// with ("src:" must be relative to the src/app/layout.tsx file):
 import localFont from "next/font/local";
 const inter = localFont({ src: './Inter.ttf' });
 ```
@@ -270,8 +278,8 @@ buildNpmPackage {
 
 You can take a look at what fonts are available in the Nix `google-fonts` package by calling:
 
-``` shell
-ls -ahl $(nix build --no-link --print-out-paths nixpkgs#google-fonts)/share/fonts/truetype/
+``` console
+$ ls -ahl $(nix build --no-link --print-out-paths nixpkgs#google-fonts)/share/fonts/truetype/
 ```
 
 Take a look at [homepage-dashboard package in nixpkgs](https://github.com/NixOS/nixpkgs/blob/8358fd43a66594d8b3445d87006185fa76d4be6e/pkgs/by-name/ho/homepage-dashboard/package.nix) for further workarounds for Nextjs in Nix.
@@ -286,14 +294,16 @@ Take a look at [homepage-dashboard package in nixpkgs](https://github.com/NixOS/
 
 Packages in are built using , so if you <a href="Overlays" class="wikilink" title="overlay that package">overlay that package</a> to a different version, the will be built using that: \<syntaxhighlight lang="nix\> final: prev: {
 
-`     nodejs = prev.nodejs-16_x;`
+` nodejs = prev.nodejs-16_x;`
 
 }
 
 </syntaxhighlight>
 
-    $ pnpm node --version
-    v16.17.1
+``` console
+$ pnpm node --version
+v16.17.1
+```
 
 ### Override NodeJS package
 

@@ -113,14 +113,14 @@ systemd.services."hello-world" = {
 
 </translate> <translate> List active timers and their current state: </translate>
 
-``` bash
-systemctl list-timers
+``` console
+$ systemctl list-timers
 ```
 
 <translate> Manually run a service once for testing purposes: </translate>
 
-``` bash
-systemctl start hello-world
+``` console
+$ systemctl start hello-world
 ```
 
 <a href="Category:systemd" class="wikilink" title="Category:systemd">Category:systemd</a>

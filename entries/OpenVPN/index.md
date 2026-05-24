@@ -10,9 +10,9 @@ OpenVPN can be configured for automatic startup by enabling it in `/etc/nixos/co
 {
   ...
   services.openvpn.servers = {
-    officeVPN  = { config = '' config /root/nixos/openvpn/officeVPN.conf ''; };
-    homeVPN    = { config = '' config /root/nixos/openvpn/homeVPN.conf ''; };
-    serverVPN  = { config = '' config /root/nixos/openvpn/serverVPN.conf ''; };
+    officeVPN  = { config = "config /root/nixos/openvpn/officeVPN.conf"; };
+    homeVPN    = { config = "config /root/nixos/openvpn/homeVPN.conf"; };
+    serverVPN  = { config = "config /root/nixos/openvpn/serverVPN.conf"; };
   };
   ...
 }
@@ -33,7 +33,7 @@ Should you have trouble with DNS resolution for services that should be availabl
   ...
   services.openvpn.servers = {
     officeVPN  = {
-      config = '' config /root/nixos/openvpn/officeVPN.conf '';
+      config = "config /root/nixos/openvpn/officeVPN.conf";
       updateResolvConf = true;
     };
   };
@@ -71,14 +71,30 @@ Example mount configurations:
   fileSystems."/mnt/office" = {
     device = "//10.8.0.x/Share";
     fsType = "cifs";
-    options = [ "noauto" "user" "uid=1000" "gid=100" "username=xxx" "password=xxx" "iocharset=utf8"
-      "x-systemd.requires=openvpn-officeVPN.service" ];
+    options = [
+      "noauto"
+      "user"
+      "uid=1000"
+      "gid=100"
+      "username=xxx"
+      "password=xxx"
+      "iocharset=utf8"
+      "x-systemd.requires=openvpn-officeVPN.service"
+    ];
   };
   fileSystems."/mnt/home" = {
     device = "//10.9.0.x/Share";
     fsType = "cifs";
-    options = [ "noauto" "user" "uid=1000" "gid=100" "username=xxx" "password=xxx" "iocharset=utf8"
-      "x-systemd.requires=openvpn-homeVPN.service" ];
+    options = [
+      "noauto"
+      "user"
+      "uid=1000"
+      "gid=100"
+      "username=xxx"
+      "password=xxx"
+      "iocharset=utf8"
+      "x-systemd.requires=openvpn-homeVPN.service"
+    ];
   };
   ...
 }
@@ -111,12 +127,13 @@ let
   domain = "vpn.localhost.localdomain";
   vpn-dev = "tun0";
   port = 1194;
-in {
+in
+{
   # sudo systemctl start nat
   networking.nat = {
     enable = true;
     externalInterface = <your-server-out-if>;
-    internalInterfaces  = [ vpn-dev ];
+    internalInterfaces = [ vpn-dev ];
   };
   networking.firewall.trustedInterfaces = [ vpn-dev ];
   networking.firewall.allowedUDPPorts = [ port ];

@@ -14,7 +14,7 @@ For redistributable Haskell scripts on any Nix system, you can use a nix-shell s
 
 ``` haskell
 #!/usr/bin/env nix-shell
-#!  nix-shell --pure -i runghc -p "ghc.withPackages (pkgs: [ pkgs.turtle ])"
+#! nix-shell --pure -i runghc -p "ghc.withPackages (pkgs: [ pkgs.turtle ])"
 {-# LANGUAGE OverloadedStrings #-}
 import Turtle
 
@@ -62,7 +62,7 @@ Read <a href="#Overrides" class="wikilink" title="#Overrides">#Overrides</a> if 
 [Cabal](https://www.haskell.org/cabal/) is the basic Haskell tool used to configure builds and is internally used by all the Haskell's packaging methods (including stack and nix). If one does not care about the reproducibility/caching offered by nix, it is always possible to use cabal like in a normal system:
 
 ``` console
-$  nix-shell -p "ghc.withPackages (pkgs: [ pkgs.cabal-install ])"
+$ nix-shell -p "ghc.withPackages (pkgs: [ pkgs.cabal-install ])"
 $ cabal init
 …
 $ cabal run
@@ -191,19 +191,19 @@ The [haskell.nix](https://github.com/input-output-hk/haskell.nix) project allows
 
 ### Using haskell-flake (flake-parts)
 
-[haskell-flake](https://community.flake.parts/haskell-flake) is a project that aims to simplify writing Nix for Haskell development through use of <a href="Flake_Parts" class="wikilink" title="flake-parts module system">flake-parts module system</a>. It uses `callCabal2nix` and `shellFor` under the hood while exposing friendly module options API. For an overview of Flakes, see the <a href="Flakes" class="wikilink" title="Flakes">Flakes</a> wiki page.
+[haskell-flake](https://haskell.nixos.asia/) is a project that aims to simplify writing Nix for Haskell development through use of <a href="Flake_Parts" class="wikilink" title="flake-parts module system">flake-parts module system</a>. It uses `callCabal2nix` and `shellFor` under the hood while exposing friendly module options API. For an overview of Flakes, see the <a href="Flakes" class="wikilink" title="Flakes">Flakes</a> wiki page.
 
 - For existing Haskell projects, initialize with:
 
-``` bash
-nix flake init -t github:srid/haskell-flake
+``` console
+$ nix flake init -t github:srid/haskell-flake
 ```
 
 - For new Haskell projects, use the example template:
 
-``` bash
-mkdir example && cd ./example
-nix flake init -t github:srid/haskell-flake#example
+``` console
+$ mkdir example && cd ./example
+$ nix flake init -t github:srid/haskell-flake#example
 ```
 
 This command will generate a project template with additional configuration details, comments, and examples. Below is an example minimal flake definition for a simple project:
@@ -228,23 +228,23 @@ The build process will use the `example.cabal` file and run the executable defin
 
 #### Further reading
 
-- [Example Haskell project with a development environment](https://github.com/srid/haskell-template/tree/master)
+- [Example Haskell project with a development environment](https://github.com/srid/haskell-template)
 
 <!-- -->
 
-- [Example cabal.project multi-package Haskell project](https://github.com/srid/haskell-multi-nix/tree/master)
+- [Example cabal.project multi-package Haskell project](https://github.com/srid/haskell-multi-nix)
 
 <!-- -->
 
-- [Getting started with haskell-flake](https://community.flake.parts/haskell-flake/start).
+- [Getting started with haskell-flake](https://haskell.nixos.asia/start).
 
 <!-- -->
 
-- [Overriding dependencies in a haskell-flake](https://community.flake.parts/haskell-flake/dependency)
+- [Overriding dependencies in a haskell-flake](https://haskell.nixos.asia/dependency)
 
 <!-- -->
 
-- [haskell-flake haskell-flake options reference](https://flake.parts/options/haskell-flake)
+- [haskell-flake options reference](https://flake.parts/options/haskell-flake)
 
 ## Overrides
 
