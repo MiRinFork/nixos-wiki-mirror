@@ -4,21 +4,9 @@
 
 <languages />
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
+Hydraは、構築されたジョブとその依存関係を説明するために純粋に機能的な言語を使用する、継続的な統合テストおよびソフトウェアリリースのためのツールである。継続的インテグレーションとは、ソフトウェア開発プロセスの品質を向上させるための簡単な手法である。自動化されたシステムは、プロジェクトのソースコードを継続的または定期的にチェックし、作成し、テストを実行し、開発者向けのレポートを生成する。したがって、誤ってコードベースに取り込まれた可能性のあるさまざまなエラーが自動的に検出される。
 
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-Hydra is a tool for continuous integration testing and software release that uses a purely functional language to describe build jobs and their dependencies. Continuous integration is a simple technique to improve the quality of the software development process. An automated system continuously or periodically checks out the source code of a project, builds it, runs tests, and produces reports for the developers. Thus, various errors that might accidentally be committed into the code base are automatically caught.
-
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-The official Hydra servers provide pre-built binary packages to speed up the update time for Nixpkgs: Users do not have to compile them on their own computers.
-
-</div>
+公式のHydraサーバーは、Nixpkgsのアップデート時間を短縮するためにあらかじめ構築されたバイナリパッケージを提供しています。ユーザーは自分でコンピューターでコンパイルする必要はありません。
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 

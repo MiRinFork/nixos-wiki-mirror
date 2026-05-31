@@ -130,15 +130,26 @@ llama-cli \
 
 ## llama-server
 
-`llama-server` runs a server, and it can run models on demand. It's quite similar to <a href="Ollama" class="wikilink" title="Ollama">Ollama</a>.
+`llama-server` runs a server, and it can run models on demand. It supports OpenAI API standard. It's quite similar to <a href="Ollama" class="wikilink" title="Ollama">Ollama</a>.
 
-You can manually start the server from your terminal, it's usage, is not that different from `llama-cli`, but we are going to see the integration with NixOS as a service.
+You can manually start the server from your terminal, it's usage, is not that different from `llama-cli`,
+
+``` bash
+llama-server \
+    -hf bartowski/Qwen_Qwen3-Coder-Next-GGUF:Q4_K_M \ 
+    --temp 1.0 --top-p 0.95 --top-k 40 
+```
+
+Or alternatively, you can **enable the NixOS service** for llama-cpp, which runs the server.
 
 ``` nixos
 {
   services.llama-cpp = {
     enable = true;
     package = pkgs.llama-cpp-vulkan;
+    # package = (pkgs.llama-cpp.override { cudaSupport = true; })
+    # package = pkgs.llama-cpp-rocm;
+
     # Takes care of downloading if model not present
     modelsPreset = {
       "Qwen3-Coder-Next" = {
@@ -157,6 +168,10 @@ You can manually start the server from your terminal, it's usage, is not that di
 And do a switch to the new configuration
 
     sudo nixos-rebuild switch
+
+### Web UI
+
+The llama-cpp service includes a web interface, where you can chat. To access you must navigate to <http://localhost:8080> . Or the `services.llama-cpp.port` configured.
 
 ### Troubleshooting
 

@@ -86,7 +86,9 @@ In case you wonder where does `["auto"]` in mesa's attributes lead you, this mig
   else throw "Unsupported platform: this derivation only supports Linux/Darwin"
 ```
 
-## Intel Xe Driver Warning Spam
+## Known Issues
+
+### Intel Xe Driver Warning Spam
 
 If you're using the Intel Xe driver you may end up getting a lot of `MESA: warning: Support for this platform is experimental with Xe KMD, bug reports may be ignored.` messages spam in your console when running various tools. You can disable this spam by setting the [MESA_LOG_FILE](https://docs.mesa3d.org/envvars.html) environment variable to some file location (like `/dev/null`). To make the change permanent you could add it to your `environment.variables` attribute set in your nix config. The downside to this approach is that you won't see legitimate Mesa warnings or errors on your console afterwards.
 

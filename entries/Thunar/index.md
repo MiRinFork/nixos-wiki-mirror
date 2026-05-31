@@ -27,7 +27,7 @@ programs.xfconf.enable = true;
 You can add plugins by including them in `programs.thunar.plugins` to your `configuration.nix`. For example:
 
 ``` nix
-programs.thunar.plugins = with pkgs.xfce; [
+programs.thunar.plugins = with pkgs; [
   thunar-archive-plugin # Requires an Archive manager like file-roller, ark, etc
   thunar-volman
 ];

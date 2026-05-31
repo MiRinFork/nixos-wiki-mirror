@@ -16,6 +16,56 @@ Adapt or add following line to your system configuration:\<syntaxhighlight lang=
 
 See `nix search nixpkgs nodejs` for additional versions like `nodejs-12_x`, etc.
 
+## Development environment
+
+Also see <a href="Development_environment_with_nix-shell" class="wikilink" title="Development environment with nix-shell">Development environment with nix-shell</a> on this wiki.
+
+### Nixpkgs example
+
+``` nix
+# shell.nix
+{ pkgs ? import <nixpkgs> {} }:
+pkgs.mkShell {
+  nativeBuildInputs = with pkgs.buildPackages; [
+    nodejs_22
+    yarn
+  ];
+}
+```
+
+### Corepack example
+
+To use specific/pinned versions of your runtime & package manager, a combination of corepack & steam-run can be used
+
+``` nix
+# shell.nix
+{ pkgs ? import <nixpkgs> {} }:
+  
+pkgs.mkShell {
+  buildInputs = with pkgs; [
+    corepack
+    steam-run-free
+  ];
+  shellHook = ''
+    alias deno="steam-run pnpm deno"
+  '';
+}
+```
+
+``` json
+// package.json
+{
+  "packageManager": "pnpm@11.4.0",
+  "devEngines": {
+    "runtime": {
+      "name": "deno",
+      "version": "^2.7.14",
+      "onFail": "download"
+    }
+  }
+}
+```
+
 ## Packaging
 
 ### Packaging with `buildNpmPackage`

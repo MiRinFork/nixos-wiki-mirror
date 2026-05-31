@@ -1,10 +1,12 @@
 <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
 
-<!-- Source page: Coq -->
+<!-- Source page: Rocq -->
+
+[Rocq](https://rocq-prover.org/) (formerly known as Coq) is an interactive theorem prover. Consult the \[nixpkgs manual\](https://nixos.org/manual/nixpkgs/unstable/#sec-language-rocq) for more information about using Rocq with Nix.
 
 ## Installation
 
-The [Coq proof assistant](https://coq.inria.fr) and associated tools (coqtop, coqc, coq_makefile, …) may be installed globally, by a user, in its profile:
+Rocq and associated tools (coqtop, coqc, coq_makefile, …) may be installed globally, by a user, in its profile:
 
 `nix-env -iA nixpkgs.coq`
 
@@ -60,7 +62,7 @@ It is possible to globally install a Coq library as any other Nix package. Notic
 
 `export COQPATH=$HOME/.nix-profile/lib/coq/8.7/user-contrib`
 
-## See also…
+## See also
 
 Related blog post: <https://yannherklotz.com/nix-for-coq/>
 

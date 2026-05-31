@@ -6,12 +6,10 @@
 
 ## Setup
 
-To enable Qtile as your window manager, set `services.xserver.windowManager.qtile.enable = true`. For example:
+To enable Qtile as your window manager, include this in your configuration:
 
 ``` nix
-{
-  services.xserver.windowManager.qtile.enable = true;
-}
+services.xserver.windowManager.qtile.enable = true;
 ```
 
 Other options for Qtile can be declared within the `services.xserver.windowManager.qtile` attribute set.
@@ -35,7 +33,7 @@ If you are using home-manager, you can copy your qtile configuration by using th
 xdg.configFile."qtile/config.py".source = ./my_qtile_config.py;
 ```
 
-or, if you have a directory containing multiple python files:
+Or, if you have a directory containing multiple python files:
 
 ``` nix
 xdg.configFile."qtile" = {
@@ -160,18 +158,24 @@ To run a bleeding-edge version of Qtile with the flake, add the Qtile repository
 }
 ```
 
-This flake can also be tested with a vm:
+This flake can also be tested with a virtual machine:
 
 ``` nix
 sudo nixos-rebuild build-vm --flake .#demo
 ```
 
-Gives you a script to run that runs Qemu to test your config. For this to work you have to set a user with a password.
+This gives you a script to run that runs Qemu to test your config. For this to work you have to set a user with a password.
+
+To hack on Qtile with Nix, simply run `nix develop` in a checkout of the Qtile repository. In the development shell, there are a few useful commands:
+
+- `qtile-run-tests-wayland`: Run all Wayland tests.
+- `qtile-run-tests-x11`: Run all X11 tests.
 
 ## Credits
 
 - Based on the official [Qtile Documentation](https://docs.qtile.org/en/latest/manual/install/nixos.html#).
-- Wayland details from [Gist by Jwijenbergh](https://gist.github.com/jwijenbergh/48da1a8f4c4a56d122407c4d009bc81f)
+- Wayland details from [Gist by Jwijenbergh](https://gist.github.com/jwijenbergh/48da1a8f4c4a56d122407c4d009bc81f).
+- Flake config details from [Gurjaka's Qtile Flake Guide](https://gurjaka.codeberg.page/blog.html?post=qtile-flake).
 - NixOS implementation details maintained by the community.
 
 <a href="Category:Window_managers" class="wikilink" title="Category:Window managers">Category:Window managers</a> <a href="Category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a>

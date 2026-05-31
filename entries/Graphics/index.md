@@ -26,7 +26,7 @@ Userspace-level graphics support is provided through OpenGL. The kernel module i
 
 The OpenGL implementation used on Linux is the <a href="Mesa" class="wikilink" title="Mesa graphics library">Mesa graphics library</a>. Mesa contains drivers for various hardware, the exact driver is selected automatically. Note that Mesa also supports software rendering if no compatible hardware driver is available, but this is very slow.
 
-Mesa can installed using the option `hardware.graphics.enable`, but note that most desktop environment modules set this themselves anyway. This option writes the driver files to `/run/opengl-driver`. Additional graphics drivers packages can be added using `hardware.graphics.extraPackages`.
+Mesa can be installed using the option `hardware.graphics.enable`, but note that most desktop environment modules set this themselves anyway. This option writes the driver files to `/run/opengl-driver`. Additional graphics drivers packages can be added using `hardware.graphics.extraPackages`.
 
 To verify which Mesa driver is used: `nix shell nixpkgs#mesa-demos -c glxinfo`
 

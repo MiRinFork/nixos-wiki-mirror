@@ -358,6 +358,10 @@ programs.zed-editor = {
 
 <translate> When Zed reports missing tools, add the required executables to `programs.zed-editor.extraPackages` or wrap the server using `pkgs.writeShellApplication`. </translate>
 
+#### GitHub Copilot CLI not logging in
+
+<translate> GitHub Copilot CLI (External Agent) may fail to log in because of issues with the libsecret library. If you use <a href="Nix-ld" class="wikilink" title="Nix-ld">Nix-ld</a>, enable the following libraries: </translate>
+
 ## See also
 
 - <translate>

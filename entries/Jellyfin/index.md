@@ -50,6 +50,33 @@ The simplest solution is to change the service user: </translate>
 
 Modern hardware often includes video acceleration capabilities that can significantly reduce CPU usage during transcoding. For detailed information, see the [official Jellyfin documentation](https://jellyfin.org/docs/general/post-install/transcoding/hardware-acceleration/).[^4]
 
+#### GPU Identification
+
+If a computer with multiple GPUs is being configured, such as a laptop with a discrete GPU, selecting the correct GPU by path may be difficult. The paths in question are at `/dev/dri`. There will be several entries within this directory:
+
+- `/dev/dri/card*`
+
+  
+2D graphics accelerators, these are not relevant to Jellyfin.
+
+- `/dev/dri/renderD*`
+
+  
+3D graphics accelerators. These are what Jellyfin uses. Often `/dev/dri/renderD128` and sequentially increasing from there.
+
+- `/dev/dri/by-path`
+
+  
+A directory that contains symlinks to the above devices, but with their PCI bus IDs. This will be used for identification.
+
+To identify, run `lspci`. This will most likely need to be downloaded, and is included in the package [pciutils](https://search.nixos.org/packages?channel=unstable&query=lspci#show=pciutils). This will show all devices on the PCI bus. For example:
+
+The beginning of each line denotes the device's PCI bus ID. Note this for the GPU desired, and add this device to your Jellyfin configuration via the `/dev/dri/by-path` directory. In this example, the Nvidia 1060M is added to the config. It can also be added to the config by inspecting the `by-path` symlink with `realpath` and using the canonical path.
+
+#### NVENC
+
+Nvidia GPU's use NVENC for hardware encoding. To use this, CUDA must be enabled: For configuring the `services.jellyfin.transcoding.hardwareDecodingCodec` and `services.jellyfin.transcoding.hardwareDecodingCodec` options for Nvidia GPUs, [consult the support matrix provided by Nvidia](https://developer.nvidia.com/video-encode-decode-support-matrix)
+
 #### VAAPI and Intel QSV
 
 Intel GPUs support Video Acceleration API (VAAPI) and Quick Sync Video (QSV). The required packages must be added to `hardware.graphics.extraPackages`.

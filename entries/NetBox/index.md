@@ -95,7 +95,7 @@ For more nginx settings and further instruction, please look here <a href="Nginx
 
 ### Plugins
 
-The NixOS module supports plugins from nixpkgs. However, at the moment only a small set of plugins is packaged in nixpkgs and is available as part of [python3Packages](https://search.nixos.org/packages?type=packages&query=python3Packages+netbox). The documentation for plugins is being worked on and discussed in [\#261522](https://github.com/NixOS/nixpkgs/issues/261522).
+The NixOS module supports plugins from nixpkgs; currently about half of the existing NetBox plugins are packaged there. Until 26.05 these plugins are available as part of [python3Packages](https://search.nixos.org/packages?type=packages&query=python3Packages+netbox). Since 26.05 plugins can be found in the \[<https://search.nixos.org/packages?type=packages&query=netboxPlugins>. netboxPlugins\] package set. The documentation for plugins is being worked on and discussed in [\#261522](https://github.com/NixOS/nixpkgs/issues/261522).
 
 To include a plugin:
 

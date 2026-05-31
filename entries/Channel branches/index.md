@@ -11,14 +11,14 @@ Each channel branch follows a corresponding development branch to which new comm
 There are several types of channel branches, each with its own use case and verification phase. Channels can be broadly categorized into *stable* and *unstable* channels, and *large* and *small* channels. To view the current official channels, see the [channel status webpage](https://status.nixos.org).
 
 - Stable vs unstable:
-  - **Stable channels** (e.g. `nixos-25.11`) only provide conservative updates for fixing bugs and security vulnerabilities, but do not receive major updates after the initial release. New stable channels are released every six months.
+  - **Stable channels** (e.g. `nixos-26.05`) only provide conservative updates for fixing bugs and security vulnerabilities, but do not receive major updates after the initial release. New stable channels are released every six months.
   - **Unstable channels** (e.g. `nixos-unstable`, `nixpkgs-unstable`) follow the `master` branch of Nixpkgs, delivering the latest tested updates on a rolling basis.
 
 <!-- -->
 
 - Large vs small:
-  - **Large channels** (e.g. `nixos-25.11`, `nixos-unstable`) are updated only after Hydra has finished building the full breadth of Nixpkgs.
-  - **Small channels** (e.g. `nixos-25.11-small`, `nixos-unstable-small`) are identical to large channels, but are updated as soon as Hydra has finished building a defined set of commonly-used packages. Thus, users following these channels will get faster updates but may need to build any packages they use from outside the defined set themselves. These channels are intended to be used for server setups, for example.
+  - **Large channels** (e.g. `nixos-26.05`, `nixos-unstable`) are updated only after Hydra has finished building the full breadth of Nixpkgs.
+  - **Small channels** (e.g. `nixos-26.05-small`, `nixos-unstable-small`) are identical to large channels, but are updated as soon as Hydra has finished building a defined set of commonly-used packages. Thus, users following these channels will get faster updates but may need to build any packages they use from outside the defined set themselves. These channels are intended to be used for server setups, for example.
 
 For most users, a stable/large channel is recommended.
 
@@ -44,7 +44,7 @@ Note that updating channels won't cause a rebuild in itself; if you want to upda
 
 ## Using channel branches with flakes
 
-Although <a href="Flakes" class="wikilink" title="Flakes">Flakes</a> do not make use of traditional Nix channels, they can still reference the same channel branches by specifying them in the flake’s inputs. These branches, such as `nixos-25.11` or `nixos-unstable`, correspond to named references within the Nixpkgs repository and serve a similar role in selecting which version of Nixpkgs or other inputs to use.
+Although <a href="Flakes" class="wikilink" title="Flakes">Flakes</a> do not make use of traditional Nix channels, they can still reference the same channel branches by specifying them in the flake’s inputs. These branches, such as `nixos-26.05` or `nixos-unstable`, correspond to named references within the Nixpkgs repository and serve a similar role in selecting which version of Nixpkgs or other inputs to use.
 
 A simple example of defining channel branches in a flake:
 

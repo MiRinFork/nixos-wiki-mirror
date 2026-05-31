@@ -41,6 +41,14 @@ true;</code> which sets to true.</translate>}}
 
 ## Tips and tricks
 
+### Improving Performance
+
+You can utilize [GameMode](https://github.com/FeralInteractive/gamemode), a combination of a library and daemon for Linux that allows games to request a set of optimizations to be temporarily applied to the host operating system and/or a game process.
+
+``` nixos
+programs.gamemode.enable = true;
+```
+
 ### Gamescope Compositor / "Boot to Steam Deck"
 
 Gamescope can function as a minimal desktop environment, meaning you can launch it from a TTY and have an experience very similar to the Steam Deck hardware console. </translate>

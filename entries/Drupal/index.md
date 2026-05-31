@@ -252,4 +252,4 @@ services.drupal.sites."localhost".stateDir = /path/to/custom/state/dir;
 
 > **Note**: Changing the state directory does not automatically change the location of the `modules`, `themes`, `config`, or `files` directories. You can override those locations by using the `modulesDir` and `themesDir`, `configDir`, `filesDir` keys, accordingly.
 
-<a href="Category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="Category:Web_Applications" class="wikilink" title="Category:Web Applications">Category:Web Applications</a>
+<a href="Category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="Category:Web_Applications" class="wikilink" title="Category:Web Applications">Category:Web Applications</a> <a href="Category:PHP" class="wikilink" title="Category:PHP">Category:PHP</a>

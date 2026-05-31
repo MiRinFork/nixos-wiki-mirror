@@ -115,7 +115,7 @@ in
 
 The options are found in the [rendered docs](https://gerg-l.github.io/spicetify-nix/options.html).
 
-The extensions, customApps, and themes are found in the following files: [EXTENSIONS.md](https://github.com/Gerg-L/spicetify-nix/blob/master/docs/EXTENSIONS.md), [CUSTOMAPPS.md](https://github.com/Gerg-L/spicetify-nix/blob/master/docs/CUSTOMAPPS.md), [THEMES.md](https://github.com/Gerg-L/spicetify-nix/blob/master/docs/THEMES.md).
+The extensions, customApps, and themes are found in the docs: [extensions.html](https://gerg-l.github.io/spicetify-nix/extensions.html), [custom-apps.html](https://gerg-l.github.io/spicetify-nix/custom-apps.html), [themes.html](https://gerg-l.github.io/spicetify-nix/themes.html).
 
 #### Unpackaged Parameters
 

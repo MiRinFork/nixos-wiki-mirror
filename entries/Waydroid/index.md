@@ -131,32 +131,7 @@ sh geobridge.sh --init
 
 ### V4L2 camera forwarding
 
-Camera forwarding using V4L2 is broken on upstream, but can be achieved by using the Waydroid images of the [Waydroid-ATV project](https://github.com/WayDroid-ATV). Further we also need an unstable Waydroid version (\>1.6.2) for running it.
-
-``` nix
-disabledModules = [
-  "virtualisation/waydroid.nix"
-];
-imports = [
- "${inputs.nixpkgs-unstable}/nixos/modules/virtualisation/waydroid.nix"
-];
-
-nixpkgs.overlays = [
-  (self: super: {
-    waydroid = (inputs.nixpkgs-unstable.legacyPackages.x86_64-linux.waydroid.overrideAttrs (old: rec {
-      version = "0-unstable-2026-04-26";
-      src = pkgs.fetchFromGitHub {
-        owner = "waydroid";
-        repo = "waydroid";
-        rev = "9478d59ad5c83b22478594e73d5879b93200fcb2";
-        hash = "sha256-L4qU5TSWavxvyPUqVV00NCd0YZqAaKPWTe3dR/q15LE=";
-      };
-    }));
-  })
-];
-```
-
-You might <a href="Waydroid#Resetting_Android_Container" class="wikilink" title="need to reset">need to reset</a> your existing Waydroid environment. Then stop the container and fetch the latest Waydroid-ATV images.
+Camera forwarding using V4L2 is broken on upstream, but can be achieved by using the Waydroid images of the [Waydroid-ATV project](https://github.com/WayDroid-ATV). You might <a href="Waydroid#Resetting_Android_Container" class="wikilink" title="need to reset">need to reset</a> your existing Waydroid environment. Then stop the container and fetch the latest Waydroid-ATV images.
 
 ``` bash
 systemctl stop waydroid-container

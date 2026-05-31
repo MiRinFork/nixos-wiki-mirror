@@ -392,4 +392,4 @@ There are some known issues regarding the WordPress module on NixOS
 - The wordpressPackages set misses translation files for themes and plugins. This means only the English interface will be available <https://github.com/helsinki-systems/wp4nix/issues/2>
 - Plugins and themes are managed by the NixOS module. Manually updating or installing them through the WordPress web interface is not supported at the moment
 
-<a href="Category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="Category:Web_Applications" class="wikilink" title="Category:Web Applications">Category:Web Applications</a>
+<a href="Category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="Category:Web_Applications" class="wikilink" title="Category:Web Applications">Category:Web Applications</a> <a href="Category:PHP" class="wikilink" title="Category:PHP">Category:PHP</a>

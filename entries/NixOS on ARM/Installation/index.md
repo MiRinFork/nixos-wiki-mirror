@@ -14,6 +14,7 @@ Continue to the <a href="NixOS_on_ARM/UEFI" class="wikilink" title="UEFI">UEFI</
 
 For `AArch64` it is possible to download images from Hydra.
 
+- [26.05 (beta)](https://hydra.nixos.org/job/nixos/release-26.05/nixos.sd_image.aarch64-linux)
 - [25.11](https://hydra.nixos.org/job/nixos/release-25.11/nixos.sd_image.aarch64-linux)
 - [25.05](https://hydra.nixos.org/job/nixos/release-25.05/nixos.sd_image.aarch64-linux)
 - [unstable (LTS kernel)](https://hydra.nixos.org/job/nixos/trunk-combined/nixos.sd_image.aarch64-linux)
