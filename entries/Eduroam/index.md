@@ -17,14 +17,17 @@ openssl pkcs12 -in eduroam.p12 -nocerts -nodes -out private.key
 openssl pkcs12 -in eduroam.p12 -nokeys -out cert.pem
 ```
 
-It may be advisable to move them to `/etc/ssl/certs/eduroam` and adjust permissions.
+It may be advisable to move them to `/etc/ssl/certs/eduroam` / `/etc/wpa_supplicant` and adjust permissions.
 
 ``` console
 sudo mkdir -p /etc/ssl/certs/eduroam
-sudo mv private.key cert.pem /etc/ssl/certs/eduroam/
-sudo chmod 600 /etc/ssl/certs/eduroam/private.key
+sudo mkdir -p /etc/wpa_supplicant
+sudo mv cert.pem /etc/ssl/certs/eduroam/
+sudo mv private.key /etc/wpa_supplicant/private.key
 sudo chmod 644 /etc/ssl/certs/eduroam/cert.pem
 sudo chown root:root /etc/ssl/certs/eduroam/*
+sudo chown wpa_supplicant:wpa_supplicant /etc/wpa_supplicant/private.key
+sudo chmod 400 /etc/wpa_supplicant/private.key
 ```
 
 Note that some universities just require a certificate some .crt or .pem certificate and authenticate via password, eliminating the need for a .key-file. Stick to your universities instructions for this.

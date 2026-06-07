@@ -2,9 +2,65 @@
 
 <!-- Source page: NixOS on ARM/Banana Pi BPI-M5 -->
 
-## Status
+**Note:** To build an image for a BPI-M5 you will need to use flakes. If you don't know them or need to set them up for your system, follow <a href="Flakes" class="wikilink" title="the Flakes Wiki page">the Flakes Wiki page</a>.
 
-Work in progress
+## Setting up the Flake for cross-compilation
+
+Create a folder with a name of your choosing. In it create a flake.nix file with the following contents:
+
+``` nix
+{
+  description = "Banana Pi M5 NixOS Build Environment";
+
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+  };
+
+  outputs = { nixpkgs, ... }: let
+    system = "x86_64-linux";
+    pkgs = import nixpkgs { inherit system; };
+
+    # Expose the correct AArch64 cross-compilation package set
+    crossPkgs = import nixpkgs {
+      inherit system;
+      crossSystem = {
+        config = "aarch64-unknown-linux-gnu";
+      };
+    };
+  in {
+    devShells.${system}.default = pkgs.mkShell {
+      packages = [
+        # For patching shebangs in the official build scripts
+        pkgs.stdenv
+
+        # Provides the 64-bit aarch64-unknown-linux-gnu-gcc
+        crossPkgs.buildPackages.gcc
+
+        # Retained for Amlogic's 32-bit SCP/BL30 binary generation
+        pkgs.gcc-arm-embedded
+
+        pkgs.ubootTools
+        pkgs.dtc
+        pkgs.flex
+        pkgs.bison
+        pkgs.swig
+
+        pkgs.openssl
+        pkgs.gnutls
+
+        # Resolves the insecure Python 2 dependency
+        pkgs.python3
+      ];
+
+      # Pre-set the build variables expected by Make
+      shellHook = ''
+        export CROSS_COMPILE="aarch64-unknown-linux-gnu-"
+        export ARCH="arm"
+      '';
+    };
+  };
+}
+```
 
 ## Building Amlogic-compatible U-Boot
 
@@ -13,11 +69,11 @@ Work in progress
 **Note:** Do not use the severely outdated [BPI-M5-bsp](https://github.com/BPI-SINOVOIP/BPI-M5-bsp) or [Amlogic-u-boot](https://github.com/Dangku/Amlogic-u-boot) to build u-boot.
 
 ``` shell-session
+$ nix develop
 $ git clone git://git.denx.de/u-boot.git
 $ cd u-boot
-$ nix-shell -p ubootTools gcc-arm-embedded dtc flex bison python swig
-$ make -j$(nproc) ARCH=arm CROSS_COMPILE=aarch64-unknown-linux-gnu- bananapi-m5_defconfig
-$ make -j$(nproc) ARCH=arm CROSS_COMPILE=aarch64-unknown-linux-gnu-
+$ make -j$(nproc) bananapi-m5_defconfig
+$ make -j$(nproc)
 $ cd ..
 ```
 
@@ -29,6 +85,7 @@ $ cd ..
 $ git clone https://github.com/LibreELEC/amlogic-boot-fip
 $ cd amlogic-boot-fip
 $ mkdir -p output-bananapim5/
+$ patchShebangs .
 $ ./build-fip.sh bananapi-m5 ../u-boot/u-boot.bin output-bananapim5
 $ hexdump -C -n 32 output-bananapim5/u-boot.bin | grep "40 41 4d 4c"
 $ cd ..
@@ -38,7 +95,7 @@ Verify that the new u-boot.bin contains `40 41 4d 4c` (`@AML`) at 0x10 onwards.
 
 ## Board-specific installation notes
 
-First follow the <a href="NixOS_on_ARM#SD_card_images_.28SBCs_and_similar_platforms.29" class="wikilink" title="NixOS_on_ARM instructions to get the SD card image">NixOS_on_ARM instructions to get the SD card image</a> and decompress it.
+First follow the <a href="NixOS_on_ARM/Installation" class="wikilink" title="NixOS_on_ARM instructions to get the SD card image">NixOS_on_ARM instructions to get the SD card image</a> and decompress it.
 
 Once the image has been decompressed, the Amlogic U-Boot package needs to be copied to byte 512+ inside the image (replace the image with the name downloaded and decompressed image):
 

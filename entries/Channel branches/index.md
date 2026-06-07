@@ -85,7 +85,7 @@ To find out when a channel was last updated, check [<https://status.nixos.org/>]
 
 [hydra-check](https://github.com/nix-community/hydra-check)
 
-``` sh
+``` console
 $ hydra-check --channel unstable bash
 Build Status for nixpkgs.bash.x86_64-linux on unstable
 ✔ bash-4.4-p23 from 2021-05-23 - https://hydra.nixos.org/build/143785213

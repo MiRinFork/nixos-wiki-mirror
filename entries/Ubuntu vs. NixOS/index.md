@@ -105,7 +105,7 @@
 </tr>
 <tr>
 <td><p>Uninstall a package</p></td>
-<td><div class="sourceCode" id="cb13"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt-get remove emacs</span></code></pre></div></td>
+<td><pre class="console"><code>$ sudo apt-get remove emacs</code></pre></td>
 <td><p>remove from /etc/nixos/configuration.nix</p>
 <pre class="console"><code>$ sudo nixos-rebuild switch</code></pre></td>
 <td><pre class="console"><code>$ nix-env --uninstall emacs</code></pre></td>
@@ -142,7 +142,7 @@
 <p>or show a nested ASCII tree of dependencies:</p>
 <pre class="console"><code>$ nix-store -q --tree /nix/var/nix/profiles/system</code></pre>
 <p>(/run/current-system and /nix/var/nix/profiles/system are symbolic links that eventually end up at the same place.)</p></td>
-<td><pre class="console"><code>$ nix-store --query --references\
+<td><pre class="console"><code>$ nix-store --query --references \
   $(nix-instantiate &#39;&lt;nixpkgs&gt;&#39; -A emacs)</code></pre>
 <p>For installed packages:</p>
 <pre class="console"><code>$ nix-store --query --references $(which emacs)</code></pre></td>
@@ -169,8 +169,8 @@
 <tr>
 <td><p>Select major version and stable/unstable</p></td>
 <td><p>Change sources.list and apt-get dist-upgrade. A an extremely infrequent and destructive operation. The nix variants are safe and easy to use.</p></td>
-<td><pre class="console"><code>$ nix-channel --add\
-   https://nixos.org/channels/nixpkgs-unstable &lt;name&gt;</code></pre>
+<td><pre class="console"><code>$ nix-channel --add \
+   https://channels.nixos.org/nixpkgs-unstable &lt;name&gt;</code></pre>
 <p>Add the unstable channel. At that address you will find names for other versions and variants. Name can be any string.</p>
 <pre class="console"><code>$ nix-channel --remove &lt;name&gt;</code></pre>
 <p>To eliminate a channel.</p>
@@ -191,7 +191,7 @@
 <p>For instance, to launch an older version of Vim you could use:</p>
 <pre class="console"><code>$ nix-shell \
     -p vim \
-    -I nixpkgs=\https://github.com/NixOS/nixpkgs/archive/4bba6650a6a5a2009e25bdeed8c1e871601a9bfb.tar.gz</code></pre></td>
+    -I nixpkgs=https://github.com/NixOS/nixpkgs/archive/4bba6650a6a5a2009e25bdeed8c1e871601a9bfb.tar.gz</code></pre></td>
 <td></td>
 </tr>
 <tr>
@@ -231,16 +231,16 @@
 <td><pre class="console"><code>$ readlink -f $(which emacs)
  /nix/store/ji06y4haijly0i0knmr986l2dajffv1p-emacs-24.4/bin/emacs-24.4</code></pre>
 <p>then</p>
-<pre class="console"><code>$du -a /nix/store/ji06y4haijly0i0knmr986l2dajffv1p-emacs-24.4</code></pre></td>
+<pre class="console"><code>$ du -a /nix/store/ji06y4haijly0i0knmr986l2dajffv1p-emacs-24.4</code></pre></td>
 <td><pre class="console"><code></code></pre></td>
 </tr>
 <tr>
 <td><p>Show package for file</p></td>
 <td><pre class="console"><code>$ dpkg -S /usr/bin/emacs</code></pre></td>
 <td><p>follow the symlink or</p>
-<pre class="console"><code>nix-locate /bin/emacs</code></pre>
+<pre class="console"><code>$ nix-locate /bin/emacs</code></pre>
 <p>(requires</p>
-<pre class="console"><code>nix-index</code></pre>
+<pre class="console"><code>$ nix-index</code></pre>
 <p>package)</p></td>
 <td><p>(same)</p></td>
 </tr>
@@ -263,7 +263,7 @@
 <td><p>Enable a service</p></td>
 <td><pre class="console"><code>$ sudo systemctl enable apache</code></pre></td>
 <td><p>In /etc/nixos/configuration.nix, add</p>
-<pre class="console"><code>services.tor.enable = true;</code></pre>
+<div class="sourceCode" id="cb63"><pre class="sourceCode nix"><code class="sourceCode nix"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a>services<span class="op">.</span>tor<span class="op">.</span>enable = <span class="cn">true</span>;</span></code></pre></div>
 <p>, then run</p>
 <pre class="console"><code>$ sudo nixos-rebuild switch</code></pre></td>
 <td></td>
@@ -272,7 +272,7 @@
 <td><p>Disable a service</p></td>
 <td><pre class="console"><code>$ sudo systemctl disable apache</code></pre></td>
 <td><p>In /etc/nixos/configuration.nix, add</p>
-<pre class="console"><code>services.tor.enable = false;</code></pre>
+<div class="sourceCode" id="cb66"><pre class="sourceCode nix"><code class="sourceCode nix"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a>services<span class="op">.</span>tor<span class="op">.</span>enable = <span class="cn">false</span>;</span></code></pre></div>
 <p>, then run</p>
 <pre class="console"><code>$ sudo nixos-rebuild switch</code></pre></td>
 <td></td>
@@ -287,16 +287,16 @@
 <td><p>Adding a user</p></td>
 <td><pre class="console"><code>$ sudo adduser alice</code></pre></td>
 <td><p>Add</p>
-<div class="sourceCode" id="cb69"><pre class="sourceCode nix"><code class="sourceCode nix"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a>users<span class="op">.</span>users<span class="op">.</span>alice =</span>
-<span id="cb69-2"><a href="#cb69-2" aria-hidden="true" tabindex="-1"></a> <span class="op">{</span> <span class="va">isNormalUser</span> <span class="op">=</span> <span class="cn">true</span><span class="op">;</span></span>
-<span id="cb69-3"><a href="#cb69-3" aria-hidden="true" tabindex="-1"></a>   <span class="va">home</span> <span class="op">=</span> <span class="st">&quot;/home/alice&quot;</span><span class="op">;</span></span>
-<span id="cb69-4"><a href="#cb69-4" aria-hidden="true" tabindex="-1"></a>   <span class="va">description</span> <span class="op">=</span> <span class="st">&quot;Alice Foobar&quot;</span><span class="op">;</span></span>
-<span id="cb69-5"><a href="#cb69-5" aria-hidden="true" tabindex="-1"></a>   <span class="va">extraGroups</span> <span class="op">=</span> <span class="op">[</span> <span class="st">&quot;wheel&quot;</span> <span class="st">&quot;networkmanager&quot;</span> <span class="op">];</span></span>
-<span id="cb69-6"><a href="#cb69-6" aria-hidden="true" tabindex="-1"></a>   <span class="va">openssh</span>.<span class="va">authorizedKeys</span>.<span class="va">keys</span> <span class="op">=</span></span>
-<span id="cb69-7"><a href="#cb69-7" aria-hidden="true" tabindex="-1"></a>      <span class="op">[</span> <span class="st">&quot;ssh-dss AAAAB3Nza... alice@foobar&quot;</span> <span class="op">];</span></span>
-<span id="cb69-8"><a href="#cb69-8" aria-hidden="true" tabindex="-1"></a> <span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb69"><pre class="sourceCode nix"><code class="sourceCode nix"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a>users<span class="op">.</span>users<span class="op">.</span>alice = <span class="op">{</span></span>
+<span id="cb69-2"><a href="#cb69-2" aria-hidden="true" tabindex="-1"></a>  <span class="va">isNormalUser</span> <span class="op">=</span> <span class="cn">true</span><span class="op">;</span></span>
+<span id="cb69-3"><a href="#cb69-3" aria-hidden="true" tabindex="-1"></a>  <span class="va">home</span> <span class="op">=</span> <span class="st">&quot;/home/alice&quot;</span><span class="op">;</span></span>
+<span id="cb69-4"><a href="#cb69-4" aria-hidden="true" tabindex="-1"></a>  <span class="va">description</span> <span class="op">=</span> <span class="st">&quot;Alice Foobar&quot;</span><span class="op">;</span></span>
+<span id="cb69-5"><a href="#cb69-5" aria-hidden="true" tabindex="-1"></a>  <span class="va">extraGroups</span> <span class="op">=</span> <span class="op">[</span> <span class="st">&quot;wheel&quot;</span> <span class="st">&quot;networkmanager&quot;</span> <span class="op">];</span></span>
+<span id="cb69-6"><a href="#cb69-6" aria-hidden="true" tabindex="-1"></a>  <span class="va">openssh</span>.<span class="va">authorizedKeys</span>.<span class="va">keys</span> <span class="op">=</span></span>
+<span id="cb69-7"><a href="#cb69-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">[</span> <span class="st">&quot;ssh-dss AAAAB3Nza... alice@foobar&quot;</span> <span class="op">];</span></span>
+<span id="cb69-8"><a href="#cb69-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
 <p>to /etc/nixos/configuration.nix and then call</p>
-<div class="sourceCode" id="cb70"><pre class="sourceCode nix"><code class="sourceCode nix"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a>nixos<span class="op">-</span>rebuild switch</span></code></pre></div></td>
+<pre class="console"><code>$ nixos-rebuild switch</code></pre></td>
 <td></td>
 </tr>
 <tr>
@@ -305,8 +305,8 @@
 <tr>
 <td><p>List binaries</p></td>
 <td><pre class="console"><code>$ ls /usr/bin/</code></pre></td>
-<td><pre class="console"><code>$ ls /run/current-system/sw/bin &amp;&amp;\
-ls /nix/var/nix/profiles/default/bin/</code></pre></td>
+<td><pre class="console"><code>$ ls /run/current-system/sw/bin &amp;&amp; \
+  ls /nix/var/nix/profiles/default/bin/</code></pre></td>
 <td><pre class="console"><code>$ ls ~/.nix-profile/bin</code></pre></td>
 </tr>
 <tr>
@@ -317,7 +317,7 @@ ls /nix/var/nix/profiles/default/bin/</code></pre></td>
 </tr>
 <tr>
 <td><p>Get sources for a package</p></td>
-<td><div class="sourceCode" id="cb76"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb76-1"><a href="#cb76-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> sudo apt-get source emacs</span></code></pre></div></td>
+<td><pre class="console"><code>$ sudo apt-get source emacs</code></pre></td>
 <td></td>
 <td><p>In Debian, apt-get source gets both the patched upstream source and the recipe for the package. Those need two steps in Nix.</p>
 <p>To find the package's attribute path:</p>
@@ -325,36 +325,36 @@ ls /nix/var/nix/profiles/default/bin/</code></pre></td>
 <p>or</p>
 <pre class="console"><code>$ nox emacs</code></pre>
 <p>To download the source as specified by the package recipe:</p>
-<div class="sourceCode" id="cb79"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb79-1"><a href="#cb79-1" aria-hidden="true" tabindex="-1"></a><span class="ex">nix-build</span> <span class="st">&#39;&lt;nixpkgs&gt;&#39;</span> <span class="at">-A</span> emacs.src</span></code></pre></div>
+<pre class="console"><code>$ nix-build &#39;&lt;nixpkgs&gt;&#39; -A emacs.src</code></pre>
 <p>The patched source is usually not a derivation itself, but can be produced for most packages with the following command:</p>
-<div class="sourceCode" id="cb80"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb80-1"><a href="#cb80-1" aria-hidden="true" tabindex="-1"></a><span class="ex">nix-shell</span> <span class="st">&#39;&lt;nixpkgs&gt;&#39;</span> <span class="at">-A</span> emacs<span class="dt">\</span></span>
-<span id="cb80-2"><a href="#cb80-2" aria-hidden="true" tabindex="-1"></a> <span class="at">--command</span> <span class="st">&#39;unpackPhase; cd $sourceRoot; patchPhase&#39;</span></span></code></pre></div></td>
+<pre class="console"><code>$ nix-shell &#39;&lt;nixpkgs&gt;&#39; -A emacs \
+ --command &#39;unpackPhase; cd $sourceRoot; patchPhase&#39;</code></pre></td>
 </tr>
 <tr>
 <td><p>Compile &amp; install a package from source</p></td>
 <td></td>
 <td></td>
-<td><pre class="console"><code>git clone foobar
-cat &gt;default.nix &lt;&lt;EOF
+<td><pre class="console"><code>$ git clone foobar
+$ cat &gt; default.nix &lt;&lt;EOF
 with import &lt;nixpkgs&gt; { };
 lib.overrideDerivation foobar (oldAttrs : {
 src = ./foobar;
 })
 EOF
-nix-build</code></pre></td>
+$ nix-build</code></pre></td>
 </tr>
 <tr>
 <td><p>Install a binary package</p></td>
 <td></td>
 <td></td>
-<td><p>e.g. via <a href="https://github.com/Mic92/nix-ld#nix-ld">nix-ld</a></p></td>
+<td><p>e.g. via <a href="https://github.com/nix-community/nix-ld#nix-ld">nix-ld</a></p></td>
 </tr>
 <tr>
 <td><p>Install a .deb</p></td>
 <td><pre class="console"><code>$ sudo dpkg -i package.deb</code></pre></td>
 <td></td>
 <td><p>Install dpkg with Nix, then</p>
-<div class="sourceCode" id="cb83"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb83-1"><a href="#cb83-1" aria-hidden="true" tabindex="-1"></a><span class="ex">dpkg</span> <span class="at">-i</span> package.deb</span></code></pre></div>
+<pre class="console"><code>$ dpkg -i package.deb</code></pre>
 <p>While this is technically possible it will in all likelihood not work.</p></td>
 </tr>
 </tbody>

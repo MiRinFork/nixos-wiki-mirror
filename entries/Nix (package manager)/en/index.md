@@ -2,7 +2,9 @@
 
 <!-- Source page: Nix (package manager)/en -->
 
-<languages/> Nix is a package manager and build system that parses reproducible build instructions specified in the <a href="Nix_Expression_Language" class="wikilink" title="Nix Expression Language">Nix Expression Language</a>, a pure functional language with lazy evaluation. Nix expressions are pure functions[^1]taking dependencies as arguments and producing a *<a href="Derivations" class="wikilink" title="derivation">derivation</a>* specifying a reproducible build environment for the package. Nix stores the results of the build in unique addresses specified by a hash of the complete dependency tree, creating an immutable package store (aka the <a href="#Nix_store" class="wikilink" title="nix store">nix store</a>) that allows for atomic upgrades, rollbacks and concurrent installation of different versions of a package, essentially eliminating [dependency hell](https://en.wikipedia.org/wiki/Dependency_hell).
+<languages/>
+
+Nix is a package manager and build system that parses reproducible build instructions specified in the <a href="Nix_(language)" class="wikilink" title="Nix Expression Language">Nix Expression Language</a>, a pure functional language with lazy evaluation. Nix expressions are pure functions[^1] taking dependencies as arguments and producing a *<a href="Derivations" class="wikilink" title="derivation">derivation</a>* specifying a reproducible build environment for the package. Nix stores the results of the build in unique addresses specified by a hash of the complete dependency tree, creating an immutable package store (aka the <a href="#Nix_store" class="wikilink" title="nix store">nix store</a>) that allows for atomic upgrades, rollbacks and concurrent installation of different versions of a package, essentially eliminating <a href="Wikipedia:Dependency_hell" class="wikilink" title="dependency hell">dependency hell</a>.
 
 ## Usage
 
@@ -10,19 +12,19 @@
 
 On <a href="NixOS" class="wikilink" title="NixOS">NixOS</a>, Nix is automatically installed.
 
-On other Linux distributions or on macOS, you can install Nix following the [installation section of the Nix manual](https://nixos.org/manual/nix/stable/installation/installation).
+On other Linux distributions or on macOS, you can install Nix following the [installation section of the Nix manual](https://nix.dev/manual/nix/stable/installation/).
 
 ### Nix commands
 
-The <a href="Nix_(command_line_utilities)" class="wikilink" title="Nix commands">Nix commands</a> are documented in the [Nix reference manual](https://nixos.org/manual/nix/stable/command-ref/command-ref): main commands, utilities and experimental commands. Prior to version 2.0 (released in February 2018) there have been different commands.
+The <a href="Nix_(command_line_utilities)" class="wikilink" title="Nix commands">Nix commands</a> are documented in the [Nix reference manual](https://nix.dev/manual/nix/stable/command-ref/): main commands, utilities and experimental commands. Prior to version 2.0 (released in February 2018) there have been different commands.
 
 ### Configuration
 
-On NixOS, Nix can be configured using the \[<https://search.nixos.org/options?query=nix>. `nix` option\].
+On NixOS, Nix can be configured using the [`nix` option](https://search.nixos.org/options?query=nix).
 
-Standalone Nix is configured through `nix.conf` (usually found in `/etc/nix/`). Details on the available options are [found in the Nix reference manual](https://nixos.org/manual/nix/stable/command-ref/conf-file).
+Standalone Nix is configured through `nix.conf` (usually found in `/etc/nix/`). Details on the available options are [found in the Nix reference manual](https://nix.dev/manual/nix/stable/command-ref/conf-file).
 
-You can also configure Nix using <a href="Home_Manager" class="wikilink" title="Home Manager">Home Manager</a>, which manages declarative environments for a single user. For system-wide configuration, you can use [System Manager](https://github.com/numtide/system-manager) on Linux and [nix-darwin](https://github.com/LnL7/nix-darwin) on macOS.
+You can also configure Nix using <a href="Home_Manager" class="wikilink" title="Home Manager">Home Manager</a>, which manages declarative environments for a single user. For system-wide configuration, you can use [System Manager](https://github.com/numtide/system-manager) on Linux and [nix-darwin](https://github.com/nix-darwin/nix-darwin) on macOS.
 
 ## Internals
 
@@ -56,7 +58,7 @@ To configure Nix for sandboxing, set `sandbox = true` in `/etc/nix/nix.conf`; to
 
 There is an ongoing effort to reimplement Nix, from the ground up, in Rust.
 
-- [tvix](https://cs.tvl.fyi/depot/-/tree/tvix)
+- [tvix](https://code.tvl.fyi/tree/tvix)
 
 There is also a community-led fork of Nix 2.18 named Lix, focused on correctness, usability, and growth. While it has also ported some components of Nix to Rust, it is not a ground-up rewrite like Tvix.
 

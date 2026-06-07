@@ -41,11 +41,19 @@ pkgs.callPackage (
 
 Then just run:
 
+``` console
+$ nix-shell
+```
+
 Or, to be more explicit:
+
+``` console
+$ nix-shell shell.nix
+```
 
 Now you have rustc available in your shell:
 
-``` bash
+``` console
 $ rustc --version
 rustc 1.80.1 (3f5fd8dd4 2024-08-06) (built from a source tarball)
 ```
@@ -86,14 +94,18 @@ For <a href="Flakes" class="wikilink" title="Flakes">Flakes</a>-based projects (
 
 Example: Building Nix in a development shell, to get <a href="Incremental_builds" class="wikilink" title="Incremental builds">Incremental builds</a> = faster recompiles. This is because Nix evaluations are cached.
 
-    git clone https://github.com/NixOS/nix --depth 1
-    cd nix
-    nix develop
+``` console
+$ git clone https://github.com/NixOS/nix --depth 1
+$ cd nix
+$ nix develop
+```
 
 Now what? Let's read the manual:
 
-    less README.md
-    less doc/manual/src/contributing/hacking.md
+``` console
+$ less README.md
+$ less doc/manual/src/contributing/hacking.md
+```
 
 The contributing guide for Nix says:
 
@@ -114,9 +126,11 @@ The contributing guide for Nix says:
 
 So, in our `nix develop` shell, we run
 
-    ./bootstrap.sh
-    ./configure $configureFlags --prefix=$(pwd)/outputs/out
-    make -j $NIX_BUILD_CORES
+``` console
+$ ./bootstrap.sh
+$ ./configure $configureFlags --prefix=$(pwd)/outputs/out
+$ make -j $NIX_BUILD_CORES
+```
 
 This will compile Nix to `./outputs/out/bin/nix`
 
@@ -140,8 +154,8 @@ stdenv.mkDerivation {
 
 Then you can start a development shell with
 
-``` bash
-nix-shell -E 'with import <nixpkgs> { }; callPackage ./default.nix { }'
+``` console
+$ nix-shell -E 'with import <nixpkgs> { }; callPackage ./default.nix { }'
 ```
 
 In this shell, you can run the phases of stdenv.mkDerivation:
@@ -153,7 +167,7 @@ echo "src = $src" && cd $(mktemp -d) && unpackPhase && cd *
 # dirty build: keep cache files from last buildPhase, to compile faster
 # this is useful to make many small changes to a large project
 # after each change, just run `buildPhase`
-#cd $HOME/path/to/project
+# cd $HOME/path/to/project
 
 configurePhase
 
@@ -176,7 +190,7 @@ and `nativeBuildInputs` would be for the native platform, while `buildInputs` wo
 
 When compiling software which links against local files (e.g. when compiling with rust's cargo), you may encounter the following problem:
 
-``` bash
+``` console
 = note: impure path `/[...]' used in link
 ```
 
@@ -211,7 +225,9 @@ This may also called: `$GSETTINGS_SCHEMA`**`S`**`_PATH`.
 
 Similar to the Gsettings issue, icons can be added with XDG_DATA_DIRS:
 
-     XDG_DATA_DIRS=...:${hicolor-icon-theme}/share:${gnome3.adwaita-icon-theme}/share
+``` bash
+XDG_DATA_DIRS=...:${hicolor-icon-theme}/share:${gnome3.adwaita-icon-theme}/share
+```
 
 ## See Also
 

@@ -25,6 +25,8 @@ Adapt following parts according to your setup
 
 The `postCommands` option is necessary to get a password prompt instead of a shell. If you omit it, you will get dropped into `/bin/ash`, and you will have to manually run `cryptsetup-askpass` to enter the password. Alternatively, the `boot.initrd.systemd.users.root.shell` option can be set to `/bin/conspy` for passwords which expect stdin. This binary included by default, and provided by busybox.
 
+Since 26.05 release, initrd is based on systemd by default. systemd-networkd must be used instead of NetworkManager, otherwise network will fail to initialize.
+
 ## Usage
 
 After reboot, connect to the initrd SSH daemon using

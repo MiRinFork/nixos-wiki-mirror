@@ -91,9 +91,9 @@ systemctl hibernate
 Using following configuration, your system will go from suspend into hibernate after 1 hour:
 
 ``` nix
-systemd.sleep.extraConfig = ''
-  HibernateDelaySec=1h
-'';
+systemd.sleep.settings.Sleep = {
+  HibernateDelaySec = "1h";
+};
 ```
 
 ### Disable all sleep functionality

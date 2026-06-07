@@ -4,11 +4,11 @@
 
 <languages/>
 
-[NixOS](https://nixos.org/) 是一个基于 <a href="Special:MyLanguage/Nix" class="wikilink" title="Nix">Nix</a> 包管理器与构建系统的 Linux 发行版。它支持 [声明式](https://en.wikipedia.org/wiki/Declarative_programming) 的系统级 [配置管理](https://en.wikipedia.org/wiki/Configuration_management) 以及 [原子化](https://en.wikipedia.org/wiki/Atomicity_(database_systems)) 升级和回滚，同时它仍支持 [命令式](https://en.wikipedia.org/wiki/Imperative_programming) 的包管理和用户管理。在 NixOS 中，发行版的所有组件 — 包括 [系统内核](https://en.wikipedia.org/wiki/Linux_kernel)、已安装的 [软件包](https://en.wikipedia.org/wiki/Package_manager) 和系统配置文件 — 均由 <a href="Special:MyLanguage/Nix" class="wikilink" title="Nix">Nix</a> 从被称为 <a href="Special:MyLanguage/Nix_Expression_Language" class="wikilink" title="Nix 表达式">Nix 表达式</a> 的 <a href="Wikipedia:Pure_function" class="wikilink" title="纯函数">纯函数</a> 中构建。
+[NixOS](https://nixos.org/) 是一个基于 <a href="Special:MyLanguage/Nix" class="wikilink" title="Nix">Nix</a> 包管理器与构建系统的 Linux 发行版。它支持 <a href="Wikipedia:Declarative_programming" class="wikilink" title="声明式">声明式</a> 的系统级 <a href="Wikipedia:Configuration_management" class="wikilink" title="配置管理">配置管理</a> 以及 <a href="Wikipedia:Atomicity_(database_systems)" class="wikilink" title="原子化">原子化</a> 升级和回滚，同时它仍支持 <a href="Wikipedia:Imperative_programming" class="wikilink" title="命令式">命令式</a> 的包管理和用户管理。在 NixOS 中，发行版的所有组件 — 包括 <a href="Wikipedia:Linux_kernel" class="wikilink" title="系统内核">系统内核</a>、已安装的 <a href="Wikipedia:Package_manager" class="wikilink" title="软件包">软件包</a> 和系统配置文件 — 均由 <a href="Special:MyLanguage/Nix" class="wikilink" title="Nix">Nix</a> 从被称为 <a href="Special:MyLanguage/Nix_(language)" class="wikilink" title="Nix 表达式">Nix 表达式</a> 的 <a href="Wikipedia:Pure_function" class="wikilink" title="纯函数">纯函数</a> 中构建。
 
-由于 Nix 使用了 [二进制](https://en.wikipedia.org/wiki/Executable) 缓存机制，这便为面向二进制分发（如 Debian）和面向 [源码](https://en.wikipedia.org/wiki/Source_code) 分发（如 Gentoo）的方法提供了一种独特的折中方案。预编译的二进制程序被视作标准组件，在其无法获取时，自助编译的软件包与模块将被自动构建。
+由于 Nix 使用了 <a href="Wikipedia:Executable" class="wikilink" title="二进制">二进制</a> 缓存机制，这便为面向二进制分发（如 Debian）和面向 <a href="Wikipedia:Source_code" class="wikilink" title="源码">源码</a> 分发（如 Gentoo）的方法提供了一种独特的折中方案。预编译的二进制程序被视作标准组件，在其无法获取时，自助编译的软件包与模块将被自动构建。
 
-NixOS 稳定版本每年发布两次（大约在五月底和十一月底）。NixOS 由 [Eelco Dolstra](https://edolstra.github.io/) 和 [Armijn Hemel](https://en.wikipedia.org/wiki/Armijn_Hemel) 创建，并于 2003 年首次发布。目前由 <a href="Special:MyLanguage/Nix_Community#NixOS_Foundation" class="wikilink" title="NixOS 基金会">NixOS 基金会</a> 管理下的社区开发与维护。
+NixOS 稳定版本每年发布两次（大约在五月底和十一月底）。NixOS 由 [Eelco Dolstra](https://edolstra.github.io/) 和 <a href="Wikipedia:Armijn_Hemel" class="wikilink" title=" Armijn Hemel"> Armijn Hemel</a> 创建，并于 2003 年首次发布。目前由 <a href="Special:MyLanguage/Nix_Community#NixOS_Foundation" class="wikilink" title="NixOS 基金会">NixOS 基金会</a> 管理下的社区开发与维护。
 
 <span id="Installation"></span>
 
@@ -71,7 +71,9 @@ NixOS 不为 RISC-V 设备提供官方支持。不过，一些设备可能会受
 
 ## 用法
 
-<span id="declarative-configuration"></span> <span id="Declarative_Configuration"></span>
+<span id="declarative-configuration"></span>
+
+<span id="Declarative_Configuration"></span>
 
 ### 声明式配置
 
@@ -103,7 +105,7 @@ NixOS 的一个核心特征便是其声明式配置模型，其中整个系统�
 
 在使用频道时，您的系统或 <a href="Special:MyLanguage/User_Environment" class="wikilink" title="用户环境">用户环境</a> 会从一个 URL 拉取软件包定义和选项，该 URL 指向 Nix 软件包集合（Nixpkgs）及相关 NixOS 模块的特定快照。
 
-关于如何使用和配置 Nix 频道的更多信息，请参阅 <a href="Special:MyLanguage/channel_branches" class="wikilink" title="频道分支">频道分支</a>。
+关于如何使用和配置 Nix 频道的更多信息，请参阅 <a href="Special:MyLanguage/Channel_branches" class="wikilink" title="频道分支">频道分支</a>。
 
 <span id="Internals"></span>
 
@@ -115,9 +117,9 @@ NixOS 的一个核心特征便是其声明式配置模型，其中整个系统�
 
 *Main Article: <a href="Special:MyLanguage/Nix_vs._Linux_Standard_Base" class="wikilink" title="比较Nix和Linux标准基础">比较Nix和Linux标准基础</a>*
 
-NixOS 与其他 Linux 发行版的主要区别在于，NixOS 不遵循 [Linux 标准规范（LSB）](https://en.wikipedia.org/wiki/Linux_Standard_Base) 的文件系统结构。在遵循 LSB 的系统中，软件通常存储在 `/{,usr}/{bin,lib,share}` 目录下，而配置文件通常存储在 `/etc`。如果程序的可执行文件被放置在 LSB 的某个 `/bin` 目录下，那么它就可以在用户环境中被访问。当一个程序引用动态链接库时，它将在 LSB 目录（`/lib`、`/usr/lib`）中搜索所需的库。
+NixOS 与其他 Linux 发行版的主要区别在于，NixOS 不遵循 <a href="Wikipedia:Linux_Standard_Base" class="wikilink" title="Linux 标准规范（LSB）">Linux 标准规范（LSB）</a> 的文件系统结构。在遵循 LSB 的系统中，软件通常存储在 `/{,usr}/{bin,lib,share}` 目录下，而配置文件通常存储在 `/etc`。如果程序的可执行文件被放置在 LSB 的某个 `/bin` 目录下，那么它就可以在用户环境中被访问。当一个程序引用动态链接库时，它将在 LSB 目录（`/lib`、`/usr/lib`）中搜索所需的库。
 
-然而，在 NixOS 中，`/lib` 和 `/usr/lib` 目录并不存在。相反，所有系统库文件、可执行文件、内核、固件和配置文件都存放在 <a href="Special:MyLanguage/Nix#Nix_store" class="wikilink" title="Nix store">Nix store</a> 中。`/nix/store` 下的文件和目录均由构建数据的描述信息经哈希后命名。所有位于 Nix Store 的文件与目录均不可变。 `/bin` 和 `/usr/bin` 几乎不存在：它们分别只包含 `/bin/sh` 和 `/usr/bin/env`，以提供与使用 shebang 行的现有脚本的最低兼容性。用户级环境通过大量指向所需软件包和辅助文件的符号链接来实现。 这些环境被称作 <a href="Special:MyLanguage/Nix#Profiles" class="wikilink" title="Profiles">Profiles</a>，被存储于 `/nix/var/nix/profiles`，每个用户拥有其独有的 Profiles。 通过这种结构化的系统组织方式，NixOS 获得了优于传统 Linux 发行版的核心优势，例如原子化操作和回滚支持。
+然而，在 NixOS 中，`/lib` 和 `/usr/lib` 目录并不存在。相反，所有系统库文件、可执行文件、内核、固件和配置文件都存放在 <a href="Special:MyLanguage/Nix_(package_manager)#Nix_store" class="wikilink" title="Nix store">Nix store</a> 中。`/nix/store` 下的文件和目录均由构建数据的描述信息经哈希后命名。所有位于 Nix Store 的文件与目录均不可变。 `/bin` 和 `/usr/bin` 几乎不存在：它们分别只包含 `/bin/sh` 和 `/usr/bin/env`，以提供与使用 shebang 行的现有脚本的最低兼容性。用户级环境通过大量指向所需软件包和辅助文件的符号链接来实现。 这些环境被称作 <a href="Special:MyLanguage/Nix#Profiles" class="wikilink" title="Profiles">Profiles</a>，被存储于 `/nix/var/nix/profiles`，每个用户拥有其独有的 Profiles。 通过这种结构化的系统组织方式，NixOS 获得了优于传统 Linux 发行版的核心优势，例如原子化操作和回滚支持。
 
 <span id="Usage_of_the_Nix_store"></span>
 
@@ -137,7 +139,7 @@ NixOS 与其他 Linux 发行版的主要区别在于，NixOS 不遵循 [Linux �
 
 NixOS 的模块系统实现了一个类型系统，以允许对选项设置进行类型检查。它还支持将多处定义的选项进行自动合并。这使得您可以将配置分散到多个文件中，而您在这些文件中设置的选项最终都会被合并在一起：
 
-请参阅 [NixOS 手册的模块部分](https://nixos.org/nixos/manual/index.html#sec-writing-modules) 以获取更多详细信息。
+请参阅 [NixOS 手册的模块部分](https://nixos.org/manual/nixos/stable/index.html#sec-writing-modules) 以获取更多详细信息。
 
 <span id="Generations"></span>
 
@@ -147,45 +149,45 @@ NixOS 的模块系统实现了一个类型系统，以允许对选项设置进�
 
 您可以通过以下命令回滚：
 
-``` shell
-$ nix-env --rollback               # 回滚用户环境
-$ nixos-rebuild switch --rollback  # 回滚系统环境
+``` console
+$ nix-env --rollback               # roll back a user environment
+$ nixos-rebuild switch --rollback  # roll back a system environment
 ```
 
 NixOS 还会在引导加载程序菜单中放置前几代系统的条目，因此，作为最后的手段，您可以通过重启来恢复到之前的配置。将当前启动的版本设置为默认运行：
 
-``` shell
+``` console
 $ /run/current-system/bin/switch-to-configuration boot
 ```
 
 由于 NixOS 会保留前几代系统状态以供回滚，因此更新后不会立即从系统中删除旧软件包版本。您可以手动删除旧版本：
 
-``` shell
-# 删除早于 30 天前的世代
+``` console
+$ # delete generations older than 30 days
 $ nix-collect-garbage --delete-older-than 30d
 
-# 删除之前的所有世代 - 运行此命令后您将无法回滚
+$ # delete ALL previous generations - you can no longer rollback after running this
 $ nix-collect-garbage -d                       
 ```
 
 列出世代：
 
-``` shell
-# 以 root 用户身份
+``` console
+$ # as root
 $ nix-env --list-generations --profile /nix/var/nix/profiles/system
 ```
 
 切换世代：
 
-``` shell
-# 以 root 用户身份切换至 204 世代
+``` console
+$ # as root switch to generation 204
 $ nix-env --profile /nix/var/nix/profiles/system --switch-generation 204
 ```
 
 删除损坏的世代：
 
-``` shell
-# 以 root 用户身份删除损坏的 205 和 206 世代
+``` console
+$ # as root delete broken generations 205 and 206 
 $ nix-env --profile /nix/var/nix/profiles/system --delete-generations 205 206
 ```
 
@@ -199,6 +201,6 @@ $ nix-env --profile /nix/var/nix/profiles/system --delete-generations 205 206
 - <a href="Special:MyLanguage/NixOS_VM_tests" class="wikilink" title="NixOS VM 测试">NixOS VM 测试</a> - 一个基于 <a href="Special:MyLanguage/Nixpkgs" class="wikilink" title="Nixpkgs">Nixpkgs</a>、<a href="Special:MyLanguage/NixOS" class="wikilink" title="NixOS">NixOS</a>、QEMU 和 Perl 用于创建可复现基础设施测试的库。
 - [NixOS & Flakes Book](https://github.com/ryan4yin/nixos-and-flakes-book) (Ryan4yin, 2023) - 🛠️ ❤️ 一本非官方的 NixOS & Flakes 新手入门书籍。
 
-<a href="Category:Pedias" class="wikilink" title="Category:Pedias">Category:Pedias</a> <a href="Category:NixOS" class="wikilink" title="Category:NixOS">Category:NixOS</a> <a href="Category:Nix{{#translation:}}" class="wikilink" title="Category:Nix{{#translation:}}">Category:Nix{{#translation:}}</a>
+<a href="Category:Pedias" class="wikilink" title="Category:Pedias">Category:Pedias</a> <a href="Category:NixOS" class="wikilink" title="Category:NixOS">Category:NixOS</a> <a href="Category:Nix" class="wikilink" title="Category:Nix">Category:Nix</a>
 
 [^1]: <https://discourse.nixos.org/t/limited-cache-availability-for-i686-32-bits-x86-architecture/37626>

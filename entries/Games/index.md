@@ -78,4 +78,4 @@ Tested with version `renowned_explorers_international_society_522_26056.sh` from
 
 Adding `libxkbcommon`, `mesa`, and `wayland` is straightforward. The game expects the shared library `sdnio.so.6.1` to exist, so we need to create a symbolic link after the installation of `sndio`.
 
-<a href="Category:Gaming" class="wikilink" title="Category:Gaming">Category:Gaming</a> <a href="Category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a>
+<a href="Category:Gaming" class="wikilink" title="Category:Gaming">Category:Gaming</a> <a href="Category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="Category:Lists" class="wikilink" title="Category:Lists">Category:Lists</a>

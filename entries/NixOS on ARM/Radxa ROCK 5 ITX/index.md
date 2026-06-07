@@ -65,7 +65,8 @@ The official hardware documentation can be found [on the Radxa website](https://
 
 ### Hardware status
 
-- Video output is not supported by mainline kernel 6.12 or older when the device tree is loaded. USB to TTL serial cable is recommended for debugging purposes.
+- Video output is not supported by mainline kernel 6.12 or older when the device tree is loaded.
+- USB to TTL serial cable is recommended for debugging purposes. Do not use `minicom` recommended by Radxa and instead use `screen /dev/ttyUSB0 1500000` for reliable UART connection.
 
 ## Bootloader Firmware
 

@@ -14,7 +14,7 @@ To enable them, add `"nvidia"` to the list of enabled video drivers defined by t
 
 #### Legacy branches
 
-GPUs of the Kepler architecture or older (most GeForce 600/700/800M cards and older) are no longer supported by latest proprietary modules. Instead, users of these GPUs must use legacy branches that may still receive updates, as long as the GPUs themselves remain supported by NVIDIA. You can find which legacy branch you need to use by searching for your GPU model on [NVIDIA's official legacy driver support list](https://www.nvidia.com/en-us/drivers/unix/legacy-gpu/).
+GPUs of the Volta architecture or older (including Pascal, meaning GeForce 1000 cards and older) are no longer supported by latest proprietary modules. Instead, users of these GPUs must use legacy branches that may still receive updates, as long as the GPUs themselves remain supported by NVIDIA. You can find which legacy branch you need to use by searching for your GPU model on [NVIDIA's official legacy driver support list](https://www.nvidia.com/en-us/drivers/unix/legacy-gpu/).
 
 To use legacy branches, you need to set the `hardware.nvidia.package` option to a package set named `config.boot.kernelPackages.nvidiaPackages.legacy_`<branch>.Nixpkgs does not endeavor to support all legacy branches since older, unmaintained legacy branches can become incompatible with newer kernel and X server versions, and at some point it becomes infeasible to patch them to cooperate with modern software. You can find the list of supported legacy branches under [in the Nixpkgs repository](https://github.com/NixOS/nixpkgs/blob/master/pkgs/os-specific/linux/nvidia-x11/default.nix).
 

@@ -12,7 +12,7 @@
 
 <div class="col-md-5">
 
-... todos os novos artigos →\]\]}}
+... todos os novos artigos →\]\] }}
 
 </div>
 

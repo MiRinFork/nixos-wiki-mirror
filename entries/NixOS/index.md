@@ -2,9 +2,9 @@
 
 <!-- Source page: NixOS -->
 
-<languages/> <translate>
+<languages/>
 
-[NixOS](https://nixos.org/) is a Linux distribution based on the <a href="Special:MyLanguage/Nix" class="wikilink" title="Nix">Nix</a> package manager and build system. It supports <a href="Wikipedia:Declarative_programming" class="wikilink" title="declarative">declarative</a> system-wide <a href="Wikipedia:Configuration_management" class="wikilink" title="configuration management">configuration management</a> as well as <a href="Wikipedia:Atomicity_(database_systems)" class="wikilink" title="atomic">atomic</a> upgrades and rollbacks, although it can additionally support <a href="Wikipedia:Imperative_programming" class="wikilink" title="imperative">imperative</a> package and user management. In NixOS, all components of the distribution — including the <a href="Wikipedia:Linux_kernel" class="wikilink" title="kernel">kernel</a>, installed <a href="Wikipedia:Package_manager" class="wikilink" title="packages">packages</a> and system configuration files — are built by <a href="Special:MyLanguage/Nix" class="wikilink" title="Nix">Nix</a> from <a href="Wikipedia:Pure_function" class="wikilink" title="pure functions">pure functions</a> called <a href="Special:MyLanguage/Nix_(language)" class="wikilink" title="Nix expressions">Nix expressions</a>.
+<translate> [NixOS](https://nixos.org/) is a Linux distribution based on the <a href="Special:MyLanguage/Nix" class="wikilink" title="Nix">Nix</a> package manager and build system. It supports <a href="Wikipedia:Declarative_programming" class="wikilink" title="declarative">declarative</a> system-wide <a href="Wikipedia:Configuration_management" class="wikilink" title="configuration management">configuration management</a> as well as <a href="Wikipedia:Atomicity_(database_systems)" class="wikilink" title="atomic">atomic</a> upgrades and rollbacks, although it can additionally support <a href="Wikipedia:Imperative_programming" class="wikilink" title="imperative">imperative</a> package and user management. In NixOS, all components of the distribution — including the <a href="Wikipedia:Linux_kernel" class="wikilink" title="kernel">kernel</a>, installed <a href="Wikipedia:Package_manager" class="wikilink" title="packages">packages</a> and system configuration files — are built by <a href="Special:MyLanguage/Nix" class="wikilink" title="Nix">Nix</a> from <a href="Wikipedia:Pure_function" class="wikilink" title="pure functions">pure functions</a> called <a href="Special:MyLanguage/Nix_(language)" class="wikilink" title="Nix expressions">Nix expressions</a>.
 
 Since Nix uses <a href="Wikipedia:Executable" class="wikilink" title="binary">binary</a> caching, this provides a unique compromise between the binary-oriented approach used by distributions such as Debian and the <a href="Wikipedia:Source_code" class="wikilink" title="source">source</a>-oriented approach used by distributions such as Gentoo. Binaries can be used for standard components, and custom-built packages and modules can be used automatically when a pre-built binary is not available.
 
@@ -37,25 +37,37 @@ Most `x86_64` devices should run NixOS without issues.
 
 #### 32-bit ARM architectures
 
-</translate> <translate> NixOS isn't officially supported on ARM32 devices (e.g. `armv6` and `armv7l`), however, for some of these devices, there may be community support.
+</translate>
+
+<translate> NixOS isn't officially supported on ARM32 devices (e.g. `armv6` and `armv7l`), however, for some of these devices, there may be community support.
 
 #### 64-bit ARM architectures
 
-</translate> <translate> As long as a device supports the generic systemd boot process, NixOS should run out of the box. However, specific devices with proprietary bootloaders may have issues running it.
+</translate>
+
+<translate> As long as a device supports the generic systemd boot process, NixOS should run out of the box. However, specific devices with proprietary bootloaders may have issues running it.
 
 #### MIPS architectures
 
-</translate> <translate> There used to be limited support for MIPS architectures in NixOS, and remnants of this support may still be found in Nixpkgs. However, there is no official support.
+</translate>
+
+<translate> There used to be limited support for MIPS architectures in NixOS, and remnants of this support may still be found in Nixpkgs. However, there is no official support.
 
 #### RISC-V architectures
 
-</translate> <translate>
+</translate>
+
+<translate>
 
 NixOS does not provide official support for RISC-V devices. However, several devices may benefit from community support.
 
 ## Usage
 
-</translate> <span id="declarative-configuration"></span> <translate>
+</translate>
+
+<span id="declarative-configuration"></span>
+
+<translate>
 
 ### Declarative Configuration
 
@@ -105,62 +117,59 @@ The <a href="Special:MyLanguage/NixOS_modules" class="wikilink" title="NixOS mod
 
 All module configuration is generally performed by adding options to `/etc/nixos/configuration.nix`. Most of the examples in the wiki show how this file can be used to configure the OS.
 
-The NixOS module system implements a typing system which allows typechecking of option settings. It also enables options defined in multiple places to be merged automatically. This allows you to spread your configuration over multiple files, and the options you set across all of those files will be merged together:
+The NixOS module system implements a typing system which allows typechecking of option settings. It also enables options defined in multiple places to be merged automatically. This allows you to spread your configuration over multiple files, and the options you set across all of those files will be merged together: </translate>
 
-</translate> <translate>
-
-See the [Modules section of the NixOS Manual](https://nixos.org/manual/nixos/stable/index.html#sec-writing-modules) for more details.
+<translate> See the [Modules section of the NixOS Manual](https://nixos.org/manual/nixos/stable/index.html#sec-writing-modules) for more details.
 
 ### Generations
 
 Every time the system state is rebuilt using `nixos-rebuild switch`, a new generation is created. You can revert to the previous generation at any time, which is useful if a configuration change (or system update) turns out to be detrimental.
 
-You can roll back via:
+You can roll back via: </translate>
 
 ``` console
 $ nix-env --rollback               # roll back a user environment
 $ nixos-rebuild switch --rollback  # roll back a system environment
 ```
 
-NixOS also places entries for previous generations in the bootloader menu, so as a last resort you can always revert to a previous configuration by rebooting. To set the currently booted generation as the default run </translate>
+<translate> NixOS also places entries for previous generations in the bootloader menu, so as a last resort you can always revert to a previous configuration by rebooting. To set the currently booted generation as the default run </translate>
 
 ``` console
 $ /run/current-system/bin/switch-to-configuration boot
 ```
 
-<translate> Because NixOS keeps previous generations of system state available in case rollback is desired, old package versions aren't deleted from your system immediately after an update. You can delete old generations manually:
+<translate> Because NixOS keeps previous generations of system state available in case rollback is desired, old package versions aren't deleted from your system immediately after an update. You can delete old generations manually: </translate>
 
 ``` console
 $ # delete generations older than 30 days
 $ nix-collect-garbage --delete-older-than 30d
 
-<!--T:57-->
 $ # delete ALL previous generations - you can no longer rollback after running this
 $ nix-collect-garbage -d                       
 ```
 
-List generations:
+<translate> List generations: </translate>
 
 ``` console
 $ # as root
 $ nix-env --list-generations --profile /nix/var/nix/profiles/system
 ```
 
-Switch generations:
+<translate> Switch generations: </translate>
 
 ``` console
 $ # as root switch to generation 204
 $ nix-env --profile /nix/var/nix/profiles/system --switch-generation 204
 ```
 
-delete broken generation(s):
+<translate> delete broken generation(s): </translate>
 
 ``` console
 $ # as root delete broken generations 205 and 206 
 $ nix-env --profile /nix/var/nix/profiles/system --delete-generations 205 206
 ```
 
-You can configure automatic garbage collection by setting the [nix.gc](https://search.nixos.org/options?query=nix.gc) options in `/etc/nixos/configuration.nix`. This is recommended, as it keeps the size of the Nix store down.
+<translate> You can configure automatic garbage collection by setting the [nix.gc](https://search.nixos.org/options?query=nix.gc) options in `/etc/nixos/configuration.nix`. This is recommended, as it keeps the size of the Nix store down.
 
 ## See also
 
@@ -170,6 +179,6 @@ You can configure automatic garbage collection by setting the [nix.gc](https://s
 
 </translate>
 
-<a href="Category:Pedias" class="wikilink" title="Category:Pedias">Category:Pedias</a> <a href="Category:NixOS" class="wikilink" title="Category:NixOS">Category:NixOS</a> <a href="Category:Nix{{#translation:}}" class="wikilink" title="Category:Nix{{#translation:}}">Category:Nix{{#translation:}}</a>
+<a href="Category:Pedias" class="wikilink" title="Category:Pedias">Category:Pedias</a> <a href="Category:NixOS" class="wikilink" title="Category:NixOS">Category:NixOS</a> <a href="Category:Nix" class="wikilink" title="Category:Nix">Category:Nix</a>
 
 [^1]: <https://discourse.nixos.org/t/limited-cache-availability-for-i686-32-bits-x86-architecture/37626>

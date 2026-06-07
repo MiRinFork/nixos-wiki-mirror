@@ -12,7 +12,7 @@
 
 <div class="col-md-5">
 
-... tous les articles d'actualité →\]\]}}
+... tous les articles d'actualité →\]\] }}
 
 </div>
 

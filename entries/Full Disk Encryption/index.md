@@ -151,7 +151,23 @@ Unattended boot can also happen with a FIDO2 device (e.g. Yubikey) or TPM. This 
 
 For FIDO2, directly read the [chapter in the official manual](https://github.com/NixOS/nixpkgs/blob/7be68f763d94cdb4c809b7980647828e3274a511/nixos/doc/manual/configuration/luks-file-systems.section.md).
 
-For TPM, replace the crypttab and systemd-cryptsetup option `fido2-device=auto` with `tpm-device=auto` for systemd stage 1. See [this integration test](https://github.com/NixOS/nixpkgs/blob/7be68f763d94cdb4c809b7980647828e3274a511/nixos/tests/systemd-initrd-luks-tpm2.nix) in the nixpkgs source code repository.
+### TPM2
+
+To store a key on the TPM2 module to unlock the device unattended, check if your `configuration.nix` has a line similar to the one below (with `YOUR-UUID` replaced with your device's actual UUID): Then this is the device we want to add the crypttab option to. If your configuration does not contain this line, then you can find it through this command:
+
+``` sh
+nixos-option boot.initrd.luks.devices
+```
+
+To unlock the device using TPM2, add the following to your configuration to enable systemd stage 1 and to add the tpm2 option to crypttab.
+
+Rebuild and reboot before running the following command:
+
+``` sh
+sudo systemd-cryptenroll --wipe-slot=tpm2 --tpm2-device=auto --tpm2-pcrs=0 /dev/disk/by-uuid/YOUR-UUID
+```
+
+Now the device should unlock without prompting you for the password. After this is working, you can run the above command again and add more PCRs such as `--tpm2-pcrs=0+7` if your system uses <a href="Secure_Boot" class="wikilink" title="Secure Boot">Secure Boot</a>. A good set of options is `--tpm2-pcrs=0+2+7+12` and you can find all of them documented at the [Linux TPM PCR Registry](https://uapi-group.org/specifications/specs/linux_tpm_pcr_registry/).
 
 Because the TPM is attached to your computer, it provides no protection against a stolen computer when used on its own (it usually allows for setting a password, but that is it). It can only protect against a stolen drive.
 

@@ -6,11 +6,11 @@
 
 This wiki article extends the documentation in the [NixOS manual](https://nixos.org/manual/nixos/stable/#module-borgbase).
 
+## Installation
+
 It's easier to take the first steps with Borg by using a GUI - information about Vorta may also be found in the [NixOS manual](https://nixos.org/manual/nixos/stable/#opt-services-backup-borgbackup-vorta).
 
-``` bash
-$ nix-env -iA nixpkgs.borgbackup
-```
+To install Borg system-wide, use this:
 
 To be able to do remote backups it should be installed both locally and remotely, but usually no remote configuration required, only a local one.
 
@@ -159,7 +159,7 @@ Patching previous example:
 
 First, check if there are any archives:
 
-``` bash
+``` console
 $ borg list user@example.name:/media/backup/backups/station/home-danbst
 ...
 station-home-danbst-2020-06-02T00:00:02 Mon, 2020-06-01 21:00:09 [24e6318a379ac3b494448fb2ab2ca7b2df7188426d0814978165cab8e09cd642]
@@ -173,7 +173,7 @@ station-home-danbst-2020-06-10T00:00:46 Tue, 2020-06-09 21:00:53 [85a5329ae39c46
 
 Choose one of "archives" and mount it locally:
 
-``` bash
+``` console
 $ borgfs -f -o uid=1002 \
     user@example.com:/media/backup/backups/station/home-danbst::station-home-danbst-2020-06-10T00:00:46 \
     ~/borg-home-danbst2 

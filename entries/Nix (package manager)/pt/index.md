@@ -14,11 +14,19 @@ Nix é um gerenciador de pacotes e sistema de construção que analisa instruç�
 
 ## Uso
 
+<span id="Installation"></span>
+
 <div class="mw-translate-fuzzy">
 
 ### Instalação
 
 NixOS: O Nix está sendo instalado enquanto você instala o NixOS.
+
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+On <a href="NixOS" class="wikilink" title="NixOS">NixOS</a>, Nix is automatically installed.
 
 </div>
 
@@ -38,11 +46,19 @@ O <a href="Nix_command" class="wikilink" title="Nix commands">Nix commands</a> e
 
 </div>
 
+<span id="Configuration"></span>
+
 <div class="mw-translate-fuzzy">
 
 ### Configuração
 
 No NixOS, o Nix é configurado através do \[<https://search.nixos.org/options?query=nix>. `nix` option\].
+
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+On NixOS, Nix can be configured using the [`nix` option](https://search.nixos.org/options?query=nix).
 
 </div>
 
@@ -122,7 +138,11 @@ Quando as compilações em sandbox estão habilitadas, o Nix configura um ambien
 
 </div>
 
+<div class="mw-translate-fuzzy">
+
 O sandboxing é habilitado por padrão no Linux e desabilitado por padrão no macOS. Em pull requests para \[NixOS/nixpkgs/ Nixpkgs\] as pessoas são solicitadas a testar compilações com sandbox habilitado (consulte `Testado usando sandbox` no modelo de solicitação de pull) porque em [official Hydra builds](https://nixos.org/hydra/)sandboxing é usado também.
+
+</div>
 
 Para configurar o Nix para sandbox, defina `sandbox = true` em `/etc/nix/nix.conf`; para configurar o NixOS para sandbox defina `nix.useSandbox = true;` em `configuration.nix`. O `nix.useSandbox` option is `true` por padrão desde NixOS 17.09.
 
@@ -132,15 +152,35 @@ Para configurar o Nix para sandbox, defina `sandbox = true` em `/etc/nix/nix.con
 
 Há um esforço contínuo para reimplementar o Nix, do zero, no Rust.
 
+<div class="mw-translate-fuzzy">
+
 tvix
+
+</div>
 
 Há também uma bifurcação do Nix 2.18 liderada pela comunidade, chamada Lix, focada em correção, usabilidade e crescimento. Embora também tenha portado alguns componentes do Nix para Rust, não é uma reescrita completa como o Tvix.
 
+<div class="mw-translate-fuzzy">
+
 Lix
+
+</div>
+
+<div class="mw-translate-fuzzy">
 
 Tentativas anteriores podem ser encontradas em github
 
+</div>
+
+<span id="Notes"></span>
+
+<div class="mw-translate-fuzzy">
+
 ## Notas
+
+<references />
+
+</div>
 
 <references />
 

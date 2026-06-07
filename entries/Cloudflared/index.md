@@ -2,56 +2,43 @@
 
 <!-- Source page: Cloudflared -->
 
-[Cloudflared](https://github.com/cloudflare/cloudflared) is a command line client for a network tunnel from the cloudflare network to a server.
+[Cloudflared](https://github.com/cloudflare/cloudflared) is a command line client that can be used to establish a network tunnel from the Cloudflare network to a server.
 
-Introduced in <https://github.com/NixOS/nixpkgs/pull/171875>
+## Cloudflare Tunnel
 
-## Example
+### Prerequisites
 
-To get credentialsFile (e.g. tunnel-ID.json) do:
+- A Cloudflare account
+- A domain registered on Cloudflare (see <https://developers.cloudflare.com/fundamentals/manage-domains/add-site/>)
 
-``` sh
-cloudflared tunnel login <the-token-you-see-in-dashboard>
-cloudflared tunnel create ConvenientTunnelName
+If you do not wish to install cloudflared you may use a nix-shell to use it for the following steps without adding it to your configuration.
+
+``` console
+$ nix-shell -p cloudflared
 ```
 
-``` nix
-{
-  services.cloudflared = {
-    enable = true;
-    tunnels = {
-      "00000000-0000-0000-0000-000000000000" = {
-        credentialsFile = "${config.sops.secrets.cloudflared-creds.path}";
-        default = "http_status:404";
-      };
-    };
-  };
-}
+You will need to log in to your Cloudflare account through the command line, the following command will open a web browser to allow you to log in:
+
+``` console
+$ cloudflared tunnel login
 ```
 
-Then you can use dashboard to add your public hosts (will need to convert the new tunnel to dashboard-managed).
+You can use the link it provides on any machine that has a browser in order to get the needed cert.pem file.
 
-Alternatively, save the `cert.pem` to cloudflared user's %home%/.cloudflared/cert.pem, and instead of using dashboard specify ingress rules in your configuration.nix like this:
+Afterwards you will need to create the tunnel from the machine.
 
-``` nix
-{
-  services.cloudflared = {
-    enable = true;
-    tunnels = {
-      "00000000-0000-0000-0000-000000000000" = {
-        credentialsFile = "${config.sops.secrets.cloudflared-creds.path}";
-        ingress = {
-          "*.domain1.com" = {
-            service = "http://localhost:80";
-            path = "/*.(jpg|png|css|js)";
-          };
-          "*.domain2.com" = "http://localhost:80";
-        };
-        default = "http_status:404";
-      };
-    };
-  };
-}
+``` console
+$ cloudflared tunnel create <tunnel-name-of-choice>
+```
+
+The command will output the tunnel ID in the format 00000000-0000-0000-0000-000000000000, which will be needed for setting up the tunnel service. The following example uses flakes and [sops-nix](https://github.com/Mic92/sops-nix) to hide the credentials file secret. You can now use the Cloudflare dashboard to add your public hosts.
+
+#### Declarative igress
+
+However, if you would instead like to do so in your configuration file you may specify ingress rules in your configuration file.Finally, create a CNAME record with the following command.
+
+``` console
+$ cloudflared tunnel route dns <your-tunnel> <your-public-domain>
 ```
 
 ## Troubleshooting

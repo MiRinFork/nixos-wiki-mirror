@@ -2,7 +2,7 @@
 
 <!-- Source page: Nixpkgs with OpenGL on non-NixOS -->
 
-Applications in \`nixpkgs\` handle OpenGL in a certain way. Using these applications outside NixOS requires the use of a wrapper.
+Applications in `nixpkgs` handle OpenGL in a certain way. Using these applications outside NixOS requires the use of a wrapper.
 
 ## Solutions
 

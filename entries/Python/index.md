@@ -216,7 +216,7 @@ After doing one of the following, you should be able to install compiled librari
   environment.systemPackages = [
     (pkgs.writeShellScriptBin "python" ''
       export LD_LIBRARY_PATH=$NIX_LD_LIBRARY_PATH
-      exec ${pkgs.python3}/bin/python "$@"
+      exec -a "$0" ${pkgs.python3}/bin/python "$@"
     '')
   ];
   # another (dangerous) solution
@@ -228,6 +228,76 @@ After doing one of the following, you should be able to install compiled librari
   #   '';
   # };
 }
+```
+
+While the above solution changes the NIX_LD_LIBRARY_PATH of python globally (which you may want to avoid since it also pollutes normal python), you can also create a new executable, say pythonld, that will set this environment variable like:
+
+``` nix
+{
+  programs.nix-ld = {
+    enable = true;
+    libraries = with pkgs; [
+      zlib zstd stdenv.cc.cc curl openssl attr libssh bzip2 libxml2 acl libsodium util-linux xz systemd
+    ];
+  };
+  # Usage: to create a venv, just do:
+  # $ pythonld -m venv myvenv
+  # $ source myvenv/bin/activate
+  # $ pip install …
+  # https://github.com/nix-community/nix-ld?tab=readme-ov-file#my-pythonnodejsrubyinterpreter-libraries-do-not-find-the-libraries-configured-by-nix-ld
+  # Important: don't forget the -a "$0" or venv will skip your wrapper.
+  environment.systemPackages = [
+    (pkgs.writeShellScriptBin "pythonld" ''
+      export LD_LIBRARY_PATH=$NIX_LD_LIBRARY_PATH
+      exec -a "$0" ${pkgs.python3}/bin/python "$@"
+    '')
+  ];
+}
+```
+
+Then, you can use your own pythonld in a specific virtual env like:
+
+``` console
+$ pythonld -m venv myvenv
+$ source myvenv/bin/activate
+$ pip install …
+$ python
+… this python has dependencies installed via pip installed …
+```
+
+If you want to also install system-wide nix dependencies like numpy so that you don't need to reinstall them in every venv, you can also install them system-wide via:
+
+``` nix
+{
+  programs.nix-ld = {
+    enable = true;
+    libraries = with pkgs; [
+      zlib zstd stdenv.cc.cc curl openssl attr libssh bzip2 libxml2 acl libsodium util-linux xz systemd
+    ];
+  };
+  # Usage: to create a venv, just do:
+  # $ pythonld -m venv --system-site-packages myvenv
+  # $ source myvenv/bin/activate
+  # $ pip install …
+  # https://github.com/nix-community/nix-ld?tab=readme-ov-file#my-pythonnodejsrubyinterpreter-libraries-do-not-find-the-libraries-configured-by-nix-ld
+  # Important: don't forget the -a "$0" or venv will skip your wrapper.
+  environment.systemPackages = [
+    (pkgs.writeShellScriptBin "pythonld" ''
+      export LD_LIBRARY_PATH=$NIX_LD_LIBRARY_PATH
+      exec -a "$0" ${(pkgs.python3.withPackages (ps: with ps; [ numpy ]))}/bin/python "$@"
+    '')
+  ];
+}
+```
+
+And then use it like:
+
+``` console
+$ pythonld -m venv --system-site-packages myvenv
+$ source myvenv/bin/activate
+$ pip install …
+$ python
+… this python has dependencies installed via pip installed …
 ```
 
 #### Using [fix-python](https://github.com/GuillaumeDesforges/fix-python/)

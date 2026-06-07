@@ -92,16 +92,14 @@ services = {
 
 ### Gamescope HDR
 
-In order for HDR to work within gamescope, you need to separately install the `gamescope-wsi` package alongside enabling the `gamescope` program. </translate>
+In order for HDR to work within gamescope, you might need to separately enable the `enableWsi` option </translate>
 
 ``` nix
 programs.gamescope = {
   enable = true;
+  enableWsi = true;
   capSysNice = false;
 };
-environment.systemPackages = with pkgs; [
-  gamescope-wsi # HDR might not work without this
-];
 ```
 
 <translate> Additionally, it may be necessary to force HDR in gamescope with the argument `--hdr-debug-force-output` when configuring your game's launch options in steam (see the example below). </translate>

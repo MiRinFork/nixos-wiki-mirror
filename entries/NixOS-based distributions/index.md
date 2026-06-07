@@ -206,6 +206,15 @@ This table lists a non-exhaustive selection of Linux distributions based on NixO
 <td><p>Sécurix is a NixOS-based secure operating system tailored for small to medium-sized teams. It provides a minimal, hardened environment with strong isolation, reproducibility, and policy-driven configurations to ensure operational security and compliance.</p></td>
 </tr>
 <tr>
+<td><p><a href="https://selfprivacy.org/">SelfPrivacy</a></p></td>
+<td><p><a href="https://git.selfprivacy.org/SelfPrivacy">https://git.selfprivacy.org/SelfPrivacy</a></p></td>
+<td><ul>
+<li>Based on NixOS</li>
+</ul></td>
+<td><p>Released</p></td>
+<td><p>SelfPrivacy is a cross-platform GUI application that allows users to install a self-hosted web server on a number of different hosting platforms. The resultant server is NixOS with a number of pre-configured services with some downstream customization. The OS is also modifiable via the SelfPrivacy app.</p></td>
+</tr>
+<tr>
 <td><p>sixos</p></td>
 <td><p><a href="https://codeberg.org/amjoseph/sixos">https://codeberg.org/amjoseph/sixos</a></p></td>
 <td><ul>
@@ -261,15 +270,6 @@ Entries in this list are deprecated, unmaintained, under-maintained, or suspecte
 </thead>
 <tbody>
 <tr>
-<td><p><a href="https://noteed.com/not-os/">not-os</a></p></td>
-<td><p><a href="https://github.com/noteed/not-os/">https://github.com/noteed/not-os/</a></p></td>
-<td><ul>
-<li>Based on NixOS</li>
-</ul></td>
-<td><p>Unmaintained</p></td>
-<td><p>An operating system builder for embedded systems.</p></td>
-</tr>
-<tr>
 <td><p>RedNixOS</p></td>
 <td><p><a href="https://github.com/redcode-labs/RedNixOS/">https://github.com/redcode-labs/RedNixOS/</a></p></td>
 <td><ul>
@@ -277,6 +277,15 @@ Entries in this list are deprecated, unmaintained, under-maintained, or suspecte
 </ul></td>
 <td><p>Unmaintained</p></td>
 <td><p>A NixOS build for cybersecurity enthusiasts.</p></td>
+</tr>
+<tr>
+<td><p><a href="https://noteed.com/not-os/">not-os</a></p></td>
+<td><p><a href="https://github.com/noteed/not-os/">https://github.com/noteed/not-os/</a></p></td>
+<td><ul>
+<li>Based on NixOS</li>
+</ul></td>
+<td><p>Unmaintained</p></td>
+<td><p>An operating system builder for embedded systems.</p></td>
 </tr>
 </tbody>
 </table>

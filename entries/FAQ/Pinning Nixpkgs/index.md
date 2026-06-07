@@ -10,8 +10,10 @@ Note: You can `sudo nix-channel --remove nixpkgs`, but you still need a nix-chan
 
 Be aware that this also pins all dependencies of the application which often causes issues for GUI applications and also brings in back outdated and potentially vulnerable dependencies.
 
-    sudo nix-channel --list
-    nixos https://nixos.org/channels/nixos-21.05
+``` console
+$ sudo nix-channel --list
+nixos https://channels.nixos.org/nixos-26.05
+```
 
 Nix 2.0 introduces new builtins, `fetchTarball` and `fetchGit`, which make it possible to fetch a specific version of nixpkgs without depending on an existing one:
 
@@ -20,10 +22,10 @@ import (builtins.fetchTarball {
   # Descriptive name to make the store path easier to identify
   name = "nixos-unstable-2018-09-12";
   # Commit hash for nixos-unstable as of 2018-09-12
-  url = "https://github.com/nixos/nixpkgs/archive/ca2ba44cab47767c8127d1c8633e2b581644eb8f.tar.gz";
+  url = "https://github.com/NixOS/nixpkgs/archive/ca2ba44cab47767c8127d1c8633e2b581644eb8f.tar.gz";
   # Hash obtained using `nix-prefetch-url --unpack <url>`
   sha256 = "1jg7g6cfpw8qvma0y19kwyp549k1qyf11a5sg6hvn6awvmkny47v";
-}) {}
+}) { }
 ```
 
 Or, to use git for fetching:
@@ -32,12 +34,12 @@ Or, to use git for fetching:
 import (builtins.fetchGit {
   # Descriptive name to make the store path easier to identify
   name = "nixos-unstable-2018-09-12";
-  url = "https://github.com/nixos/nixpkgs/";
+  url = "https://github.com/NixOS/nixpkgs/";
   # Commit hash for nixos-unstable as of 2018-09-12
-  # `git ls-remote https://github.com/nixos/nixpkgs nixos-unstable`
+  # `git ls-remote https://github.com/NixOS/nixpkgs nixos-unstable`
   ref = "refs/heads/nixos-unstable";
   rev = "ca2ba44cab47767c8127d1c8633e2b581644eb8f";
-}) {}
+}) { }
 ```
 
 If the `ref` attribute is omitted, we get an error like this:
@@ -56,9 +58,9 @@ There is probably a better way, especially once flakes come around. Some package
 
 add to configuration.nix a set allowing unstable packages. This assumes a channel named `nixpkgs-unstable` exists, like so:
 
-``` bash
-nix-channel --add https://nixos.org/channels/nixpkgs-unstable nixpkgs-unstable
-nix-channel --update
+``` console
+$ nix-channel --add https://channels.nixos.org/nixpkgs-unstable nixpkgs-unstable
+$ nix-channel --update
 ```
 
 then in `configuration.nix` allow unstable packages:

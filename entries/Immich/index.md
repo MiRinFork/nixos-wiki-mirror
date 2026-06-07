@@ -32,7 +32,7 @@ This is a typical <a href="Nginx" class="wikilink" title="Nginx">Nginx</a> confi
 
 ### Using borg for backups
 
-Following Immichs [backup docs](https://immich.app/docs/administration/backup-and-restore/) and [backup script](https://immich.app/docs/guides/template-backup-script) an automated backup using <a href="Borg_backup" class="wikilink" title="Borg backup">Borg backup</a> could look something like this: Make sure to manually create a borg repo at the desired location beforehand with `sudo borg init --encryption=none <path-to-borg-repo`
+Following Immichs [backup docs](https://immich.app/docs/administration/backup-and-restore/) and [backup script](https://immich.app/docs/guides/template-backup-script) an automated backup using <a href="Borg_backup" class="wikilink" title="Borg backup">Borg backup</a> could look something like this: Make sure to manually create a borg repo at the desired location beforehand with `sudo borg init --encryption=none `<path-to-borg-repo>
 
 ## Troubleshooting
 

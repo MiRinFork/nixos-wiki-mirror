@@ -9,9 +9,9 @@
 Due to NixOS not using FHS paths, many DAWs will not know where to look for VSTs and other plugins. Musnix fixes this; if you don't want to use it, you can solve this by setting
 
 ``` nix
-    environment.variables = let
+environment.variables = let
       makePluginPath = format:
-        (makeSearchPath format [
+        (lib.makeSearchPath format [
           "$HOME/.nix-profile/lib"
           "/run/current-system/sw/lib"
           "/etc/profiles/per-user/$USER/lib"
@@ -24,6 +24,7 @@ Due to NixOS not using FHS paths, many DAWs will not know where to look for VSTs
       LXVST_PATH  = makePluginPath "lxvst";
       VST_PATH    = makePluginPath "vst";
       VST3_PATH   = makePluginPath "vst3";
+      CLAP_PATH   = makePluginPath "clap";
     };
 ```
 

@@ -62,3 +62,5 @@ In order to keep the list ordered, we try to put the group these folder in diffe
 ### Python
 
 ## Specific to Kernel development
+
+<a href="Category:Lists" class="wikilink" title="Category:Lists">Category:Lists</a>

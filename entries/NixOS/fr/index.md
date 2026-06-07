@@ -4,11 +4,23 @@
 
 <languages/>
 
+<div class="mw-translate-fuzzy">
+
 [NixOS](https://nixos.org/) est une distribution Linux basée sur <a href="Special:MyLanguage/Nix" class="wikilink" title="Nix">Nix</a> un gestionnaire de paquets et un système de construction. À l'échelle du système, il supporte la [programmation déclarative](https://fr.wikipedia.org/wiki/Programmation_déclarative) au travers d'une [gestion de configuration](https://fr.wikipedia.org/wiki/Gestion_de_configuration) ainsi que les mises à jour [atomiques](https://fr.wikipedia.org/wiki/Atomicité_(informatique)) et les "retours en arrière" (rollbacks), bien qu'il puisse aussi supporter des paquets [impératifs](https://fr.wikipedia.org/wiki/Programmation_impérative) ainsi que la gestion des utilisateurs. Dans NixOS, tous les composants de la distribution — y compris le [noyau Linux](https://fr.wikipedia.org/wiki/Noyau_Linux), les [paquets](https://fr.wikipedia.org/wiki/Gestionnaire_de_paquets) installés et les fichiers de configuration système — sont construits par <a href="Special:MyLanguage/Nix" class="wikilink" title="Nix">Nix</a> depuis des <a href="Wikipedia:Pure_function" class="wikilink" title="fonctions pures">fonctions pures</a> appelées <a href="Special:MyLanguage/Nix_Expression_Language" class="wikilink" title="expressions Nix">expressions Nix</a>.
+
+</div>
+
+<div class="mw-translate-fuzzy">
 
 Depuis que Nix met des [exécutables](https://fr.wikipedia.org/wiki/Fichier_exécutable) en cache, cela permet d'avoir un compromis unique entre une approche orientée autour de l'exécutable présente dans des distributions comme Debian et une approche orientée autour du [code source](https://fr.wikipedia.org/wiki/Code_source) utilisée dans des distributions comme Gentoo. Les binaires peuvent être utilisés comme des composants standard, tandis que les paquets sur-mesure et les modules peuvent être utilisés automatiquement quand un binaire pré-compilé n'est pas disponible.
 
+</div>
+
+<div class="mw-translate-fuzzy">
+
 Les versions stables de NixOS sont publiées deux fois par an (vers la fin mai et la fin novembre). NixOS a été créé par [Eelco Dolstra](https://edolstra.github.io/) et [Armijn Hemel](https://en.wikipedia.org/wiki/Armijn_Hemel), et a vu le jour en 2003. Il est développé et maintenu par la communauté sous l'égide de la <a href="Special:MyLanguage/Nix_Community#NixOS_Foundation" class="wikilink" title="Fondation NixOS">Fondation NixOS</a>.
+
+</div>
 
 ## Installation
 
@@ -67,7 +79,9 @@ NixOS ne fournit pas de support officiel pour les appareils RISC-V. Cependant, p
 
 ## Usage
 
-<span id="declarative-configuration"></span> <span id="Declarative_Configuration"></span>
+<span id="declarative-configuration"></span>
+
+<span id="Declarative_Configuration"></span>
 
 ### Configuration Déclarative
 
@@ -99,7 +113,11 @@ Dans l'<a href="Special:MyLanguage/Nix_ecosystem" class="wikilink" title="écosy
 
 Lorsque les canaux sont utilisés, votre système ou l'<a href="Special:MyLanguage/_User_Environment" class="wikilink" title="environnement utilisateur">environnement utilisateur</a> récupère les définitions des paquets et les options depuis une URL qui pointe vers une image de l'ensemble des paquets Nix (Nixpkgs) et les modules NixOS associés.
 
+<div class="mw-translate-fuzzy">
+
 Pour plus d'information sur l'utilisation et la mise en place des canaux, merci de vous référer aux <a href="Special:MyLanguage/channel_branches" class="wikilink" title=" branches"> branches</a>.
+
+</div>
 
 <span id="Internals"></span>
 
@@ -111,9 +129,17 @@ Pour plus d'information sur l'utilisation et la mise en place des canaux, merci 
 
 *Article principal: <a href="Special:MyLanguage/Nix_vs._Linux_Standard_Base" class="wikilink" title="Nix vs. Linux Standard Base">Nix vs. Linux Standard Base</a>*
 
+<div class="mw-translate-fuzzy">
+
 La principale différence entre NixOS et les autres distributions Linux réside dans le fait que NixOS ne suit pas la structure de système de fichiers définie par la [Linux Standard Base](https://en.wikipedia.org/wiki/Linux_Standard_Base). Sur les systèmes conformes à la norme LSB, les logiciels sont stockés sous `/{,usr}/{bin,lib,share}` et les fichiers de configuration sont généralement stockés dans `/etc`. Les binaires logiciels sont disponibles dans l'environnement utilisateur s'ils sont placés dans l'un des répertoires `/bin` de la LSB. Lorsqu'un programme fait référence à des bibliothèques dynamiques, il recherche les bibliothèques requises dans les dossiers LSB (`/lib`, `/usr/lib`).
 
+</div>
+
+<div class="mw-translate-fuzzy">
+
 Dans NixOS, cependant, `/lib` et `/usr/lib` n'existent pas. À la place, toutes les bibliothèques système, les binaires, les noyaux, les micrologiciels et les fichiers de configuration sont placés dans le <a href="Special:MyLanguage/Nix#Nix_store" class="wikilink" title="Nix store">Nix store</a>. Les fichiers et répertoires situés dans `/nix/store` sont nommés d'après les hachages des informations décrivant les données compilées. Tous les fichiers et répertoires placés dans le magasin Nix sont immuables. `/bin` et `/usr/bin` sont pratiquement inexistants : ils ne contiennent respectivement que `/bin/sh` et `/usr/bin/env`, afin d'assurer une compatibilité minimale avec les scripts existants utilisant des lignes shebang. Les environnements au niveau utilisateur sont implémentés à l'aide d'un grand nombre de liens symboliques vers tous les paquets et fichiers auxiliaires requis. Ces environnements sont appelés <a href="Special:MyLanguage/Nix#Profiles" class="wikilink" title="profils">profils</a> et sont stockés dans `/nix/var/nix/profiles`, chaque utilisateur disposant de ses propres profils. C'est en structurant le système de cette manière que NixOS tire ses principaux avantages par rapport aux distributions Linux classiques, tels que l'atomicité et la prise en charge des retours en arrière.
+
+</div>
 
 <span id="Usage_of_the_Nix_store"></span>
 
@@ -131,7 +157,11 @@ La configuration des modules s'effectue généralement en ajoutant des options a
 
 Le système de modules de NixOS met en œuvre un système de typage qui permet de vérifier le type des paramètres d'options. Il permet également de fusionner automatiquement les options définies à plusieurs endroits. Vous pouvez ainsi répartir votre configuration sur plusieurs fichiers, et les options que vous définissez dans l'ensemble de ces fichiers seront fusionnées :
 
+<div class="mw-translate-fuzzy">
+
 Pour plus d'informations, consultez la \[section « Modules <https://nixos.org/nixos/manual/index.html#sec-writing-modules> » du manuel NixOS\].
+
+</div>
 
 <span id="Generations"></span>
 
@@ -141,26 +171,28 @@ Chaque fois que l'état du système est reconstruit à l'aide de l'option `nixos
 
 Vous pouvez revenir en arrière via :
 
-``` shell
-$ nix-env --rollback               # restaurer un environnement utilisateur
-$ nixos-rebuild switch --rollback  # restaurer un environnement système
+``` console
+$ nix-env --rollback               # roll back a user environment
+$ nixos-rebuild switch --rollback  # roll back a system environment
 ```
 
 ixOS ajoute également des entrées correspondant aux générations précédentes dans le menu du chargeur d'amorçage ; ainsi, en dernier recours, vous pouvez toujours revenir à une configuration antérieure en redémarrant. Pour définir la génération actuellement démarrée comme valeur par défaut, exécutez la commande suivante :
 
-``` shell
+``` console
 $ /run/current-system/bin/switch-to-configuration boot
 ```
 
 Comme NixOS conserve les versions précédentes de l'état du système au cas où vous souhaiteriez revenir en arrière, les anciennes versions des paquets ne sont pas supprimées de votre système immédiatement après une mise à jour. Vous pouvez supprimer ces anciennes versions manuellement :
 
-``` shell
-# efface les générations de plus de 30 jours
+``` console
+$ # delete generations older than 30 days
 $ nix-collect-garbage --delete-older-than 30d
 
-# efface TOUTES les générations précédentes - vous ne pouvez pas revenir en arrière après ça
+$ # delete ALL previous generations - you can no longer rollback after running this
 $ nix-collect-garbage -d                       
 ```
+
+<div class="mw-translate-fuzzy">
 
 Liste les générations:
 
@@ -169,6 +201,15 @@ Liste les générations:
 $ nix-env --list-generations --profile /nix/var/nix/profiles/system
 ```
 
+</div>
+
+``` console
+$ # as root
+$ nix-env --list-generations --profile /nix/var/nix/profiles/system
+```
+
+<div class="mw-translate-fuzzy">
+
 Changer de génération:
 
 ``` shell
@@ -176,10 +217,26 @@ Changer de génération:
 $ nix-env --profile /nix/var/nix/profiles/system --switch-generation 204
 ```
 
+</div>
+
+``` console
+$ # as root switch to generation 204
+$ nix-env --profile /nix/var/nix/profiles/system --switch-generation 204
+```
+
+<div class="mw-translate-fuzzy">
+
 effacer une(des) génération(s) cassée(s):
 
 ``` shell
 # en tant que root effacer les générations cassées 205 et 206 
+$ nix-env --profile /nix/var/nix/profiles/system --delete-generations 205 206
+```
+
+</div>
+
+``` console
+$ # as root delete broken generations 205 and 206 
 $ nix-env --profile /nix/var/nix/profiles/system --delete-generations 205 206
 ```
 
@@ -193,6 +250,6 @@ Vous pouvez configurer le ramasse-miettes automatique en définissant les option
 - <a href="Special:MyLanguage/NixOS_VM_tests" class="wikilink" title="NixOS VM tests">NixOS VM tests</a>, a library for creating reproducible infrastructure tests, based on <a href="Special:MyLanguage/Nixpkgs" class="wikilink" title="Nixpkgs">Nixpkgs</a>, <a href="Special:MyLanguage/NixOS" class="wikilink" title="NixOS">NixOS</a>, QEMU and Perl.
 - [NixOS & Flakes Book](https://github.com/ryan4yin/nixos-and-flakes-book) (Ryan4yin, 2023) - 🛠️ ❤️ An unofficial NixOS & Flakes book for beginners.
 
-<a href="Category:Pedias" class="wikilink" title="Category:Pedias">Category:Pedias</a> <a href="Category:NixOS" class="wikilink" title="Category:NixOS">Category:NixOS</a> <a href="Category:Nix{{#translation:}}" class="wikilink" title="Category:Nix{{#translation:}}">Category:Nix{{#translation:}}</a>
+<a href="Category:Pedias" class="wikilink" title="Category:Pedias">Category:Pedias</a> <a href="Category:NixOS" class="wikilink" title="Category:NixOS">Category:NixOS</a> <a href="Category:Nix" class="wikilink" title="Category:Nix">Category:Nix</a>
 
 [^1]: <https://discourse.nixos.org/t/limited-cache-availability-for-i686-32-bits-x86-architecture/37626>

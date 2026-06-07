@@ -152,6 +152,7 @@ Operations tools for the Nix Ecosystem:
 - [Nixinate](https://github.com/MatthewCroughan/nixinate) - A Nix flake library to provide app outputs for managing existing NixOS hosts over SSH
 - `nixos-build --target-host`
 - [Nixus](https://github.com/Infinisil/nixus) - an experimental NixOS deployment tool
+- [wire](https://github.com/forallsys/wire) - A tool to deploy NixOS systems. Its usage is inspired by colmena however it is not a fork.
 
 ### Docker
 

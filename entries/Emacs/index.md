@@ -54,27 +54,6 @@ See [the module options](https://home-manager-options.extranix.com/?query=servic
 
 One can mix and match whether Emacs packages are installed by Nix or Emacs. This can be particularly useful for Emacs packages that need to be built, such as vterm. One way to install Emacs packages through Nix is by the following, replacing with the variant in use:
 
-``` nix
-environment.systemPackages = with pkgs;
-[ ...
-  ((emacsPackagesFor emacs-pgtk).emacsWithPackages (
-    epkgs: [ epkgs.vterm ]
-  ))
-  ...
-];
-
-# To make the packages available to emacsclient, one can do the following:
-services.emacs.package = with pkgs; (
-  (emacsPackagesFor emacs-pgtk).emacsWithPackages (
-    epkgs: [ epkgs.vterm ]
-  )
-);
-
-# Some packages have characters like + that Nix considers a syntax error. 
-# To fix this, write the package name in quotes and specify the package set, even if using with epkgs;. 
-# For example, use epkgs."ido-completing-read+".
-```
-
 Note that if the expression `(emacsPackagesFor emacs-pgtk)` is present, `emacs-pgtk` need not be listed separately in the list `environment.systemPackages`. Indeed, if one does that, `nixos-rebuild` will warn about link collisions when the configuration is rebuilt.
 
 ###### Alternative way of installation to ensuring consistent package management for emacs and emacsclient
@@ -117,30 +96,6 @@ located at <https://github.com/alezost/pretty-sha-path.el>
 
 If you use `use-package` or `leaf` in your configuration, the community overlay can manage your Emacs packages automatically by using `emacsWithPackagesFromUsePackage`. First, install the overlay (instructions above), then add the following to your `configuration.nix`:
 
-``` nix
-{
-  environment.systemPackages = [
-    (pkgs.emacsWithPackagesFromUsePackage {
-      package = pkgs.emacsGit;  # replace with pkgs.emacsPgtk, or another version if desired.
-      config = path/to/your/config.el;
-      # config = path/to/your/config.org; # Org-Babel configs also supported
-
-      # Optionally provide extra packages not in the configuration file.
-      extraEmacsPackages = epkgs: [
-        epkgs.use-package
-      ];
-
-      # Optionally override derivations.
-      override = epkgs: epkgs // {
-        somePackage = epkgs.melpaPackages.somePackage.overrideAttrs(old: {
-           # Apply fixes here
-        });
-      };
-    })
-  ];
-}
-```
-
 See the [overlay README](https://github.com/nix-community/emacs-overlay#extra-library-functionality) for a full list of options.
 
 #### Adding packages from outside ELPA/MELPA
@@ -158,7 +113,8 @@ Emacs packages can be defined and tested like other nixpkgs. They can be obtaine
 They are located at `pkgs/applications/editors/emacs/elisp-packages/manual-packages/` [1](https://github.com/NixOS/nixpkgs/tree/master/pkgs/applications/editors/emacs/elisp-packages/manual-packages) and a new pkg must be added under `pkgs/applications/editors/elisp-packages/manual-packages.nix` [2](https://github.com/NixOS/nixpkgs/blob/master/pkgs/applications/editors/emacs/elisp-packages/manual-packages.nix). Once the nixpkg is ready, it can be tested using the following command. This inserts the nixpkg into the load-path of Emacs.
 
 ``` console
-$ nix-shell -I nixpkgs=<path_to_nixpkgs_copy> -p "(emacsPackagesFor pkgs.emacs28).emacsWithPackages (epkgs: [ epkgs.<package> ])"
+$ nix-shell -I nixpkgs=<path_to_nixpkgs_copy> -p \
+    "(emacsPackagesFor pkgs.emacs28).emacsWithPackages (epkgs: [ epkgs.<package> ])"
 ```
 
 }}
@@ -214,28 +170,24 @@ If you would like to use the latest version of Emacs on Darwin, one option is to
 
 ``` nix
 pkgs.emacsPgtk.overrideAttrs (old: {
-      patches =
-        (old.patches or [])
-        ++ [
-          # Fix OS window role (needed for window managers like yabai)
-          (fetchpatch {
-            url = "https://raw.githubusercontent.com/d12frosted/homebrew-emacs-plus/master/patches/emacs-28/fix-window-role.patch";
-            sha256 = "0c41rgpi19vr9ai740g09lka3nkjk48ppqyqdnncjrkfgvm2710z";
-          })
-          # Enable rounded window with no decoration
-          (fetchpatch {
-            url = "https://raw.githubusercontent.com/d12frosted/homebrew-emacs-plus/master/patches/emacs-29/round-undecorated-frame.patch";
-            sha256 = "111i0r3ahs0f52z15aaa3chlq7ardqnzpwp8r57kfsmnmg6c2nhf";
-          })
-          # Make Emacs aware of OS-level light/dark mode
-          (fetchpatch {
-            url = "https://raw.githubusercontent.com/d12frosted/homebrew-emacs-plus/master/patches/emacs-28/system-appearance.patch";
-            sha256 = "14ndp2fqqc95s70fwhpxq58y8qqj4gzvvffp77snm2xk76c1bvnn";
-          })
-        ];
-    });
-  };
-}
+  patches = (old.patches or [ ]) ++ [
+    # Fix OS window role (needed for window managers like yabai)
+    (fetchpatch {
+      url = "https://raw.githubusercontent.com/d12frosted/homebrew-emacs-plus/master/patches/emacs-28/fix-window-role.patch";
+      sha256 = "0c41rgpi19vr9ai740g09lka3nkjk48ppqyqdnncjrkfgvm2710z";
+    })
+    # Enable rounded window with no decoration
+    (fetchpatch {
+      url = "https://raw.githubusercontent.com/d12frosted/homebrew-emacs-plus/master/patches/emacs-29/round-undecorated-frame.patch";
+      sha256 = "111i0r3ahs0f52z15aaa3chlq7ardqnzpwp8r57kfsmnmg6c2nhf";
+    })
+    # Make Emacs aware of OS-level light/dark mode
+    (fetchpatch {
+      url = "https://raw.githubusercontent.com/d12frosted/homebrew-emacs-plus/master/patches/emacs-28/system-appearance.patch";
+      sha256 = "14ndp2fqqc95s70fwhpxq58y8qqj4gzvvffp77snm2xk76c1bvnn";
+    })
+  ];
+})
 ```
 
 #### Running xwidgets

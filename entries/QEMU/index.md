@@ -11,9 +11,9 @@ For running virtual machines as a services see <a href="Libvirt" class="wikilink
 To install the main QEMU program system-wide, add the following to your `configuration.nix`:
 
 ``` nix
-  environment = {
-    systemPackages = [ pkgs.qemu ];
-  };
+environment.systemPackages = [
+  pkgs.qemu
+];
 ```
 
 ### Quick EMU
@@ -22,9 +22,9 @@ Quickly create and run highly optimised desktop virtual machines for Linux, macO
 
 <https://github.com/quickemu-project/quickemu>
 
-``` bash
-quickget windows 11
-quickemu --vm windows-11.conf
+``` console
+$ quickget windows 11
+$ quickemu --vm windows-11.conf
 ```
 
 ## Configuration

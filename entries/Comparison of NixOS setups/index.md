@@ -438,4 +438,4 @@ Link to the repository.
 - [GitHub search by most starred "nixos language:nix"](https://github.com/search?o=desc&p=1&q=nixos+language%3Anix&s=stars&type=Repositories)
 - [Most starred public NixOS repos on GitLab](https://gitlab.com/explore/projects/topics/nixos?sort=stars_desc&visibility_level=20)
 
-<a href="Category:Community" class="wikilink" title="Category:Community">Category:Community</a>
+<a href="Category:Community" class="wikilink" title="Category:Community">Category:Community</a> <a href="Category:Lists" class="wikilink" title="Category:Lists">Category:Lists</a>

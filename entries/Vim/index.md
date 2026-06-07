@@ -8,9 +8,7 @@
 
 ### Basic Install
 
-</translate> \<syntaxhighlight lang="nix\>
-
-` programs.vim.enable = true;`
+</translate> \<syntaxhighlight lang="nix\> programs.vim.enable = true;
 
 </syntaxhighlight>
 
@@ -21,10 +19,10 @@ or
 </translate>
 
 ``` nix
-  programs.vim = {
-    enable = true;
-    package = pkgs.vim-full;
-  };
+programs.vim = {
+  enable = true;
+  package = pkgs.vim-full;
+};
 ```
 
 <translate>
@@ -34,7 +32,7 @@ or
 </translate>
 
 ``` nix
-  environment.systemPackages = with pkgs; [ vim-full ];
+environment.systemPackages = with pkgs; [ vim-full ];
 ```
 
 <translate>
@@ -43,16 +41,16 @@ or
 
 Vim can easily be set up using <a href="Special:MyLanguage/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a>. Here's a minimal example:
 
-</translate> \<syntaxhighlight lang="nix\>
+</translate> \<syntaxhighlight lang="nix\> programs.vim = {
 
-` programs.vim = {`  
-`   enable = true;`  
-`   plugins = with pkgs.vimPlugins; [ vim-airline ];`  
-`   settings = { ignorecase = true; };`  
-`   extraConfig = ''`  
-`     set mouse=a`  
-`   '';`  
-` };`
+` enable = true;`  
+` plugins = with pkgs.vimPlugins; [ vim-airline ];`  
+` settings = { ignorecase = true; };`  
+` extraConfig = ''`  
+`   set mouse=a`  
+` '';`
+
+};
 
 </syntaxhighlight>
 
@@ -116,7 +114,7 @@ On unstable:
   programs.vim = {
     enable = true;
     defaultEditor = true;
-    package = (pkgs.vim-full.override {  }).customize{
+    package = (pkgs.vim-full.override { }).customize{
       name = "vim";
 <translate>
       <!--T:77-->
@@ -177,10 +175,9 @@ import these in your `configuration.nix` and </translate>
 
 ``` nix
 {    
-  imports =    
-    [
-      ./vim.nix
-    ];
+  imports = [
+    ./vim.nix
+  ];
   # ...
 }
 ```
@@ -311,7 +308,7 @@ vimrcConfig.pathogen.pluginNames = [ "vim-addon-nix" "youcompleteme" ];
 </translate>
 
 ``` nix
-vimrcConfig.plug.plugins = with pkgs.vimPlugins; [vim-addon-nix youcompleteme];
+vimrcConfig.plug.plugins = with pkgs.vimPlugins; [ vim-addon-nix youcompleteme ];
 ```
 
 <translate>

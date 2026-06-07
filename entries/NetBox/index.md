@@ -16,6 +16,8 @@ You should **NOT** share this key outside the configuration (i.e. in /nix/store)
 mkdir -p /var/lib/netbox/
 nix-shell -p openssl
 openssl rand -hex 50 > /var/lib/netbox/secret-key-file
+# For netbox 4.5
+$(find /nix/store -name generate_secret_key.py) > /var/lib/netbox/api-token-peppers-file
 ```
 
 ### Configuration
@@ -32,6 +34,13 @@ The module will automatically set up a Redis instance and a PostgreSQL database.
   services.netbox = {
     enable = true;
     secretKeyFile = "/var/lib/netbox/secret-key-file";
+    # For netbox 4.5
+    apiTokenPeppersFile = "/var/lib/netbox/api-token-peppers-file";
+    settings = {
+      # DEBUG = true;   # use this if you hit the CSRF error.
+      ALLOWED_HOSTS = [ "[::1]" ];  # from proxyPass (below)
+      CSRF_TRUSTED_ORIGINS = [ "http://__YOUR_HOSTNAME_HERE__" ];  # CSRF error fix
+    };
   };
 
   services.nginx = {
@@ -139,7 +148,7 @@ You can now log in with the given credentials.
 
 #### CSRF aborted message at login
 
-If you still get an CSRF aborted message while trying to log in after doing everything above, please try to use another browser.
+If you still get an CSRF aborted message while trying to log in after doing everything above, enable DEBUG mode to get a detailed description of the problem.
 
 It could be these problem <https://stackoverflow.com/questions/11516635/django-does-not-send-csrf-token-again-after-browser-cookies-has-been-cleared> but I'm not sure.
 

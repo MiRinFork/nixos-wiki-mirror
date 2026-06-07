@@ -2,37 +2,75 @@
 
 <!-- Source page: Nix (package manager)/ja -->
 
-<languages/> Nixは、<a href="Nix_Expression_Language" class="wikilink" title="Nix Expression Language">Nix Expression Language</a> で表現された再現可能なビルド命令を解析するパッケージマネージャーおよびビルドシステムであり、これは遅延評価を伴う純粋関数型言語である。Nix expressions は、依存関係を引数として取り、パッケージに対して再現可能なビルド環境*<a href="Derivations" class="wikilink" title="derivation">derivation</a>*を作成する純粋関数[^1]です。Nixは、ビルドの結果を完全な依存関係ツリーのハッシュで指定された一意のアドレスに保存し、不変のパッケージストアを作成することで、原子的な更新、ロールバックを実現する。また、異なるバージョンのパッケージを同時にインストールすることで、根本的に[依存関係地獄](https://ja.wikipedia.org/wiki/%E4%BE%9D%E5%AD%98%E9%96%A2%E4%BF%82%E5%9C%B0%E7%8D%84)を防ぐ。
+<languages/>
+
+<div class="mw-translate-fuzzy">
+
+Nixは、<a href="Nix_Expression_Language" class="wikilink" title="Nix Expression Language">Nix Expression Language</a> で表現された再現可能なビルド命令を解析するパッケージマネージャーおよびビルドシステムであり、これは遅延評価を伴う純粋関数型言語である。Nix expressions は、依存関係を引数として取り、パッケージに対して再現可能なビルド環境*<a href="Derivations" class="wikilink" title="derivation">derivation</a>*を作成する純粋関数[^1]です。Nixは、ビルドの結果を完全な依存関係ツリーのハッシュで指定された一意のアドレスに保存し、不変のパッケージストアを作成することで、原子的な更新、ロールバックを実現する。また、異なるバージョンのパッケージを同時にインストールすることで、根本的に[依存関係地獄](https://ja.wikipedia.org/wiki/%E4%BE%9D%E5%AD%98%E9%96%A2%E4%BF%82%E5%9C%B0%E7%8D%84)を防ぐ。
+
+</div>
 
 <span id="Usage"></span>
 
 ## 使い方
 
+<span id="Installation"></span>
+
+<div class="mw-translate-fuzzy">
+
 ### インストール
 
 <a href="NixOS" class="wikilink" title="NixOS">NixOSでは</a>、Nix は最初からインストールされている。
-
-他の Linux ディストリビューションや macOS 上では、[installation section of the Nix manual](https://nixos.org/manual/nix/stable/installation/installation)に従ってインストールできる。
-
-<span id="Nix_commands"></span>
-
-### Nix コマンド
-
-<a href="Nix_(command_line_utilities)" class="wikilink" title="Nix コマンド">Nix コマンドは</a>、[Nix リファレンスマニュアル](https://nixos.org/manual/nix/stable/command-ref/command-ref)に、主なコマンド、ユーティリティ、および実験コマンドが文書化されている。バージョン2.0(2018年2月リリース)以前は、さまざまなコマンドが存在していた。
-
-### 設定
-
-NixOS 上では、\[<https://search.nixos.org/options?query=nix>. `nix` option\]を用いてNixで設定することができる。
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-Standalone Nix is configured through `nix.conf` (usually found in `/etc/nix/`). Details on the available options are [found in the Nix reference manual](https://nixos.org/manual/nix/stable/command-ref/conf-file).
 
 </div>
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
-You can also configure Nix using <a href="Home_Manager" class="wikilink" title="Home Manager">Home Manager</a>, which manages declarative environments for a single user. For system-wide configuration, you can use [System Manager](https://github.com/numtide/system-manager) on Linux and [nix-darwin](https://github.com/LnL7/nix-darwin) on macOS.
+On <a href="NixOS" class="wikilink" title="NixOS">NixOS</a>, Nix is automatically installed.
+
+</div>
+
+<div class="mw-translate-fuzzy">
+
+他の Linux ディストリビューションや macOS 上では、[installation section of the Nix manual](https://nixos.org/manual/nix/stable/installation/installation)に従ってインストールできる。
+
+</div>
+
+<span id="Nix_commands"></span>
+
+### Nix コマンド
+
+<div class="mw-translate-fuzzy">
+
+<a href="Nix_(command_line_utilities)" class="wikilink" title="Nix コマンド">Nix コマンドは</a>、[Nix リファレンスマニュアル](https://nixos.org/manual/nix/stable/command-ref/command-ref)に、主なコマンド、ユーティリティ、および実験コマンドが文書化されている。バージョン2.0(2018年2月リリース)以前は、さまざまなコマンドが存在していた。
+
+</div>
+
+<span id="Configuration"></span>
+
+<div class="mw-translate-fuzzy">
+
+### 設定
+
+NixOS 上では、\[<https://search.nixos.org/options?query=nix>. `nix` option\]を用いてNixで設定することができる。
+
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+On NixOS, Nix can be configured using the [`nix` option](https://search.nixos.org/options?query=nix).
+
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+Standalone Nix is configured through `nix.conf` (usually found in `/etc/nix/`). Details on the available options are [found in the Nix reference manual](https://nix.dev/manual/nix/stable/command-ref/conf-file).
+
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+You can also configure Nix using <a href="Home_Manager" class="wikilink" title="Home Manager">Home Manager</a>, which manages declarative environments for a single user. For system-wide configuration, you can use [System Manager](https://github.com/numtide/system-manager) on Linux and [nix-darwin](https://github.com/nix-darwin/nix-darwin) on macOS.
 
 </div>
 
@@ -142,7 +180,7 @@ There is an ongoing effort to reimplement Nix, from the ground up, in Rust.
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
-- [tvix](https://cs.tvl.fyi/depot/-/tree/tvix)
+- [tvix](https://code.tvl.fyi/tree/tvix)
 
 </div>
 
@@ -168,13 +206,9 @@ Earlier attempts can be found on [riir-nix](https://riir-nix.github.io/)
 
 ## Notes
 
+</div>
+
 <references />
-
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-</div>
 
 <a href="Category:Pedias" class="wikilink" title="Category:Pedias">Category:Pedias</a> <a href="Category:Nix" class="wikilink" title="Category:Nix">Category:Nix</a> <a href="Category:Incomplete" class="wikilink" title="Category:Incomplete">Category:Incomplete</a> <a href="Category:Software" class="wikilink" title="Category:Software">Category:Software</a>
 

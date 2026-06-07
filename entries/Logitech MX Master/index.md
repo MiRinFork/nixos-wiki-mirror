@@ -76,7 +76,76 @@ For further configuration, see: [project documentation](https://pwr-solaar.githu
 
 ## LogiOps
 
-[LogiOps](https://search.nixos.org/packages?query=LogiOps) a userspace driver running as a <a href="Systemd/User_Services" class="wikilink" title="systemd service">systemd service</a>. Default location for the configuration file is /etc/logid.cfg, but another can be specified using the `-c` flag.
+[LogiOps](https://search.nixos.org/packages?query=LogiOps) a userspace driver running as a <a href="Systemd/User_Services" class="wikilink" title="systemd service">systemd service</a>. Default location for the configuration file is `/etc/logid.cfg`, but another can be specified using the `-c` flag.
+
+``` nixos
+# Adds `pkgs.logitech-udev-rules` and `pkgs.ltunify`
+hardware.logitech.wireless.enable = true;
+
+services.logiops = {
+  enable = true;
+  config = {
+    devices = [
+      {
+        name = "MX Keys for Business";
+        buttons = [
+          {
+            cid = (fromTOML "hex = 0x0103").hex; # Dictation / Fn+F5
+            action = {
+              type = "Keypress";
+              keys = ["KEY_DICTATE"];
+            };
+          }
+          {
+            cid = (fromTOML "hex = 0x0108").hex; # Emoji / Fn+F6
+            action = {
+              type = "Keypress";
+              keys = ["KEY_EMOJI_PICKER"];
+            };
+          }
+          {
+            cid = (fromTOML "hex = 0x011C").hex; # Mic Mute /Fn+F7
+            action = {
+              type = "Keypress";
+              keys = ["KEY_MICMUTE"];
+            };
+          }
+          {
+            cid = (fromTOML "hex = 0x010A").hex; # Screenshot / Print screen
+            action = {
+              type = "Keypress";
+              keys = ["KEY_PRINT"];
+            };
+          }
+          {
+            cid = (fromTOML "hex = 0x006F").hex; # Lock screen / Numpad padlock
+            action = {
+              type = "Keypress";
+              keys = ["KEY_SCREENSAVER"];
+            };
+          }
+        ];
+      }
+
+      {
+        name = "MX Vertical Advanced Ergonomic Mouse";
+        dpi = 1500; # max=4000
+        hiresscroll = {
+          hires = true;
+          invert = false;
+          target = true;
+        };
+        # buttons = [{}];
+      }
+    ];
+  };
+};
+```
+
+Additional recommendations:
+
+- Use a dedicated file for trial-and-error, i.e. `sudo logid -c ./logid.cfg -v`
+- If auto-detection fails, turn Off/On device while `logid` is running.
 
 See [project documentation](https://github.com/PixlOne/logiops/wiki/Configuration) and [Arch Wiki](https://wiki.archlinux.org/title/Logitech_MX_Master) for usage and configuration details.
 

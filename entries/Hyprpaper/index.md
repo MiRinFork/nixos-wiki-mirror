@@ -8,10 +8,8 @@ Examples for Hyprpaper settings may be found on the [Hyprland Wiki on their Hypr
 
 ## Home Manager Configuration (NixOS Stable)
 
-## Home Manager Configuration (New)
+## Home Manager Configuration (NixOS Legacy)
 
-The following is an example of the new syntax required for `services.hyprpaper` as of the version supplied by nixos-unstable(26.05). It follows the wallpaper object syntax described on the current Hyprland Wiki. [^1]
+The following is an example of the old `services.hyprpaper` syntax used before the changes introduced in later nixos 26.05 version.
 
 <a href="Category:Hyprland" class="wikilink" title="Category:Hyprland">Category:Hyprland</a>
-
-[^1]: <https://wiki.hypr.land/Hypr-Ecosystem/hyprpaper/>

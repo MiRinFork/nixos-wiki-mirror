@@ -4,13 +4,21 @@
 
 <languages/>
 
+<div class="mw-translate-fuzzy">
+
 [NixOS](https://nixos.org/)は<a href="Special:MyLanguage/Nix" class="wikilink" title="Nix">NixパッケージマネージャーとビルドシステムをベースにしたLinuxディストリビューションです</a>。システム全体の[宣言的](https://ja.wikipedia.org/wiki/%E5%AE%A3%E8%A8%80%E5%9E%8B%E3%83%97%E3%83%AD%E3%82%B0%E3%83%A9%E3%83%9F%E3%83%B3%E3%82%B0)な[構成管理](https://ja.wikipedia.org/wiki/%E6%A7%8B%E6%88%90%E7%AE%A1%E7%90%86)、[アトミック](https://ja.wikipedia.org/wiki/%E4%B8%8D%E5%8F%AF%E5%88%86%E6%93%8D%E4%BD%9C)な更新とロールバックに加え、[命令形](https://ja.wikipedia.org/wiki/%E5%91%BD%E4%BB%A4%E5%9E%8B%E3%83%97%E3%83%AD%E3%82%B0%E3%83%A9%E3%83%9F%E3%83%B3%E3%82%B0)のパッケージ/ユーザー管理が実現できます。 NixOSでは[カーネル](https://ja.wikipedia.org/wiki/Linux%E3%82%AB%E3%83%BC%E3%83%8D%E3%83%AB)、インストールする[パッケージ](https://ja.wikipedia.org/wiki/%E3%83%91%E3%83%83%E3%82%B1%E3%83%BC%E3%82%B8%E7%AE%A1%E7%90%86%E3%82%B7%E3%82%B9%E3%83%86%E3%83%A0)、コンフィグファイルなど、システムを構成するすべての要素が<a href="Special:MyLanguage/Nix_Expression_Language" class="wikilink" title="Nix式">Nix式と</a>呼ばれる[純粋関数(英語)](https://en.wikipedia.org/wiki/Pure_function)によって構成されます。
+
+</div>
+
+<div class="mw-translate-fuzzy">
 
 Nixでは[バイナリ](https://ja.wikipedia.org/wiki/%E5%AE%9F%E8%A1%8C%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB)キャッシュを利用しているため、Debianのようなバイナリ指向ディストリビューションと、Gentooのような[ソース](https://ja.wikipedia.org/wiki/%E3%82%BD%E3%83%BC%E3%82%B9%E3%82%B3%E3%83%BC%E3%83%89)指向のディストリビューションの要素を併せ持った、独自の方式を提供しています。OSの根幹をなす一般的なパッケージにはバイナリをそのまま使用することができ、ビルド済みのバイナリが提供されていない独自のパッケージやモジュールについては、自動的にソースからビルドして使用します。
 
+</div>
+
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
-Stable NixOS releases are delivered twice a year (around the end of May and the end of November). NixOS was created by [Eelco Dolstra](https://edolstra.github.io/) and [Armijn Hemel](https://en.wikipedia.org/wiki/Armijn_Hemel), and initially released in 2003. It is community developed and maintained under the stewardship of the <a href="Special:MyLanguage/Nix_Community#NixOS_Foundation" class="wikilink" title="NixOS Foundation">NixOS Foundation</a>.
+Stable NixOS releases are delivered twice a year (around the end of May and the end of November). NixOS was created by [Eelco Dolstra](https://edolstra.github.io/) and <a href="Wikipedia:Armijn_Hemel" class="wikilink" title="Armijn Hemel">Armijn Hemel</a>, and initially released in 2003. It is community developed and maintained under the stewardship of the <a href="Special:MyLanguage/Nix_Community#NixOS_Foundation" class="wikilink" title="NixOS Foundation">NixOS Foundation</a>.
 
 </div>
 
@@ -209,7 +217,7 @@ When using channels, your system or <a href="Special:MyLanguage/User_Environment
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
-For more information on using and configuring nix channels, refer to <a href="Special:MyLanguage/channel_branches" class="wikilink" title="channel branches">channel branches</a>.
+For more information on using and configuring nix channels, refer to <a href="Special:MyLanguage/Channel_branches" class="wikilink" title="channel branches">channel branches</a>.
 
 </div>
 
@@ -233,13 +241,13 @@ For more information on using and configuring nix channels, refer to <a href="Sp
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
-The main difference between NixOS and other Linux distributions is that NixOS does not follow the [Linux Standard Base](https://en.wikipedia.org/wiki/Linux_Standard_Base) file system structure. On LSB-compliant systems software is stored under `/{,usr}/{bin,lib,share}` and configuration is generally stored in `/etc`. Software binaries are available in the user environment if they are placed in one of the LSB's `/bin` directories. When a program references dynamic libraries it will search for the required libraries in the LSB folders (`/lib`, `/usr/lib`).
+The main difference between NixOS and other Linux distributions is that NixOS does not follow the <a href="Wikipedia:Linux_Standard_Base" class="wikilink" title="Linux Standard Base ">Linux Standard Base </a> file system structure. On LSB-compliant systems software is stored under `/{,usr}/{bin,lib,share}` and configuration is generally stored in `/etc`. Software binaries are available in the user environment if they are placed in one of the LSB's `/bin` directories. When a program references dynamic libraries it will search for the required libraries in the LSB folders (`/lib`, `/usr/lib`).
 
 </div>
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
-In NixOS however `/lib` and `/usr/lib` do not exist. Instead all system libraries, binaries, kernels, firmware and configuration files are placed in the <a href="Special:MyLanguage/Nix#Nix_store" class="wikilink" title="Nix store">Nix store</a>. The files and directories in `/nix/store` are named by hashes of the information describing the built data. All of the files and directories placed in the Nix store are immutable. `/bin` and `/usr/bin` are almost absent: they contain only `/bin/sh` and `/usr/bin/env` respectively, to provide minimal compatibility with existing scripts using shebang lines. User-level environments are implemented using a large number of symbolic links to all required packages and auxiliary files. These environments are called <a href="Special:MyLanguage/Nix#Profiles" class="wikilink" title="profiles">profiles</a> and are stored in `/nix/var/nix/profiles`, each user having their own profiles. Structuring the system in this way is how NixOS obtains its key advantages over conventional Linux distributions, such as atomicity and rollback support.
+In NixOS however `/lib` and `/usr/lib` do not exist. Instead all system libraries, binaries, kernels, firmware and configuration files are placed in the <a href="Special:MyLanguage/Nix_(package_manager)#Nix_store" class="wikilink" title="Nix store">Nix store</a>. The files and directories in `/nix/store` are named by hashes of the information describing the built data. All of the files and directories placed in the Nix store are immutable. `/bin` and `/usr/bin` are almost absent: they contain only `/bin/sh` and `/usr/bin/env` respectively, to provide minimal compatibility with existing scripts using shebang lines. User-level environments are implemented using a large number of symbolic links to all required packages and auxiliary files. These environments are called <a href="Special:MyLanguage/Nix#Profiles" class="wikilink" title="profiles">profiles</a> and are stored in `/nix/var/nix/profiles`, each user having their own profiles. Structuring the system in this way is how NixOS obtains its key advantages over conventional Linux distributions, such as atomicity and rollback support.
 
 </div>
 
@@ -287,7 +295,7 @@ The NixOS module system implements a typing system which allows typechecking of 
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
-See the [Modules section of the NixOS Manual](https://nixos.org/nixos/manual/index.html#sec-writing-modules) for more details.
+See the [Modules section of the NixOS Manual](https://nixos.org/manual/nixos/stable/index.html#sec-writing-modules) for more details.
 
 </div>
 
@@ -309,14 +317,10 @@ You can roll back via:
 
 </div>
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-``` shell
+``` console
 $ nix-env --rollback               # roll back a user environment
 $ nixos-rebuild switch --rollback  # roll back a system environment
 ```
-
-</div>
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
@@ -324,7 +328,7 @@ NixOS also places entries for previous generations in the bootloader menu, so as
 
 </div>
 
-``` shell
+``` console
 $ /run/current-system/bin/switch-to-configuration boot
 ```
 
@@ -334,52 +338,46 @@ Because NixOS keeps previous generations of system state available in case rollb
 
 </div>
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-``` shell
-# delete generations older than 30 days
+``` console
+$ # delete generations older than 30 days
 $ nix-collect-garbage --delete-older-than 30d
-</div>
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
-# delete ALL previous generations - you can no longer rollback after running this
+$ # delete ALL previous generations - you can no longer rollback after running this
 $ nix-collect-garbage -d                       
 ```
-
-</div>
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
 List generations:
 
-``` shell
-# as root
+</div>
+
+``` console
+$ # as root
 $ nix-env --list-generations --profile /nix/var/nix/profiles/system
 ```
-
-</div>
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
 Switch generations:
 
-``` shell
-# as root switch to generation 204
+</div>
+
+``` console
+$ # as root switch to generation 204
 $ nix-env --profile /nix/var/nix/profiles/system --switch-generation 204
 ```
-
-</div>
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
 delete broken generation(s):
 
-``` shell
-# as root delete broken generations 205 and 206 
+</div>
+
+``` console
+$ # as root delete broken generations 205 and 206 
 $ nix-env --profile /nix/var/nix/profiles/system --delete-generations 205 206
 ```
-
-</div>
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
@@ -401,6 +399,6 @@ You can configure automatic garbage collection by setting the [nix.gc](https://s
 
 </div>
 
-<a href="Category:Pedias" class="wikilink" title="Category:Pedias">Category:Pedias</a> <a href="Category:NixOS" class="wikilink" title="Category:NixOS">Category:NixOS</a> <a href="Category:Nix{{#translation:}}" class="wikilink" title="Category:Nix{{#translation:}}">Category:Nix{{#translation:}}</a>
+<a href="Category:Pedias" class="wikilink" title="Category:Pedias">Category:Pedias</a> <a href="Category:NixOS" class="wikilink" title="Category:NixOS">Category:NixOS</a> <a href="Category:Nix" class="wikilink" title="Category:Nix">Category:Nix</a>
 
 [^1]: <https://discourse.nixos.org/t/limited-cache-availability-for-i686-32-bits-x86-architecture/37626>

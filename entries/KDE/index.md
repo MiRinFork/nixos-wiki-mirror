@@ -112,6 +112,31 @@ When setting a wallpaper, Plasma may save the path as a `/nix/store/*/share/wall
 
 The "Region & Language" page in the Plasma system settings is somewhat broken on NixOS. Instead, edit the `$XDG_CONFIG_HOME/plasma-localerc` file.
 
+If you really want to configure locale in settings, you can use this workaround:
+
+``` nix
+{ pkgs, ... }:
+{
+  i18n = {
+    extraLocales = "all";
+    imperativeLocale = true; # Unknown if needed (system settings sets user-level override?)
+  };
+  environment = {
+    systemPackages = [ pkgs.stdenv.cc.libc.out ]; # this derivation contains the locales
+    pathsToLink = [ "/share/i18n" ];
+  };
+}
+```
+
+Switch to that configuration, then run:
+
+``` bash
+sudo mkdir -p /usr/share/i18n
+sudo ln -s /run/current-system/sw/share/i18n/locales /usr/share/i18n/locales
+```
+
+That is a very dirty command, and I don't know if it persists across reboots.
+
 ## Tips and tricks
 
 ### Plasma-Manager

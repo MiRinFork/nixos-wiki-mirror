@@ -17,15 +17,15 @@ A full deployment can be enabled as easy as:
 </translate>
 
 ``` nix
-  services.hydra = {
-    enable = true;
-    hydraURL = "http://localhost:3000"; # externally visible URL
-    notificationSender = "hydra@localhost"; # e-mail of Hydra service
-    # a standalone Hydra will require you to unset the buildMachinesFiles list to avoid using a nonexistant /etc/nix/machines
-    buildMachinesFiles = [];
-    # you will probably also want this, otherwise *everything* will be built from scratch
-    useSubstitutes = true;
-  };
+services.hydra = {
+  enable = true;
+  hydraURL = "http://localhost:3000"; # externally visible URL
+  notificationSender = "hydra@localhost"; # e-mail of Hydra service
+  # a standalone Hydra will require you to unset the buildMachinesFiles list to avoid using a nonexistant /etc/nix/machines
+  buildMachinesFiles = [];
+  # you will probably also want this, otherwise *everything* will be built from scratch
+  useSubstitutes = true;
+};
 ```
 
 <translate>
@@ -40,8 +40,8 @@ Hydra will provide the web interface [at localhost](http://localhost:3000/) port
 
 </translate>
 
-``` bash
-# su - hydra
+``` console
+$ su - hydra
 $ hydra-create-user alice --full-name 'Alice Q. User' \
     --email-address 'alice@example.org' --password-prompt --role admin
 ```

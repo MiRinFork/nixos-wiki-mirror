@@ -146,4 +146,4 @@ Not all providers allow to upload custom images or provide NixOS images for inst
 
 See also the <a href="NixOps" class="wikilink" title="NixOps">NixOps</a> project, which also provides interfaces to different cloud providers.
 
-<a href="Category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="Category:Community" class="wikilink" title="Category:Community">Category:Community</a> <a href="Category:Deployment" class="wikilink" title="Category:Deployment">Category:Deployment</a>
+<a href="Category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="Category:Community" class="wikilink" title="Category:Community">Category:Community</a> <a href="Category:Deployment" class="wikilink" title="Category:Deployment">Category:Deployment</a> <a href="Category:Lists" class="wikilink" title="Category:Lists">Category:Lists</a>
