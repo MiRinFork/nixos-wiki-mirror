@@ -10,27 +10,27 @@ Since neither the runtime, not the language reserve these keywords, these keywor
 
 ## Nix language
 
-- outPath
-- \_\_functor
-- \_\_toString
+- `outPath`
+- `__functor`
+- `__toString`
 
 ## nix-build
 
-- recurseForDerivations
+- `recurseForDerivations`
 
 ## The wider ecosystem
 
-- \_type for nominal typing. Should contain a string. Pioneered by the module system (?)
-- ~type~ in principle this one is available for domain specific use! That is, unless you want the attrset to double as a "derivation" in the CLI.
+- `_type` for nominal typing. Should contain a string. Pioneered by the module system (?)
+- ~~`type`~~ in principle this one is available for domain specific use! That is, unless you want the attrset to double as a "derivation" in the CLI.
 
 ## Module system
 
-- \_type
-- config, options (etc) (switches away from shorthand syntax)
-- \_module option tree is omitted from the returned config and is intended for module system specific use
-- \_key
-- \_class
-- \_file
+- `_type`
+- `config`, `options` (etc) (switches away from shorthand syntax)
+- `_module` option tree is omitted from the returned config and is intended for module system specific use
+- `_key`
+- `_class`
+- `_file`
 - ...
 
 <a href="Category:Nix" class="wikilink" title="Category:Nix">Category:Nix</a>

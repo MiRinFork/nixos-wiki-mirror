@@ -47,6 +47,10 @@ Possible solutions:
 }
 ```
 
+## Troubleshooting
+
+- If running on Wayland, make sure to enable and properly configure a suitable [XDG portal](https://search.nixos.org/options?query=xdg.portal), otherwise the program will crash when attempting to open a file selector.
+
 ## See also
 
 - [virtualisation.virtualbox options](https://search.nixos.org/options?query=virtualisation.virtualbox)

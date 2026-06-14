@@ -8,7 +8,7 @@
 
 Enable libvirt daemon
 
-To enable local user access to libvirt, for example by using `virt-manager` or `gnome-boxes`, add yourself to the `libvirtd` group
+To enable local user access to libvirt, for example by using <a href="virt-manager" class="wikilink" title="virt-manager"><code>virt-manager</code></a> or `gnome-boxes`, add yourself to the `libvirtd` group
 
 ## Configuration
 

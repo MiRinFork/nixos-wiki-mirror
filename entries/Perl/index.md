@@ -55,14 +55,14 @@ or start it with `perl ./myscript.pl`
 
 1.  Enter a `nix-shell` that provides the necessary dependencies:
     ``` console
-    $ nix-shell -p perl perlPackages.CPANPLUS perlPackages.GetoptLongDescriptive perlPackages.LogLog4perl perlPackages.Readonly
+    $ nix-shell -p nix-generate-from-cpan
     ```
 2.  Use the `nix-generate-from-cpan.pl` script (see `nixpkgs/maintainers/scripts/`) to generate something appropriate.  
     Example usage:
     ``` console
-    $ nix-generate-from-cpan.pl Devel::REPL
+    $ nix-generate-from-cpan Devel::REPL
     ```
-3.  After reviewing the result from the previous step and making appropriate modifications, add it to `pkgs/top-level/perl-packages.nix`. Note that some things use `buildPerlPackage` while some use `buildPerlModule`. Also note the mostly-followed naming convention as well as the mostly-followed alphabetical ordering. There are plenty of examples in `perl-packages.nix` — use the source, Luke!
+3.  After reviewing the result from the previous step and making appropriate modifications, add it to `pkgs/top-level/perl-packages.nix`. Note that some things use `buildPerlPackage` while some use `buildPerlModule`. Also note the mostly-followed naming convention as well as the mostly-followed alphabetical ordering. There are plenty of examples in `perl-packages.nix`.
 4.  Build and test.
 
 ## Adding something without a Makefile.PL

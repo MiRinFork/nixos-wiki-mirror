@@ -271,7 +271,7 @@ Framework provides and the community maintains utilities that help manage Framew
 To enable input module support (if installed), set:
 
 ``` nix
-inputmodule.enable = true;
+hardware.inputmodule.enable = true;
 ```
 
 Example (LED matrix clock):

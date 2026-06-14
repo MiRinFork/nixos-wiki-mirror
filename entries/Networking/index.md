@@ -43,8 +43,8 @@ To edit `/etc/hosts` just add something like this to your `configuration.nix`:
 
 ``` nix
 networking.hosts = {
-  "127.0.0.2" = ["other-localhost"];
-  "192.0.2.1" = ["mail.example.com" "imap.example.com"];
+  "127.0.0.2" = [ "other-localhost" ];
+  "192.0.2.1" = [ "mail.example.com" "imap.example.com" ];
 };
 ```
 
@@ -133,9 +133,7 @@ networking = {
     enable = true;
     
     # Allows the entire interface through the firewall.
-    # trustedInterfaces = [
-    #   "virbr0"
-    # ];
+    # trustedInterfaces = [ "virbr0" ];
 
     # Allows individual ports through the firewall.
     interfaces = {
@@ -153,9 +151,7 @@ networking = {
   nat = {
     enable = true;
 
-    internalInterfaces = [
-      "virbr0"
-    ];
+    internalInterfaces = [ "virbr0" ];
   };
 };
 ```
@@ -258,30 +254,30 @@ The should be unique among your machines, [as mentioned in the manual](https://n
 Complete networking section example:
 
 ``` nix
-    networking = {
-      hostId = "deadb33f";
-      hostName = "nixos";
-      domain = "example.com";
-      dhcpcd.enable = false;
-      interfaces.enp2s1.ipv4.addresses = [{
-        address = "192.168.1.2";
-        prefixLength = 28;
-      }];
-      vlans = {
-        vlan100 = { id=100; interface="enp2s0"; };
-        vlan101 = { id=101; interface="enp2s0"; };
-      };
-      interfaces.vlan100.ipv4.addresses = [{
-        address = "10.1.1.2";
-        prefixLength = 24;
-      }];
-      interfaces.vlan101.ipv4.addresses = [{
-        address = "10.10.10.3";
-        prefixLength = 24;
-      }];
-      defaultGateway = "192.168.1.1";
-      nameservers = [ "1.1.1.1" "8.8.8.8" ];
-    };
+networking = {
+  hostId = "deadb33f";
+  hostName = "nixos";
+  domain = "example.com";
+  dhcpcd.enable = false;
+  interfaces.enp2s1.ipv4.addresses = [{
+    address = "192.168.1.2";
+    prefixLength = 28;
+  }];
+  vlans = {
+    vlan100 = { id=100; interface="enp2s0"; };
+    vlan101 = { id=101; interface="enp2s0"; };
+  };
+  interfaces.vlan100.ipv4.addresses = [{
+    address = "10.1.1.2";
+    prefixLength = 24;
+  }];
+  interfaces.vlan101.ipv4.addresses = [{
+    address = "10.10.10.3";
+    prefixLength = 24;
+  }];
+  defaultGateway = "192.168.1.1";
+  nameservers = [ "1.1.1.1" "8.8.8.8" ];
+};
 ```
 
 ## Link aggregation

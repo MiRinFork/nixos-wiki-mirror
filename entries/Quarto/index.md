@@ -4,7 +4,85 @@
 
 Quarto is an open-source technical publishing system that allows you to render markdown and code chunks into technical documents. It supports several kinds of formats including HTML, PDF, and word documents.
 
-The quarto package from nixpkgs by itself will render "qmd" markdown without any extra dependencies. However in order to render R, Python, or other code chunks, you will need to include those tools in your path. For example, consider the following "default.nix" file:
+The quarto package from nixpkgs by itself will render `qmd` markdown without any extra requirements. However in order to render R, Python, or other code chunks, you will need to include those tools.
+
+You can use the following in your system's `configuration.nix` file:
+
+``` nix
+environment.systemPackages = let
+    myPythonPackages = ps: with ps; [
+      pandas
+      statsmodels
+      scikit-learn
+      sympy
+    ];
+    myRPackages = with pkgs.rPackages; [
+      reticulate # wanted by quarto to execute Python when using R.
+      # any other RPackages - you can reuse this list for R and RStudio
+    ]
+    patchedQuarto = (pkgs.quarto.override {
+        extraPythonPackages = myPythonPackages;
+        extraRPackages = myRPackages;
+      }).overrideAttrs (oldAttrs: { # Remove this overrideAttrs patch when fixed. See https://github.com/NixOS/nixpkgs/issues/519484#issuecomment-4667477454
+      postPatch = (oldAttrs.postPatch or "") + ''
+        substituteInPlace bin/quarto.js \
+          --replace-fail "syntax-highlighting" "highlight-style"
+      '';
+    });
+  in with pkgs; [
+    #### next generation of Rmarkdown for Python, Julia, R, and JS:
+    patchedQuarto
+    #### Your command-line Python:
+    (python3.withPackages (myPythonPackages))
+    #### R and RStudio:
+    (rWrapper.override {packages = myRPackages; })
+    (rstudioWrapper.override { packages = myRPackages; })
+  ];
+```
+
+similarly a \`flake.nix\` file with \`nix develop\`:
+
+``` nix
+{
+  description = "Minimal Quarto and SymPy environment";
+  inputs = {
+    nixpkgs.url = "github:Nixos/nixpkgs/nixos-unstable";
+  };
+  outputs = { self, nixpkgs }:
+    let
+      system = "x86_64-linux";
+      pkgs = nixpkgs.legacyPackages.${system};
+      myPythonPackages = ps: with ps; [ sympy ];
+      myRPackages = with pkgs.rPackages; [ reticulate ];
+      pythonEnv = pkgs.python3.withPackages (myPythonPackages);
+    in
+    {
+      devShells.${system}.default = pkgs.mkShell {
+        packages = [
+          ((pkgs.quarto.override {
+            extraPythonPackages = myPythonPackages;
+            extraRPackages = myRPackages;
+          }).overrideAttrs (oldAttrs: {
+            # Remove this overrideAttrs patch when fixed.
+            # See https://github.com/NixOS/nixpkgs/issues/519484#issuecomment-4667477454
+            postPatch = (oldAttrs.postPatch or "") + ''
+              substituteInPlace bin/quarto.js \
+                --replace-fail "syntax-highlighting" "highlight-style"
+            '';
+          }))
+          pythonEnv
+          (pkgs.rWrapper.override {packages = myRPackages; })
+        ];
+        shellHook = ''
+          echo "Quarto Environment Active (Pure Flake)"
+          echo "Quickstart: run 'quarto render document.qmd'"
+        '';
+      };
+    };
+}
+```
+
+Or you can use the following `default.nix` or `shell.nix` file with `nix-shell` (and you don't have to pass in your Python packages via `override`):
 
 ``` nix
 let
@@ -13,8 +91,15 @@ in
 pkgs.mkShell {
   packages = with pkgs; [
 
-    # The core tool can render markdown without any additional dependencies.
-    quarto
+    #### The core tool can render markdown without any additional requirements:
+    # quarto # commenting until this is fixed in nixpkgs - until then use below patch,
+    #### see https://github.com/NixOS/nixpkgs/issues/519484#issuecomment-4667477454
+    (quarto.overrideAttrs (oldAttrs: {
+      postPatch = (oldAttrs.postPatch or "") + ''
+        substituteInPlace bin/quarto.js \
+          --replace-fail "syntax-highlighting" "highlight-style"
+      '';
+    }))
     
     # Render python code chunks.
     python3

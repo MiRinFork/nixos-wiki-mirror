@@ -31,7 +31,7 @@ Current Boot Loader:
 
 ### Setup
 
-Follow the instructions in the [Quick Start guide](https://github.com/nix-community/lanzaboote/blob/master/docs/getting-started/prepare-your-system.md).
+Follow the instructions in the [Quick Start guide](https://nix-community.github.io/lanzaboote/getting-started/prepare-your-system.html).
 
 ### Key management
 
@@ -39,12 +39,12 @@ At the time of writing, Lanzaboote offers only local storage of the keyring, oth
 
 In the future, Lanzaboote will offer two new signature backends: remote signing (an HTTP server which receives signature requests and answers with signatures) and PKCS#11-based signing (that is, bringing an HSM-like device, e.g. YubiKey, NitroKey, etc.).
 
-### Differences with \`systemd-stub\`
+### Differences with `systemd-stub`
 
-systemd and distribution upstream have an existing solution called \`systemd-stub\` but this is not a realistic solution for NixOS as there's too many generations on a system.
+systemd and distribution upstream have an existing solution called `systemd-stub` but this is not a realistic solution for NixOS as there's too many generations on a system.
 
-Using \`systemd-stub\`, a kernel and an initrd has to be duplicated for **each generation**, using Lanzaboote's stub, a kernel and initrd can be **deduplicated** without compromising on the security.
+Using `systemd-stub`, a kernel and an initrd has to be duplicated for **each generation**, using Lanzaboote's stub, a kernel and initrd can be **deduplicated** without compromising on the security.
 
-Tracking the feature parity with \`systemd-stub\` can be done in this issue: <https://github.com/nix-community/lanzaboote/issues/94>. </translate>
+Tracking the feature parity with `systemd-stub` can be done in this issue: </translate>
 
 <a href="Category:Booting" class="wikilink" title="Category:Booting">Category:Booting</a>

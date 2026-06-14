@@ -15,10 +15,10 @@ Extra configuration can be specified inside `networking.wireless.extraConfig`.
 To be able to use `wpa_gui` or `wpa_cli` as user put the following in your `configuration.nix` file:
 
 ``` nix
-networking.wireless.userControlled.enable = true;
+networking.wireless.userControlled = true;
 ```
 
-Also your user must be part of the `wheel` group (replace USER with your username):
+Also your user must be part of the `wpa_supplicant` group (replace USER with your username):
 
 ``` nix
 users.extraUsers.USER.extraGroups = [ "wheel" ];
@@ -58,8 +58,6 @@ Another example of simple wpa2 auth:
   networking.wireless = {
     enable = true;  # Enables wireless support via wpa_supplicant.
     networks."MYSSID".psk = "myPresharedKey";
-    extraConfig = "ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=wheel";
-    # output ends up in /run/wpa_supplicant/wpa_supplicant.conf
   };
 ```
 

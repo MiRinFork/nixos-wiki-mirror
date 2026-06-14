@@ -26,10 +26,10 @@ A typical NixOS config, running MPD system-wide, will look like this:
 services.mpd = {
   enable = true;
   musicDirectory = "/path/to/music";
-  extraConfig = ''
-    # must specify one or more outputs in order to play audio!
+  settings = {
+    # must specify one or more audio_output blocks in order to play audio!
     # (e.g. ALSA, PulseAudio, PipeWire), see next sections
-  '';
+  };
 
   # Optional:
   network.listenAddress = "any"; # if you want to allow non-localhost connections
@@ -52,12 +52,14 @@ hardware.pulseaudio.enable = true;
 Then, add a PulseAudio output to MPD:
 
 ``` nix
-services.mpd.extraConfig = ''
-  audio_output {
-    type "pulse"
-    name "My PulseAudio" # this can be whatever you want
-  }
-'';
+services.mpd.settings = {
+  audio_output = [
+    {
+      type = "pulse";
+      name = "My PulseAudio"; # this can be whatever you want
+    }
+  ];
+};
 ```
 
 Now, according to <cite><https://wiki.archlinux.org/index.php/Music_Player_Daemon/Tips_and_tricks#Local_(with_separate_mpd_user)></cite>, this will not work, because MPD and Pulseaudio are ran by different users.
@@ -75,13 +77,15 @@ to `configuration.nix`
 And add `server "127.0.0.1"` to MPD's config to tell it to connect to PulseAudio's local sound server.
 
 ``` nix
-services.mpd.extraConfig = ''
-  audio_output {
-    type "pulse"
-    name "Pulseaudio"
-    server "127.0.0.1" # add this line - MPD must connect to the local sound server
-  }
-'';
+services.mpd.settings = {
+  audio_output = [
+    {
+      type = "pulse";
+      name = "Pulseaudio";
+      server = "127.0.0.1"; # add this line - MPD must connect to the local sound server
+    }
+  ];
+};
 ```
 
 After editing the configuration and running `# nixos-rebuild switch`, you can test if everything is working by using a MPD client, such as `MPC`.
@@ -91,17 +95,19 @@ After editing the configuration and running `# nixos-rebuild switch`, you can te
 Another workaround is to configure NixOS to run PulseAudio system-wide.
 
 ``` nix
-hardware.pulseaudio.systemWide = true; 
+hardware.pulseaudio.systemWide = true;
 
-services.mpd.extraConfig = ''
-    audio_output {
-      type "pulse"
-      name "Pulseaudio"
-      mixer_type      "hardware"      # optional
-      mixer_device    "default"       # optional
-      mixer_control   "PCM"           # optional
-      mixer_index     "0"             # optional
-    }  '';
+services.mpd.settings = {
+  audio_output = [
+    {
+      type = "pulse";
+      name = "Pulseaudio";
+      mixer_type   = "hardware"; # optional
+      mixer_device = "default";  # optional
+      mixer_control = "PCM";     # optional
+      mixer_index  = "0";        # optional
+    }
+  ];
 };
 ```
 
@@ -110,17 +116,19 @@ services.mpd.extraConfig = ''
 You can also use alsa, just add audio output to services.mpd.extraConfig:
 
 ``` nix
-services.mpd.extraConfig = ''
-  audio_output {
-    type "alsa"
-    name "My ALSA"
-    device          "hw:0,0"    # optional 
-    format          "44100:16:2"    # optional
-    mixer_type      "hardware"
-    mixer_device    "default"
-    mixer_control   "PCM"
-  }
-'';
+services.mpd.settings = {
+  audio_output = [
+    {
+      type = "alsa";
+      name = "My ALSA";
+      device        = "hw:0,0"; # optional
+      format        = "44100:16:2"; # optional
+      mixer_type    = "hardware";
+      mixer_device  = "default";
+      mixer_control = "PCM";
+    }
+  ];
+};
 ```
 
 ## PipeWire
@@ -130,12 +138,14 @@ Make sure PipeWire is enabled. See <a href="PipeWire" class="wikilink" title="Pi
 To use PipeWire with a system-wide MPD instance, create an `audio_output` for it:
 
 ``` nix
-services.mpd.extraConfig = ''
-  audio_output {
-    type "pipewire"
-    name "My PipeWire Output"
-  }
-'';
+services.mpd.settings = {
+  audio_output = [
+    {
+      type = "pipewire";
+      name = "My PipeWire Output";
+    }
+  ];
+};
 ```
 
 See <https://mpd.readthedocs.io/en/stable/plugins.html#pipewire> for more options. However, similar to PulseAudio, MPD cannot connect to the PipeWire socket because MPD will by default run under a different user than PipeWire.

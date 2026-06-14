@@ -57,6 +57,8 @@ Note: If your client doesn't support [Matrix Spaces](https://matrix.org/ecosyste
 
 #### [LinkedIn](https://www.linkedin.com/company/nixos-foundation/)
 
+#### [Bluesky](https://bsky.app/profile/nixos.org)
+
 ## Unofficial Spaces
 
 Spaces maintained by members of the community.

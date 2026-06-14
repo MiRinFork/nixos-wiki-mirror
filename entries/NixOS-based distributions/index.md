@@ -251,6 +251,15 @@ This table lists a non-exhaustive selection of Linux distributions based on NixO
 <td><p>Released</p></td>
 <td><p>vpsAdminOS is a small OS serving as a host for unprivileged Linux system containers. It is based on NixOS and not-os.</p></td>
 </tr>
+<tr>
+<td><p><a href="https://git.oss.uzinfocom.uz/xinux/">Xinux</a></p></td>
+<td><p><a href="https://git.oss.uzinfocom.uz/xinux/">https://git.oss.uzinfocom.uz/xinux/</a></p></td>
+<td><ul>
+<li>Based on NixOS</li>
+</ul></td>
+<td><p>6 month rolling release</p></td>
+<td><p>User friendly general purpose distro originally hard fork of SnowflakeOS.</p></td>
+</tr>
 </tbody>
 </table>
 

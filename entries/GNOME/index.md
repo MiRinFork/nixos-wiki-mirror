@@ -60,7 +60,7 @@ Using the following example configuration, Qt applications will have a look simi
 
 ### Experimental features
 
-GNOME has a number of experimental options for features not fully completed and thus hidden from the user. As of GNOME 49, these are the experimental features you may want to use:
+GNOME has a number of experimental options for features not fully completed and thus hidden from the user. As of GNOME 50, these are the experimental features you may want to try out:
 
 ### Discover dconf settings
 

@@ -104,7 +104,7 @@ For more nginx settings and further instruction, please look here <a href="Nginx
 
 ### Plugins
 
-The NixOS module supports plugins from nixpkgs; currently about half of the existing NetBox plugins are packaged there. Until 26.05 these plugins are available as part of [python3Packages](https://search.nixos.org/packages?type=packages&query=python3Packages+netbox). Since 26.05 plugins can be found in the \[<https://search.nixos.org/packages?type=packages&query=netboxPlugins>. netboxPlugins\] package set. The documentation for plugins is being worked on and discussed in [\#261522](https://github.com/NixOS/nixpkgs/issues/261522).
+The NixOS module supports plugins from nixpkgs; currently about half of the [existing NetBox plugins](https://netboxlabs.com/plugins/) are packaged there. Until 26.05 these plugins are available as part of [python3Packages](https://search.nixos.org/packages?type=packages&query=python3Packages+netbox). Since 26.05 plugins can be found in the \[<https://search.nixos.org/packages?type=packages&query=netboxPlugins>. netboxPlugins\] package set. The documentation for plugins is being worked on and discussed in [\#261522](https://github.com/NixOS/nixpkgs/issues/261522).
 
 To include a plugin:
 
@@ -124,6 +124,8 @@ services.netbox.settings.PLUGINS
 ```
 
 is usually contained in the official documentation for the plugin. It usually is slightly different from the package name.
+
+Some plugins depend on other plugins (e. g. netbox-config-backup on netbox-napalm-plugin, or netbox-peering-manager on netbox-routing) and some are incompatible with each other (e. g. netbox-bgp and netbox-routing).
 
 ### Setup Superuser
 

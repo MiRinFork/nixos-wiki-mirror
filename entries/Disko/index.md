@@ -17,13 +17,13 @@ The following command will apply the disk layout specified in the configuration 
 </translate> <translate> </translate> <translate>
 
 ``` console
-# sudo nix run github:nix-community/disko -- --mode disko ./disko-config.nix
+# sudo nix run github:nix-community/disko/latest -- --mode disko ./disko-config.nix
 ```
 
 Alternativley use a disk layout configuration of a [remote repository](https://github.com/Lassulus/flakes-testing) containing a `flake.nix` file as an entry point.
 
 ``` console
-# sudo nix run github:nix-community/disko -- --mode disko --flake github:Lassulus/flakes-testing#fnord
+# sudo nix run github:nix-community/disko/latest -- --mode disko --flake github:Lassulus/flakes-testing#fnord
 ```
 
 The commands above requires <a href="Special:MyLanguage/Flake" class="wikilink" title="Flake">Flake</a> features available on your system.
