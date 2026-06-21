@@ -8,11 +8,9 @@
 
 </div>
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
+<span id="Installation"></span>
 
-## Installation
-
-</div>
+## 安装
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
@@ -44,17 +42,13 @@ home.packages = with pkgs; [ hmcl ];
 
 </div>
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
+<span id="Configuration"></span>
 
-## Configuration
+## 配置
 
-</div>
+<span id="Basic"></span>
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-#### Basic
-
-</div>
+#### 基础
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
@@ -62,11 +56,9 @@ At present, configuration can be performed through the HMCL interface; however, 
 
 </div>
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
+<span id="Wayland_support"></span>
 
-#### Wayland support
-
-</div>
+#### Wayland 支持
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
@@ -80,11 +72,9 @@ For older Minecraft versions, users who want to use Wayland should enable `Advan
 
 </div>
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
+<span id="Advanced"></span>
 
-#### Advanced
-
-</div>
+#### 进阶
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
@@ -107,11 +97,9 @@ environment.systemPackages = with pkgs; [
 
 </div>
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
+<span id="References"></span>
 
-## References
-
-</div>
+## 参考
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 

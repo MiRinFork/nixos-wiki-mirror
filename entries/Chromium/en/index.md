@@ -124,4 +124,30 @@ programs.firejail = {
 };
 ```
 
+## Add support for Brave Browser in Profile Sync daemon
+
+Adding Brave Browser support to Profile Sync daemon can be automated with an overlay.
+
+``` nix
+# /etc/nixos/configuration.nix
+{
+  nixpkgs = {
+    overlays = [
+      (final: prev: {
+        profile-sync-daemon = prev.profile-sync-daemon.overrideAttrs (oldAttrs: {
+          installPhase =
+            oldAttrs.installPhase
+            + ''
+              cp $out/share/psd/{contrib,browsers}/brave
+            '';
+        });
+      })
+    ];
+  };
+
+  # Enable the Profile Sync daemon service.
+  services.psd.enable = true;
+}
+```
+
 <a href="Category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="Category:Web_Browser{{#translation:}}" class="wikilink" title="Category:Web Browser{{#translation:}}">Category:Web Browser{{#translation:}}</a>

@@ -15,7 +15,7 @@ Home Manager can be configured as a user in `~/.config/home-manager/home.nix` or
 
 ### Installation as a user
 
-Follow the [official guide](https://nix-community.github.io/home-manager/index.xhtml#ch-installation)
+Follow the [official guide](https://nix-community.github.io/home-manager/installation/standalone.html)
 
 Your configuration is stored in `~/.config/home-manager/home.nix`. Each time you modify it, rerun `home-manager switch` for changes to have effect.
 

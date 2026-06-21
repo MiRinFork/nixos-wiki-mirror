@@ -2,7 +2,7 @@
 
 <!-- Source page: Plymouth/zh -->
 
-<languages/> [Plymouth](https://www.freedesktop.org/wiki/Software/Plymouth) 是一个在启动过程早期运行的应用程序，提供图形启动动画，被大多数面向桌面的 Linux 发行版所使用。
+<languages/> [Plymouth](https://www.freedesktop.org/wiki/Software/Plymouth) 是一个在启动过程早期运行的应用程序，提供图形启动动画。它被大多数面向桌面的 Linux 发行版所使用。
 
 <span id="Usage"></span>
 

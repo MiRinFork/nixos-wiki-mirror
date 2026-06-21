@@ -36,7 +36,7 @@ nixos-shell -I nixpkgs=/home/myuser/projects/nixpkgs myvm.nix
 
 ### Graphical session
 
-Following snippet will spawn a QEMU session with a graphical screen running GNOME, configured to auto login the user `nixos`.
+Following snippet will spawn a QEMU session with a graphical screen running GNOME, configured to auto login the user `nixos`.If you want auto screen resize support and clipboard-sharing between host and guest to work, append the following lines to your guest config.
 
 ### Mounting host directories
 

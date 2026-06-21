@@ -8,7 +8,7 @@ Without entering too much into the details − [this blog post](https://www.twea
 
 ## Setting-up Nix for CA derivations
 
-Being still an experimental feature, CA derivations are currently only available on unstable Nix versions, and require an explicit opt-in.
+Being still an experimental feature, CA derivations currently require an explicit opt-in.
 
 ### On NixOS
 

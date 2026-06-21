@@ -17,6 +17,26 @@ services.navidrome = {
 
 The service should be available add <http://127.0.0.1:4533>. Continue adding an admin login including setting a password.
 
+#### Setting to localhost
+
+``` nix
+servces.navidrome = {
+  settings = {
+    Address = "0.0.0.0";
+  };
+};
+```
+
+#### Open the Firewall
+
+If it is enabled the following settings will open just for this port
+
+``` nix
+servces.navidrome = {
+  openFirewall = true;
+};
+```
+
 ### Tips and tricks
 
 #### Import playlists

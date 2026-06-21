@@ -74,11 +74,7 @@ There is a optional dependency for niri which is highly recommended to install (
 
 </div>
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-Or using <a href="Special:MyLanguage/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a>
-
-</div>
+或者使用 <a href="Special:MyLanguage/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a>
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 

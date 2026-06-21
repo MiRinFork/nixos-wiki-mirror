@@ -161,7 +161,7 @@ This will ensure your node has a stable ID. You can optionally include the key.p
 To generate a new key.cert and key.pem for a deployment, you can use the -generate argument:
 
 ``` bash
-$ nix-shell -p syncthing --run "syncthing generate --config myconfig/"
+$ nix-shell -p syncthing --run "syncthing generate --home myconfig/"
 2024/04/23 11:41:17 INFO: Generating ECDSA key and certificate for syncthing...
 2024/04/23 11:41:17 INFO: Device ID: DMWVMM6-MKEQVB4-I4UZTRH-5A6E24O-XHQTL3K-AAI5R5L-MXNMUGX-QTGRHQ2
 2024/04/23 11:41:17 INFO: Default folder created and/or linked to new config

@@ -14,7 +14,7 @@ For installing Godot-Mono (C#), see <a href="Godot-Mono" class="wikilink" title=
 
 On Godot upgrade, the new export template can be automatically provisioned this way:
 
-`home.file.".local/share/godot/export_templates/${builtins.replaceStrings [ "-" ] [ "." ] pkgs.godot_4-export-templates.version}".source = pkgs.godot_4-export-templates;`
+`home.file.".local/share/godot/export_templates".source = "${pkgs.godot_4-export-templates-bin}/share/godot/export_templates";`
 
 ### Android Export Target
 

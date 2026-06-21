@@ -20,7 +20,7 @@ You can also style and configure ReGreet through Nix easily.
 
 ## Automatic startup
 
-In this minimal example, the Wayland compositor <a href="Sway" class="wikilink" title="Sway">Sway</a> automatically gets executed by the user `myuser` after successfull boot, no password required:
+In this minimal example, the Wayland compositor <a href="Sway" class="wikilink" title="Sway">Sway</a> automatically gets executed by the user `myuser` after successful boot, no password required:
 
 `initial_session` is executed automatically. If you just define `default_session`, greetd will ask for a password and execute `command` with user `myuser`.
 

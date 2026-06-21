@@ -92,7 +92,7 @@ Refer to <a href="NixOS_modules" class="wikilink" title="NixOS modules">NixOS mo
 
 #### Importing packages from multiple nixpkgs branches
 
-A NixOS config flake could be as follows (replace <hostname> with your hostname):
+A NixOS config flake could be as follows (replace hostname with your hostname):
 
 If the variable `nixpkgs` points to the flake, you can also define `pkgs` with overlays with:
 

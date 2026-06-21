@@ -60,7 +60,7 @@ For user-wide config (inside home-manager), use the following:
 
 ## PKCS#11
 
-Note some websites still use PKCS#11 instead of Web eID (for Estonian ID cards). This requires different configuration.
+Note some websites still use PKCS#11 instead of Web eID (e.g. for Estonian and Belgian ID cards). This requires different configuration.
 
 We configure the browser(s) to load PKCS#11 modules via the `p11-kit-proxy` module as configured in `/etc/pkcs11/modules`, and configure `opensc-pkcs11.so` in there.
 
@@ -112,7 +112,7 @@ Invoke `setup-browser-eid` to configure (and whenever this gets garbage-collecte
 
 ## Belgian eID cards
 
-The Web eID browser extension, used for authentication with Belgian eID cards, requires the PKCS#11 module `libbeidpkcs11.so.0` to be available in the directory `/usr/lib/x86_64-linux-gnu/`. Since this directory does not exist by default on NixOS, the Web eID application installed on the host system will not detect or support Belgian eID cards.
+Set up PKCS#11 as described above. The Web eID browser extension, used for authentication with Belgian eID cards, requires the PKCS#11 module `libbeidpkcs11.so.0` to be available in the directory `/usr/lib/x86_64-linux-gnu/`. Since this directory does not exist by default on NixOS, the Web eID application installed on the host system will not detect or support Belgian eID cards.
 
 To resolve this, you can create a symlink from the Nix store version of `beidpkcs11.so`, provided by the `eid-mw` package, into `/usr/lib/x86_64-linux-gnu/`:
 

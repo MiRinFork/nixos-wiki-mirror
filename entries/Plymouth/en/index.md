@@ -2,7 +2,7 @@
 
 <!-- Source page: Plymouth/en -->
 
-<languages/> [Plymouth](https://www.freedesktop.org/wiki/Software/Plymouth) is an application that runs early in the boot process, providing a graphical boot animation, it is used by most desktop-oriented Linux distributions.
+<languages/> [Plymouth](https://www.freedesktop.org/wiki/Software/Plymouth) is an application that runs early in the boot process, providing a graphical boot animation. It is used by most desktop-oriented Linux distributions.
 
 ## Usage
 

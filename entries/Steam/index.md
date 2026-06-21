@@ -2,9 +2,7 @@
 
 <!-- Source page: Steam -->
 
-<languages/> <translate> [Steam](https://store.steampowered.com/) is a digital distribution platform for video games, offering a vast library for purchase, download, and management. On NixOS, Steam is generally easy to install and use, often working "out-of-the-box". It supports running many Windows games on Linux through its compatibility layer, <a href="&lt;tvar_name=1&gt;#Proton&lt;/tvar&gt;" class="wikilink" title="Proton">Proton</a>.[^1] </translate>
-
-<translate>
+<languages/> <translate> <tvar name=steam>[Steam](https://store.steampowered.com/)</tvar> is a digital distribution platform for video games, offering a vast library for purchase, download, and management. On NixOS, Steam is generally easy to install and use, often working "out-of-the-box". It supports running many Windows games on Linux through its compatibility layer, <tvar name=proton><a href="#Proton" class="wikilink" title="Proton">Proton</a></tvar>.[^1]
 
 ## Installation
 
@@ -17,9 +15,7 @@ $ nix-shell -p steam-run # For FHS environment
 $ nix-shell -p steamcmd  # For steamcmd
 ```
 
-<translate> This provides the tools in your current shell without adding them to your system configuration. For `steamcmd` to work correctly for some tasks (like initializing for steam-tui), you might need to run it once to generate necessary files, as shown in the <a href="&lt;tvar_name=1&gt;#steam-tui&lt;/tvar&gt;" class="wikilink" title=" steam-tui section"> steam-tui section</a>. </translate>
-
-<translate>
+<translate> This provides the tools in your current shell without adding them to your system configuration. For `steamcmd` to work correctly for some tasks (like initializing for steam-tui), you might need to run it once to generate necessary files, as shown in the <a href="&lt;tvar_name=1&gt;#steam-tui&lt;/tvar&gt;" class="wikilink" title=" steam-tui section"> steam-tui section</a>.
 
 #### System setup
 
@@ -33,7 +29,7 @@ To install the <tvar name=steam><a href="Special:MyLanguage/Steam" class="wikili
 
 Basic Steam features can be enabled directly within the <tvar name=steam_option></tvar> attribute set: </translate>
 
-true;</code> which sets to true.</translate>}}
+true;</code> which sets <tvar name=steam_hardware_option></tvar> to true.</translate>}}
 
 \[pkgs.hidapi\];</code></translate>}}
 
@@ -43,11 +39,13 @@ true;</code> which sets to true.</translate>}}
 
 ### Improving Performance
 
-You can utilize [GameMode](https://github.com/FeralInteractive/gamemode), a combination of a library and daemon for Linux that allows games to request a set of optimizations to be temporarily applied to the host operating system and/or a game process.
+You can utilize <tvar name=gamemode>[GameMode](https://github.com/FeralInteractive/gamemode)</tvar>, a combination of a library and daemon for Linux that allows games to request a set of optimizations to be temporarily applied to the host operating system and/or a game process. </translate>
 
 ``` nixos
 programs.gamemode.enable = true;
 ```
+
+<translate>
 
 ### Gamescope Compositor / "Boot to Steam Deck"
 
@@ -215,7 +213,7 @@ programs.steam.package = pkgs.steam.override {
 
 GNOME uses the window class to determine the icon associated with a window. Steam currently doesn't set the required key for this in its .desktop files[^2], but you can fix this manually by editing the `StartupWMClass` key for each game's .desktop file, found under `~/.local/share/applications/`.
 
-For games running through Proton, the value should be `steam_app_`<game_id> (where <game_id> matches the value after <steam://rungameid/> on the `Exec` line). To automate this with <a href="Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> (executed on every rebuild): </translate>
+For games running through Proton, the value should be `steam_app_`<game_id> (where <game_id> matches the value after <steam://rungameid/> on the `Exec` line). To automate this with <tvar name=hm><a href="Special:MyLanguage/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a></tvar> (executed on every rebuild): </translate>
 
 ``` nix
 home.activation.fixSteamIcons = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
@@ -266,7 +264,7 @@ One common issue preventing steam from being able to start, at least on `x86-64`
 
 ### Steam is not updated
 
-When you restart Steam after an update, it starts the old version. ([\#181904](https://github.com/NixOS/nixpkgs/issues/181904)) A workaround is to remove the user files in `/home/<USER>/.local/share/Steam/userdata`. This can be done with `rm -rf /home/<USER>/.local/share/Steam/userdata` in the terminal or with your file manager. After that, Steam can be set up again by restarting.
+When you restart Steam after an update, it starts the old version. (<tvar name=issue>[\#181904](https://github.com/NixOS/nixpkgs/issues/181904)</tvar>) A workaround is to remove the user files in `/home/<USER>/.local/share/Steam/userdata`. This can be done with `rm -rf /home/<USER>/.local/share/Steam/userdata` in the terminal or with your file manager. After that, Steam can be set up again by restarting.
 
 ### Game fails to start
 
@@ -284,7 +282,7 @@ LD_LIBRARY_PATH=~/.steam/bin32:$LD_LIBRARY_PATH:/nix/store/pfsa... blabla ...cur
 
 <translate> Note: If a game gets stuck on Installing scripts, check for a DXSETUP.EXE process and run it manually, then restart the game launch.
 
-#### Changing the driver on AMD GPUs
+#### Changing the driver on AMD GPUs <tvar name=comment> </tvar>
 
 </translate>
 
@@ -311,7 +309,7 @@ The setcap issue at SteamVR start can be fixed with: `sudo setcap CAP_SYS_NICE+e
 
 ### Gamescope fails to launch when used within Steam
 
-Gamescope may fail to start due to missing Xorg libraries. ([\#214275](https://github.com/NixOS/nixpkgs/issues/214275)) To resolve this override the steam package to add them: </translate>
+Gamescope may fail to start due to missing Xorg libraries. (<tvar name=issue>[\#214275](https://github.com/NixOS/nixpkgs/issues/214275)</tvar>) To resolve this override the steam package to add them: </translate>
 
 ``` nix
 programs.steam.package = pkgs.steam.override {

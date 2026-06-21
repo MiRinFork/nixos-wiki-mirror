@@ -58,11 +58,9 @@ This is probably because the writeback device has already been mounted elsewhere
 
 Unlike zram, zswap requires a disk-based swap device or file to back it.
 
-Zswap is controlled by kernel parameters and can be enabled in your NixOS configuration by setting appropriate options through `boot.kernelParams`.
+Zswap is controlled by kernel parameters and can be enabled in your NixOS configuration by using the options.
 
 You can verify zswap's runtime status via `cat /sys/module/zswap/parameters/enabled` and inspect usage statistics with `# grep -r . /sys/kernel/debug/zswap/`
-
-A proper zswap configuration module is [currently under review](https://github.com/NixOS/nixpkgs/pull/470366).
 
 ## Disable swap
 

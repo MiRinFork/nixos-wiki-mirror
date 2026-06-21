@@ -29,7 +29,17 @@ Basic Steam features can be enabled directly within the attribute set:
 
 true;</code> which sets to true.}}
 
+\[pkgs.hidapi\];</code>}}
+
 ## Tips and tricks
+
+### Improving Performance
+
+You can utilize [GameMode](https://github.com/FeralInteractive/gamemode), a combination of a library and daemon for Linux that allows games to request a set of optimizations to be temporarily applied to the host operating system and/or a game process.
+
+``` nixos
+programs.gamemode.enable = true;
+```
 
 ### Gamescope Compositor / "Boot to Steam Deck"
 
@@ -72,16 +82,14 @@ services = {
 
 ### Gamescope HDR
 
-In order for HDR to work within gamescope, you need to separately install the `gamescope-wsi` package alongside enabling the `gamescope` program.
+In order for HDR to work within gamescope, you might need to separately enable the `enableWsi` option
 
 ``` nix
 programs.gamescope = {
   enable = true;
+  enableWsi = true;
   capSysNice = false;
 };
-environment.systemPackages = with pkgs; [
-  gamescope-wsi # HDR won't work without this
-];
 ```
 
 Additionally, it may be necessary to force HDR in gamescope with the argument `--hdr-debug-force-output` when configuring your game's launch options in steam (see the example below).
@@ -189,7 +197,19 @@ programs.steam.package = pkgs.steam.override {
 
 GNOME uses the window class to determine the icon associated with a window. Steam currently doesn't set the required key for this in its .desktop files[^2], but you can fix this manually by editing the `StartupWMClass` key for each game's .desktop file, found under `~/.local/share/applications/`.
 
-For games running through Proton, the value should be `steam_app_`<game_id> (where <game_id> matches the value after <steam://rungameid/> on the `Exec` line).
+For games running through Proton, the value should be `steam_app_`<game_id> (where <game_id> matches the value after <steam://rungameid/> on the `Exec` line). To automate this with <a href="Special:MyLanguage/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> (executed on every rebuild):
+
+``` nix
+home.activation.fixSteamIcons = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+  for f in ~/.local/share/applications/*.desktop; do
+    id=$(grep -Eo 'steam://rungameid/[0-9]+' "$f" | sed 's#.*/##') || true
+    [ -n "$id" ] || continue
+    last=$(tail -n1 "$f" || true)
+    want="StartupWMClass=steam_app_$id"
+    [ "$last" = "$want" ] || echo "$want" >> "$f"
+  done
+'';
+```
 
 For games running natively, the value should match the game's main executable.
 
@@ -226,7 +246,7 @@ If you have those options set (or 32-bit isn't applicable to your system/platfor
 
 ### Steam is not updated
 
-When you restart <a href="Special:MyLanguage/Steam" class="wikilink" title="Steam">Steam</a> after an update, it starts the old version. ([\#181904](https://github.com/NixOS/nixpkgs/issues/181904)) A workaround is to remove the user files in `/home/<USER>/.local/share/Steam/userdata`. This can be done with `rm -rf /home/<USER>/.local/share/Steam/userdata` in the terminal or with your file manager. After that, Steam can be set up again by restarting.
+When you restart Steam after an update, it starts the old version. ([\#181904](https://github.com/NixOS/nixpkgs/issues/181904)) A workaround is to remove the user files in `/home/<USER>/.local/share/Steam/userdata`. This can be done with `rm -rf /home/<USER>/.local/share/Steam/userdata` in the terminal or with your file manager. After that, Steam can be set up again by restarting.
 
 ### Game fails to start
 
@@ -300,6 +320,16 @@ The following example is for the 8bitdo Ultimate Bluetooth controller, different
 ```
 
 To find the vendor and product ID of a device [usbutils](https://search.nixos.org/packages?channel=unstable&show=usbutils&from=0&size=50&sort=relevance&type=packages&query=usbutils) might be useful
+
+### Steam controller mouse input issues
+
+Mouse input on the controller may fail to take control of the visual cursor. In this instance, the input is still registered, but the cursor does not move. A fix for this is to preload Steam with extest. The Steam package already has an option for it:
+
+``` nix
+  programs.steam = {
+    extest.enable = true;
+  };
+```
 
 ### Known issues
 

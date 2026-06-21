@@ -146,4 +146,32 @@ programs.firejail = {
 };
 ```
 
+<span id="Add_support_for_Brave_Browser_in_Profile_Sync_daemon"></span>
+
+## 在配置同步守护程序中添加对 Brave 浏览器的支持
+
+通过 \`overlay\` 实现向配置同步守护程序添加 Brave 浏览器支持的自动化。
+
+``` nix
+# /etc/nixos/configuration.nix
+{
+  nixpkgs = {
+    overlays = [
+      (final: prev: {
+        profile-sync-daemon = prev.profile-sync-daemon.overrideAttrs (oldAttrs: {
+          installPhase =
+            oldAttrs.installPhase
+            + ''
+              cp $out/share/psd/{contrib,browsers}/brave
+            '';
+        });
+      })
+    ];
+  };
+
+  # Enable the Profile Sync daemon service.
+  services.psd.enable = true;
+}
+```
+
 <a href="Category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="Category:Web_Browser{{#translation:}}" class="wikilink" title="Category:Web Browser{{#translation:}}">Category:Web Browser{{#translation:}}</a>

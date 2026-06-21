@@ -6,7 +6,7 @@ This article describes how to work with the nix related repositories to add new 
 
 There is a chapter about hacking packages and modules in the NixOS manual: [development](http://nixos.org/nixos/manual/index.html#ch-development)
 
-Writing packages is covered in [quick start](https://nixos.org/manual/nixpkgs/stable/#chap-quick-start) and writing modules is covered in the [manual](http://nixos.org/nixos/manual)
+Writing packages is covered in [nixpkgs/blob/master/pkgs/README.md](https://github.com/NixOS/nixpkgs/blob/master/pkgs/README.md) and writing modules is covered in the [manual](http://nixos.org/nixos/manual)
 
 If you've read the manual and still don't know how to go about creating a package, read on.
 

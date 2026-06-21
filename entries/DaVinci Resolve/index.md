@@ -108,6 +108,17 @@ If it didn't help, you can view the error log at `~/.local/share/DaVinciResolve/
 
 If you can spot a line similar to `Cannot mix incompatible Qt library (5.15.12) with this library (5.15.2)`, and have configured QT options in your NixOS configuration (`qt.enable = true;`), try disabling them.
 
+### Resolve Studio crashes during License check with USB dongle
+
+When Resolve Studio starts fine as root, but crashes when you are trying to run it as a normal user and you are using a USB License Key Dongle you might need to add a UDEV rule to allow user access to the USB device[^1]:
+
+``` nix
+# DaVinci Resolve UDEV
+services.udev.extraRules = ''
+  SUBSYSTEM=="usb", ATTR{idVendor}=="096e", MODE="0664", GROUP="users", TAG+="uaccess"
+'';
+```
+
 ### Resolve crashes on Edit/Fusion tab with Intel iGPU
 
 If you are using `intel-compute-runtime-legacy1` and DaVinci Resolve crashes whenever you try to switch to Edit or Fusion tab, it indicates the issue with the latest package. If you want to learn more about how pinning packages to specific versions works, you can read <a href="FAQ/Pinning_Nixpkgs" class="wikilink" title="this article">this article</a>.
@@ -138,3 +149,5 @@ hardware.amdgpu.opencl.enable = true;
 ```
 
 <a href="Category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a>
+
+[^1]: <https://github.com/zelikos/davincibox#resolve-studio-crashes-on-checking-licences>
