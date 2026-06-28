@@ -189,3 +189,32 @@ This is a known issue ([441531](https://github.com/NixOS/nixpkgs/issues/441531))
   };
 }
 ```
+
+#### Migration to nixos-unstable (RFC42)
+
+Since [RFC42](https://github.com/NixOS/rfcs/blob/master/rfcs/0042-config-option.md) was approved, services are being migrated to use `.settings`, including `llama-cpp`. This is already the case for `nixos-unstable`. If you are using unstable, this is how you can migrate your service:
+
+``` diff
+{
+  services.llama-cpp = {
+    enable = true;
+    package = pkgs.llama-cpp-vulkan;
+    # package = (pkgs.llama-cpp.override { cudaSupport = true; })
+    # package = pkgs.llama-cpp-rocm;
+    # Takes care of downloading if model not present
+-    port = 8083;
+-    modelsPreset = {
++    settings.port = 8083;
++    settings.models-preset = (pkgs.formats.ini { }).generate "models-preset.ini" {
+      "Qwen3-Coder-Next" = {
+        hf-repo = "unsloth/Qwen3-Coder-Next-GGUF";
+        hf-file = "Qwen3-Coder-Next-UD-Q4_K_XL.gguf";
+        alias = "unsloth/Qwen3-Coder-Next";
+        temp = "1.0";
+        top-p = "0.95";
+        top-k = "40";
+      };
+    };
+  };
+}
+```

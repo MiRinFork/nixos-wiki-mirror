@@ -40,29 +40,35 @@ For the full list of available home-manager options for fish, refer to the [modu
 
 ## Tips and tricks
 
-### Setting fish as default shell
+### Setting fish as the default shell
+
+It is possible to set fish as the interactive non-login shell for your terminal emulator without setting it as the login shell (the one in `/etc/passwd`).
+
+As this is usually a user-wise setting, to configure the terminal emulator you will need to either modify its config file, or use <a href="Home_Manager" class="wikilink" title="Home Manager">Home Manager</a>.
+
+#### Setting fish as default for Kitty
+
+Using <a href="Home_Manager" class="wikilink" title="Home Manager">Home Manager</a>: Note: the `shellIntegration.enableFishIntegration = true;` is not required for setting fish as default, but provides other useful quality-of-life features, see <https://sw.kovidgoyal.net/kitty/shell-integration/>.
+
+For use without home-manager, refer to <https://sw.kovidgoyal.net/kitty/conf/#opt-kitty.shell> and <https://sw.kovidgoyal.net/kitty/conf/#opt-kitty.shell_integration>.
+
+**Setting fish as default for Gnome Console**
+
+Using <a href="Home-manager" class="wikilink" title="Home Manager">Home Manager</a>:
+
+### Setting fish as the login shell
 
 Using fish as the the login shell can cause compatibility issues. For example, certain recovery environments such as systemd's emergency mode to be completely broken when fish was set as the login shell. ArchWiki presents an [alternative solution](https://wiki.archlinux.org/title/Fish#Modify_.bashrc_to_drop_into_fish), keeping bash as the system shell but having it exec fish when run interactively.
+
+Do note that even the following code is not full-proof, and should only be used with a thorough understanding. Prefer <a href="Fish#Setting_fish_as_default_shell" class="wikilink" title="Setting fish as the default shell">Setting fish as the default shell</a>.
 
 Here is one solution, which launches fish unless the parent process is already fish:
 
 For a more detailed explanation, please see the [aforementioned ArchWiki page](https://wiki.archlinux.org/title/Fish#Modify_.bashrc_to_drop_into_fish).
 
-**Setting fish as default for Gnome Console**
+If you are using Lix, you can change the grep condition to `"fish\|nix-shell"` so the `nix-shell` command still works, this is necessary since Lix forks before spawning the shell process so the parent process ends up being nix-shell and not fish.[^1]
 
-It is possible to set fish as the interactive non-login shell for Gnome Console without setting fish as the login shell (the login shell in /etc/passwd for your user will not be fish).
-
-If you still want to set fish as the login shell, see <a href="Command_Shell#Changing_the_default_shell" class="wikilink" title="Command Shell#Changing the default shell">Command Shell#Changing the default shell</a>.
-
-#### Disable man page generation
-
-Some users suffer from slow build due to fish enabling \`documentation.man.generateCaches\`. You may force false.
-
-`documentation.man.generateCaches = false`*`;`*
-
-For home-manager users, man cache need to be disabled in programs
-
-`programs.man.generateCaches = false`*`;`*
+↵If you still want to set fish as the login shell, see <a href="Command_Shell#Changing_the_default_shell" class="wikilink" title="Command Shell#Changing the default shell">Command Shell#Changing the default shell</a>.
 
 #### Running fish interactively with zsh as system shell on darwin
 
@@ -78,6 +84,16 @@ programs.zsh = {
   ''
 };
 ```
+
+### Disable man page generation
+
+Some users suffer from slow build due to fish enabling \`documentation.man.generateCaches\`. You may force false.
+
+`documentation.man.generateCaches = false`*`;`*
+
+For home-manager users, man cache needs to be disabled in programs
+
+`programs.man.generateCaches = false`*`;`*
 
 ### Show that you are in a nix-shell
 
@@ -144,3 +160,5 @@ end
 - <a href="Command_Shell" class="wikilink" title="Command Shell">Command Shell</a>
 
 <a href="Category:Shell" class="wikilink" title="Category:Shell">Category:Shell</a>
+
+[^1]: <https://git.lix.systems/lix-project/lix/issues/1131#issuecomment-18341>

@@ -26,6 +26,10 @@ For example, to set user "myuser"'s shell to <a href="fish" class="wikilink" tit
 
 You can also choose whether or not a user should use the default shell:
 
+## Aliases
+
+You can set aliases for all shells via:
+
 ## Using a different shell in nix-shell and nix develop
 
 By default, both `nix develop` and `nix-shell` launch an interactive bash shell. However, it is possible to configure these environments to use an alternative shell.

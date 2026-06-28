@@ -269,6 +269,152 @@ Furthermore, it is necessary to announce the service with a `domain.tld/.well-kn
 }
 ```
 
+### Matrix Authentication Service (MAS)
+
+> At the time of writing, the `services.matrix-authentication-service` module has not yet been merged into Nixpkgs. The examples below are based on the proposed module available in PR [\#527621](https://github.com/NixOS/nixpkgs/pull/527621/) and may require adjustments until it is merged.
+
+The Matrix Authentication Service (MAS) is an OAuth 2.1 and OpenID Connect provider designed for Matrix homeservers. It is intended to become the authentication component used by Matrix homeservers implementing MSC3861.
+
+MAS provides a modern authentication layer for Matrix and enables features such as:
+
+- Single Sign-On (SSO) using external OpenID Connect providers;
+- Account management independent from the homeserver implementation;
+- Passwordless deployments relying entirely on upstream identity providers;
+- Future Matrix authentication features based on MSC3861 and MSC4108.
+
+MAS stores its own state in PostgreSQL and communicates with the homeserver using a shared secret.
+
+#### Basic configuration
+
+A minimal configuration can be achieved with:
+
+``` nixos
+# MAS part
+services.matrix-authentication-service = {
+  enable = true;
+  createDatabase = true;
+  settings = {
+    http.public_base = "https://auth.example.com/";
+    http.issuer = "https://auth.example.com/";
+    matrix = {
+      homeserver = "example.com";
+      endpoint = "http://127.0.0.1:8008/";
+      secret_file = config.age.secrets.mas_matrix_secret.path;
+    };
+  };
+};
+# Synapse part
+services.matrix-synapse.settings = {
+  matrix_authentication_service = {
+    enabled = true;
+    endpoint = "http://127.0.0.1:8089/";
+    secret_path = config.age.secrets.mas_matrix_secret.path;
+  };
+};
+```
+
+The following parameters are required:
+
+- `matrix.homeserver` should match the Synapse `server_name`.
+- `matrix.endpoint` must point to the homeserver's internal HTTP endpoint.
+- `matrix.secret_file` contains the shared secret used by MAS to authenticate to Synapse.
+  - The secret should be a long, randomly generated value. For example: `openssl rand -hex 32`
+
+<!-- -->
+
+- `http.public_base` is the public URL used by clients to reach MAS.
+
+#### Using an upstream OpenID Connect provider
+
+MAS can delegate authentication to an external OpenID Connect provider.
+
+The example below configures MAS to authenticate users through Authelia and disables the internal password database.
+
+``` nixos
+services.matrix-authentication-service = {
+  enable = true;
+  settings = {
+    passwords.enabled = false;
+    upstream_oauth2.providers = [
+      {
+        id = "XXXX";
+        human_name = "Authelia";
+        issuer = "https://auth.example.com";
+        client_id = "xxxxxxxx";
+        client_secret = "xxxxxxxx";
+        token_endpoint_auth_method = "client_secret_basic";
+        discovery_mode = "insecure";
+        fetch_userinfo = true;
+        scope = "openid profile email";
+        claims_imports = {
+          localpart = {
+            action = "require";
+            template = "{{ user.preferred_username }}";
+          };
+          displayname = {
+            action = "suggest";
+            template = "{{ user.name }}";
+          };
+          email = {
+            action = "suggest";
+            template = "{{ user.email }}";
+            set_email_verification = "always";
+          };
+        };
+      }
+    ];
+  };
+};
+```
+
+An OpenID Connect client must also be declared in Authelia:
+
+``` nixos
+{
+  client_name = "Matrix";
+
+  client_id = "<client-id>";
+  client_secret = "<client-secret>";
+
+  public = false;
+
+  authorization_policy = "two_factor";
+
+  redirect_uris = [
+    "https://auth.example.com/upstream/callback/XXXX"
+  ];
+
+  scopes = [
+    "openid"
+    "profile"
+    "email"
+    "offline_access"
+  ];
+
+  grant_types = [
+    "authorization_code"
+    "refresh_token"
+  ];
+
+  response_types = [ "code" ];
+}
+```
+
+With this setup:
+
+- Users authenticate against Authelia.
+- MAS consumes the OIDC claims exposed by Authelia.
+- Matrix accounts are associated with the imported `preferred_username`, display name and email address.
+- No password is stored locally in MAS.
+
+#### Secret management
+
+Secrets such as encryption keys, OIDC client secrets, and Matrix shared secrets should not be stored in the Nix store.
+
+Please use a secret management solution: <a href="Comparison_of_secret_managing_schemes" class="wikilink" title="Comparison of secret managing schemes">Comparison of secret managing schemes</a>
+
+See the [MAS configuration reference](https://search.nixos.org/options?channel=unstable&query=matrix-authentication-service) for the complete list of available options.
+
 ## Application services (a.k.a. bridges)
 
 Bridges allow you to connect Matrix to a third-party platform (like Discord, Telegram, etc.), and interact seamlessly. See [here](https://matrix.org/ecosystem/bridges/) for a list of currently supported bridges.

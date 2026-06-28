@@ -101,7 +101,7 @@ Once you're running an installer image, you can create a flake referencing the r
 
 ## Other Solutions
 
-In general, as show in in the first section, the closed source and proprietary software powering part of the Raspberry Pi development boards is a big source of contention. Therefore, there are largely two kinds of solutions going forward: **moving towards a generic boot process**, and **using proprietary software**, each with advantages and disadvantages.
+In general, as shown in in the first section, the closed source and proprietary software powering part of the Raspberry Pi development boards is a big source of contention. Therefore, there are largely two kinds of solutions going forward: **moving towards a generic boot process**, and **using proprietary software**, each with advantages and disadvantages.
 
 ### Using proprietary software
 

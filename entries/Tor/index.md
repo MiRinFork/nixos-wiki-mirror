@@ -155,13 +155,23 @@ Tor relays are servers that help anonymize internet traffic by routing it throug
 
 ### Client Bridge
 
-Tor can be enabled as a system service by enabling options . Configuration of tor service is an example of [Freeform module](https://nixos.org/manual/nixos/stable/index.html#sec-freeform-modules), so you can pass not only explicitly supported , but all other [torrc](https://2019.www.torproject.org/docs/tor-manual.html.en) options. For example, client bridge config can be set like this:
+Tor can be enabled as a system service by enabling options . Configuration of tor service is an example of [Freeform module](https://nixos.org/manual/nixos/stable/index.html#sec-freeform-modules), so you can pass not only explicitly supported , but all other [torrc](https://2019.www.torproject.org/docs/tor-manual.html.en) options. For example, a client obfs4 bridge config can be set like this:
 
 ``` nix
 services.tor.settings = {
       UseBridges = true;
       ClientTransportPlugin = "obfs4 exec ${pkgs.obfs4}/bin/lyrebird";
       Bridge = "obfs4 IP:ORPort [fingerprint]";
+};
+```
+
+For a webtunnel bridge, use:
+
+``` nix
+services.tor.settings = {
+      UseBridges = true;
+      ClientTransportPlugin = "webtunnel exec ${pkgs.webtunnel}/bin/client";
+      Bridge = "webtunnel IP:ORPort [fingerprint]";
 };
 ```
 

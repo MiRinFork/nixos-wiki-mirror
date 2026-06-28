@@ -64,8 +64,4 @@ A problem occurred configuring project ':app'.
 
 - There might be cases where setting the `ANDROID_HOME` environment variable will have no effect on Flutter's ability to assess the validity of Android SDK's installation. This behavior may be caused by an existing configuration file (`$XDG_CONFIG_HOME/settings` or `$XDG_CONFIG_HOME/flutter/settings`) containing an incorrectly set `"android-sdk"` key-value pair. Once removed, the environment variable should no longer be overridden, and should function correctly.
 
-## See also
-
-- The [team working on flutter in nixpkgs](https://github.com/orgs/NixOS/teams/flutter) maintains several pieces of infrastructure related to the cause. The documentation is lacking as of now, but there are plans to improve it.
-
 <a href="Category:_Development" class="wikilink" title="Category: Development">Category: Development</a>

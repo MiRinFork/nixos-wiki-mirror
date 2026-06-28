@@ -153,21 +153,26 @@ For FIDO2, directly read the [chapter in the official manual](https://github.com
 
 ### TPM2
 
-To store a key on the TPM2 module to unlock the device unattended, check if your `configuration.nix` has a line similar to the one below (with `YOUR-UUID` replaced with your device's actual UUID): Then this is the device we want to add the crypttab option to. If your configuration does not contain this line, then you can find it through this command:
+To store a key on the TPM2 module to unlock the device unattended, first find the UUID values of the encrypted LUKS devices. One way to do this is by running the `lsblk` command and seeing an output similar to:
+
+    NAME                                          MAJ:MIN RM  SIZE RO TYPE  MOUNTPOINTS
+    nvme0n1                                       259:0    0  1.8T  0 disk  
+    ├─nvme0n1p1                                   259:1    0    1G  0 part  /boot
+    ├─nvme0n1p2                                   259:2    0  1.8T  0 part  
+    │ └─luks-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx 254:1    0  1.8T  0 crypt /nix/store
+    │                                                                       /
+    └─nvme0n1p3                                   259:3    0    8G  0 part  
+      └─luks-yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy 254:0    0  7.9G  0 crypt [SWAP]
+
+You are looking for devices in the format of `luks-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` where `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` is replaced with an actual UUID. There may be multiple of these drives, in which case complete the following step on each device individually if unlocking via TPM2 is desired for all (in this example there are two devices due to the encrypted swap).
+
+Run the following command but replace `YOUR-UUID` with the UUID you found in the previous step **without the `luks-` at the start**:
 
 ``` sh
-nixos-option boot.initrd.luks.devices
+sudo systemd-cryptenroll --wipe-slot=tpm2 --tpm2-device=auto /dev/disk/by-uuid/YOUR-UUID
 ```
 
-To unlock the device using TPM2, add the following to your configuration to enable systemd stage 1 and to add the tpm2 option to crypttab.
-
-Rebuild and reboot before running the following command:
-
-``` sh
-sudo systemd-cryptenroll --wipe-slot=tpm2 --tpm2-device=auto --tpm2-pcrs=0 /dev/disk/by-uuid/YOUR-UUID
-```
-
-Now the device should unlock without prompting you for the password. After this is working, you can run the above command again and add more PCRs such as `--tpm2-pcrs=0+7` if your system uses <a href="Secure_Boot" class="wikilink" title="Secure Boot">Secure Boot</a>. A good set of options is `--tpm2-pcrs=0+2+7+12` and you can find all of them documented at the [Linux TPM PCR Registry](https://uapi-group.org/specifications/specs/linux_tpm_pcr_registry/).
+Now the device should unlock without prompting you for the password. After this is working, you should add certain restrictions to your saved key using Platform Configuration Registers (PCR). All options for these can be found at the [Linux TPM PCR Registry](https://uapi-group.org/specifications/specs/linux_tpm_pcr_registry/). If using the default `systemd-boot` without <a href="Secure_Boot" class="wikilink" title="Secure Boot">Secure Boot</a>, then a standard set of options to use is `4+9+12`. This can be applied by running the above command again with `--tpm2-pcrs=4+9+12`. If your system uses secure boot with <a href="Limine" class="wikilink" title="Limine">Limine</a> you may want to use `--tpm2-pcrs=4+7+8+9` instead.
 
 Because the TPM is attached to your computer, it provides no protection against a stolen computer when used on its own (it usually allows for setting a password, but that is it). It can only protect against a stolen drive.
 

@@ -32,6 +32,8 @@ Home Manager allows for deep customization of Firefox, including extensions, sea
 
 <translate> [More options are available on Home Manager's site.](https://nix-community.github.io/home-manager/options.xhtml#opt-programs.firefox.enable)
 
+To reload uBlock Origin settings from `policies.json`, open the uBlock Origin dashboard and choose *Reset to default settings*.
+
 ## Firefox Variants
 
 There are several Firefox variants available. To choose one, set the `programs.firefox.package` option accordingly. </translate>
@@ -114,7 +116,6 @@ Screen sharing on Wayland requires enabling PipeWire and the appropriate XDG Des
 
 - <a href="Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> – Declarative per-user configuration
 - [NixOS options for Firefox](https://search.nixos.org/options?channel=unstable&query=programs.firefox)
-- [Firefox topics on NixOS Discourse](https://discourse.nixos.org/tag/firefox)
 
 ## References
 
