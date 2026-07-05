@@ -10,13 +10,13 @@ This page is a minimalistic guide for setting up LUKS-based full disk encryption
 
 2\. Setup FIDO2 device. For a new YubiKey device, a FIDO2 PIN must be set, which can be done by running Yubico Authenticator (available in ), clicking `Passkey` section in the left menu and then clicking `︙` at the right upper corner.
 
-3\. Enroll FIDO2 device by running
+3\. Enroll FIDO2 device by running the following (note that LUKS partition will be automatically detected):
 
 ``` console
-# sudo systemd-cryptenroll --fido2-device=auto $LUKS_PART
+# sudo systemd-cryptenroll --fido2-device=auto
 ```
 
-where `$LUKS_PART` is the physical partition. See [systemd-cryptenroll(wiki.archlinux.org)](https://wiki.archlinux.org/title/Systemd-cryptenroll#FIDO2_tokens), , [1](https://discourse.nixos.org/t/fde-using-systemd-cryptenroll-with-fido2-key/47762#accepted-label) for further information on customization including user presence, pin, and biometric user verification.
+See [systemd-cryptenroll(wiki.archlinux.org)](https://wiki.archlinux.org/title/Systemd-cryptenroll#FIDO2_tokens), , [1](https://discourse.nixos.org/t/fde-using-systemd-cryptenroll-with-fido2-key/47762#accepted-label) for further information on customization including user presence, pin, and biometric user verification.
 
 4\. Update the NixOS configuration following :
 

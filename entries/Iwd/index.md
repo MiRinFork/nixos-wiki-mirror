@@ -35,6 +35,10 @@ To configure iwd, you should use `networking.wireless.iwd.settings` option. An e
 
 For a detailed and up-to-date list of available settings, please reference the [network daemon configuration documentation](https://git.kernel.org/pub/scm/network/wireless/iwd.git/tree/src/iwd.network.rst), from kernel Git repo.
 
+### Permissions
+
+At the time of this writing only `root` and users in the `wheel` group are permitted to use iwd. Here's [an issue about this (with a workaround)](https://github.com/NixOS/nixpkgs/issues/538306).
+
 ### <a href="eduroam" class="wikilink" title="eduroam">eduroam</a>
 
 <a href="eduroam" class="wikilink" title="eduroam">eduroam</a> (WPA2 Enterprise) wireless networks need to get configured manually by creating the following file `/var/lib/iwd/eduroam.8021x`, which will not persist across NixOS rebuilds unless explicitly managed. It's often better to configure this via a NixOS module.

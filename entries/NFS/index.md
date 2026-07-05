@@ -12,31 +12,32 @@
 
 ### Using bind mounts
 
+When deploying NFS, it is considered best practice to bind mount directories to be shared to a "virtual root directory" (typically `/export`) as filesystems to be exported can be made available under a single directory.
+
 Let's say that we've got one server-machine with 2 directories that we want to share: `/mnt/tomoyo` and `/mnt/kotomi`.
 
-First, we have to create a dedicated directory from which our NFS server will access the data:
+First, we have to create a dedicated directory ("virtual root directory") from which our NFS server will access the data:
 
 ``` console
 $ mkdir /export
 ```
 
-You may need to change ownership of the `/export` directory to `nobody:nogroup`
+You may need to change ownership of the `/export` directory to `nobody:nogroup`.
 
-Then we have to either move our already-existing directories inside `/export` (using `mv` from the command line) or bind-mount them there:
+Next mount directories to the virtual root directory.
 
-``` nix
-{
-  fileSystems."/export/tomoyo" = {
-    device = "/mnt/tomoyo";
-    options = [ "bind" ];
-  };
-
-  fileSystems."/export/kotomi" = {
-    device = "/mnt/kotomi";
-    options = [ "bind" ];
-  };
-}
+``` console
+# mount --bind /mnt/tomoyo /export/tomoyo
+# mount --bind /mnt/kotomi /export/kotomi
 ```
+
+Generate hardware config:
+
+``` console
+nixos-generate-config
+```
+
+This will add the following to `hardware-configuration.nix`.
 
 Refer to <a href="Filesystems#Bind_mounts" class="wikilink" title="Filesystems#Bind mounts">Filesystems#Bind mounts</a> for more information on bind mounts.
 
@@ -47,17 +48,6 @@ If you are using Btrfs, instead of moving existing directories or bind-mounting 
 ## NFS service configuration
 
 Having the filesystem ready, we can proceed to configure the NFS server itself:
-
-``` nix
-{
-  services.nfs.server.enable = true;
-  services.nfs.server.exports = ''
-    /export         192.168.1.10(rw,fsid=0,no_subtree_check) 192.168.1.15(rw,fsid=0,no_subtree_check)
-    /export/kotomi  192.168.1.10(rw,nohide,insecure,no_subtree_check) 192.168.1.15(rw,nohide,insecure,no_subtree_check)
-    /export/tomoyo  192.168.1.10(rw,nohide,insecure,no_subtree_check) 192.168.1.15(rw,nohide,insecure,no_subtree_check)
-  '';
-}
-```
 
 This configuration exposes all our shares to 2 local IPs; you can find more examples at [Gentoo's wiki on NFS](https://wiki.gentoo.org/wiki/NFSv4).
 
@@ -96,24 +86,24 @@ Many clients only support NFSv3, which requires the server to have fixed ports:
 
 # Client
 
-To ensure the client has the necessary NFS utilities installed, add the following to your system configuration (for example, in `configuration.nix`).
+To ensure the client has the necessary NFS utilities installed to mount NFS drives, add "nfs" to .
 
-``` nix
-  boot.supportedFilesystems = [ "nfs" ];
+Next mount exports to your local directories:
+
+``` console
+# mount 192.0.2.1:/tomoyo /mnt/tomoyo
+# mount 192.0.2.1:/kotomi /mnt/kotomi
 ```
 
-NFS shares can be mounted on a client system using the standard `filesystem` option. Continuing the server example, to mount the `tomoyo` share:
+Generate hardware config:
 
-``` nix
-{
-  fileSystems."/mnt/tomoyo" = {
-    device = "server:/tomoyo";
-    fsType = "nfs";
-  };
-}
+``` console
+nixos-generate-config
 ```
 
-In the above configuration, replace "server" with the appropriate IP address or DNS entry of your NFS server. Other, regular [filesystem options](https://search.nixos.org/options?query=filesystems.%3Cname%3E) apply.
+This will add the following to `hardware-configuration.nix`.
+
+Other, regular [filesystem options](https://search.nixos.org/options?query=filesystems.%3Cname%3E) apply.
 
 ## Specifying NFS version
 

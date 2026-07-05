@@ -199,9 +199,6 @@ Since [RFC42](https://github.com/NixOS/rfcs/blob/master/rfcs/0042-config-option.
   services.llama-cpp = {
     enable = true;
     package = pkgs.llama-cpp-vulkan;
-    # package = (pkgs.llama-cpp.override { cudaSupport = true; })
-    # package = pkgs.llama-cpp-rocm;
-    # Takes care of downloading if model not present
 -    port = 8083;
 -    modelsPreset = {
 +    settings.port = 8083;

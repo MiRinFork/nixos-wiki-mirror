@@ -4,7 +4,7 @@
 
 **nixos-rebuild** is the NixOS command used to apply changes made to the system configuration. It can also be used for a variety of other tasks related to managing the state of a NixOS system.
 
-`nixos-rebuild-ng` is a rewrite of `nixos-rebuild` in Python instead of Bash which has better performance and more features, and will become the default in NixOS 25.11.
+`nixos-rebuild-ng` is a rewrite of `nixos-rebuild` in Python instead of Bash which has better performance and more features, and is the default in NixOS 25.11.
 
 ## Usage
 
@@ -54,7 +54,7 @@ If you are rebuilding a remote host as a non-root user, use the `--sudo` option 
 $ nixos-rebuild --target-host user@example.com --sudo switch
 ```
 
-To enter a password while using remote sudo, prefix the command with `NIX_SSHOPTS="-o RequestTTY=force"`, or add `--ask-sudo-password` with `nixos-rebuild-ng`.
+To enter a password while using remote sudo, add the flag `--ask-sudo-password`.
 
 For a full list of sub-commands and options, see the `nixos-rebuild` man page.
 

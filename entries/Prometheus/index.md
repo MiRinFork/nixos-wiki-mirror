@@ -21,6 +21,6 @@ Another example:
 ## See also
 
 - <a href="Grafana" class="wikilink" title="Grafana">Grafana</a>, the dashboarding tool often used with Prometheus.
-- <a href="Grafana_Loki" class="wikilink" title="Loki">Loki</a>, the equivalent of Prometheus for logs.
+- <a href="Grafana_Loki" class="wikilink" title="Grafana Loki">Grafana Loki</a>, the equivalent of Prometheus for logs.
 
 <a href="Category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="Category:NixOS_Manual" class="wikilink" title="Category:NixOS Manual">Category:NixOS Manual</a>

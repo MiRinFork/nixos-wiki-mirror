@@ -247,7 +247,7 @@ Alternatively, you can expose relevant packages directly under `/usr/share/...` 
     fontsPkgs = config.fonts.packages ++ (with pkgs; [
         # Add your cursor themes and icon packages here
         bibata-cursors
-        gnome.gnome-themes-extra
+        gnome-themes-extra
         # etc.
       ]);
     x11Fonts = pkgs.runCommand "X11-fonts"
@@ -255,8 +255,7 @@ Alternatively, you can expose relevant packages directly under `/usr/share/...` 
         preferLocalBuild = true;
         nativeBuildInputs = with pkgs; [
           gzip
-          xorg.mkfontscale
-          xorg.mkfontdir
+          mkfontdir
         ];
       }
       (''
@@ -272,7 +271,7 @@ Alternatively, you can expose relevant packages directly under `/usr/share/...` 
         cd "$out/share/fonts"
         mkfontscale
         mkfontdir
-        cat $(find ${pkgs.xorg.fontalias}/ -name fonts.alias) >fonts.alias
+        cat $(find ${pkgs.font-alias}/ -name fonts.alias) >fonts.alias
       '');
     aggregatedIcons = pkgs.buildEnv {
       name = "system-icons";
@@ -288,8 +287,8 @@ Alternatively, you can expose relevant packages directly under `/usr/share/...` 
 
   fonts.packages = with pkgs; [
     noto-fonts
-    noto-fonts-emoji
-    noto-fonts-cjk
+    noto-fonts-color-emoji
+    noto-fonts-cjk-sans
   ];
 ```
 

@@ -63,7 +63,7 @@ services.syncthing = {
 };
 ```
 
-Note: If you want to use <a href="Agenix" class="wikilink" title="Agenix">Agenix</a> to set the GUI password use [services.syncthing.guiPasswordFile](https://search.nixos.org/options?channel=unstable&query=syncthing&show=services.syncthing.guiPasswordFile) instead of setting.gui.password.
+Note: If you want to use <a href="Agenix" class="wikilink" title="Agenix">Agenix</a> to set the GUI password, use [services.syncthing.guiPasswordFile](https://search.nixos.org/options?channel=unstable&query=syncthing&show=services.syncthing.guiPasswordFile) instead of setting.gui.password.
 
 #### Advanced
 

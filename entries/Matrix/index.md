@@ -271,7 +271,7 @@ Furthermore, it is necessary to announce the service with a `domain.tld/.well-kn
 
 ### Matrix Authentication Service (MAS)
 
-> At the time of writing, the `services.matrix-authentication-service` module has not yet been merged into Nixpkgs. The examples below are based on the proposed module available in PR [\#527621](https://github.com/NixOS/nixpkgs/pull/527621/) and may require adjustments until it is merged.
+> MAS module is only available since nixos 26.11
 
 The Matrix Authentication Service (MAS) is an OAuth 2.1 and OpenID Connect provider designed for Matrix homeservers. It is intended to become the authentication component used by Matrix homeservers implementing MSC3861.
 
@@ -293,13 +293,14 @@ A minimal configuration can be achieved with:
 services.matrix-authentication-service = {
   enable = true;
   createDatabase = true;
+  credentials."matrix_secret" = config.age.secrets.mas_matrix_secret.path;
   settings = {
     http.public_base = "https://auth.example.com/";
     http.issuer = "https://auth.example.com/";
     matrix = {
       homeserver = "example.com";
       endpoint = "http://127.0.0.1:8008/";
-      secret_file = config.age.secrets.mas_matrix_secret.path;
+      secret_file = "/run/credentials/matrix-authentication-service.service/matrix_secret";
     };
   };
 };
@@ -341,7 +342,8 @@ services.matrix-authentication-service = {
         human_name = "Authelia";
         issuer = "https://auth.example.com";
         client_id = "xxxxxxxx";
-        client_secret = "xxxxxxxx";
+        client_secret_file = "/run/credentials/matrix-authentication-service.service/xxxx";
+        # client_secret = "xxxxxxxx";
         token_endpoint_auth_method = "client_secret_basic";
         discovery_mode = "insecure";
         fetch_userinfo = true;
@@ -414,6 +416,10 @@ Secrets such as encryption keys, OIDC client secrets, and Matrix shared secrets 
 Please use a secret management solution: <a href="Comparison_of_secret_managing_schemes" class="wikilink" title="Comparison of secret managing schemes">Comparison of secret managing schemes</a>
 
 See the [MAS configuration reference](https://search.nixos.org/options?channel=unstable&query=matrix-authentication-service) for the complete list of available options.
+
+#### Example configuration
+
+This configuration is provided for demonstration purposes only (mas+synapse+authelia with agenix for secret management): <https://github.com/hatch01/flake/blob/d8e8a74b8b3df01283b79a777c46513dd78c9d10/apps/matrix/mas.nix>
 
 ## Application services (a.k.a. bridges)
 

@@ -140,10 +140,10 @@ To solve this problem, you can set up your remote builders as substituters. Ever
   - Run `nix build` with `--max-jobs 0`.
 - How do I know why my builds aren't being distributed?
   - Run `nix build -vvvvvvvvv 2>&1 | less` and search for `decline`.
-- I can `nix store ping` but the build doesn't distribute.
-  - If on NixOS, Check that `nix store ping` command works when run as root.
-  - If you configured builders on the command line (with `--builders`), make sure your account is in `nix.trustedUsers` in `/etc/nixos/configuration.nix`. Only `/etc/nix/nix.conf` is taken into account otherwise.
-- I can ping the store as root, but I'm getting "broken pipe" errors when trying to distribute.
+- I can `nix store info` but the build doesn't distribute.
+  - If on NixOS, Check that `nix store info` works when run as root.
+  - If you configured builders on the command line with the `--builders` flag, make sure your account is in `nix.trustedUsers` in `/etc/nixos/configuration.nix`. Otherwise only `/etc/nix/nix.conf` is taken into account.
+- I can `nix store info` as root, but I'm getting "broken pipe" errors when trying to distribute.
   - You may have hit bug . Add `nix.distributedBuilds = true;` to `configuration.nix` and `nixos-rebuild switch`.
 
 ## Tips and tricks

@@ -80,11 +80,11 @@ Firefox can be configured to load PKCS#11 tokens with the following snippet:
 
 ``` nix
 {
-  programs.firefox.policies.SecurityDevices.p11-kit-proxy = "${pkgs.p11-kit}/lib/p11-kit-proxy.so";
+  programs.firefox.policies.SecurityDevices.Add.p11-kit-proxy = "${pkgs.p11-kit}/lib/p11-kit-proxy.so";
 }
 ```
 
-If you're building a firefox derivation yourself, you can override it with `extraPolicies.SecurityDevices.p11-kit-proxy "${pkgs.p11-kit}/lib/p11-kit-proxy.so";`.
+If you're building a firefox derivation yourself, you can override it with `extraPolicies.SecurityDevices.Add.p11-kit-proxy "${pkgs.p11-kit}/lib/p11-kit-proxy.so";`.
 
 ### Google Chrome / Chromium
 

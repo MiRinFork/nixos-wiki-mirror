@@ -115,31 +115,29 @@ Please refer to the [Attic documentation](https://docs.attic.rs/) to set it up c
 
 This tutorial explains how to setup a machine as a binary cache for other machines, serving the nix store on TCP port 80 with signing turned on. It assumes that an service is already running, that port 80 is open,[^1] and that the hostname resolves to the server.[^2]
 
-### 1. Generating a private/public keypair
+### 1. Generating a signing key
 
-A keypair is necessary to sign Nix packages. Replace `binarycache.example.com` with your domain.
-
-The packages can be signed before adding them to the binary cache, or on the fly as they are served. In this tutorial we'll set up to sign packages on the fly when it serves them. In this case it is important that only can access the private key. The location is just an example.
+Follow the generation process at <a href="Signing_store_paths#Signing_Key" class="wikilink" title="Signing store paths#Signing Key">Signing store paths#Signing Key</a>, replacing the example hostname with your own. In this tutorial, signs packages on the fly when it serves them so any <a href="Nix_(package_manager)" class="wikilink" title="Nix">Nix</a> configuration isn't required.
 
 ### 2. Activating 
 
-is the service that speaks the binary cache protocol via HTTP.
+is the service that serves the binary cache protocol via HTTP.
 
 To start it on NixOS:
 
 ``` nix
 services.nix-serve = {
   enable = true;
-  secretKeyFile = "/var/cache-priv-key.pem";
+
+  # Note: You don't need to give nix-serve ownership of the file because systemd reads it.
+  secretKeyFile = "/var/secrets/nix-cache-priv-key";
 };
 ```
 
 To start it on a non-NixOS machine at boot, add to :
 
-``` crontab
-NIX_SECRET_KEY_FILE=/var/cache-priv-key.pem
-@reboot /home/USER/.nix-profile/bin/nix-serve --listen :5000 --error-log /var/log/nix-serve.log --pid /var/run/nix-serve.pid --user USER --daemonize
-```
+    NIX_SECRET_KEY_FILE=/var/secrets/nix-cache-priv-key
+    @reboot /home/USER/.nix-profile/bin/nix-serve --listen :5000 --error-log /var/log/nix-serve.log --pid /var/run/nix-serve.pid --user USER --daemonize
 
 will by default serve on port 5000. We are not going to open a firewall port for it, because we will let redirect to it.
 
@@ -179,9 +177,13 @@ server {
 
 To apply the previous settings to your NixOS machine, run:
 
+``` shell-session
+# nixos-rebuild switch
+```
+
 Check the general availability:
 
-``` bash
+``` shell-session
 $ curl http://binarycache.example.com/nix-cache-info
 StoreDir: /nix/store
 WantMassQuery: 1
@@ -190,14 +192,14 @@ Priority: 30
 
 On the binary cache server, build some package:
 
-``` bash
+``` shell-session
 $ nix-build '<nixpkgs>' -A pkgs.hello
 /nix/store/gdh8165b7rg4y53v64chjys7mbbw89f9-hello-2.10
 ```
 
 To verify the signing on the fly, make sure the following request contains a line:
 
-``` bash
+``` shell-session
 $ curl http://binarycache.example.com/gdh8165b7rg4y53v64chjys7mbbw89f9.narinfo
 StorePath: /nix/store/gdh8165b7rg4y53v64chjys7mbbw89f9-hello-2.10
 URL: nar/gdh8165b7rg4y53v64chjys7mbbw89f9.nar

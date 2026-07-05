@@ -45,6 +45,7 @@ For the purposes of this basic overview, a compositor can be thought of as equiv
 
 - <a href="Sway" class="wikilink" title="Sway">Sway</a> is a i3-like compositor.
 - <a href="Hyprland" class="wikilink" title="Hyprland">Hyprland</a> the dynamic tiling Wayland compositor that doesn't sacrifice on its looks.
+- <a href="Niri" class="wikilink" title="Niri">Niri</a> is a scrollable tiling compositor
 
 ### X and Wayland support
 

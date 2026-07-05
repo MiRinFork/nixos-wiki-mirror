@@ -2,7 +2,24 @@
 
 <!-- Source page: Install NixOS on Scaleway X86 Virtual Cloud Server -->
 
-# New method
+## nixos-bite
+
+As of July 2026, using [nixos-bite](https://codeberg.org/whitequark/nixos-bite) just works. Even on a STARDUST with ipv6 only.
+
+Add this to your `cloud-init.yaml`:
+
+``` yaml
+#cloud-config
+runcmd:
+- 'sleep 30s' # wait for network
+- 'curl https://codeberg.org/whitequark/nixos-bite/raw/branch/main/nixos-bite.sh | bash -s reboot' 
+# For Ipv6 only
+# - 'curl https://codeberg.org/whitequark/nixos-bite/raw/branch/main/nixos-bite.sh | NIX_DNS=2a00:1098:2c::1 bash -s reboot' 
+```
+
+It will maintain the SSH key provided to Scaleway, so you can just `nixos-rebuild switch` to the instance.
+
+## Another old method
 
 As of November 2020, it is easy to get a NixOS VM running on Scaleway by using nixos-infect and Scaleway's support for cloud init.
 
@@ -28,7 +45,7 @@ You can change the packages you'd like preinstalled by modiffying the list with 
 
 On login, you will be in NixOS 25.11.
 
-## Using the scaleway virtual console
+#### Using the scaleway virtual console
 
 Just add:
 
@@ -38,7 +55,7 @@ boot.kernelParams = [ "console=ttyS0" ];
 
 to the configuration.nix
 
-# Old method
+## Old method
 
 ## Create Scaleway Instance
 

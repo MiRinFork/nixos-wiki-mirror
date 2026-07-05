@@ -40,7 +40,7 @@ The following example describes installing [Agenix](https://github.com/ryantm/ag
 After adding the input, install the `agenix` client application with: </translate>
 
 ``` nix
-environment.systemPackages = [ pkgs.agenix-cli ];
+environment.systemPackages = [ inputs.agenix.packages.x86_64-linux.default ];
 ```
 
 <translate>

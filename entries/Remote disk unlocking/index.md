@@ -6,12 +6,60 @@ This page describes the method for <strong>remotely</strong> unlocking LUKS / ZF
 
 ## Setup
 
-Generate host key for the SSH daemon which will run in initrd during boot (required)
+### Add kernel modules for the network card
+
+The network card may not work in initrd without its kernel being manually loaded by . Find out the kernel module required by checking "Kernel modules" section in the output of `lspci -v | grep -iA8 'network\|ethernet'` (`lspci` is available in ), and add it to (not to confuse with , which is for stage 2).
+
+### Generate host key
+
+Generate host key for the SSH daemon in `/etc/secrets/initrd/ssh_host_ed25519_key` which is required.
 
 ``` console
 # mkdir -p /etc/secrets/initrd
 # ssh-keygen -t ed25519 -N "" -f /etc/secrets/initrd/ssh_host_ed25519_key
 ```
+
+### Configure SSH
+
+Configure . Add the generated host key to and your public key to .
+
+Now proceed to one of <a href="#Setup_with_Systemd" class="wikilink" title="#Setup with Systemd">#Setup with Systemd</a> or <a href="#Setup_without_Systemd" class="wikilink" title="#Setup without Systemd">#Setup without Systemd</a>.
+
+## Setup with Systemd
+
+### Configure systemd-networkd
+
+has a syntax similar to . For details, see <a href="Systemd/networkd" class="wikilink" title="Systemd/networkd">Systemd/networkd</a>.
+
+First find the interface name(s) (`eth0` in this example):
+
+``` console
+# ip addr
+lo ...
+eth0 ...
+```
+
+To configure DHCP:
+
+To configure static IP:
+
+### Debug shell
+
+Enable debug shell. Although it is not required, enabling the debug shell allows you to enter the debug shell by press `Ctrl+Alt+F9` during Stage 1.
+
+The network and SSH status can be checked from within the debug shell:
+
+``` console
+# networkctl status: show systemd-networkd status
+# journalctl -u sshd
+# cat /etc/ssh/sshd_config
+```
+
+### Automatic password prompt
+
+To automatically be prompted for a password when logging in via SSH, add `command="systemctl default"` to .
+
+## Setup without Systemd
 
 Enable SSH daemon in initrd
 
@@ -24,8 +72,6 @@ Adapt following parts according to your setup
   - You could also configure a static IP `boot.kernelParams = [ "ip=10.25.0.2::10.25.0.1:255.255.255.0:myhost::none" ];`, where `10.25.0.2` is the client IP, `10.25.0.1` is the gateway IP. See [the kernel documentation](https://www.kernel.org/doc/Documentation/filesystems/nfs/nfsroot.txt) for more information on the `ip=` parameter.
 
 The `postCommands` option is necessary to get a password prompt instead of a shell. If you omit it, you will get dropped into `/bin/ash`, and you will have to manually run `cryptsetup-askpass` to enter the password. Alternatively, the `boot.initrd.systemd.users.root.shell` option can be set to `/bin/conspy` for passwords which expect stdin. This binary included by default, and provided by busybox.
-
-Since 26.05 release, initrd is based on systemd by default. systemd-networkd must be used instead of NetworkManager, otherwise network will fail to initialize.
 
 ## Usage
 
