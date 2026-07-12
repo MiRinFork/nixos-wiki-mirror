@@ -126,7 +126,7 @@ To develop apps using [Android Studio](https://developer.android.com/studio/), i
 ``` nix
 environment.systemPackages = [
   pkgs.android-studio
-]
+];
 ```
 
 By default, Android Studio has a FHS environment and by using `pkgs.android-studio-full` you get the predefined Android SDK composition including (as of nixos-unstable on 2024-11-02) platforms 28-34, an emulator, many system images and the NDK.

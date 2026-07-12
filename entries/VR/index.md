@@ -86,6 +86,10 @@ By modifying the bubblewrap binary used for running Steam, you can allow process
 
 Steam will periodically replace this modification with its own binary when steam-runtime updates, so you may need to re-apply this change if it breaks.
 
+### Setting SteamVR as default OpenXR runtime
+
+To set SteamVR as the default OpenXR runtime, you have to add the following snippet to your Home Manager config:
+
 ## wlx-overlay-s
 
 [wlx-overlay-s](https://github.com/galister/wlx-overlay-s) is a lightweight OpenXR/OpenVR overlay for Wayland and X11 desktops. It works with SteamVR as well as Monado/WiVRn natively.

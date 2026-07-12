@@ -82,10 +82,10 @@ If everything worked, you should now see the `[root@kexec:~]#` prompt. You're no
 
 ## Installing NixOS
 
-Install NixOS like normal, and make sure to include the following:
+[Install NixOS like normal](https://nixos.org/manual/nixos/stable/#sec-installation-manual) (first paragraphs and section do not apply, you can directly go to [formatting](https://nixos.org/manual/nixos/stable/#sec-installation-manual-partitioning)), and make sure to include the following:
 
 - `boot.kernelParams = [ "net.ifnames=0" ];`
-- The same network configuration from above
+- The same network configuration from above This is vital! The kexec will not survive a reboot, and formatting the drive will erase the existing OS. Therefore if you cannot ssh into the installed NixOS, you will be *permanently* unable to connect to the server (unless your VPS allows <a href="wikipedia:Out-of-band_management" class="wikilink" title="Out-of-Bounds management">Out-of-Bounds management</a>).
 
 ### Example installation with ZFS
 
@@ -165,9 +165,5 @@ And finally, install nixos and cross fingers:
 nixos-install
 reboot
 ```
-
-## NIXOS_LUSTRATE
-
-See the relevant [PR](https://github.com/NixOS/nixpkgs/pull/17784) or [section of the manual](https://nixos.org/nixos/manual/index.html#sec-installing-from-other-distro)
 
 <a href="Category:Server" class="wikilink" title="Category:Server">Category:Server</a>

@@ -183,14 +183,24 @@ Credit: this section is adapted from ArchWiki. This section should fully support
 
 ## Proxy server setup
 
-Same as peer setup, skip the endpoint option, with the following addition:
+To route your internet traffic through the server, first check the name of your active network interface. This can be done through running this command:
+
+    ip route get 9.9.9.9
+
+and the result should be something similar to:
+
+    9.9.9.9 via 192.168.1.1 dev enp2s0 src 192.168.1.35 uid 0
+
+The item after `dev` is your active interface, in this case `enp2s0`.
+
+After that, set up WireGuard the same way as the <a href="#Peer_setup" class="wikilink" title="peer setup">peer setup</a>, except do not include the `Endpoint` option. Then, add the following options to your configuration, using the active network interface you previously found for `externalInterface`:
 
 ``` nix
 {
   networking.nat = {
     enable = true;
     enableIPv6 = true;
-    externalInterface = "ens6";
+    externalInterface = "enp2s0";
     internalInterfaces = [ "wg0" ];
   };
 

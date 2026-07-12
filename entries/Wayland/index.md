@@ -8,13 +8,13 @@ For additional details, see .
 
 ## Checking for Wayland
 
-To check if you are using Wayland, run the following command
+To check if you are using Wayland, run the following command:
 
 ``` console
 $ echo $XDG_SESSION_TYPE
 ```
 
-If is returned, you are running Wayland
+If is returned, you are running Wayland.
 
 ## Setup
 
@@ -24,7 +24,7 @@ Two things are required for running Wayland: a compatible Display Manager, and a
 
 Display Managers are responsible for handling user login.
 
-The following Display Managers support using both X and Wayland protocols
+The following Display Managers support using both X and Wayland protocols:
 
 #### Graphical
 
@@ -43,14 +43,14 @@ For the purposes of this basic overview, a compositor can be thought of as equiv
 
 ### Wayland Native
 
-- <a href="Sway" class="wikilink" title="Sway">Sway</a> is a i3-like compositor.
+- <a href="Sway" class="wikilink" title="Sway">Sway</a> is an i3-like compositor.
 - <a href="Hyprland" class="wikilink" title="Hyprland">Hyprland</a> the dynamic tiling Wayland compositor that doesn't sacrifice on its looks.
-- <a href="Niri" class="wikilink" title="Niri">Niri</a> is a scrollable tiling compositor
+- <a href="Niri" class="wikilink" title="Niri">Niri</a> is a scrollable tiling compositor.
 
 ### X and Wayland support
 
-- [Mutter](https://github.com/NixOS/nixpkgs/blob/nixos-23.11/pkgs/desktops/gnome/core/mutter/default.nix) is the default compositor for <a href="GNOME" class="wikilink" title="GNOME">GNOME</a> Desktop Environment.
-- [KWin](https://github.com/NixOS/nixpkgs/blob/nixos-23.11/pkgs/desktops/plasma-5/kwin/default.nix) is the default compositor for <a href="KDE" class="wikilink" title="KDE">KDE</a> Desktop Environment.
+- [Mutter](https://github.com/NixOS/nixpkgs/blob/nixos-23.11/pkgs/desktops/gnome/core/mutter/default.nix) is the default compositor for the <a href="GNOME" class="wikilink" title="GNOME">GNOME</a> Desktop Environment.
+- [KWin](https://github.com/NixOS/nixpkgs/blob/nixos-23.11/pkgs/desktops/plasma-5/kwin/default.nix) is the default compositor for the <a href="KDE" class="wikilink" title="KDE">KDE</a> Desktop Environment.
 
 ## Applications
 
@@ -58,7 +58,7 @@ Not all apps support running natively on Wayland. To work around this, Xwayland 
 
 ### Electron and Chromium
 
-Ozone Wayland (which uses Wayland native instead of Xwayland) support in <a href="Chromium" class="wikilink" title="Chromium">Chromium</a> and <a href="Electron" class="wikilink" title="Electron">Electron</a> based applications can be enabled by setting the environment variable "`NIXOS_OZONE_WL`" with `NIXOS_OZONE_WL=1` *(also see [commit](https://github.com/NixOS/nixpkgs/commit/b2eb5f62a7fd94ab58acafec9f64e54f97c508a6))*
+Ozone Wayland (which uses Wayland native instead of Xwayland) support in <a href="Chromium" class="wikilink" title="Chromium">Chromium</a> and <a href="Electron" class="wikilink" title="Electron">Electron</a> based applications can be enabled by setting the environment variable "`NIXOS_OZONE_WL`" with `NIXOS_OZONE_WL=1` *(also see [commit](https://github.com/NixOS/nixpkgs/commit/b2eb5f62a7fd94ab58acafec9f64e54f97c508a6))*.
 
 As of NixOS 25.05 ("Warbler"), if `XDG_SESSION_TYPE` is unset or set to "wayland", [chromium and electron apps will default to wayland native](https://issues.chromium.org/issues/40083534#comment599). This ignores the `DISPLAY` environment variable.
 

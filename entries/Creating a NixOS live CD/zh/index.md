@@ -6,39 +6,23 @@
 
 ## 起因
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
+从已安装的NixOS系统中创建一个自定义的 NixOS Live CD 有许多优势：
 
-Creating a modified NixOS LiveCD out of an existing working NixOS installation has a number of benefits:
+- 确保可信度
 
-</div>
+<!-- -->
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
+- 无需访问互联网
 
-- Ensures authenticity.
+<!-- -->
 
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-- No need for internet access.
-
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-- It is easy to add your own packages and configuration changes to the image.
-
-</div>
+- 很容易向镜像中添加自己的包和配置
 
 <span id="Building"></span>
 
 ## 构建
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-Building minimal NixOS installation CD with the `nix-build` command by creating this `iso.nix`-file. In this example with <a href="Neovim" class="wikilink" title="Neovim">Neovim</a> preinstalled.
-
-</div>
+创建`iso.nix`文件，并使用`nix-build`命令来构建最小化的NixOS安装镜像。如下示例中预装了<a href="Neovim" class="wikilink" title="Neovim">Neovim</a>。
 
 ``` nix
 { config, pkgs, ... }:
@@ -54,38 +38,22 @@ Building minimal NixOS installation CD with the `nix-build` command by creating 
 }
 ```
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-Build the image via:
-
-</div>
+通过以下命令构建镜像：
 
 ``` bash
 nix-build '<nixpkgs/nixos>' -A config.system.build.isoImage -I nixos-config=iso.nix
 ```
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
+另外，也可以使用<a href="Flakes" class="wikilink" title="Flakes">Flakes</a>来生成ISO安装镜像。示例中使用`nixos-24.05`作为nixpkgs源。
 
-Alternatively, use Nix <a href="Flakes" class="wikilink" title="Flakes">Flakes</a> to generate a ISO installation image, using the `nixos-24.05` branch as nixpkgs source:
-
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-The following commands will generate the iso-image:
-
-</div>
+用以下命令生成iso镜像:
 
 ``` console
 
 # nix build path:$PWD
 ```
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-The resulting image can be found in `result`:
-
-</div>
+生成的镜像文件可以在`result`中找到
 
 ``` console
 $ ls result/iso/
@@ -96,11 +64,7 @@ nixos-24.05.20240721.63d37cc-x86_64-linux.iso
 
 ### 测试镜像
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-To inspect the contents of the ISO image:
-
-</div>
+查看ISO镜像中的内容：
 
 ``` console
 $ mkdir mnt
@@ -110,11 +74,7 @@ boot  EFI  isolinux  nix-store.squashfs  version.txt
 $ umount mnt
 ```
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-To boot the ISO image in an emulator:
-
-</div>
+在模拟器中启动镜像：
 
 ``` console
 $ nix-shell -p qemu
@@ -123,7 +83,7 @@ $ qemu-system-x86_64 -enable-kvm -m 256 -cdrom result/iso/nixos-*.iso
 
 ### SSH
 
-在您的 `iso.nix` 中：
+在你的 `iso.nix` 中添加：
 
 ``` nix
 {
@@ -141,11 +101,7 @@ $ qemu-system-x86_64 -enable-kvm -m 256 -cdrom result/iso/nixos-*.iso
 
 ### 静态 IP 地址
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-Static IP addresses can be set in the image itself. This can be useful for VPS installation.
-
-</div>
+你可以直接在镜像中设置好静态IP地址。这对于在VPS上进行安装可能会很有帮助。
 
 ``` nix
 {
@@ -167,30 +123,18 @@ Static IP addresses can be set in the image itself. This can be useful for VPS i
 
 ### 更快速的构建
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
+构建过程缓慢的原因是压缩。
 
-The build process is slow because of compression.
+以下是`nix-build`使用的一些压缩方式的用时测试结果：
 
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-Here are some timings for `nix-build`:
-
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-| squashfsCompression             | Time | Size |
+| squashfsCompression             | 用时 | 大小 |
 |---------------------------------|------|------|
 | `lz4`                           | 100s | 59%  |
 | `gzip -Xcompression-level 1`    | 105s | 52%  |
 | `gzip`                          | 210s | 49%  |
 | `xz -Xdict-size 100%` (default) | 450s | 43%  |
 
-Compression results
-
-</div>
+压缩测试结果
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
@@ -198,11 +142,7 @@ See also: [mksquashfs benchmarks](https://gist.github.com/baryluk/70a99b5f26df46
 
 </div>
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-If you don't care about file size, you can use a faster compression by adding this to your `iso.nix`:
-
-</div>
+如果你并不在意文件大小，可以在你的`iso.nix`中添加如下内容以使用更快的压缩方式：
 
 ``` nix
 {
@@ -214,10 +154,6 @@ If you don't care about file size, you can use a faster compression by adding th
 
 ## 另见
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-- [NixOS Manual: Building a NixOS (Live) ISO](https://nixos.org/manual/nixos/stable/index.html#sec-building-image).
-
-</div>
+- [NixOS 手册: 构建一个 NixOS (Live) ISO](https://nixos.org/manual/nixos/stable/index.html#sec-building-image).
 
 <a href="Category:NixOS" class="wikilink" title="Category:NixOS">Category:NixOS</a> <a href="Category:Deployment" class="wikilink" title="Category:Deployment">Category:Deployment</a> <a href="Category:Cookbook" class="wikilink" title="Category:Cookbook">Category:Cookbook</a>

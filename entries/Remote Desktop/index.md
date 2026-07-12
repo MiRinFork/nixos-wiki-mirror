@@ -8,20 +8,20 @@ Remote desktop software is split into two types: servers and clients. To access 
 
 ## Server Protocols
 
-- VNC
-- RDP
+- <a href="Wikipedia:VNC" class="wikilink" title="VNC">VNC</a>
+- <a href="Wikipedia:Remote_Desktop_Protocol" class="wikilink" title="RDP">RDP</a>
 
 ## Self hosting
 
-- <a href="RustDesk" class="wikilink" title="RustDesk">RustDesk</a> available in nixpkgs as rustdesk-server
+- <a href="RustDesk" class="wikilink" title="RustDesk">RustDesk</a> available in nixpkgs as [rustdesk-server](https://search.nixos.org/packages?query=rustdesk-server)
 
 ## Clients
 
 - Apache Guacamole
-- freerdp
+- FreeRDP
 - KRDC (KDE)
-- remmina
-- tightvnc and its forks tigervnc and turbovnc
+- Remmina
+- TightVNC and its forks <a href="TigerVNC" class="wikilink" title="TigerVNC">TigerVNC</a> and TurboVNC
 - x2goclient
 - GNOME Connections
 - <a href="RustDesk" class="wikilink" title="RustDesk">RustDesk</a>
@@ -34,7 +34,7 @@ Most servers provide a `vncserver` command. Various servers provide configuratio
 
 To start a desktop session or window manager, one currently has to do this manually because servers still have hard-coded paths to `/usr/share/xsessions` to look for `.desktop` files. That means one has to write a script that starts the desktop session, window manager, or any other X application.
 
-Some servers will automatically run `$HOME/.vnc/xstartup` but the more secure option is to write an executable script and run `vncserver -xstartup $pathToScript`
+Some servers will automatically run `$HOME/.vnc/xstartup` but the more secure option is to write an executable script and run `vncserver -xstartup $pathToScript`.
 
 An example script:
 
@@ -46,7 +46,7 @@ An example script:
 exec icewm
 ```
 
-`pathToScript` can also be a path to an executable like `${pkgs.icewm}/bin/icewm`
+`pathToScript` can also be a path to an executable like `${pkgs.icewm}/bin/icewm`.
 
 ### TigerVNC
 
@@ -54,7 +54,7 @@ Nixpkgs has a package but no service. The server component can be started using 
 
 For an automated nixos config see <a href="TigerVNC" class="wikilink" title="TigerVNC">TigerVNC</a>.
 
-However, you'll more likely have success running [x11vnc](https://search.nixos.org/packages?channel=unstable&query=x11vnc&show=x11vnc) on the remote/far-away server, while only using \`vncviewer\` from the TigerVNC package from where you're sitting. Quality documentation for x11vnc usage is at its [official repository](https://github.com/LibVNC/x11vnc/?tab=readme-ov-file#readme).
+However, you'll more likely have success running [x11vnc](https://search.nixos.org/packages?channel=unstable&query=x11vnc&show=x11vnc) on the remote/far-away server, while only using `vncviewer` from the TigerVNC package from where you're sitting. Quality documentation for x11vnc usage is at its [official repository](https://github.com/LibVNC/x11vnc/?tab=readme-ov-file#readme).
 
 ### x2go
 
@@ -62,13 +62,13 @@ X2go client is packaged in nixos as `x2goclient`.
 
 The server is installed by adding the following line:  
 `services.x2goserver.enable = true;`  
-to /etc/nixos/configuration.nix.
+to `/etc/nixos/configuration.nix`.
 
 ### Guacamole
 
 #### Guacamole Server
 
-In nixos the guacamole server component is provided by [guacamole-server](https://github.com/NixOS/nixpkgs/blob/nixos-24.05/nixos/modules/services/web-apps/guacamole-server.nix)
+In nixos the guacamole server component is provided by [guacamole-server](https://github.com/NixOS/nixpkgs/blob/nixos-24.05/nixos/modules/services/web-apps/guacamole-server.nix).
 
 A basic server setup service entry would look like this:
 
@@ -83,7 +83,7 @@ services.guacamole-server = {
 
 This creates the `guacamole-server.service` systemd unit.
 
-See the [search.nixos options](https://search.nixos.org/options?type=packages&query=services.guacamole-server) for other configuration options.
+See the [NixOS Options search](https://search.nixos.org/options?type=packages&query=services.guacamole-server) for other configuration options.
 
 The `host` entry indicates on which IP the server component listens. The `port` entry here is the default port of `4822`.
 
@@ -95,26 +95,12 @@ The `user-mapping.xml` file is how to define the user(s) that are allowed to log
 
 The file content should look something like this:
 
-`   `<user-mapping>  
-`       `<authorize username="USERNAME_HERE" password="ENCRYPTED_PASSWORD_HERE" encoding="sha256">  
-`         `<connection name="NAME_OF_THE_CONNECTION">  
-`             `<protocol>`rdp`</protocol>  
-`             `<param name="hostname">`XXX.XXX.XXX.XXX`</param>  
-`             `<param name="port">`3389`</param>  
-`             `<param name="ignore-cert">`true`</param>  
-`         `</connection>  
-`         `<connection name="NAME_OF_THE_CONNECTION">  
-`             `<protocol>`ssh`</protocol>  
-`             `<param name="hostname">`XXX.XXX.XXX.XXX`</param>  
-`             `<param name="port">`22`</param>  
-`         `</connection>  
-`       `</authorize>  
-`   `</user-mapping>
-
 The `password=""` can be a plain text password, but it is not recommended. An easy way to encrypt a password would be something like:
 
-`   $  echo -n 'SUPERsecretPASSWORD' | openssl dgst -sha256`  
-`   SHA2-256(stdin)= 491cf91d586fb9442db7efe92b7839190206a653971573c23fed0435ceb596e8`
+``` console
+$ echo -n 'SUPERsecretPASSWORD' | openssl dgst -sha256
+SHA2-256(stdin)= 491cf91d586fb9442db7efe92b7839190206a653971573c23fed0435ceb596e8
+```
 
 The [upstream documentation](https://guacamole.apache.org/doc/gug/configuring-guacamole.html#configuring-connections) has complete configuration options avaiable.
 
@@ -128,12 +114,12 @@ A basic client setup service entry would look like this:
 
 ``` nix
 services.guacamole-client = {
-    enable = true;
-    enableWebserver = true;
-    settings = {
-        guacd-port = 4822;
-        guacd-hostname = "localhost";
-    };
+  enable = true;
+  enableWebserver = true;
+  settings = {
+    guacd-port = 4822;
+    guacd-hostname = "localhost";
+  };
 };
 ```
 
@@ -234,12 +220,11 @@ networking.firewall = {
 
 ### XRDP
 
-![GNOME running in an XRDP shell in Remmina.](Screenshot_from_2024-03-02_03-15-05.png "GNOME running in an XRDP shell in Remmina.") NixOS has first-class support for XRDP. Client-wise, RDP can be accessed in many ways, but \`remmina\` and \`freerdp\` support it natively.
+![GNOME running in an XRDP shell in Remmina.](Screenshot_from_2024-03-02_03-15-05.png "GNOME running in an XRDP shell in Remmina.") NixOS has first-class support for XRDP. Client-wise, RDP can be accessed in many ways, but `remmina` and `freerdp` support it natively.
 
-All of the options for the `xrdp` service can be viewed on the [NixOS Options wiki](https://search.nixos.org/options?type=packages&query=xrdp), though an example setup inside of `configuration.nix` is provided below:
+All of the options for the `xrdp` service can be viewed through the [NixOS Options search](https://search.nixos.org/options?query=xrdp), though an example setup inside of `configuration.nix` is provided below:
 
 ``` nix
-
 services.xserver = {
   enable = true;
   displayManager.sddm.enable = true;
@@ -276,24 +261,24 @@ networking.firewall.allowedTCPPorts = [ 3389 ];
 If you want to use enhanced session mode in VMConnect while using Hyper-V for a NixOS VM, you need to specify some additional options:
 
 ``` nix
-  services = {
-    xrdp = {
-      defaultWindowManager = "${pkgs.i3}/bin/i3";
-      enable = true;
-      extraConfDirCommands = ''
-        substituteInPlace $out/xrdp.ini \
-          --replace-fail 'port=3389' 'port=vsock://-1:3389' \
-          --replace-fail '#vmconnect=true' 'vmconnect=true' \
-          --replace-fail 'security_layer=negotiate' 'security_layer=rdp' \
-          --replace-fail 'crypt_level=high' 'crypt_level=none' \
-          --replace-fail 'bitmap_compression=true' 'bitmap_compression=false'
-      '';
-    };
+services = {
+  xrdp = {
+    defaultWindowManager = "${pkgs.i3}/bin/i3";
+    enable = true;
+    extraConfDirCommands = ''
+      substituteInPlace $out/xrdp.ini \
+        --replace-fail 'port=3389' 'port=vsock://-1:3389' \
+        --replace-fail '#vmconnect=true' 'vmconnect=true' \
+        --replace-fail 'security_layer=negotiate' 'security_layer=rdp' \
+        --replace-fail 'crypt_level=high' 'crypt_level=none' \
+        --replace-fail 'bitmap_compression=true' 'bitmap_compression=false'
+    '';
   };
+};
 
-  systemd.services.xrdp.serviceConfig.ExecStart = lib.mkForce "${pkgs.xrdp}/bin/xrdp --nodaemon --config /etc/xrdp/xrdp.ini";
+systemd.services.xrdp.serviceConfig.ExecStart = lib.mkForce "${pkgs.xrdp}/bin/xrdp --nodaemon --config /etc/xrdp/xrdp.ini";
 
-  virtualisation.hypervGuest.enable = true;
+virtualisation.hypervGuest.enable = true;
 ```
 
 As documented in [this issue](https://github.com/nixos/nixpkgs/issues/304855), the current behavior of the XRDP module in NixOS is to provide the `--port` parameter on the CLI in the systemD unit file. It does print a message indicating it's ignoring anything provided in the configuration saying `--port parameter found, ini override` in journalctl.

@@ -48,8 +48,6 @@ It should be noted that the name of the dependency is hardcoded in the binaries,
 
 This is of course still quite a hacky solution, as the name of the resulting binaries will simply be padded with the char '\_'. A better solution might be found in the future.
 
-<small>For details, see [NixOS - Discourse: "How to use uutils-coreutils instead of the builtin coreutils?" (8904) - Comment 36](https://discourse.nixos.org/t/how-to-use-uutils-coreutils-instead-of-the-builtin-coreutils/8904/36?u=malix)</small>}}
+<small>For details, see [NixOS - Discourse: "How to use uutils-coreutils instead of the builtin coreutils?" (8904) - Comment 36](https://discourse.nixos.org/t/how-to-use-uutils-coreutils-instead-of-the-builtin-coreutils/8904/36?u=malix)</small>
 
-\]
-
-<a href="Category:CLI_Applications" class="wikilink" title="Category:CLI_Applications">Category:CLI_Applications</a> <a href="Category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="Category:Rust" class="wikilink" title="Category:Rust">Category:Rust</a>
+<a href="Category:CLI_Applications" class="wikilink" title="Category:CLI Applications">Category:CLI Applications</a> <a href="Category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="Category:Rust" class="wikilink" title="Category:Rust">Category:Rust</a>

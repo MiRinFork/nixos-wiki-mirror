@@ -175,7 +175,7 @@ To hack on Qtile with Nix, simply run `nix develop` in a checkout of the Qtile r
 
 - Based on the official [Qtile Documentation](https://docs.qtile.org/en/latest/manual/install/nixos.html#).
 - Wayland details from [Gist by Jwijenbergh](https://gist.github.com/jwijenbergh/48da1a8f4c4a56d122407c4d009bc81f).
-- Flake config details from [Gurjaka's Qtile Flake Guide](https://gurjaka.codeberg.page/blog.html?post=qtile-flake).
+- Flake config details from [Gurjaka's Qtile Flake Guide](https://gurjaka.dev/blog.html?post=qtile-flake).
 - NixOS implementation details maintained by the community.
 
 <a href="Category:Window_managers" class="wikilink" title="Category:Window managers">Category:Window managers</a> <a href="Category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a>

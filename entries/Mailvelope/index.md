@@ -2,7 +2,7 @@
 
 <!-- Source page: Mailvelope -->
 
-Mailvelope is a browser extension for using PGP-based end-to-end encryption with webmail clients
+[Mailvelope](https://mailvelope.com/de) is a browser extension for using PGP-based end-to-end encryption with webmail clients.
 
 ## Installation
 
@@ -60,3 +60,5 @@ To allow it for Firefox-based browsers, add this to your Home Manager configurat
 Or to your NixOS configuration via .
 
 The json is based on the [upstream recommendation](https://github.com/mailvelope/mailvelope/wiki/Creating-the-app-manifest-file-on-macOS-and-Linux#firefox)
+
+<a href="Category:_Web_Browser" class="wikilink" title="Category: Web Browser">Category: Web Browser</a>

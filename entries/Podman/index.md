@@ -10,11 +10,55 @@ A reboot or re-login might be required for the permissions to take effect after 
 
 ## Tips and tricks
 
-### podman-compose
+### **podman compose**
 
-`podman-compose` is a drop-in replacement for `docker-compose`
+podman compose is a thin wrapper around an external compose provider such as [docker-compose](https://github.com/docker/compose) or [podman-compose](https://github.com/containers/podman-compose). This means that `podman compose` is executing another tool that implements the compose functionality but sets up the environment in a way to let the compose provider communicate transparently with the local Podman socket. The specified options as well as the command and argument are passed directly to the compose provider.
 
-See [the official documentation](https://docs.podman.io/en/stable/markdown/podman-compose.1.html)
+The default compose providers are `docker-compose` and `podman-compose`. If installed, `docker-compose` takes precedence since it is the original implementation of the Compose specification.
+
+To change the default behavior or have a custom installation path for your provider of choice:
+
+``` nix
+{
+  services.podman.settings.containers = { compose_providers = ["/path/to/provider"] };
+}
+```
+
+You may also set the `PODMAN_COMPOSE_PROVIDER` environment variable:
+
+``` bash
+PODMAN_COMPOSE_PROVIDER="/path/to/provider" podman compose up -d
+```
+
+or:
+
+``` nix
+{
+  environment.sessionVariables = {
+    PODMAN_COMPOSE_PROVIDER = "/path/to/provider";
+  };
+}
+```
+
+By default, `podman compose` will emit a warning saying that it executes an external command. This warning can be disabled by setting `compose_warning_logs` to false in `services.podman.settings.containers` or setting the `PODMAN_COMPOSE_WARNING_LOGS` environment variable to false.
+
+``` nix
+{
+  services.podman.settings.containers = {
+    compose_providers = ["/path/to/provider"];
+    compose_warning_logs = false;
+  };
+}
+```
+
+``` nix
+{
+  environment.sessionVariables = {
+    PODMAN_COMPOSE_PROVIDER = "/path/to/provider";
+    PODMAN_COMPOSE_WARNING_LOGS = false;
+  };
+}
+```
 
 ### With ZFS
 

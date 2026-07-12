@@ -132,3 +132,5 @@ in
   ];
 }
 ```
+
+<a href="Category:Web_Browser" class="wikilink" title="Category:Web Browser">Category:Web Browser</a>

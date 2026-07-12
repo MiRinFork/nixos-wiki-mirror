@@ -8,6 +8,8 @@ The editor provides native builds for Linux, including Nixpkgs packages and a re
 
 is available in Nixpkgs since 24.11; However, Zed provides [an official nix flake](https://github.com/zed-industries/zed/blob/main/flake.nix) which might be useful if you need features that have not yet reached unstable Nixpkgs.
 
+<a href="Gram" class="wikilink" title="Gram">Gram</a> is a fork of Zed with some features removed: AI integration, telemetry, user agreement and subscription.
+
 ## Installation
 
 The package installs both desktop launchers and a CLI entry point aliased to `zeditor`, mirroring the upstream binary name

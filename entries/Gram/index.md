@@ -82,3 +82,5 @@ If using flake parts, devShells need to have their inputs passed to them by `per
 
 - [NixOS Discourse: Fail To Add Extensions To Gram](https://discourse.nixos.org/t/fail-to-add-extensions-to-gram/78466/2)
 - <a href="Talk:Gram#Using_Rustup_for_Building_Extensions" class="wikilink" title="Talk:Gram#Using_Rustup_for_Building_Extensions">Talk:Gram#Using_Rustup_for_Building_Extensions</a>
+
+<a href="Category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="Category:Text_Editor" class="wikilink" title="Category:Text Editor">Category:Text Editor</a>

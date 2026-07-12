@@ -4,9 +4,9 @@
 
 <strong>Emacs</strong> is a free and open-source text editor known for its exceptional extensibility and adaptability. It can be customized into anything from a simple editor to a full development environment or productivity tool. Emacs features built-in self-documentation, syntax-aware editing, and a vast ecosystem of community-developed packages.[^1]
 
-For an easier introduction, [Doom Emacs](https://doomemacs.org) offers a pre-configured Emacs framework with modern defaults and features like IDE tools, note-taking, and task management.
+For an easier introduction, [Doom Emacs](https://doomemacs.org) offers a pre-configured Emacs framework with modern defaults and features like IDE tools, note-taking, and task management. You can also deploy Doom Emacs natively on Nix with [nix-doom-emacs-unstraightened](https://github.com/marienz/nix-doom-emacs-unstraightened).
 
-There is an official Matrix room for Nix/Emacs: [\#emacs:nixos.org](https://matrix.to/#/#emacs:nixos.org).
+There is an official Matrix room for Nix/Emacs: [\#emacs:nixos.org](https://matrix.to/#/#emacs:nixos.org), as well as another one for Doom Emacs on Nix: [https://matrix.to/#/#doom-emacs:nixos.org](https://matrix.to/#/#doom-emacs:nixos.org).
 
 ## Installation
 
