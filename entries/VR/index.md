@@ -32,6 +32,8 @@ To disable hand tracking, modify the environment variable to include `WMR_HANDTR
 
 ## OpenComposite
 
+Note: OpenComposite is unmaintained. We recommend using [xrizer](https://github.com/Supreeeme/xrizer) instead.
+
 [OpenComposite](https://gitlab.com/znixian/OpenOVR) is a compatibility layer for running OpenVR applications on an OpenXR runtime like Monado. It is comparable to tools like DXVK or vkd3d, but for translating OpenVR calls to OpenXR.
 
 In order to run OpenVR games on anything other than SteamVR, you need to configure the OpenVR runtime path defined in `~/.config/openvr/openvrpaths.vrpath`. A reliable way to do this is to use <a href="Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> to create this file. </translate>

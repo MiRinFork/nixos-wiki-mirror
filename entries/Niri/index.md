@@ -18,6 +18,8 @@ Simply enable :
 
 The configuration path for niri is . Therefore <a href="&lt;tvar_name=&quot;1&quot;&gt;Special:MyLanguage/Home_Manager&lt;/tvar&gt;" class="wikilink" title="Home Manager">Home Manager</a> can be used for configuration:
 
+</translate> <translate> If you want to validate your configuration as part of the build process you can use like this:
+
 </translate> <translate>
 
 You might want to start from \[<tvar name="1"><https://github.com/niri-wm/niri/blob/main/resources/default-config.kdl></tvar> the default configuration file\] described at \[<tvar name="2"><https://github.com/niri-wm/niri/wiki/Getting-Started#main-default-hotkeys></tvar> here\].

@@ -37,7 +37,7 @@ This will configure the default network to start automatically on boot and immed
 
 Create a XML file called `virbr0.xml` with the definition of the bridge interface.
 
-``` bash
+``` xml
 <network>
   <name>virbr0</name>
   <forward mode='bridge'/>
@@ -47,33 +47,33 @@ Create a XML file called `virbr0.xml` with the definition of the bridge interfac
 
 Add and enable bridge interface.
 
-``` bash
-virsh net-define virbr0.xml
-virsh net-start virbr0
-ip link add virbr0 type bridge
-ip address ad dev virbr0 10.25.0.1/24
-ip link set dev virbr0 up
+``` console
+# virsh net-define virbr0.xml
+# virsh net-start virbr0
+# ip link add virbr0 type bridge
+# ip address ad dev virbr0 10.25.0.1/24
+# ip link set dev virbr0 up
 ```
 
 Edit the libvirt guest `my_guest` XML file and add the bridge interface to it.
 
-``` bash
-virsh edit my_guest
+``` console
+$ virsh edit my_guest
 ```
 
 Add:
 
-``` bash
-  <devices>
-    [...]
-    <interface type='bridge'>
-      <mac address='52:54:00:12:34:56'/>
-      <source bridge='virbr0'/>
-      <model type='virtio'/>
-      <address type='pci' domain='0x0000' bus='0x01' slot='0x00' function='0x0'/>
-    </interface>
-    [...]
-  </devices>
+``` xml
+<devices>
+  [...]
+  <interface type='bridge'>
+    <mac address='52:54:00:12:34:56'/>
+    <source bridge='virbr0'/>
+    <model type='virtio'/>
+    <address type='pci' domain='0x0000' bus='0x01' slot='0x00' function='0x0'/>
+  </interface>
+  [...]
+</devices>
 ```
 
 Inside the guest configure networking for the interface `enp1s0` (name may differ).
@@ -144,26 +144,26 @@ Another recommended way to share files between host and guest is to use `spice-w
 
 Shutdown the client, in this example named `my_guest`, and edit the libvirt XML file.
 
-``` bash
-virsh edit my_guest
+``` console
+$ virsh edit my_guest
 ```
 
 Add the following snippet after <channel type='unix'>`[...]`</channel> part inside the devices subsection:
 
-``` bash
-    <channel type='spiceport'>
-      <source channel='org.spice-space.webdav.0'/>
-      <target type='virtio' name='org.spice-space.webdav.0'/>
-      <address type='virtio-serial' controller='0' bus='0' port='3'/>
-    </channel>
+``` xml
+<channel type='spiceport'>
+  <source channel='org.spice-space.webdav.0'/>
+  <target type='virtio' name='org.spice-space.webdav.0'/>
+  <address type='virtio-serial' controller='0' bus='0' port='3'/>
+</channel>
 ```
 
 Start the guest machine. Inside the guest, add following part to your system configuration and apply it.
 
 List available shares for the guest.
 
-``` bash
-curl localhost:9843
+``` console
+$ curl localhost:9843
 ```
 
 Mount an example share called `myshare` to the mountpoint `myshare.`
@@ -202,8 +202,8 @@ An example config would be:
 
 Note that after you added the configuration and switch, you'll have the following command to setup the hooks.
 
-``` bash
-systemctl start libvirtd-config.service
+``` console
+$ systemctl start libvirtd-config.service
 ```
 
 ### PCI Passthrough

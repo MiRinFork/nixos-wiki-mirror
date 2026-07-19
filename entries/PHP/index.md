@@ -12,11 +12,10 @@ See also:
 ## Install
 
 ``` nix>
-  environment.systemPackages = with pkgs; [ php ];
+environment.systemPackages = with pkgs; [ php ];
 </syntaxhighlight>
 
 See <code>nix search php</code> (<code>nix search nixpkgs php</code> with [[Flakes]]) for additional versions like <code>php74</code>, etc.
-
 
 == Configuration ==
 
@@ -69,38 +68,37 @@ environment.systemPackages = \[
 
 You can see the full list of extensions e.g. with:
 
-`$ nix repl`  
-  
-`nix-repl> pkgs = import `<nixpkgs>` {}            `  
-  
-`nix-repl> builtins.attrNames pkgs.phpExtensions`
+``` nix
+$ nix repl
+ 
+nix-repl> pkgs = import <nixpkgs> {}            
+ 
+nix-repl> builtins.attrNames pkgs.phpExtensions
+```
 
 ## Apache, plugins, settings
 
 Here's how to configure Apache to use a particular PHP configuration/version/etc
 
-``` nix>
+``` nix
 # in /etc/nixos/configuration.nix (not inside systemPackages)
 services.httpd.phpPackage = pkgs.php.buildEnv {
-    extensions = ({ enabled, all }: enabled ++ (with all; [
-        xdebug
-    ]));
-    extraConfig = ''
-        xdebug.mode=debug
-    '';
+  extensions = ({ enabled, all }: enabled ++ (with all; [
+    xdebug
+  ]));
+  extraConfig = ''
+    xdebug.mode=debug
+  '';
 };
-</syntaxhighlight>
+```
 
-== OCI image ==
+## OCI image
 
 Here's an example on how to build an OCI image running a PHP application:
 
 Using nginx:
 
-<syntaxhighlight lang=
-```
-
-packages = let
+\<syntaxhighlight lang="nix\> packages = let
 
 ` src = ./.;`  
 ` php = pkgs.php81;`

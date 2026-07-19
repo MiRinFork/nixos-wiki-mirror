@@ -26,15 +26,15 @@ main = do
 To remove the additional latency overhead of a nix-shell, add GHC to `environment.systemPackages` and call `runghc` in the shebang.
 
 ``` nix
-  environment.systemPackages = with pkgs; [
-    ...
-    (ghc.withPackages (hsPkgs: with hsPkgs; [
-      turtle      # Faster startup time with all external shell commands
-      shh         # Piping operators and other goodies
-      shh-extras  # Try shh as an interactive shell
-      ...         # ...anything else you want!
-    ])
-  ]; 
+environment.systemPackages = with pkgs; [
+  ...
+  (ghc.withPackages (hsPkgs: with hsPkgs; [
+    turtle      # Faster startup time with all external shell commands
+    shh         # Piping operators and other goodies
+    shh-extras  # Try shh as an interactive shell
+    ...         # ...anything else you want!
+  ])
+];
 ```
 
 Here's a basic example using the Shh module rather than Turtle, so it can use the pipe operator:

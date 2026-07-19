@@ -10,24 +10,30 @@ F# is packaged in the `dotnet-sdk` family of packages (`dotnet-sdk_3`, `dotnet-s
 
 You can pop into a REPL:
 
-    $ nix-shell -p dotnet-sdk
-    warning: unknown setting 'experimental-features'
+``` console
+$ nix-shell -p dotnet-sdk
+warning: unknown setting 'experimental-features'
 
-    [nix-shell:~]$ dotnet fsi
+[nix-shell:~]$ dotnet fsi
 
-    Microsoft (R) F# Interactive version 12.0.5.0 for F# 6.0
-    Copyright (c) Microsoft Corporation. All Rights Reserved.
+Microsoft (R) F# Interactive version 12.0.5.0 for F# 6.0
+Copyright (c) Microsoft Corporation. All Rights Reserved.
 
-    For help type #help;;
+For help type #help;;
+```
 
-    > printfn "Hello world from F#!";;
-    Hello world from F#!
-    val it : unit = ()
+``` fsharp
+> printfn "Hello world from F#!";;
+Hello world from F#!
+val it : unit = ()
+```
 
 To create a project use
 
-    dotnet new console --language F#
-    dotnet run
+``` console
+$ dotnet new console --language F#
+$ dotnet run
+```
 
 like so!
 

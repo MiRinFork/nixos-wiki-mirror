@@ -6,7 +6,7 @@
 
 # Client
 
-There are two versions of the client available rustdesk (deprecated) and rustdesk-flutter (more recent). They do not need any changes in the configuration to be used with the official server.
+There are two versions of the client available [rustdesk](https://search.nixos.org/packages?channel=26.05&query=rustdesk) (deprecated) and [rustdesk-flutter](https://search.nixos.org/packages?channel=26.05&query=rustdesk) (more recent). They do not need any changes in the configuration to be used with the official server.
 
 To use the client with a custom server, it is necessary to change in the network preferences (burger menu --\> network):
 
@@ -14,6 +14,8 @@ To use the client with a custom server, it is necessary to change in the network
     Relay-Server: [Enter IP or domain name of server]
     API-Server:  [leave blank]
     Key: [Copy the content from /var/lib/private/rustdesk/id_ed25519.pub]
+
+Installing rustdesk (even though version number might be higher) on Wayland can lead to error `"failed to create capturer for display 0"`, while rustdesk-flutter on the same PC can work fine.
 
 # Server
 

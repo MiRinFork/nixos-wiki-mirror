@@ -34,7 +34,7 @@ Examples using abnormal Blender Packages:
 
 ``` nix
 let
-  blender-cuda = blender.override {config.cudaSupport=true;};
+  blender-cuda = blender.override {config.cudaSupport=true; config.rocmSupport=false; };
 in {
 
   environment.systemPackages = with pkgs; [
@@ -99,7 +99,7 @@ The following example shows how to override specifically the Blender package for
 
 ``` nix
 environment.systemPackages = with pkgs; [
-  (blender.override {config.cudaSupport=true;})
+  (blender.override {config.cudaSupport=true; config.rocmSupport=false;})
 
 /* (blender.override {
     config.cudaSupport=true;

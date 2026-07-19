@@ -33,6 +33,8 @@ Acceleration is configured by selecting a package:
 - ollama-cuda: supported by most modern NVIDIA GPUs
 - ollama-vulkan: supported by most modern GPUs on Linux
 
+**Note:** When using the ollama-cuda package, you may want to add the [CUDA Substitute Binary Cache](https://cache.nixos-cuda.org/), since compiling CUDA from source may take a long time. (See the <a href="CUDA" class="wikilink" title="CUDA">CUDA</a> Wiki Entry for more Information)
+
 Example: Enable GPU acceleration for Nvidia graphic cards
 
 As a standalone package:

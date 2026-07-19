@@ -94,29 +94,29 @@ If you want to package and install a fresher version of some TeXLive package, yo
 Example code:
 
 ``` nix
-    pkgs.texlive.combine {
-      scheme-medium = pkgs.texlive.scheme-medium // {
-        pkgs = pkgs.lib.filter
-          (x: (x.pname != "apxproof"))
-          pkgs.texlive.scheme-medium.pkgs;
-      };
-    
-      apxproof = { pkgs = [(pkgs.runCommand "apxproof" {
-        src = pkgs.fetchurl {
-          url = "https://raw.githubusercontent.com/PierreSenellart/apxproof/1ac14c47b8351b693ca05eec73dca1332a517ac9/apxproof.sty";
-          sha256 = "sha256-XSgtXsOwhMu2Wo4hVp8ZfaPWgjEEg3EBn5/BhD3xkMA=";
-        };
-        passthru = {
-          pname = "apxproof";
-          version = "1.2.3";
-          tlType = "run";
-        };
-      }
-      "
-        mkdir -p $out/tex/latex/apxproof/
-        cp $src $out/tex/latex/apxproof/apxproof.sty
-      ")]; };
-    }
+pkgs.texlive.combine {
+  scheme-medium = pkgs.texlive.scheme-medium // {
+    pkgs = pkgs.lib.filter
+      (x: (x.pname != "apxproof"))
+      pkgs.texlive.scheme-medium.pkgs;
+  };
+
+  apxproof = { pkgs = [(pkgs.runCommand "apxproof" {
+    src = pkgs.fetchurl {
+      url = "https://raw.githubusercontent.com/PierreSenellart/apxproof/1ac14c47b8351b693ca05eec73dca1332a517ac9/apxproof.sty";
+      sha256 = "sha256-XSgtXsOwhMu2Wo4hVp8ZfaPWgjEEg3EBn5/BhD3xkMA=";
+    };
+    passthru = {
+      pname = "apxproof";
+      version = "1.2.3";
+      tlType = "run";
+    };
+  }
+  "
+    mkdir -p $out/tex/latex/apxproof/
+    cp $src $out/tex/latex/apxproof/apxproof.sty
+  ")]; };
+}
 ```
 
 ## Frequently asked questions FAQ

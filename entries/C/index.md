@@ -186,7 +186,7 @@ EOF
 ``` nix
 {
   gcc11_multi = pkgs.wrapCCMulti pkgs.gcc11;
-  // or
+  # or
   gcc13_multi = pkgs.wrapCCMulti pkgs.gcc13;
 }
 ```
@@ -331,7 +331,7 @@ fastStdenv.mkDerivation {
 Unwrapped compilers usually do not have any access to libraries/headers in nix. This is an issue if you work on the clang/llvm code base. Assuming you have built llvm/clang like this
 
 ``` console
-$  git clone https://github.com/llvm/llvm-project
+$ git clone https://github.com/llvm/llvm-project
 $ cd llvm-project
 $ nix-shell -p cmake --command 'mkdir build &&  cd build && cmake -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra" -DCMAKE_INSTALL_PREFIX=../install -DCMAKE_BUILD_TYPE=Debug ../llvm && make -j$(nproc)'
 ```
@@ -362,13 +362,13 @@ EOF
 Then you can create a `shell.nix` like this:
 
 ``` nix
- with import <nixpkgs> {};
- pkgs.mkShell {
-   nativeBuildInputs = [
-    cmake
-    (callPackage ./impure-clang.nix {})
-   ];
- }
+with import <nixpkgs> {};
+pkgs.mkShell {
+  nativeBuildInputs = [
+   cmake
+   (callPackage ./impure-clang.nix {})
+  ];
+}
 ```
 
 And use your self-compiled clang in a nix-shell:

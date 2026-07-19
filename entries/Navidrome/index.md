@@ -20,7 +20,7 @@ The service should be available add <http://127.0.0.1:4533>. Continue adding an 
 #### Setting to localhost
 
 ``` nix
-servces.navidrome = {
+services.navidrome = {
   settings = {
     Address = "0.0.0.0";
   };
@@ -32,7 +32,7 @@ servces.navidrome = {
 If it is enabled the following settings will open just for this port
 
 ``` nix
-servces.navidrome = {
+services.navidrome = {
   openFirewall = true;
 };
 ```

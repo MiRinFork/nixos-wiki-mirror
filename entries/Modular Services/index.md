@@ -2,70 +2,36 @@
 
 <!-- Source page: Modular Services -->
 
-Modular services are an experimental feature added to NixOS between the 25.05 and 25.11 releases.
+Modular Services are a new experimental module system support in Nixpkgs, that aims to expand the module systems (Eg. NixOS, home-manager, nix-darwin, etc) ecosystem with modularity and portability. Modular services is designed to integrate/compose with other modules systems such as NixOS.
 
-For official documentation see the [NixOS Manual](https://nixos.org/manual/nixos/unstable/#modular-services).
+## Difference between Traditional Module Systems (such as NixOS) vs Modular Services
 
-This page exists to used to collect experiences and recommendations for using this feature that would not fit well in the NixOS manual.
+Modular services are built for composability, re-usability, are not defined in sets of options, portable. Where as traditional modules are the opposite.
 
-## Do's
+## How to use
 
-## Do not's
-
-### Depend on anything already being in \$PATH
-
-Don't expect any programs to be available, not even GNU coreutils.
-
-Start the services program using a full path and if you need to write a script then set PATH there.
-
-Setting a \$PATH with a shell script:
+- System:
 
 ``` nix
-{
-  process.argv = [
-    (pkgs.writeShellScript "foo.sh" ''
-      PATH="${lib.makeBinPath [ pkgs.foo pkgs.bar pkgs.coreutils ]}"
-
-      mkdir /var/lib/foo
-      foo …
-    '')
-  ];
-}
+  system.services.<name> = {
+    # Usage inside of the traditional module system like NixOS...
+    imports = [ pkgs.example.services.default ];
+    example.allowAll = false;
+  };
 ```
 
-Or set PATH without a script using <a href="execline" class="wikilink" title="execline">execline</a>:
+- User:
 
 ``` nix
-{
-  process.argv = [
-    "${pkgs.execline}/bin/export" "PATH" (lib.makeBinPath [ pkgs.foo pkgs.bar ])
-    "foo" "…"
-  ];
-}
+  system.user.services.<name> = {
+    # Usage inside of the traditional module system like NixOS...
+    imports = [ pkgs.example.services.default ];
+    example.allowAll = false;
+  };
 ```
 
-## Research Topics
+## Resources
 
-### "One-shot" services
+1.  
 
-Some services run to completion and should not be restarted.
-
-Should these services we be wrapped in scripts that never return?
-
-### Secrets management
-
-How to load secrets without depending on specific service managers?
-
-### User management
-
-How to create new users?
-
-### Security hardening
-
-Best practices for privilege de-escalation?
-
-### Intra-service dependencies
-
-How should dependencies within a collection of services be expressed?
-
-<a href="Category:NixOS" class="wikilink" title="Category:NixOS">Category:NixOS</a>
+2.

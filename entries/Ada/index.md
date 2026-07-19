@@ -55,9 +55,9 @@ stdenv.mkDerivation {
 If you try to build static binaries, you need to add the static version of libc manually. For this, add `glibc` to the derivation parameters (at the top) and add the following to the derivation itself.
 
 ``` nix
-  buildInputs = [
-    glibc.static
-  ];
+buildInputs = [
+  glibc.static
+];
 ```
 
 There is an example on [GitHub](https://github.com/blitz/adahello).

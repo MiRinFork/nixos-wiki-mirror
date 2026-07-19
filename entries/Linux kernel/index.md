@@ -376,9 +376,9 @@ Then you can run the following commands (in the nix-shell `$makeFlags` will cont
 
 ``` console
 $ nix-shell
-# to configure
+$ # to configure
 $ nix-shell> make $makeFlags defconfig -j $(nproc)
-# to build
+$ # to build
 $ nix-shell> make $makeFlags -j $(nproc)
 ```
 
@@ -398,9 +398,9 @@ Then you can use:
 
 ``` console
 $ nix-shell
-# to configure
+$ # to configure
 $ nix-shell> make $makeFlags defconfig -j $(nproc)
-# to build
+$ # to build
 $ nix-shell> make $makeFlags -j $(nproc)
 ```
 

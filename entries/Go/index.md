@@ -74,9 +74,9 @@ Running `nix shell` will create a shell, where you can execute the `ziti` binary
 If you want to build a local project with Nix, replace the `src` attribute to be the local directory, e.g.:
 
 ``` nix
-  some-package = buildGoModule {
-    src = ./.
-  };
+some-package = buildGoModule {
+  src = ./.
+};
 ```
 
 #### Monorepo support
@@ -84,12 +84,12 @@ If you want to build a local project with Nix, replace the `src` attribute to be
 the `go.mod` file must be in the source root for `buildGoModule`. to change the source root, use
 
 ``` nix
-  some-package = buildGoModule {
-    src = fetchFromGitHub {
-      # ...
-    } + "/path/to/module";
+some-package = buildGoModule {
+  src = fetchFromGitHub {
     # ...
-  };
+  } + "/path/to/module";
+  # ...
+};
 ```
 
 ### buildGoPackage
@@ -97,10 +97,10 @@ the `go.mod` file must be in the source root for `buildGoModule`. to change the 
 If no `go.mod` file is available, **buildGoPackage** ([implementation](https://github.com/NixOS/nixpkgs/blob/master/pkgs/build-support/go/package.nix)) can be used. Dependencies must be specified manually in a `deps.nix` file, which is linked with
 
 ``` nix
-  some-package = buildGoPackage {
-    # ...
-    goDeps = ./deps.nix;
-  };
+some-package = buildGoPackage {
+  # ...
+  goDeps = ./deps.nix;
+};
 ```
 
 ## Using cgo on NixOS

@@ -194,8 +194,8 @@ rider-fhs.nix
 }).env
 ```
 
-``` nix
-nix-shell ./rider-fhs.nix
+``` console
+$ nix-shell ./rider-fhs.nix
 ```
 
 This can be added as an alias to your shell if you update the reference to an absolute address, such as location within your home directory.
@@ -236,10 +236,10 @@ Unsure what specific situations cause this, probably has something to do with .N
 
 The workaround is modifying the bits that generate nuget-deps.nix:
 
-``` sh
-dotnet restore --packages=packageDir --use-current-runtime ./SomeProject.csproj
-nuget-to-nix packageDir >deps.nix
-rm -r packageDir
+``` console
+$ dotnet restore --packages=packageDir --use-current-runtime ./SomeProject.csproj
+$ nuget-to-nix packageDir >deps.nix
+$ rm -r packageDir
 ```
 
 The new parameter `--use-current-runtime` requires .NET SDK 8+. I believe what it does is explicitly adding packages missing in this runtime vs .NET Standard to packageDir.

@@ -53,7 +53,7 @@ Note: If your client doesn't support [Matrix Spaces](https://matrix.org/ecosyste
 
 #### [Mastodon](https://chaos.social/@nixos_org)
 
-#### [Twitter](https://twitter.com/nixos_org)
+#### [X (formerly Twitter)](https://twitter.com/nixos_org)
 
 #### [LinkedIn](https://www.linkedin.com/company/nixos-foundation/)
 

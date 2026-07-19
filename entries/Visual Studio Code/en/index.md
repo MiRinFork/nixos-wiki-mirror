@@ -1,8 +1,8 @@
 <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
 
-<!-- Source page: Visual Studio Code -->
+<!-- Source page: Visual Studio Code/en -->
 
-<translate> **Visual Studio Code** is a cross-platform text editor developed by Microsoft, built on the Electron framework.
+**Visual Studio Code** is a cross-platform text editor developed by Microsoft, built on the Electron framework.
 
 For the free distribution of the VS Code codebase (without MS branding, telemetry, and [extension marketplace](https://marketplace.visualstudio.com/) replaced by [Open VSX](https://open-vsx.org/)) see <a href="VSCodium" class="wikilink" title="VSCodium">VSCodium</a>.
 
@@ -109,8 +109,7 @@ The following derivation builds a package with the latest insiders build (on Nix
   });
   version = "latest";
 
-  <!--T:25-->
-buildInputs = oldAttrs.buildInputs ++ [ pkgs.krb5 ];
+  buildInputs = oldAttrs.buildInputs ++ [ pkgs.krb5 ];
 });
 ```
 
@@ -227,11 +226,9 @@ Note that nix-vscode-server works as of 8/21/21 but is occasionally broken (See 
 #! /usr/bin/env nix-shell
 #! nix-shell --pure -i runghc -p "haskellPackages.ghcWithPackages (pkgs: [ pkgs.turtle ])"
 
-<!--T:55-->
 {-# LANGUAGE OverloadedStrings #-}
 import Turtle
 
-<!--T:56-->
 main = sh $ do
   homedir <- home
   subdir <- ls $ homedir </> ".vscode-server/bin/"
@@ -321,7 +318,5 @@ If you're using fish or other shell, set this in the user settings JSON on the c
 ```
 
 See <https://github.com/microsoft/vscode-remote-release/issues/2509> and <https://github.com/nix-community/nixos-vscode-server/issues/18>
-
-</translate>
 
 <a href="Category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="Category:IDE" class="wikilink" title="Category:IDE">Category:IDE</a>

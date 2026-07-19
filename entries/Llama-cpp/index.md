@@ -123,7 +123,7 @@ In your shell:
 
 ``` bash
 llama-cli \ 
-  -hf bartowski/Qwen_Qwen3-Coder-Next-GGUF:Q4_K_M \ 
+  -hf unsloth/Qwen3-Coder-Next-GGUF:UD-Q4_K_M \ 
   --temp 1.0 --top-p 0.95 --top-k 40 \ 
   -p "briefly explain journalctl in one paragraph"
 ```
@@ -136,7 +136,7 @@ You can manually start the server from your terminal, it's usage, is not that di
 
 ``` bash
 llama-server \
-    -hf bartowski/Qwen_Qwen3-Coder-Next-GGUF:Q4_K_M \ 
+    -hf unsloth/Qwen3-Coder-Next-GGUF:UD-Q4_K_M \ 
     --temp 1.0 --top-p 0.95 --top-k 40 
 ```
 

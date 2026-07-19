@@ -21,35 +21,35 @@ Additional Git module configuration options can be found at .
 Git can be configured using <a href="Home_Manager" class="wikilink" title="Home Manager">Home Manager</a>:
 
 ``` nix
-  programs.git = {
-    enable = true;
-    config.user = {
-        name  = "John Doe";
-        email = "johndoe@example.com";
-    };
+programs.git = {
+  enable = true;
+  config.user = {
+    name  = "John Doe";
+    email = "johndoe@example.com";
   };
+};
 ```
 
 Aliases can be added with:
 
 ``` nix
-  programs.git = {
-    enable = true;
-    settings.alias = {
-      ci = "commit";
-      co = "checkout";
-      s = "status";
-    };
+programs.git = {
+  enable = true;
+  settings.alias = {
+    ci = "commit";
+    co = "checkout";
+    s = "status";
   };
+};
 ```
 
 Git [LFS](https://git-lfs.com/) can be enabled with:
 
 ``` nix
-  programs.git = {
-    enable = true;
-    lfs.enable = true;
-  };
+programs.git = {
+  enable = true;
+  lfs.enable = true;
+};
 ```
 
 Configure git-credential-helper with libsecret:
@@ -133,10 +133,10 @@ $ git citool
 Or you may wish to install the `gitFull` package, which includes `git gui`, `gitk`, etc. This can be installed either through system environment packages or by setting the package module option:
 
 ``` nix
-  programs.git = {
-    enable = true;
-    package = pkgs.gitFull;
-  };
+programs.git = {
+  enable = true;
+  package = pkgs.gitFull;
+};
 ```
 
 ## Management of the `nixpkgs` git repository
@@ -197,34 +197,34 @@ See also: <a href="gitolite" class="wikilink" title="gitolite">gitolite</a>.
 
 1\. Run this on the server to create repo `myproject` accessible by user `git`
 
-``` bash
-sudo -u git bash -c "git init --bare ~/myproject.git"
+``` console
+$ sudo -u git bash -c "git init --bare ~/myproject.git"
 ```
 
 (`~` here is the home of the user `git`, which is `/var/lib/git-server`)
 
 2\. Push to the server repo from another system
 
-``` bash
-mkdir myproject
-cd myproject
-echo hello > a
-git init
-git add .
-git commit -m init
-git remote add origin git@myserver:myproject.git
-git push origin master
+``` console
+$ mkdir myproject
+$ cd myproject
+$ echo "hello" > a
+$ git init
+$ git add .
+$ git commit -m "init"
+$ git remote add origin git@myserver:myproject.git
+$ git push origin master
 ```
 
 3\. Clone and edit the server repo from another system
 
-``` bash
-git clone git@myserver:myproject.git
-cd myproject
-cat a
-echo world >> a
-git commit -am hello
-git push origin master
+``` console
+$ git clone git@myserver:myproject.git
+$ cd myproject
+$ cat a
+$ echo "world" >> a
+$ git commit -am "hello"
+$ git push origin master
 ```
 
 ## Bisecting Nix regressions

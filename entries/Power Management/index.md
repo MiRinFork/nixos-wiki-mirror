@@ -59,7 +59,7 @@ Please note that `resumeDevice` must match the output of `swapon -s` especially 
 Therefore, an example configuration could look like this:
 
 ``` nix
-// I'm hibernating into a logical volume that's also under LUKS. Pretty cool, right?
+# I'm hibernating into a logical volume that's also under LUKS. Pretty cool, right?
 
 swapDevices = [
   {
@@ -80,8 +80,8 @@ Filename                                Type            Size           Used     
 
 Test and use hibernation with the following command:
 
-``` nix
-systemctl hibernate
+``` console
+$ systemctl hibernate
 ```
 
 ## Tips and tricks
@@ -156,8 +156,8 @@ PT29      S4    *disabled  pci:0000:03:09.0
 
 You can temporarily toggle a device by writing its "Device" name back into `/proc/acpi/wakeup`
 
-``` sh
-echo GPP0 | sudo tee /proc/acpi/wakeup
+``` console
+$ echo GPP0 | sudo tee /proc/acpi/wakeup
 ```
 
 After finding out which component is causing unwanted wakeups you can use the sysfs id to find out the "vendor" and "device" fields:

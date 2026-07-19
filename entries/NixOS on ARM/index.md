@@ -16,7 +16,7 @@ The way the ARM integration is built into NixOS is by making **generic builds th
 
 It is still possible, when needed, to build and use a customized platform firmware and kernel for specific boards<sup><a href="Talk:NixOS_on_ARM#NixOS_.22support.22_for_board-specific_kernels_or_bootloaders" class="wikilink" title="[reference needed">[reference needed</a>\]</sup>.
 
-At this moment in time (early 2024) **only AArch64** has full support upstream. With that said, neither armv6l or armv7l are being ignored, fixes are worked on and approved as needed. What's missing is support and builds being maintained in binary form. At the time of writing, no publicly available caches for armv6l or armv7l are available.
+AArch64 has an official binary cache on stable and unstable NixOS channels. ARMv6 and ARMv7 remain available in Nixpkgs, but NixOS does not currently publish binary caches for them.
 
 **For images links, including UEFI install**, skip to the <a href="NixOS_on_ARM/Installation" class="wikilink" title="Installation page">Installation page</a>.
 
@@ -29,16 +29,17 @@ Table legend:
 
 ### Upstream (NixOS) supported devices
 
-NixOS has support for these boards using AArch64 architecture on the nixpkgs-unstable and stable channel.
+NixOS supports Raspberry Pi 3 and Raspberry Pi 4 on stable and unstable AArch64 channels. Raspberry Pi 5 requires `nixos-unstable`.
 
-Support for those board assumes as much is supported as Mainline Linux supports.
+On each board, NixOS supports only the hardware covered by the configured Linux kernel, platform firmware, and bootloader.
 
 <div class="table">
 
 | Manufacturer | Board | SoC | ISA | CPU | RAM | Storage |
 |----|----|----|----|----|----|----|
-| Raspberry Pi Foundation | <a href="NixOS_on_ARM/Raspberry_Pi_3" class="wikilink" title="Raspberry Pi 3">Raspberry Pi 3</a> | Broadcom BCM2837 | AArch64 / ARMv7 | 4× Cortex-A53 @ 1.2 - 1.4 GHz | 1 GB | SD/microSD |
-| Raspberry Pi Foundation | <a href="NixOS_on_ARM/Raspberry_Pi_4" class="wikilink" title="Raspberry Pi 4">Raspberry Pi 4</a> | Broadcom BCM2711 | AArch64 / ARMv7 | 4× Cortex-A72 @ 1.5 - 1.8 GHz | 1-8 GB | microSD, eMMC |
+| Raspberry Pi Ltd | <a href="NixOS_on_ARM/Raspberry_Pi_3" class="wikilink" title="Raspberry Pi 3">Raspberry Pi 3</a> | Broadcom BCM2837 | AArch64 | 4× Cortex-A53 @ 1.2 to 1.4 GHz | 512 MB to 1 GB | microSD, eMMC |
+| Raspberry Pi Ltd | <a href="NixOS_on_ARM/Raspberry_Pi_4" class="wikilink" title="Raspberry Pi 4">Raspberry Pi 4</a> | Broadcom BCM2711 | AArch64 | 4× Cortex-A72 @ 1.5 to 1.8 GHz | 1 to 8 GB | microSD, eMMC |
+| Raspberry Pi Ltd | <a href="NixOS_on_ARM/Raspberry_Pi_5" class="wikilink" title="Raspberry Pi 5">Raspberry Pi 5</a> (`nixos-unstable` only) | Broadcom BCM2712 | AArch64 | 4× Cortex-A76 @ 2.4 GHz | 1 to 16 GB | microSD; eMMC on CM5; NVMe for the root filesystem after Linux starts |
 
 </div>
 
@@ -92,11 +93,8 @@ The baseline support level expected is “Just as much as mainline Linux and U-B
 | Radxa | <a href="NixOS_on_ARM/Radxa_ROCK_5_ITX" class="wikilink" title="ROCK 5 ITX">ROCK 5 ITX</a> | Rockchip RK3588 | AArch64 | 4× Cortex-A76 @ 2.4GHz, 4×Cortex-A55 @ 1.8 GHz | 4/8/16/32 GB | eMMC, microSD, NVMe, SATA |
 | Radxa | <a href="NixOS_on_ARM/Radxa_ROCK5_Model_B" class="wikilink" title="ROCK5 Model B">ROCK5 Model B</a> | Rockchip RK3588 | AArch64 | 4× Cortex-A76 @ 2.4GHz, 4×Cortex-A55 @ 1.8 GHz | 4/8/16 GB | eMMC, microSD, NVMe |
 | Radxa | <a href="NixOS_on_ARM/Radxa_ROCK5_Model_A" class="wikilink" title="ROCK5 Model A">ROCK5 Model A</a> | Rockchip RK3588s | AArch64 | 4× Cortex-A76 @ 2.4GHz, 4×Cortex-A55 @ 1.8 GHz | 4/8/16 GB | eMMC, microSD, NVMe |
-| Raspberry Pi Foundation | <a href="NixOS_on_ARM/Raspberry_Pi" class="wikilink" title="Raspberry Pi">Raspberry Pi</a> | Broadcom BCM2835 | ARMv6 | 1 × ARM1176 @ 700 MHz | 256 MB / 512 MB | SD/microSD |
-| Raspberry Pi Foundation | <a href="NixOS_on_ARM/Raspberry_Pi" class="wikilink" title="Raspberry Pi 2">Raspberry Pi 2</a> | Broadcom BCM2836 | ARMv7 | 4× Cortex-A7 @ 900 MHz | 1 GB | SD/microSD |
-| Raspberry Pi Foundation | <a href="NixOS_on_ARM/Raspberry_Pi_3" class="wikilink" title="Raspberry Pi 3">Raspberry Pi 3</a> | Broadcom BCM2837 | AArch64 / ARMv7 | 4× Cortex-A53 @ 1.2 GHz | 1 GB | SD/microSD |
-| Raspberry Pi Foundation | <a href="NixOS_on_ARM/Raspberry_Pi_4" class="wikilink" title="Raspberry Pi 4">Raspberry Pi 4</a> | Broadcom BCM2711 | AArch64 / ARMv7 | 4× Cortex-A53 @ 1.5 GHz | 1-8 GB | microSD |
-| Raspberry Pi Foundation | <a href="NixOS_on_ARM/Raspberry_Pi_5" class="wikilink" title="Raspberry Pi 5">Raspberry Pi 5</a> | Broadcom BCM2712 | AArch64 | 4× Cortex-A76 @ 2.4 GHz | 4-8 GB | microSD |
+| Raspberry Pi Ltd | <a href="NixOS_on_ARM/Raspberry_Pi" class="wikilink" title="Raspberry Pi">Raspberry Pi</a> | Broadcom BCM2835 | ARMv6 | 1 × ARM1176 @ 700 MHz | 256 MB / 512 MB | SD/microSD |
+| Raspberry Pi Ltd | <a href="NixOS_on_ARM/Raspberry_Pi" class="wikilink" title="Raspberry Pi 2">Raspberry Pi 2</a> | Broadcom BCM2836 | ARMv7 | 4× Cortex-A7 @ 900 MHz | 1 GB | SD/microSD |
 | Toshiba | <a href="NixOS_on_ARM/Toshiba_AC100" class="wikilink" title="AC100 (mini laptop)">AC100 (mini laptop)</a> | Tegra 2 250 (T20) | ARMv7 | 2× Cortex-A9 @ 1 GHz | 512 MB | 8­­–32 GB eMMC, SD |
 | Wandboard | <a href="NixOS_on_ARM/Wandboard" class="wikilink" title="Wandboard Solo/Dual/Quad">Wandboard Solo/Dual/Quad</a> | Freescale i.MX6 | ARMv7 | 1×/2×/4× Cortex-A9 @ 1000 MHz | 512 MB / 1 GB / 2 GB | microSD, SATA |
 

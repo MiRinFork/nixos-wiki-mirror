@@ -62,64 +62,69 @@ Open firewall port for IMAPS clients.
     # use my own passwd file for auth, see below
     enablePAM = false;
 
-    # https://doc.dovecot.org/2.3/configuration_manual/howto/postfix_dovecot_lmtp/
-    # https://doc.dovecot.org/2.3/configuration_manual/howto/postfix_and_dovecot_sasl/
-    extraConfig = ''
-      # force to use full user name plus domain name
-      # for disambiguation
-      auth_username_format = %Lu
+    # https://doc.dovecot.org/2.4.4/howto/lmtp/postfix.html
+    # https://doc.dovecot.org/2.4.4/howto/sasl/postfix.html
+    settings = {
+      # dovecot_config_version and dovecot_storage_version must be explicitly set
+      # to retain compatibility with future updates.
+      dovecot_config_version = "2.4.2";
+      dovecot_storage_version = "2.4.0";
 
-      # Authentication configuration:
-      auth_mechanisms = plain
-      passdb {
-        driver = passwd-file
-        args = ${config.age.secrets.dovecot.path}
-      }
-    ''
+      auth_username_format = "%{user | lower}";
+      auth_mechanisms = [ "plain" ];
+      "passdb passwd-file" = {
+        driver = "passwd-file";
+        passwd_file_path = config.age.secrets.dovecot.path;
+      };
+    };
   };
 ```
 
 # Setup virtual users
 
 ``` nix
-  # /var/spool/mail/vmail needs to be created and owned by vmail
-  users.users."vmail" = {
-    createHome = true;
-    home = "/var/spool/mail/vmail";
-  };
+# /var/spool/mail/vmail needs to be created and owned by vmail
+  systemd.tmpfiles.rules = [
+    "d /var/spool/mail/vmail 0700 vmail vmail -"
+  ];
 
   services.dovecot2 = {
-    # configure virtual mail user and group
-    createMailUser = true;
-    mailUser = "vmail";
-    mailGroup = "vmail";
+    settings = {
+      # dovecot_config_version and dovecot_storage_version must be explicitly set
+      # to retain compatibility with future updates.
+      dovecot_config_version = "2.4.2";
+      dovecot_config_version = "2.4.0";
 
-    # implement virtual users
-    # https://doc.dovecot.org/2.3/configuration_manual/howto/simple_virtual_install/
-    # store virtual mail under
-    # /var/spool/mail/vmail/<DOMAIN>/<USER>/Maildir/
-    mailLocation = "maildir:~/Maildir";
+      # If config.services.dovecot2.createMailUser is true (which is the default),
+      # the user defined in mail_uid and mail_gid will be automatically created.
+      mail_uid = "vmail";
+      mail_gid = "vmail";
 
-    mailboxes = {
-      # use rfc standard https://apple.stackexchange.com/a/201346
-      All = { auto = "create"; autoexpunge = null; specialUse = "All"; };
-      Archive = { auto = "create"; autoexpunge = null; specialUse = "Archive"; };
-      Drafts = { auto = "create"; autoexpunge = null; specialUse = "Drafts"; };
-      Flagged = { auto = "create"; autoexpunge = null; specialUse = "Flagged"; };
-      Junk = { auto = "create"; autoexpunge = "60d"; specialUse = "Junk"; };
-      Sent = { auto = "create"; autoexpunge = null; specialUse = "Sent"; };
-      Trash = { auto = "create"; autoexpunge = "60d"; specialUse = "Trash"; };
+      # implement virtual users
+      # https://doc.dovecot.org/2.4.4/howto/virtual/simple_install.html
+      # store virtual mail under /var/spool/mail/vmail/<DOMAIN>/<USER>/Maildir
+      mail_driver = "maildir";
+      mail_path = "~/Maildir";
+
+      "namespace inbox" = {
+        "mailbox All" = { auto = "create"; special_use = "\\All"; };
+        "mailbox Archive" = { auto = "create"; special_use = "\\Archive"; };
+        "mailbox Drafts" = { auto = "create"; special_use = "\\Drafts"; };
+        "mailbox Flagged" = { auto = "create"; special_use = "\\Flagged"; };
+        "mailbox Junk" = { auto = "create"; special_use = "\\Junk"; autoexpunge = "60d"; };
+        "mailbox Sent" = { auto = "create"; special_use = "\\Sent"; };
+        "mailbox Trash" = { auto = "create"; special_use = "\\Trash"; autoexpunge = "60d"; };
+      };
+
+      "userdb static" = {
+        fields = {
+          uid = "vmail";
+          gid = "vmail";
+          username_format = "%u";
+          home = "/var/spool/mail/vmail/%d/%n";
+        };
+      };
     };
-
-    extraConfig = ''
-      userdb {
-        driver = static
-        # the full e-mail address inside passwd-file is the username (%u)
-        # user@example.com
-        # %d for domain_name %n for user_name
-        args = uid=vmail gid=vmail username_format=%u home=/var/spool/mail/vmail/%d/%n
-      }
-    '';
   };
 ```
 
@@ -128,48 +133,51 @@ Open firewall port for IMAPS clients.
 See <a href="Postfix" class="wikilink" title="Postfix">Postfix</a> for further setup on postfix side.
 
 ``` nix
-  services.dovecot2 = {
-    # connection to postfix
-    enableLmtp = true;
+  # create path for dovecot socket
+  systemd.tmpfiles.rules = [
+    "d /var/spool/postfix 0700 postfix postfix -";
+  ];
 
-    # https://doc.dovecot.org/2.3/configuration_manual/howto/postfix_dovecot_lmtp/
-    # https://doc.dovecot.org/2.3/configuration_manual/howto/postfix_and_dovecot_sasl/
-    extraConfig = ''
-      # connection to postfix via lmtp
-      service lmtp {
-       unix_listener /var/spool/postfix/dovecot-lmtp {
-         mode = 0600
-         user = postfix
-         group = postfix
-        }
-      }
-      service auth {
-        unix_listener /var/spool/postfix/auth {
-          mode = 0600
-          user = postfix
-          group = postfix
-        }
-      }
-    '';
-  };
+  services.dovecot2 = {
+    settings = {
+      # dovecot_config_version and dovecot_storage_version must be explicitly set
+      # to retain compatibility with future updates.
+      dovecot_config_version = "2.4.2";
+      dovecot_config_version = "2.4.0";
+
+      protocols = [ "imap" "lmtp" ];
+
+      # https://doc.dovecot.org/2.4.4/howto/lmtp/postfix.html
+      "service lmtp" = {
+        # Note that the socket needs to be placed here because Postfix access is limited to this directory
+        "unix_listener /var/spool/postfix/dovecot-lmtp" = {
+          user = "postfix";
+          group = "postfix";
+          mode = "0600";
+        };
+      };
+
+      # https://doc.dovecot.org/2.4.4/howto/sasl/postfix.html
+      "service auth" = {
+        "unix_listener /var/spool/postfix/auth" = {
+          user = "postfix";
+          group = "postfix";
+          mode = "0600";
+        };
+      };
+    };
 
   # postfix connection to dovecot
   services.postfix.config = {
-    # https://doc.dovecot.org/2.3/configuration_manual/howto/postfix_dovecot_lmtp/
+    # https://doc.dovecot.org/2.4.4/howto/lmtp/postfix.html
     mailbox_transport = "lmtp:unix:/var/spool/postfix/dovecot-lmtp";
     virtual_transport = "lmtp:unix:/var/spool/postfix/dovecot-lmtp";
 
-    # https://doc.dovecot.org/2.3/configuration_manual/howto/postfix_and_dovecot_sasl/
+    # https://doc.dovecot.org/2.4.4/howto/sasl/postfix.html
     smtpd_sasl_type = "dovecot";
     smtpd_sasl_path = "/var/spool/postfix/auth";
     smtpd_sasl_auth_enable = "yes";
     smtpd_recipient_restrictions = "permit_mynetworks, permit_sasl_authenticated, reject_unauth_destination";
-  };
-
-  # create path for dovecot socket
-  users.users."postfix" = {
-    createHome = true;
-    home = "/var/spool/postfix";
   };
 ```
 
@@ -177,9 +185,18 @@ See <a href="Postfix" class="wikilink" title="Postfix">Postfix</a> for further s
 
 ``` nix
   services.dovecot2 = {
-    sslServerCert = "${sslCertDir}/fullchain.pem";
-    sslServerKey = "${sslCertDir}/key.pem";
-    sslCACert = "${sslCertDir}/chain.pem";
+    settings = {
+      # dovecot_config_version and dovecot_storage_version must be explicitly set
+      # to retain compatibility with future updates.
+      dovecot_config_version = "2.4.2";
+      dovecot_config_version = "2.4.0";
+
+      # https://doc.dovecot.org/2.4.4/core/config/ssl.html
+      ssl = true; # see also "required"
+      ssl_server_cert_file = "${sslCertDir}/fullchain.pem";
+      ssl_server_key_file = "${sslCertDir}/key.pem";
+      ssl_server_ca_file = "${sslCertDir}/chain.pem";
+    }; 
   };
 ```
 

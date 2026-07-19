@@ -29,7 +29,7 @@ It is possible to override the global Nix configuration set in your `nix.conf` f
 When using any <a href="Nix_command" class="wikilink" title="nix command"><code>nix</code> command</a>, add the following command-line options: </translate>
 
 ``` shell
- --experimental-features 'nix-command flakes'
+--experimental-features 'nix-command flakes'
 ```
 
 <translate>
@@ -41,7 +41,7 @@ When using any <a href="Nix_command" class="wikilink" title="nix command"><code>
 Add the following to the <a href="NixOS_system_configuration#Usage" class="wikilink" title="NixOS configuration">NixOS configuration</a>: </translate>
 
 ``` nix
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+nix.settings.experimental-features = [ "nix-command" "flakes" ];
 ```
 
 <translate>
@@ -51,7 +51,7 @@ Add the following to the <a href="NixOS_system_configuration#Usage" class="wikil
 Add the following to your <a href="Home_Manager" class="wikilink" title="home manager">home manager</a> config: </translate>
 
 ``` nix
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+nix.settings.experimental-features = [ "nix-command" "flakes" ];
 ```
 
 <translate>
@@ -195,7 +195,7 @@ inputs = {
 <translate> By default, Git submodules in package `src`'s won't get copied to the nix store, this may cause the build to fail. Flakes in Git repositories can declare that they need Git submodules to be enabled. Since Nix version [2.27](https://discourse.nixos.org/t/nix-2-27-0-released/62003), you can enable submodules by: </translate>
 
 ``` nix
-  inputs.self.submodules = true;
+inputs.self.submodules = true;
 ```
 
 <translate>
@@ -383,13 +383,17 @@ To push *all* flake outputs automatically, checkout [devour-flake](https://githu
 
 </translate>
 
-    nix build github:nixos/nixpkgs?ref=pull/<PR_NUMBER>/head#<PACKAGE>
+``` console
+$ nix build github:nixos/nixpkgs?ref=pull/<PR_NUMBER>/head#<PACKAGE>
+```
 
 <translate> this allows building a package that has not yet been added to nixpkgs.
 
 note that this will download a full source tarball of nixpkgs. if you already have a local clone, using that may be faster due to delta compression: </translate>
 
-    git fetch upstream pull/<PR_NUMBER>/head && git checkout FETCH_HEAD && nix build .#PACKAGE
+``` console
+$ git fetch upstream pull/<PR_NUMBER>/head && git checkout FETCH_HEAD && nix build .#PACKAGE
+```
 
 <translate> this allows building a package that has not yet been added to nixpkgs.
 
@@ -397,8 +401,10 @@ note that this will download a full source tarball of nixpkgs. if you already ha
 
 When a <a href="git" class="wikilink" title="git">git</a> folder exists, flake will only copy files added in git to maximize reproducibility (this way if you forgot to add a local file in your repo, you will directly get an error when you try to compile it). However, for development purpose you may want to create an alternative flake file, for instance containing configuration for your preferred editors as described [here](https://discourse.nixos.org/t/local-personal-development-tools-with-flakes/22714/8)… of course without committing this file since it contains only your own preferred tools. You can do so by doing something like that (say for a file called `extra/flake.nix`): </translate>
 
-    git add --intent-to-add extra/flake.nix
-    git update-index --skip-worktree --assume-unchanged extra/flake.nix
+``` console
+$ git add --intent-to-add extra/flake.nix
+$ git update-index --skip-worktree --assume-unchanged extra/flake.nix
+```
 
 <translate>
 
@@ -408,21 +414,21 @@ One common pain point with using Nix as a development environment is the need to
 
 Consider a situation where your executable, `consumexe`, depends on a library, `libdep`. You're trying to work on both at the same time, where changes to `libdep` are reflected in real time for `consumexe`. This workflow can be achieved like so: </translate>
 
-``` bash
-cd ~/libdep-src-checkout/
-nix develop # Or `nix-shell` if applicable.
-export prefix="./install" # configure nix to install it here
-buildPhase   # build it like nix does
-installPhase # install it like nix does
+``` console
+$ cd ~/libdep-src-checkout/
+$ nix develop # Or `nix-shell` if applicable.
+$ export prefix="./install" # configure nix to install it here
+$ buildPhase   # build it like nix does
+$ installPhase # install it like nix does
 ```
 
 <translate> Now that you've built the dependency, `consumexe` can take it as an input. **In another terminal**: </translate>
 
-``` bash
-cd ~/consumexe-src-checkout/
-nix develop --redirect libdep ~/libdep-src-checkout/install
-echo $buildInputs | tr " " "\n" | grep libdep
-# Output should show ~/libdep-src-checkout/ so you know it worked
+``` console
+$ cd ~/consumexe-src-checkout/
+$ nix develop --redirect libdep ~/libdep-src-checkout/install
+$ echo $buildInputs | tr " " "\n" | grep libdep
+$ # Output should show ~/libdep-src-checkout/ so you know it worked
 ```
 
 <translate>

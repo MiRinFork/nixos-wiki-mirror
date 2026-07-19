@@ -20,106 +20,15 @@ Thermald proactively prevents overheating on Intel CPUs and works well with othe
 
 A common tool used to save power on laptops is [TLP](https://linrunner.de/tlp/index.html), which has sensible defaults for most laptops. To enable TLP you simply just write `services.tlp.enable = true;` in your `configuration.nix`. However, if you need a specific configuration, you can do as shown in the example below.
 
-``` nix
-services.tlp = {
-  enable = true;
-  settings = {
-    CPU_SCALING_GOVERNOR_ON_AC = "performance";
-    CPU_SCALING_GOVERNOR_ON_BAT = "powersave";
-
-    CPU_ENERGY_PERF_POLICY_ON_BAT = "power";
-    CPU_ENERGY_PERF_POLICY_ON_AC = "performance";
-
-    CPU_MIN_PERF_ON_AC = 0;
-    CPU_MAX_PERF_ON_AC = 100;
-    CPU_MIN_PERF_ON_BAT = 0;
-    CPU_MAX_PERF_ON_BAT = 20;
-
-    # Optional helps save long term battery health
-    START_CHARGE_THRESH_BAT0 = 40; # 40 and below it starts to charge
-    STOP_CHARGE_THRESH_BAT0 = 80;  # 80 and above it stops charging
-  };
-};
-```
-
 This example enables TLP and sets the minimum and maximum frequencies for the CPU based on whether it is plugged into power or not. It also changes the CPU scaling governor based on this.
 
 ### auto-cpufreq
 
 Another tool used for power management is [auto-cpufreq](https://github.com/AdnanHodzic/auto-cpufreq) which aims to replace TLP. When using auto-cpufreq it is therefore recommended to disable TLP as these tools are conflicting with each other. However, NixOS does allow for using both at the same time, and you can therefore run them in tandem at your own risk. To enable the service, add `services.auto-cpufreq.enable = true;` to your `configuration.nix`.
 
-Example of how to configure auto-cpufreq:
+Example of how to configure auto-cpufreq: Alternatively, if you have <a href="Flakes" class="wikilink" title="Flakes">Flakes</a> enabled you can also use the flake directly provided by the auto-cpufreq authors to get a more up-to-date version. They offer a detailed explanation how to add it to your system on their [GitHub page](https://github.com/AdnanHodzic/auto-cpufreq?tab=readme-ov-file#nixos).
 
-``` nix
-services.auto-cpufreq.enable = true;
-services.auto-cpufreq.settings = {
-  battery = {
-    governor = "powersave";
-    turbo = "never";
-  };
-  charger = {
-    governor = "performance";
-    turbo = "auto";
-  };
-};
-```
-
-Alternatively, if you have <a href="Flakes" class="wikilink" title="Flakes">Flakes</a> enabled you can also use the flake directly provided by the auto-cpufreq authors to get a more up-to-date version. They offer a detailed explanation how to add it to your system on their [GitHub page](https://github.com/AdnanHodzic/auto-cpufreq?tab=readme-ov-file#nixos).
-
-To summarize:</br> 1) add the flake as an input to your `flake.nix` file and enable the module:
-
-``` nix
-# flake.nix
-{
-  inputs =
-    {
-      # ---Snip---
-      auto-cpufreq = {
-        url = "github:AdnanHodzic/auto-cpufreq";
-        inputs.nixpkgs.follows = "nixpkgs";
-      };
-      # ---Snip---
-    };
-
-  outputs = inputs@{ nixpkgs, auto-cpufreq, ... }: {
-    nixosConfigurations.HOSTNAME = nixpkgs.lib.nixosSystem {
-      specialArgs = {
-        inherit inputs;
-      };
-      modules = [
-        ./configuration.nix
-        auto-cpufreq.nixosModules.default
-      ];
-    };
-  };
-}
-```
-
-2\) Then enable it in your `configuration.nix` file:
-
-``` nix
-# configuration.nix
-{ inputs, pkgs, ... }: {
-  # ---Snip---
-
-  programs.auto-cpufreq.enable = true;
-
-  # optionally, you can configure your auto-cpufreq settings, if you have any
-  programs.auto-cpufreq.settings = {
-    charger = {
-      governor = "performance";
-      turbo = "auto";
-    };
-    battery = {
-      governor = "powersave";
-      turbo = "auto";
-    };
-  };
-  # ---Snip---
-}
-```
-
-Since v2.0 auto-cpufreq also includes a GUI that lets you temporarily override the CPU frequency governor setting.
+To summarize:</br> 1) add the flake as an input to your `flake.nix` file and enable the module: 2) Then enable it in your `configuration.nix` file: Since v2.0 auto-cpufreq also includes a GUI that lets you temporarily override the CPU frequency governor setting.
 
 ### Powertop
 

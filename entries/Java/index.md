@@ -30,22 +30,6 @@ As you might expect, though, many flavors of Java are available in NixOS.
 
 Unfortunately the extension contains and uses a version of the JRE which makes use of dynamically loaded libraries, which nix cannot accomodate out-of-the-box. Fortunately there's a simple solution in the use of [nix-ld](https://github.com/nix-community/nix-ld). Here's a simple `flake.nix` snippet to get you started (I'll focus on the `devShell` part for brevity):
 
-``` nix
-# flake.nix
-devShell = pkgs.mkShell {
-  buildInputs = [
-    pkgs.gradle
-    pkgs.jdk17
-  ];
-  NIX_LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
-    pkgs.stdenv.cc.cc
-    pkgs.openssl
-  ];
-  NIX_LD = pkgs.lib.fileContents "${pkgs.stdenv.cc}/nix-support/dynamic-linker"; 
-  # ^--- when using direnv, this line will require the 'use flake --impure' option.
-};
-```
-
 The important lines above are the two starting with `NIX_LD...`. They will let nix-ld wrap the required, dynamically loaded libraries so that they are found when building the `devShell`.
 
 Another solution is to use the [`java.jdt.ls.java.home`](https://github.com/redhat-developer/vscode-java?tab=readme-ov-file#supported-vs-code-settings) VSCode setting to point to a nix-built Java 17. For example, using home-manager's settings:
@@ -80,14 +64,6 @@ Example with UMLet with JRE
 ```
 
 To install the Oracle JRE system-wide, you need to explicitly accept the license in addition to allowing unfree modules:
-
-``` nix
-# /etc/nixos/configuration.nix
-{
-  nixpkgs.config.allowUnfree = true;
-  programs.java = { enable = true; package = pkgs.oraclejre8; };
-}
-```
 
 Working with `requireFile` (manual downloading the tarballs and manual adding in to the nix store) might be annoying and nixops-unfriendly, so it can be overridden in overlays
 
@@ -178,7 +154,9 @@ See the [Java section in the Nixpkgs manual](https://nixos.org/manual/nixpkgs/#s
 
 [Maven](https://maven.apache.org/run.html) is a build tool for Java. The typical build command is
 
-    mvn verify
+``` console
+$ mvn verify
+```
 
 [mvn2nix](https://github.com/fzakaria/mvn2nix), [buildMavenPackage](https://nixos.org/manual/nixpkgs/stable/#maven-buildmavenpackage) (recommended) can be used to build Maven projects with Nix
 
@@ -188,11 +166,15 @@ See also: [Packaging a Maven application with Nix](https://fzakaria.com/2020/07/
 
 [Ant](https://ant.apache.org/manual/running.html) is a build tool for Java. To build the `compile` target, run
 
-    ant compile
+``` console
+$ ant compile
+```
 
 To list available build targets, run
 
-    ant -p
+``` console
+$ ant -p
+```
 
 #### Ivy
 

@@ -156,4 +156,71 @@ Adding Brave Browser support to Profile Sync daemon can be automated with an ove
 }
 ```
 
+## Getting fonts to work in containers
+
+When building a container using or , the image won't include any fonts, and so Chrome won't be able to render any text. To handle this, you must add to the image, along with the fonts you want included.
+
+Adding fonts to your image will only add them at , but fontconfig expects them at , so you just link the fonts to that directory:
+
+``` nix
+{
+  dockerTools,
+  chromium,
+  fontconfig,
+  maple-mono,
+  bashNonInteractive,
+  ...
+}:
+
+dockerTools.streamLayeredImage {
+  name = "chromium";
+  tag = "latest";
+  contents = [
+    chromium
+    fontconfig.out # The default .bin output only contains binaries
+    
+    # Fontconfig already contains a minimal set of DejaVu fonts, adding extra
+    # fonts is optional
+    maple-mono.NF
+  ];
+  # This part is only necessary if you're adding extra fonts
+  fakeRootCommands = ''
+    #!${bashNonInteractive}
+    mkdir -p usr/share
+    ln -s /share/fonts usr/share/fonts
+  '';
+} 
+```
+
+Chrome will then be able to discover the DejaVu and Maple Mono NF fonts through fontconfig.
+
+If you instead want to use fonts from the package set, you'll need to symlink the directory instead of as the texlive packages have a different structure:
+
+``` nix
+{
+  dockerTools,
+  chromium,
+  fontconfig,
+  texlivePackages,
+  bashNonInteractive,
+  ...
+}:
+
+dockerTools.streamLayeredImage {
+  name = "chromium";
+  tag = "latest";
+  contents = [
+    chromium
+    fontconfig.out
+
+    texlivePackages.opensans
+  ];
+  fakeRootCommands = ''
+    #!${bashNonInteractive}
+    mkdir -p usr/share
+    ln -s /fonts usr/share/fonts
+  '';
+} 
+```
+
 <a href="Category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="Category:Web_Browser{{#translation:}}" class="wikilink" title="Category:Web Browser{{#translation:}}">Category:Web Browser{{#translation:}}</a>

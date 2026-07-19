@@ -7,7 +7,7 @@
 <table>
 <thead>
 <tr>
-<th colspan="2" class="title"><p>Raspberry Pi 3 Family</p></th>
+<th colspan="2" class="title"><p>Raspberry Pi 3 family</p></th>
 </tr>
 </thead>
 <tbody>
@@ -19,183 +19,76 @@
 </tr>
 <tr>
 <td><p>Manufacturer</p></td>
-<td><p>Raspberry Pi Foundation</p></td>
+<td><p>Raspberry Pi Ltd</p></td>
 </tr>
 <tr>
 <td><p>Architecture</p></td>
-<td><p>AArch64</p></td>
+<td><p>AArch64, with ARMv7 as a best-effort alternative</p></td>
 </tr>
 <tr>
-<td><p>Bootloader</p></td>
-<td><p>Custom or U-Boot</p></td>
-</tr>
-<tr>
-<td><p>Boot order</p></td>
-<td><p>SD, USB*</p></td>
-</tr>
-<tr>
-<td><p>Maintainer</p></td>
-<td></td>
-</tr>
-<tr>
-<td colspan="2" class="title"><p>Raspberry Pi 3B</p></td>
+<td><p>Boot method</p></td>
+<td><p>Raspberry Pi firmware, U-Boot, and extlinux</p></td>
 </tr>
 <tr>
 <td><p>SoC</p></td>
-<td><p>BCM2837</p></td>
-</tr>
-<tr>
-<td colspan="2" class="title"><p>Raspberry Pi 3B+</p></td>
-</tr>
-<tr>
-<td><p>SoC</p></td>
-<td><p>BCM2837B0</p></td>
+<td><p>BCM2837 or BCM2837B0</p></td>
 </tr>
 </tbody>
 </table>
 
 </div>
 
-The Raspberry Pi family of devices is a series of single-board computers made by the Raspberry Pi Foundation. They are all based on Broadcom System-on-a-chip (SOCs).
+The **Raspberry Pi 3** works with the generic AArch64 SD image. AArch64 is the usual choice because NixOS publishes binary packages for it. ARMv7 remains buildable, but NixOS does not publish an ARMv7 binary cache. Import the Raspberry Pi 3 profile from `nixos-hardware` for the Raspberry Pi downstream kernel and board defaults.
 
-## Status
+## Installation
 
-The default Linux kernel in use, is the mainline Linux kernel, and not the Raspberry Pi Foundation's fork. This could reduce compatibility with some add-on boards or third-party libraries<sup>\[expanded explanation needed\]</sup>.
+Use the generic AArch64 SD image described on the <a href="NixOS_on_ARM/Raspberry_Pi#Installation" class="wikilink" title="family page">family page</a>. It contains Raspberry Pi 3 firmware, device trees, U-Boot, and an extlinux configuration.[^1] In a flake, import `nixos-hardware.nixosModules.raspberry-pi-3`. With channels, import `<nixos-hardware/raspberry-pi/3>`. The <a href="NixOS_on_ARM/Raspberry_Pi#Board_profiles" class="wikilink" title="family page">family page</a> provides complete examples and explains that a profile does not partition storage or install U-Boot.
 
-The Raspberry Pi 3 Family is only supported as **AArch64**. Use as armv7 is community supported.
+## Profile defaults
 
-## Board-specific installation notes
+The profile selects a pinned kernel from Raspberry Pi's downstream Linux tree. It disables GRUB and enables generation of `/boot/extlinux/extlinux.conf`. The shared `config.txt` defaults request full VC4 KMS, and the profile adds both serial and display kernel-console parameters.[^2][^3]
 
-First follow the <a href="NixOS_on_ARM#Installation" class="wikilink" title="generic installation steps">generic installation steps</a> to get the installer image and install using the <a href="NixOS_on_ARM#NixOS_installation_.26_configuration" class="wikilink" title="installation and configuration steps">installation and configuration steps</a>.
+The kernel package installs BCM2837-named copies of device trees for Pi 3A+, Pi 3B, Pi 3B+, CM3, and Zero 2 W. These files provide boot-time device-tree coverage. They do not create a separate Zero 2 W profile or imply equal hardware test coverage for every variant.
 
-### Raspberry Pi 3B and 3B+
-
-Both the AArch64 and ARMv7 images boot out-of-the-box. Using the 64-bit AArch64 image is highly recommended, as the availability of binaries is much better and allows the use of the 64-bit instruction set.
-
-For the UART console, edit `/extlinux/extlinux.conf` on the main partition of the SD card to set `console=ttyS1,115200n8` in the kernel boot parameters, making sure to replace the existing `console=ttyS0,115200n8` parameter. Use the following GPIO Pins with an USB-TTL connector:
-
-    GND         - 3rd in top row, black cable
-    GPIO 14 TXD - 4th in top row, white cable
-    GPIO 15 RXD - 5th in top row, green cable
-
-Use `nix-shell -p screen --run "screen /dev/ttyUSB0 115200"` (or `nix run nixpkgs#screen -- /dev/ttyUSB0 115200` if you're using nix flakes) to connect to the console.
-
-``` nix
-{
-  hardware.enableRedistributableFirmware = true;
-  networking.wireless.enable = true;
-}
-```
-
-## Tools
-
-The raspberry tools are available in the `libraspberrypi` package and include commands like `vcgencmd` to measure temperature and CPU frequency.
-
-## Audio
-
-In addition to the usual config, you will need to enable audio support explicitly in the firmwareConfig.
+See <a href="NixOS_on_ARM/Raspberry_Pi#Board_profiles" class="wikilink" title="Board profiles">Board profiles</a> for Wi-Fi firmware requirements on custom systems.
 
 ## Serial console
 
-Your `configuration.nix` will need to add `console=ttyS1,115200n8` to the `boot.kernelParams` configuration to use the serial console.
-
-If the Raspberry Pi downstream kernel is used the serial interface is named `serial0` instead.
-
-### Early boot
-
-Raspberry Pi 3's UART rate is tied to the GPU core frequency, set by default to 400MHz on Raspberry Pi 3 and later. This results in garbled serial output in bootloaders. Setting `core_freq=250` in `config.txt` solves this issue (as per [thread on the Raspberry Pi forum](https://forums.raspberrypi.com/viewtopic.php?p=942203#p942203)).
-
-It can be done declaratively as such:
-
-Note that this [may have a negative impact on performance](https://github.com/RealVNC/raspi-documentation/blob/fc6b4711f91791db7acd19ae743fcfddc9c89546/configuration/config-txt/overclocking.md#overclocking-options):
-
-> Frequency of the GPU processor core in MHz. It has an impact on CPU performance because it drives the L2 cache and memory bus.
-
-## Bluetooth
-
-The bluetooth controller is by default connected to the UART device at `/dev/ttyAMA0` and needs to be enabled through `btattach`:
-
-## Camera
-
-For the camera to work, you will need to add the following code to your configuration.nix:
-
-To make the camera available as v4l device under `/dev/video0` the `bcm2835-v4l2` kernel module need to be loaded. This can be done by adding the following code to your configuration.nix:
-
-## Notes about the boot process
-
-It takes approximately 1 minute to boot a Pi 3B.
-
-USB keyboards and HDMI displays should work, though some issues have been reported (see Troubleshooting below).
-
-Using the 3.3v serial port via the pin headers (exact location depends on hardware version) will get u-boot output and, when configured, a Linux kernel console.
-
-### Updating U-Boot
-
-[These steps can be followed to update the platform firmware.](https://github.com/NixOS/nixpkgs/issues/82455#issuecomment-959797355)
-
-## Troubleshooting
-
-### Power issues
-
-Especially with the power-hungry Raspberry Pi 3, it is important to have a [sufficient enough power supply](https://www.raspberrypi.org/documentation/hardware/raspberrypi/power/README.md) or *weirdness* may happen. Weirdness may include:
-
-- Lightning bolt on HDMI output "breaking" the display.
-- Screen switching back to u-boot text
-  - Fixable temporarily when power is sufficient by switching VT (alt+F2 / alt+F1)
-- Random hangs
-
-This problem is a hard problem. It is caused by the Raspberry Pi warning about power issues, but the current drivers (as of Linux 4.14) have a hard time dealing with it properly. If the power supply is rated properly AND the cable is not incurring too much power losses, it may be required to disable the lightning bolt indicator so the display driver isn't messed up.[^1] The lightning bolt indicator can be disabled by adding the line `avoid_warnings=1` in config.txt[^2]
-
-### WiFi / WLAN
-
-For a possible solution to 802.11 wireless connectivity issues, see: <https://github.com/NixOS/nixpkgs/issues/82462#issuecomment-604634627>
-
-In case `wlan0` is missing, try overlaying an older `firmwareLinuxNonfree` confirmed to be working:
-
-### HDMI
-
-HDMI issues have been observed on the 18.09 AArch64 image. The display would hang on "Starting Kernel...", then act as if the HDMI cable was unplugged. Re-plugging the HDMI cable after boot fixed the issue, as did a different monitor and HDMI cable.
-
-#### Early boot messages
-
-To show boot messages from initrd with the mainline kernel, add this to `configuration.nix`.
+The profile adds these kernel parameters:
 
 ``` nix
 {
-  boot.initrd.kernelModules = [ "vc4" "bcm2835_dma" "i2c_bcm2835" ];
+  boot.kernelParams = [
+    "console=ttyS0,115200n8"
+    "console=tty0"
+  ];
 }
 ```
 
-### Raspberry Pi 3B+ HDMI output issues
+It also defaults `enable_uart=1` in `config.txt`. On Pi 3 boards with onboard Bluetooth, `ttyS0` is normally the mini UART routed to GPIO 14 and GPIO 15, which are physical pins 8 and 10. Use pin 6 for ground and a 3.3 V serial adapter. A 5 V serial adapter can damage the board.[^4]
 
-As of 2019/08/19, the u-boot build and kernel build can disagree about the name of the dtb file for the Raspberry Pi 3B+. This happens because the upstream filename has changed, and the built u-boot has hardcoded expectations for the filename to load.
+After Linux starts, use `/dev/serial0` to address the primary UART without depending on its hardware name. Override `boot.kernelParams` declaratively to use different console parameters. Do not edit `extlinux.conf` manually because NixOS regenerates it.
 
-For now, do not use `linuxPackages_latest`, use the default `linuxPackages` which is the latest LTS, 4.19, which is known to be compatible.
+## Memory
 
-See .
+Pi 3 models have 512 MB or 1 GB of RAM. Cached packages generally fit in this memory, but a local kernel build or another large derivation may exhaust it. If a rebuild fails for lack of memory, add disk or compressed-RAM swap, or use an AArch64 remote builder.
 
-### HDMI output issue with kernel ~6.1 (NixOS 23.05 or NixOS unstable)
+## See also
 
-When using HDMI and hardware acceleration (e.g. Kodi), an application may fail to start and/or crash with a dmesg like:
+- <a href="NixOS_on_ARM/Raspberry_Pi" class="wikilink" title="NixOS on ARM/Raspberry Pi">NixOS on ARM/Raspberry Pi</a>
+- <a href="NixOS_on_ARM/Installation" class="wikilink" title="NixOS on ARM/Installation">NixOS on ARM/Installation</a>
+- [Raspberry Pi USB boot documentation](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#usb-mass-storage-boot)
 
-    [232195.380745] [drm:vc4_bo_create [vc4]] *ERROR* Failed to allocate from CMA:
-    [232195.380751] [drm]                         kernel:    432kb BOs (1)
-    [232195.380755] [drm]                           dumb:  69064kb BOs (14)
+## References
 
-    [306160.152488] cma: cma_alloc: alloc failed, req-size: 142 pages, ret: -16
-    [306160.152498] [vc_sm_cma_ioctl_alloc]: dma_alloc_coherent alloc of 581632 bytes failed
-    [306160.152501] [vc_sm_cma_ioctl_alloc]: something failed - cleanup. ret -12
-    [317686.623989] [drm:vc4_bo_create [vc4]] *ERROR* Failed to allocate from CMA:
-    [317686.623998] [drm]                           dumb:  74752kb BOs (16)
+<references />
 
-A workaround is to increase the pre-allocated CMA space (which, as of writing, defaults to 65M):
+<a href="Category:NixOS_on_ARM" class="wikilink" title="Category:NixOS on ARM">Category:NixOS on ARM</a>
 
-For more information see a post in raspberry pi forum[^3] and thios github issue[^4].
+[^1]: [Nixpkgs generic AArch64 SD image module](https://github.com/NixOS/nixpkgs/blob/master/nixos/modules/installer/sd-card/sd-image-aarch64.nix)
 
-[^1]: <https://logs.nix.samueldr.com/nixos/2017-12-20#1513784657-1513784714>;
+[^2]: [nixos-hardware Raspberry Pi 3 profile](https://github.com/NixOS/nixos-hardware/blob/master/raspberry-pi/3/default.nix)
 
-[^2]: <https://www.raspberrypi.org/documentation/configuration/config-txt/README.md>
+[^3]: [nixos-hardware Raspberry Pi config.txt defaults](https://github.com/NixOS/nixos-hardware/blob/master/raspberry-pi/common/config-txt-defaults.nix)
 
-[^3]: <https://forums.raspberrypi.com/viewtopic.php?t=285068>
-
-[^4]: <https://github.com/raspberrypi/linux/issues/3861>
+[^4]: [Raspberry Pi UART documentation](https://www.raspberrypi.com/documentation/computers/configuration.html#configure-uarts)

@@ -12,23 +12,6 @@ Nixpkgs has the few last Python versions packaged, as well as a consequent set o
 
 Create a file `shell.nix` in the project directory, with the following template:
 
-``` nix
-# shell.nix
-let
-  # We pin to a specific nixpkgs commit for reproducibility.
-  # Last updated: 2024-04-29. Check for new commits at https://status.nixos.org.
-  pkgs = import (fetchTarball "https://github.com/NixOS/nixpkgs/archive/cf8cc1201be8bc71b7cbbbdaf349b22f4f99c7ae.tar.gz") {};
-in pkgs.mkShell {
-  packages = [
-    (pkgs.python3.withPackages (python-pkgs: with python-pkgs; [
-      # select Python packages here
-      pandas
-      requests
-    ]))
-  ];
-}
-```
-
 In this example, we create a Python environment with packages `pandas` and `requests`.
 
 You can find Python packages that are available in Nixpkgs using [search.nixos.org](https://search.nixos.org/packages). For instance, type a Python package name like `numpy` in the search bar and click on the search button on the right. You can narrow down results by clicking on eg. "python311Packages" in the "Package sets" section on the left. Note that in the snippet above, on lines 10-11, each package is listed in the form `python-pkgs.`<name> where <name> corresponds to the one found in [search.nixos.org](https://search.nixos.org/packages) . See [Nix language basics](https://nix.dev/tutorials/nix-language.html) for more information on the `python-pkgs` attribute set.
@@ -41,8 +24,8 @@ Note that with NixOS, this method can be used to install packages at the system 
 environment.systemPackages = with pkgs; [
   # ...
   (python3.withPackages (python-pkgs: with python-pkgs; [
-      pandas
-      requests
+    pandas
+    requests
   ]))
 ];
 ```
@@ -53,9 +36,9 @@ environment.systemPackages = with pkgs; [
 environment.systemPackages = with pkgs; [
   # ...
   (python3.withPackages (python-pkgs: with python-pkgs; [
-      pandas
-      requests
-      rpy2
+    pandas
+    requests
+    rpy2
   ]))
 
   # don't use rWrapper.override
@@ -78,66 +61,7 @@ Python packages in Nixpkgs are created and updated by Nixpkgs maintainers. Altho
 
 The following is a high-level overview. For a complete explanation, see [Developing with Python](https://nixos.org/manual/nixpkgs/unstable/#developing-with-python) in the Nixpkgs Manual.
 
-Generally, you may create a file that looks like this:
-
-``` nix
-# toolz.nix
-{
-  lib,
-  buildPythonPackage,
-  fetchPypi,
-  setuptools,
-  wheel,
-}:
-
-buildPythonPackage rec {
-  pname = "toolz";
-  version = "0.10.0";
-
-  src = fetchPypi {
-    inherit pname version;
-    hash = "sha256-CP3V73yWSArRHBLUct4hrNMjWZlvaaUlkpm1QP66RWA=";
-  };
-
-  # do not run tests
-  doCheck = false;
-
-  # specific to buildPythonPackage, see its reference
-  pyproject = true;
-  build-system = [
-    setuptools
-    wheel
-  ];
-}
-```
-
-Given the file above is named `toolz.nix` and is the same directory as the previous `shell.nix` , you can edit `shell.nix` to use the package `toolz` above like so:
-
-``` nix
-# shell.nix
-let
-  pkgs = import <nixpkgs> {};
-
-  python = pkgs.python3.override {
-    self = python;
-    packageOverrides = pyfinal: pyprev: {
-      toolz = pyfinal.callPackage ./toolz.nix { };
-    };
-  };
-
-in pkgs.mkShell {
-  packages = [
-    (python.withPackages (python-pkgs: [
-      # select Python packages here
-      python-pkgs.pandas
-      python-pkgs.requests
-      python-pkgs.toolz
-    ]))
-  ];
-}
-```
-
-Next time you enter the shell specified by this file, Nix will build and include the Python package you have written.
+Generally, you may create a file that looks like this: Given the file above is named `toolz.nix` and is the same directory as the previous `shell.nix` , you can edit `shell.nix` to use the package `toolz` above like so: Next time you enter the shell specified by this file, Nix will build and include the Python package you have written.
 
 ### Running Python packages which requires compilation and/or contains libraries precompiled without `nix`
 
@@ -437,7 +361,7 @@ As a system package
 
 ``` nix
 environment.systemPackages = with pkgs; [
-    uv
+  uv
 ];
 ```
 
@@ -445,7 +369,7 @@ or as a home-manager package
 
 ``` nix
 home.packages = with pkgs; [
-    uv
+  uv
 ];
 ```
 
@@ -778,7 +702,7 @@ pkgs/development/python-modules/<name>/default.nix
 Those expressions are then referenced from `pkgs/top-level/python-packages.nix` as in
 
 ``` nix
-  aenum = callPackage ../development/python-modules/aenum { };
+aenum = callPackage ../development/python-modules/aenum { };
 ```
 
 ### Applications

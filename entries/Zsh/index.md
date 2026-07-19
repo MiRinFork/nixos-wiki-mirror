@@ -92,25 +92,23 @@ environment.shells = with pkgs; [ zsh ];
 
 Meaning this message:
 
-``` zsh
-This is the Z Shell configuration function for new users,
-zsh-newuser-install.
-You are seeing this message because you have no zsh startup files
-(the files .zshenv, .zprofile, .zshrc, .zlogin in the directory
-~).  This function can help you with a few settings that should
-make your use of the shell easier.
+    This is the Z Shell configuration function for new users,
+    zsh-newuser-install.
+    You are seeing this message because you have no zsh startup files
+    (the files .zshenv, .zprofile, .zshrc, .zlogin in the directory
+    ~).  This function can help you with a few settings that should
+    make your use of the shell easier.
 
-You can:
+    You can:
 
-(q)  Quit and do nothing.  The function will be run again next time.
+    (q)  Quit and do nothing.  The function will be run again next time.
 
-(0)  Exit, creating the file ~/.zshrc containing just a comment.
-     That will prevent this function being run again.
+    (0)  Exit, creating the file ~/.zshrc containing just a comment.
+         That will prevent this function being run again.
 
-(1)  Continue to the main menu.
+    (1)  Continue to the main menu.
 
---- Type one of the keys in parentheses --- 
-```
+    --- Type one of the keys in parentheses --- 
 
 You can hide this message by adding following line to the system configuration:
 

@@ -206,11 +206,11 @@ Add the following to your Home Manager configuration
 
 [^1]: <https://github.com/Legcord/Legcord>
 
-[^2]: <https://betterdiscord.app/>
+[^2]: <https://github.com/BetterDiscord/BetterDiscord>
 
 [^3]: <https://github.com/GooseMod/OpenAsar>
 
-[^4]: <https://vencord.dev/>
+[^4]: <https://github.com/Vendicated/Vencord>
 
 [^5]: <https://github.com/Vencord/Vesktop>
 

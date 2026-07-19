@@ -10,6 +10,10 @@
 
 </translate>
 
+``` console
+$ nix-shell -p firefox
+```
+
 <translate> The command above makes `firefox` available in your current shell without modifying any configuration files.
 
 #### System setup
@@ -65,6 +69,10 @@ This method is reproducible but may lag behind the upstream version. First, add 
 This method is not necessarily reproducible without a flake-like system but will always be the latest version. </translate>
 
 <translate> Using this method requires the `--impure` flag for Nix commands, for example: </translate>
+
+``` console
+$ nixos-rebuild switch --impure
+```
 
 <translate>
 

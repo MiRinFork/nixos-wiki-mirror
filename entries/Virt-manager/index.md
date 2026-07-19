@@ -68,13 +68,15 @@ The host must [provide the needed virtio serial port](https://wiki.libvirt.org/Q
 
 ### Wayland
 
-In order to run on Wayland, virt-manager must be ran under XWayland with \`\$ GDK_BACKEND=x11 virt-manager\` or a gdk cursor must be set. An example of setting a gdk cursor with home-manager is as follows:
+In order to run on Wayland, virt-manager must be ran under XWayland with `$ GDK_BACKEND=x11 virt-manager` or a gdk cursor must be set. An example of setting a gdk cursor with home-manager is as follows:
 
-` home.pointerCursor = {`  
-`    gtk.enable = true;`  
-`    package = pkgs.vanilla-dmz;`  
-`    name = "Vanilla-DMZ";`  
-` };`
+``` nix
+home.pointerCursor = {
+   gtk.enable = true;
+   package = pkgs.vanilla-dmz;
+   name = "Vanilla-DMZ";
+};
+```
 
 ## Troubleshooting
 

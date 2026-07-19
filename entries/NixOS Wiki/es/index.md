@@ -12,7 +12,7 @@
 
 <div class="col-md-5">
 
-<span lang="en" dir="ltr" class="mw-content-ltr">... all news articles →</span>\]\] }}
+... todos los artículos de noticias →\]\] }}
 
 </div>
 

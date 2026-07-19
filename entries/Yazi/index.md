@@ -100,13 +100,17 @@ programs.yazi = {
 
 If you would like to use your existing files to keep them portable, you can import them into your configuration directly to be read and built by nix.
 
-## Tips and tricks
+## Plugins
 
 #### Installing Plugins
 
 Many yazi plugins are [packaged in nixpkgs](https://search.nixos.org/packages?channel=unstable&from=0&size=50&buckets=%7B%22package_attr_set%22%3A%5B%22yaziPlugins%22%5D%2C%22package_license_set%22%3A%5B%5D%2C%22package_maintainers_set%22%3A%5B%5D%2C%22package_platforms%22%3A%5B%5D%7D&sort=relevance&type=packages&query=yaziPlugins).
 
 There are some additional yazi plugins packaged in the [nix-yazi-plugins](https://github.com/lordkekz/nix-yazi-plugins) flake. It also provides home-manager modules for configuring the plugins' options.
+
+#### home-manager
+
+## Tips and tricks
 
 #### Bleeding edge
 
@@ -189,6 +193,8 @@ bind = [
   "$mod, E, exec, kitty -e yazi"
 ];
 ```
+
+#### Easy directory keymap
 
 ## Troubleshooting
 
