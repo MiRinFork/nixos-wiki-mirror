@@ -22,9 +22,11 @@ You will need to create the referenced configuration files. The above example wi
 
 Ensure you use absolute paths for any files such as certificates and keys referenced from the configuration files.
 
-Use <em>systemctl</em> to start/stop VPN service. Each generated service will have a prefix \`openvpn-\`:
+Use <em>systemctl</em> to start/stop VPN service. Each generated service will have a prefix `openvpn-`:
 
-    systemctl start openvpn-officeVPN.service
+``` console
+# systemctl start openvpn-officeVPN.service
+```
 
 Should you have trouble with DNS resolution for services that should be available via the VPN, try adding the following to the config:
 

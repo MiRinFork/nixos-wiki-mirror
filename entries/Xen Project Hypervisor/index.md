@@ -30,6 +30,10 @@ See for more configuration options.
 
 You can then start the domain using the following command:
 
+``` console
+# xl create /path/to/example-hvm.cfg -Fc
+```
+
 If you are interested in managing Xen domains declaratively, please take a look at pull request and everything else tagged with the `declarative libxenlight` title.
 
 ## See also

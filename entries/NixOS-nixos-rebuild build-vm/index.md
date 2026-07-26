@@ -81,7 +81,7 @@ When running a virtual machine a file called `$hostname.qcow2` is created in you
 
 ## qemu
 
-To enable connecting from your host to your virtual machine, you'll need to forcefully override the default networking settings to apply those from <https://wiki.qemu.org/Documentation/Networking#How_to_get_SSH_access_to_a_guest> instead. For example, to expose the VM's port 80 on the (unprivileged) port 8009 of the 'localhost' of the host:
+To enable connecting from your host to your virtual machine, you'll need to forcefully override the default networking settings to apply those from <https://wiki.qemu.org/Documentation/Networking#How_to_get_SSH_access_to_a_guest> instead. For example, to expose the VM's port 80 on the (unprivileged) port 8009 of the 'localhost' of the host, add the following to the VM (not the host) configuration:
 
 ``` nix
 { config, pkgs, lib, modulesPath, ... }:
@@ -113,11 +113,14 @@ Build it as a [bootable ISO image](https://nix.dev/tutorials/nixos/building-boot
 ``` nix
 { 
 ...
-  imports = [ 
-    <nixos/nixos/modules/virtualisation/virtualbox-image.nix> ]
+  imports = [ <nixos/nixos/modules/virtualisation/virtualbox-image.nix> ]
 ...
 ```
 
-`nix build -f '`<nixpkgs/nixos>`' -I nixos-config=./configuration.nix config.system.build.virtualBoxOVA` [Source](https://discourse.nixos.org/t/nixos-rebuild-build-vm-not-portable-across-linux-distributions/28564/4)
+``` console
+$ nix build -f '<nixpkgs/nixos>' -I nixos-config=./configuration.nix config.system.build.virtualBoxOVA
+```
+
+[Source](https://discourse.nixos.org/t/nixos-rebuild-build-vm-not-portable-across-linux-distributions/28564/4)
 
 <a href="Category:Virtualization" class="wikilink" title="Category:Virtualization">Category:Virtualization</a> <a href="Category:NixOS" class="wikilink" title="Category:NixOS">Category:NixOS</a>

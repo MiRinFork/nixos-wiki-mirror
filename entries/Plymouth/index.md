@@ -70,7 +70,7 @@ NixOS sets the default theme to **bgrt**[^2]. You can change the theme with \`bo
 
 ### Install new themes
 
-As an example, you can use a boot animation from \[<tvar name="1"><https://github.com/adi1090x/plymouth-themes></tvar> adi1090x's collection\] like so:
+As an example, you can use a boot animation from [adi1090x's collection](https://github.com/adi1090x/plymouth-themes) like so:
 
 ### HiDPI
 

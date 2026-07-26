@@ -66,39 +66,39 @@ Make sure you're using a branch of nixpkgs that has <https://github.com/NixOS/ni
 This generates a script that starts gdb with module symbols and kernel sources attached:
 
 ``` nix
-  users.motd =
-    let
-      gdbScript = pkgs.writeScript "attach-gdb.sh" ''
-        mkdir -p /tmp/gdb
-        cd /tmp/gdb
-        rm -rf *
+users.motd =
+  let
+    gdbScript = pkgs.writeScript "attach-gdb.sh" ''
+      mkdir -p /tmp/gdb
+      cd /tmp/gdb
+      rm -rf *
 
-        ls ${pkgs.srcOnly config.boot.kernelPackages.kernel} | while read line ; do ln -s ${pkgs.srcOnly config.boot.kernelPackages.kernel}/$line $line ; done
+      ls ${pkgs.srcOnly config.boot.kernelPackages.kernel} | while read line ; do ln -s ${pkgs.srcOnly config.boot.kernelPackages.kernel}/$line $line ; done
 
-        mkdir kos
-        cd kos
+      mkdir kos
+      cd kos
 
-        cp ${config.boot.kernelPackages.kernel}/lib/modules/*/kernel/fs/netfs/* .
-        cp ${config.boot.kernelPackages.kernel}/lib/modules/*/kernel/fs/9p/* .
-        cp ${config.boot.kernelPackages.kernel}/lib/modules/*/kernel/net/9p/* .
-        xz -d *
-        GDB_SCRIPT_DIR=$(echo ${config.boot.kernelPackages.kernel.dev}/lib/modules/*/build/scripts/gdb)
+      cp ${config.boot.kernelPackages.kernel}/lib/modules/*/kernel/fs/netfs/* .
+      cp ${config.boot.kernelPackages.kernel}/lib/modules/*/kernel/fs/9p/* .
+      cp ${config.boot.kernelPackages.kernel}/lib/modules/*/kernel/net/9p/* .
+      xz -d *
+      GDB_SCRIPT_DIR=$(echo ${config.boot.kernelPackages.kernel.dev}/lib/modules/*/build/scripts/gdb)
 
-        gdb \
-          -ex "python import sys; sys.path.insert(0, '$GDB_SCRIPT_DIR')" \
-          -ex "target remote :1234" \
-          -ex "source $GDB_SCRIPT_DIR/vmlinux-gdb.py" \
-          -ex "lx-symbols" \
-          ${config.boot.kernelPackages.kernel.dev}/vmlinux
-      '';
-    in ''
-      look at /repro/default.json
-
-      kernel at ${config.boot.kernelPackages.kernel}
-      kernel dev at ${config.boot.kernelPackages.kernel.dev}
-
-      attach gdb with ${gdbScript} on the host
+      gdb \
+        -ex "python import sys; sys.path.insert(0, '$GDB_SCRIPT_DIR')" \
+        -ex "target remote :1234" \
+        -ex "source $GDB_SCRIPT_DIR/vmlinux-gdb.py" \
+        -ex "lx-symbols" \
+        ${config.boot.kernelPackages.kernel.dev}/vmlinux
     '';
+  in ''
+    look at /repro/default.json
+
+    kernel at ${config.boot.kernelPackages.kernel}
+    kernel dev at ${config.boot.kernelPackages.kernel.dev}
+
+    attach gdb with ${gdbScript} on the host
+  '';
 ```
 
 ### With a manually-built kernel
@@ -172,9 +172,9 @@ $ scripts/config --set-val DEBUG_INFO y # For gdb debug symbols
 $ scripts/config --set-val DEBUG y # All pr_debug messages get printed
 $ scripts/config --set-val GDB_SCRIPTS y
 $ scripts/config --set-val DEBUG_DRIVER y # Enable printk messages in drivers
-# everything as one command for copy'n'paste
+$ # everything as one command for copy'n'paste
 $ scripts/config --set-val DEBUG_INFO y --set-val DEBUG y  --set-val GDB_SCRIPTS y --set-val DEBUG_DRIVER y
-# this might ask for further options, just press enter for every question
+$ # this might ask for further options, just press enter for every question
 $ make -j$(nproc)
 ```
 
@@ -240,7 +240,7 @@ Than build with the following commands:
 
 ``` console
 $ nix-build
-# copy out
+$ # copy out
 $ install -m644 result/nixos.qcow2 qemu-image.img
 ```
 
@@ -251,17 +251,17 @@ Than follow with the next step is launching qemu.
 If you want to build a different Linux distro you can use the following instructions to build a debian instead:
 
 ``` console
- $ nix-shell -p debootstrap qemu
- $ qemu-img create qemu-image.img 5G
- $ mkfs.ext2 qemu-image.img
- $ mkdir mount-point.dir
- $ sudo mount -o loop qemu-image.img mount-point.dir
- $ sudo debootstrap --arch amd64 buster mount-point.dir
- $ sudo chroot mount-point.dir /bin/bash -i
- $ export PATH=$PATH:/bin
- $ passwd # Set root password
- $ exit
- $ sudo umount mount-point.dir
+$ nix-shell -p debootstrap qemu
+$ qemu-img create qemu-image.img 5G
+$ mkfs.ext2 qemu-image.img
+$ mkdir mount-point.dir
+$ sudo mount -o loop qemu-image.img mount-point.dir
+$ sudo debootstrap --arch amd64 buster mount-point.dir
+$ sudo chroot mount-point.dir /bin/bash -i
+$ export PATH=$PATH:/bin
+$ passwd # Set root password
+$ exit
+$ sudo umount mount-point.dir
 ```
 
 #### Installing tools to the image
@@ -269,11 +269,11 @@ If you want to build a different Linux distro you can use the following instruct
 The filesystem is mounted read only so to add tools like lspci. Mount and chroot then use apt to install the needed binaries.
 
 ``` console
- $ sudo  mount -o loop qemu-image.img mount-point.dir
- $ sudo chroot mount-point.dir /bin/bash -i
- $ export PATH=$PATH:/bin
- $ apt install pciutils tree
- $ sudo umount mount-point.dir 
+$ sudo  mount -o loop qemu-image.img mount-point.dir
+$ sudo chroot mount-point.dir /bin/bash -i
+$ export PATH=$PATH:/bin
+$ apt install pciutils tree
+$ sudo umount mount-point.dir 
 ```
 
 #### Launch qemu
@@ -281,20 +281,20 @@ The filesystem is mounted read only so to add tools like lspci. Mount and chroot
 You can find a slighty stripped version of qemu in a package called `qemu_kvm` (qemu without emulation support for other cpu architectures). The `nokaslr` kernel flag is important to be able to set breakpoints in kernel memory. You can also skip the `-S` to not make qemu break on startup and waiting for gdb.
 
 ``` console
- $ qemu-system-x86_64 -s -S \
-    -kernel arch/x86/boot/bzImage \
-    -hda qemu-image.img \
-    -append "root=/dev/sda console=ttyS0 nokaslr" \
-    -enable-kvm \
-    -nographic
+$ qemu-system-x86_64 -s -S \
+   -kernel arch/x86/boot/bzImage \
+   -hda qemu-image.img \
+   -append "root=/dev/sda console=ttyS0 nokaslr" \
+   -enable-kvm \
+   -nographic
 ```
 
 #### Connect with gdb
 
 ``` console
- $ echo "add-auto-load-safe-path `pwd`/scripts/gdb/vmlinux-gdb.py" >> ~/.gdbinit
- $ gdb -ex "target remote :1234" ./vmlinux
- (gdb) continue
+$ echo "add-auto-load-safe-path `pwd`/scripts/gdb/vmlinux-gdb.py" >> ~/.gdbinit
+$ gdb -ex "target remote :1234" ./vmlinux
+(gdb) continue
 ```
 
 Note that setting breakpoints in early boot might not work for all functions. If a breakpoint is not triggered as expected try to set the breakpoint later when the VM is fully booted.
@@ -314,7 +314,7 @@ This can be used for example in combination with clangd, which scales well to si
 Make sure the driver you want to inspect is not compiled into the kernel, look for the option to enable compilation of your driver, to do this execute:
 
 ``` console
- $ make nconfig
+$ make nconfig
 ```
 
 press `F8` and search for your driver, and check if it is set to "Module" with <M>. After compilation copy the driver.ko into the mounted `qemu-image.img`. Unmount start the kernel and break at the `load_module` function and `insmod driver.ko`. Happy hacking!

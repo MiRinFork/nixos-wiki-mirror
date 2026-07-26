@@ -2,11 +2,11 @@
 
 <!-- Source page: Git -->
 
-[Git](https://en.wikipedia.org/wiki/Git_(software)) is the version control system (VCS) developed by Junio C Hamano and designed by Linus Torvalds (Creator of the Linux kernel). Git is used to maintain NixOS packages, as well as many other projects, including sources for the Linux kernel.
+[Git](https://en.wikipedia.org/wiki/Git_(software)) is the <a href="wikipedia:Version_control" class="wikilink" title="version control system (VCS)">version control system (VCS)</a> developed by Junio C Hamano and designed by <a href="wikipedia:Linus_Torvalds" class="wikilink" title="Linus Torvalds">Linus Torvalds</a> (Creator of the <a href="Linux_kernel" class="wikilink" title="Linux kernel">Linux kernel</a>). Git is used to maintain NixOS packages, as well as many other projects, including sources for the Linux kernel.
 
 ## Installing and configuring Git
 
-On NixOS, Git can be installed and configured at either the system level or the user level with <a href="Home_Manager" class="wikilink" title="Home Manager">Home Manager</a>.
+On NixOS, Git can be installed and configured at either the system level with the NixOS module or the user level with <a href="Home_Manager" class="wikilink" title="Home Manager">Home Manager</a>.
 
 ### System-wide installation
 
@@ -52,7 +52,7 @@ programs.git = {
 };
 ```
 
-Configure git-credential-helper with libsecret:
+Configure git-credential-helper with `libsecret`:
 
 ``` nix
 { pkgs, ... }:
@@ -141,18 +141,18 @@ programs.git = {
 
 ## Management of the `nixpkgs` git repository
 
-`nixpkgs` has become a git repository of quite substantial size with \> 889 000 commits (as of late 2025). This brings many unoptimized tools to their limits, leading to long waiting times on certain operations. Here we’ll collect useful info on how to manage that.
+`nixpkgs` has become a git repository of quite substantial size with \> 1M commits[^1] (as of 2026). This brings many unoptimized tools to their limits, leading to long waiting times on certain operations. Here we’ll collect useful info on how to manage that.
 
 ### Garbage collecting
 
-Normal `git gc` should work as usual, but you should force a full garbage collect every half a year or so. `git gc --aggressive` is the command for that. For the author it did not work on the first try, since their laptop’s memory was too small and it went out of memory. According to [StackOverflow](https://stackoverflow.com/a/4829883/1382925%7Cthis) answer it suffices to set some local repository config variables.
+Normal `git gc` should work as usual, but you should force a full garbage collect every half a year or so. `git gc --aggressive` is the command for that. For the author it did not work on the first try, since their laptop’s memory was too small, and it went out of memory. According to [StackOverflow](https://stackoverflow.com/a/4829883/1382925%7Cthis) answer it suffices to set some local repository config variables.
 
 ``` console
 $ git config pack.windowMemory 2g
 $ git config pack.packSizeLimit 1g
 ```
 
-worked well on a machine with about 6–8 GB of free RAM and two processor threads, and reduced the size of the `nixpkgs` checkout from ~1.3 GB to ~0.95 GB.
+This worked well on a machine with about 6–8 GB of free RAM and two processor threads, and reduced the size of the `nixpkgs` checkout from ~1.3 GB to ~0.95 GB.
 
 # Serve Git repos via SSH
 
@@ -230,3 +230,5 @@ $ git push origin master
 ## Bisecting Nix regressions
 
 <a href="Category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="Category:CLI_Applications" class="wikilink" title="Category:CLI Applications">Category:CLI Applications</a> <a href="Category:Version_control" class="wikilink" title="Category:Version control">Category:Version control</a>
+
+[^1]: <https://github.com/NixOS/nixpkgs>

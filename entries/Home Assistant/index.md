@@ -587,10 +587,6 @@ Home Assistant trusts certificates provided by the `certifi` python package, whi
   });
 ```
 
-# Example configurations
-
-- [Mic92's config](https://github.com/Mic92/dotfiles/tree/393539385b0abfc3618e886cd0bf545ac24aeb67/machines/eve/modules/home-assistant)
-
 # Misc
 
 ## Run Home Assistant from GitHub repository

@@ -376,10 +376,18 @@ home.packages = with pkgs; [
 If you use uv it's recommended that you install the Python versions you need using the `uv python install` command, e.g.
 
 ``` console
-$ uv python install 3.14 --preview --default
+$ uv python install 3.14 --default
 ```
 
-You may want to set the `UV_PYTHON_DOWNLOADS=never` environment variable in your shell to stop uv from downloading Python binaries automatically if needed. Setting `environment.localBinInPath = true;` is highly recommended, because uv will install binaries in `~/.local/bin`.
+Setting `environment.localBinInPath = true;` is highly recommended, because uv will install binaries in `~/.local/bin`.
+
+#### Python software development
+
+Python is meant to be considered a *development* package. That said, avoid installing a *system* Python for developing on Python projects. Consider using Home Manager's [`programs.uv`](https://nix-community.github.io/home-manager/options/home-manager/programs/uv.html) instead that does Python and Python tool installations with continuous, automatic updates.
+
+#### ImportError: libstdc++.so.6
+
+If you hit the infamous `ImportError: libstdc++.so.6: cannot open shared object file: No such file or directory` error after installing a Python package make sure to configure `nix-ld` (see above) to patch packages that expect an <a href="wikipedia:Filesystem_Hierarchy_Standard" class="wikilink" title="FHS compliant">FHS compliant</a> environment. See [this blog post](https://painless.software/how-use-python-on-nixos-the-pythonic-way) for background reading.
 
 ### Using poetry
 

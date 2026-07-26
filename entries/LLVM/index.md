@@ -52,19 +52,19 @@ in stdenv.mkDerivation {
 After that you can execute the following commands to get a working clang:
 
 ``` console
- $ git clone https://github.com/llvm/llvm-project/
- $ mkdir build && cd build
- $ cmake $cmakeFlags ../llvm-project/llvm
- $ ninja
- # installs everything to ../inst
- $ ninja install
- $ cd ..
+$ git clone https://github.com/llvm/llvm-project/
+$ mkdir build && cd build
+$ cmake $cmakeFlags ../llvm-project/llvm
+$ ninja
+$ # installs everything to ../inst
+$ ninja install
+$ cd ..
 ```
 
 Then assuming you have a test program called `main.c`:
 
 ``` console
- $ ./inst/bin/clang $CFLAGS -o main main.c 
+$ ./inst/bin/clang $CFLAGS -o main main.c 
 ```
 
 ## Building Nixpkgs/NixOS with LLVM

@@ -72,6 +72,13 @@ Below assumes you have already enabled Home Manager in your NixOS configuration.
 
 Launching `xfce4-settings-editor` you can view xfce personalizations already applied to the system. They're displayed in a tree view, but stored in a flat string format. You can query these same values from the command line with `xfconf-query` to quickly get the full key and value in a friendlier format. For instance:
 
+``` console
+$ xfconf-query -c ristretto -lv
+/window/navigationbar/position  left
+/window/statusbar/show          true
+/window/toolbar/show            false
+```
+
 Can be translated like so:
 
 ### Using built-in wallpapers

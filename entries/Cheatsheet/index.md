@@ -8,7 +8,7 @@ This cheatsheet is a collection of handy snippets for working with a NixOS syste
 
 ### Get the store path for a package
 
-``` console
+``` nix
 $ nix repl
 nix-repl> :l <nixpkgs> 
 Added 7486 variables.
@@ -16,7 +16,9 @@ nix-repl> "${xorg.libXtst}"
 "/nix/store/nlpnx21yjdjx2ii7ln4kcmbm0x1vy7w9-libXtst-1.2.3"
 
 nix-repl> :lf ./configuration.nix # as flakes way for a local file 
+```
 
+``` console
 $ # load nixos configuration from a nix file
 $ nix repl --file '<nixpkgs/nixos>' -I nixos-config=./configuration.nix
 
@@ -118,7 +120,9 @@ This can be helpful if your configuration is spread across multiple modules, or 
 
 You can do this with configuration files other than the one installed in `/etc/nixos`, too:
 
-    nix-repl> :a import <nixpkgs/nixos> { configuration = /path/to/config.nix; }
+``` nix
+nix-repl> :a import <nixpkgs/nixos> { configuration = /path/to/config.nix; }
+```
 
 ### Manually switching a NixOS system to a certain version of system closure
 
@@ -153,15 +157,6 @@ If you use a different profile name the procedure is similar, but use `/nix/var/
 While `nixos-rebuild build-vm` allows to build a vm out of the current system configuration, there is a more light-weight alternative when only a single service needs to be tested.
 
 Given the following configuration:
-
-``` nix
-# vm.nix
-{ lib, config, ... }:
-{
-  services.tor.enable = true;
-  users.users.root.initialPassword = "root";
-}
-```
 
 a vm can be build using the following command:
 
@@ -270,7 +265,7 @@ nixos-unstable https://nixos.org/channels/nixos-unstable
 
 update the channels using the following command:
 
-``` bash
+``` console
 $ sudo nix-channel -update nixos nixos-unstable
 ```
 
@@ -294,12 +289,12 @@ which allows you to switch particular packages to the unstable channel:
 
 ``` nix
 environment.systemPackages = with pkgs; [
-    ddate
-    devilspie2
-    evince
-    unstable.google-chrome
-    # ...
-    zsh
+  ddate
+  devilspie2
+  evince
+  unstable.google-chrome
+  # ...
+  zsh
 ];
 ```
 

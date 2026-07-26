@@ -8,6 +8,10 @@ NixOS supports using NVIDIA GPUs for pure computing purposes, not just for graph
 
 Assuming you've followed the <a href="NVIDIA" class="wikilink" title="NVIDIA">NVIDIA</a> page correctly, and have a CUDA compatible GPU, you shouldn't need to do any further configuration. You can confirm your CUDA version by running the following command in your terminal.
 
+``` console
+$ nvidia-smi | grep CUDA
+```
+
 ## `cudatoolkit`, `cudnn`, and related packages
 
 The CUDA toolkit is available in a [number of different versions](https://search.nixos.org/packages?channel=unstable&from=0&size=50&buckets=%7B%22package_attr_set%22%3A%5B%22cudaPackages%22%5D%2C%22package_license_set%22%3A%5B%5D%2C%22package_maintainers_set%22%3A%5B%5D%2C%22package_platforms%22%3A%5B%5D%7D&sort=relevance&type=packages&query=cudatoolkit). Please use the latest major version. You can see where they're defined in nixpkgs [here](https://github.com/NixOS/nixpkgs/blob/master/pkgs/development/cuda-modules/cudatoolkit/releases.nix).
@@ -66,7 +70,8 @@ in
 - By making a nix-shell
 
 ``` nix
-# flake.nix, run with `nix develop`# Run with `nix-shell cuda-shell.nix`
+# flake.nix, run with `nix develop`
+# Run with `nix-shell cuda-shell.nix`
 { pkgs ? import <nixpkgs> {} }:
 let
    nvidiaPackage = pkgs.linuxPackages.nvidiaPackages.stable;
@@ -180,7 +185,7 @@ Or you can override individual packages.
 
 ``` nix
 environment.systemPackages = with pkgs; [
- (mlt.override {config.cudaSupport=true;})
+  (mlt.override {config.cudaSupport=true;})
 ];
 ```
 

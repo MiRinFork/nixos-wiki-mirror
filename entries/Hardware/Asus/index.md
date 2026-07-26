@@ -10,7 +10,9 @@ Asus laptops will often have a Model Name, and a number of Model Numbers for tha
 
 It is unconfirmed, but highly likely that this command will give the actual Model Number, mapping to a specific sold model.
 
-    sudo nix-shell -p dmidecode --run "dmidecode -t 11" | grep 'String 4' | sed -e 's/\s//g' | cut -d':' -f2
+``` console
+# nix-shell -p dmidecode --run "dmidecode -t 11" | grep 'String 4' | sed -e 's/\s//g' | cut -d':' -f2
+```
 
 This command looks at *String 4* under the *OEM Strings* section.
 

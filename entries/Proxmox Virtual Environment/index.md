@@ -20,7 +20,7 @@ Proxmox VE uses
 
 NixOS runs on both.
 
-> The instructions should work for PVE 7.2 and later with NixOS 22.05 and later.
+> The instructions should work for PVE 7.2 and later with NixOS 22.05 and later.
 
 ## Deploying Proxmox with NixOS
 
@@ -36,7 +36,9 @@ A better option is to generate a VMA image that can be imported as a VM on Proxm
 
 > The first run will take some time, as a patched version of qemu with support for the VMA format needs to be built
 
-    nix run github:nix-community/nixos-generators -- --format proxmox
+``` console
+$ nix run github:nix-community/nixos-generators -- --format proxmox
+```
 
 Pass additional nix configuration to the template with `--configuration filename.nix`. In addition to NixOS module options, proxmox-specific options present in [nixos/modules/virtualisation/proxmox-image.nix](https://github.com/NixOS/nixpkgs/blob/master/nixos/modules/virtualisation/proxmox-image.nix) can be used to set core, memory, disk and other VM hardware options.
 
@@ -44,41 +46,47 @@ Pass additional nix configuration to the template with `--configuration filename
 
 The generated vma.zst file can be copied to `/var/lib/vz/dump/` (or any other configured VM dump storage path). A new VM can be spun up from it either using the GUI or the CLI:
 
-    qmrestore /var/lib/vz/dump/vzdump-qemu-nixos-21.11.git.d41882c7b98M.vma.zst &lt;vmid&gt; --unique true
+``` console
+$ qmrestore /var/lib/vz/dump/vzdump-qemu-nixos-21.11.git.d41882c7b98M.vma.zst <vmid> --unique true
+```
 
 > note: the MAC address of net0 defaults to `00:00:00:00:00:00`. This must either be overridden through `proxmox.qemuConf.net0`, or the `unique` attribute must be set to true when importing the image on Proxmox.
 
 By default, the generated image is set up to expose a serial terminal interface for ease of access.
 
-    root@proxmox-server:~# qm start &lt;vmid&gt;
-    root@proxmox-server:~# qm terminal &lt;vmid&gt;
-    starting serial terminal on interface serial0 (press Ctrl+O to exit)
+``` console
+root@proxmox-server:~# qm start <vmid>
+root@proxmox-server:~# qm terminal <vmid>
+starting serial terminal on interface serial0 (press Ctrl+O to exit)
 
-    &lt;&lt;&lt; NixOS Stage 1 &gt;&gt;&gt;
+<<< NixOS Stage 1 >>>
 
-    loading module dm_mod...
-    running udev...
-    Starting version 249.4
-    .
-    .
-    .
-    [  OK  ] Reached target Multi-User System.
-
-
-    &lt;&lt;&lt; Welcome to NixOS 21.11.git.d41882c7b98M (x86_64) - ttyS0 &gt;&gt;&gt;
-
-    Run 'nixos-help' for the NixOS manual.
-
-    nixos login: root (automatic login)
+loading module dm_mod...
+running udev...
+Starting version 249.4
+.
+.
+.
+[  OK  ] Reached target Multi-User System.
 
 
-    [root@nixos:~]#
+<<< Welcome to NixOS 21.11.git.d41882c7b98M (x86_64) - ttyS0 >>>
+
+Run 'nixos-help' for the NixOS manual.
+
+nixos login: root (automatic login)
+
+
+[root@nixos:~]#
+```
 
 ### Network configuration
 
 Cloud-init can be enabled with
 
-    services.cloud-init.network.enable = true;
+``` nix
+services.cloud-init.network.enable = true;
+```
 
 This will enable systemd-networkd, allowing cloud-init to set up network interfaces on boot.
 
@@ -86,7 +94,9 @@ This will enable systemd-networkd, allowing cloud-init to set up network interfa
 
 ### Generating LXC template
 
-    nix run github:nix-community/nixos-generators -- --format proxmox-lxc
+``` console
+$ nix run github:nix-community/nixos-generators -- --format proxmox-lxc
+```
 
 ### Privileged LXCs
 

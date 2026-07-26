@@ -30,13 +30,78 @@ After the VM is successfully booted, DokuWiki will be available on <http://local
 
 Using the `-I nixpkgs` parameter, you could choose to use a local *nixpkgs* repository, for example to test unfinished packages or modules:
 
-``` bash
-nixos-shell -I nixpkgs=/home/myuser/projects/nixpkgs myvm.nix
+``` console
+$ nixos-shell -I nixpkgs=/home/myuser/projects/nixpkgs myvm.nix
 ```
 
 ### Graphical session
 
-Following snippet will spawn a QEMU session with a graphical screen running GNOME, configured to auto login the user `nixos`.If you want auto screen resize support and clipboard-sharing between host and guest to work, append the following lines to your guest config.
+Following snippet will spawn a QEMU session with a graphical screen running GNOME, configured to auto login the user `nixos`:
+
+``` nix
+{ ... }: {
+  virtualisation.memorySize = 8096;
+  virtualisation.cores = 8;
+
+  virtualisation.graphics = true;
+
+  services.displayManager.gdm.enable = true;
+  services.desktopManager.gnome.enable = true;
+
+  services.displayManager.autoLogin = {
+    enable = true;
+    user = "nixos";
+  };
+
+  users.users.nixos = {
+    isNormalUser = true;
+    initialPassword = "nixos";
+  };
+};
+```
+
+If you want auto screen resize support and clipboard-sharing between host and guest to work, append the following lines to your guest config:
+
+``` nix
+{ ... }: {
+  [...]
+
+  nixpkgs.overlays = [
+    (final: prev: {
+      qemu = prev.qemu.overrideAttrs (old: {
+        configureFlags = old.configureFlags ++ ["--enable-gtk-clipboard"];
+      });
+      qemu_kvm = prev.qemu_kvm.overrideAttrs (old: {
+        configureFlags = old.configureFlags ++ ["--enable-gtk-clipboard"];
+      });
+    })
+  ];
+
+  virtualisation.qemu.options = [
+    "-device virtio-vga-gl"
+    "-display gtk,gl=on"
+    "-chardev qemu-vdagent,id=vdagent,name=vdagent,clipboard=on"
+    "-device virtio-serial"
+    "-device virtserialport,chardev=vdagent,name=com.redhat.spice.0"
+  ];
+
+  services.spice-vdagentd.enable = true;
+
+  systemd.user.services.spice-vdagent = {
+    description = "spice-vdagent user daemon";
+    after = [ "spice-vdagentd.service" "graphical-session.target" ];
+    requires = [ "graphical-session.target" ];
+    wantedBy = [ "graphical-session.target" ];
+    serviceConfig = {
+      ExecStart = "${pkgs.spice-vdagent}/bin/spice-vdagent -x";
+    };
+    unitConfig = {
+      ConditionPathExists = "/run/spice-vdagentd/spice-vdagent-sock";
+    };
+  };
+
+};
+```
 
 ### Mounting host directories
 

@@ -19,14 +19,14 @@ To be able to do remote backups it should be installed both locally and remotely
 I'll describe remote SSH backups here, as this is the most important case. It should be as easy as:
 
 ``` nix
-  services.borgbackup.jobs.home-danbst = {
-    paths = "/home/danbst";
-    encryption.mode = "none";
-    environment.BORG_RSH = "ssh -i /home/danbst/.ssh/id_ed25519";
-    repo = "ssh://user@example.com:23/path/to/backups-dir/home-danbst";
-    compression = "auto,zstd";
-    startAt = "daily";
-  };
+services.borgbackup.jobs.home-danbst = {
+  paths = "/home/danbst";
+  encryption.mode = "none";
+  environment.BORG_RSH = "ssh -i /home/danbst/.ssh/id_ed25519";
+  repo = "ssh://user@example.com:23/path/to/backups-dir/home-danbst";
+  compression = "auto,zstd";
+  startAt = "daily";
+};
 ```
 
 First, create a directory for backups `/path/to/backups-dir` on your remote machine, then rebuild local machine using this config and correctly specified `paths`, `BORG_RSH`, etc.
@@ -36,44 +36,44 @@ It will create "archives" with identifiers like `station-home-danbst-2020-06-10T
 Personally, I've adapted that to exclude unrelated stuff and split into multiple repos, but you don't necessarily need that:
 
 ``` nix
-  services.borgbackup.jobs =
-    let common-excludes = [
-          # Largest cache dirs
-          ".cache"
-          "*/cache2" # firefox
-          "*/Cache"
-          ".config/Slack/logs"
-          ".config/Code/CachedData"
-          ".container-diff"
-          ".npm/_cacache"
-          # Work related dirs
-          "*/node_modules"
-          "*/bower_components"
-          "*/_build"
-          "*/.tox"
-          "*/venv"
-          "*/.venv"
-        ];
-        work-dirs = [
-          "/home/danbst/dev/company1"
-          "/home/danbst/dev/company2"
-        ];
-        basicBorgJob = name: {
-          encryption.mode = "none";
-          environment.BORG_RSH = "ssh -o 'StrictHostKeyChecking=no' -i /home/danbst/.ssh/id_ed25519";
-          environment.BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK = "yes";
-          extraCreateArgs = "--verbose --stats --checkpoint-interval 600";
-          repo = "ssh://user@example.com//media/backup/${name}";
-          compression = "zstd,1";
-          startAt = "daily";
-          user = "danbst";
-        };
-  in {
+services.borgbackup.jobs =
+  let
+    common-excludes = [
+      # Largest cache dirs
+      ".cache"
+      "*/cache2" # firefox
+      "*/Cache"
+      ".config/Slack/logs"
+      ".config/Code/CachedData"
+      ".container-diff"
+      ".npm/_cacache"
+      # Work related dirs
+      "*/node_modules"
+      "*/bower_components"
+      "*/_build"
+      "*/.tox"
+      "*/venv"
+      "*/.venv"
+    ];
+    work-dirs = [
+      "/home/danbst/dev/company1"
+      "/home/danbst/dev/company2"
+    ];
+    basicBorgJob = name: {
+      encryption.mode = "none";
+      environment.BORG_RSH = "ssh -o 'StrictHostKeyChecking=no' -i /home/danbst/.ssh/id_ed25519";
+      environment.BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK = "yes";
+      extraCreateArgs = "--verbose --stats --checkpoint-interval 600";
+      repo = "ssh://user@example.com//media/backup/${name}";
+      compression = "zstd,1";
+      startAt = "daily";
+      user = "danbst";
+    };
+  in
+  {
     home-danbst = basicBorgJob "backups/station/home-danbst" // rec {
       paths = "/home/danbst";
-      exclude = work-dirs ++ map (x: paths + "/" + x) (common-excludes ++ [
-        "Downloads"
-      ]);
+      exclude = work-dirs ++ map (x: paths + "/" + x) (common-excludes ++ [ "Downloads" ]);
     };
     home-danbst-downloads = basicBorgJob "backups/station/home-danbst-downloads" // rec {
       paths = "/home/danbst/Downloads";
@@ -143,16 +143,16 @@ With persistent timers above you can get into a problem that after reboot backup
 Patching previous example:
 
 ``` nix
-    } // flip mapAttrs' config.services.borgbackup.jobs (name: value:
-      nameValuePair "borgbackup-job-${name}" {
-        unitConfig.OnFailure = "notify-problems@%i.service";
-        preStart = lib.mkBefore ''
-          # waiting for internet after resume-from-suspend
-          until /run/wrappers/bin/ping google.com -c1 -q >/dev/null; do :; done
-        '';
-      }
-    );
-    ...
+} // flip mapAttrs' config.services.borgbackup.jobs (name: value:
+  nameValuePair "borgbackup-job-${name}" {
+    unitConfig.OnFailure = "notify-problems@%i.service";
+    preStart = lib.mkBefore ''
+      # waiting for internet after resume-from-suspend
+      until /run/wrappers/bin/ping google.com -c1 -q >/dev/null; do :; done
+    '';
+  }
+);
+...
 ```
 
 ## Mounting point-in-time archives
@@ -187,29 +187,29 @@ where uid is your user's UID, in case you are restoring on a different system. Y
 Actually, I don't have a solution as of time being, so I'll share a setup which allows automount, but requires `sudo` to access.
 
 ``` nix
-  fileSystems."/run/user/1002/borg-home-danbst" = {
-    device = "user@example.com:/media/backup/backups/station/home-danbst::station-home-danbst-2020-06-10T00:00:46";
-    noCheck = true;
-    fsType = "fuse.borgfs";      # note that this requires a custom binary, see below
-    options = [ "x-systemd.automount" "noauto" "uid=1002" "exec" ];    # I'm using automount here to skip mount on boot, which slows startup
-  };
-  
-  # this one should mount the actual directory from the root view of backup
-  fileSystems."/run/user/1002/home-danbst" = {
-    device = "/run/user/1002/borg-home-danbst/home/danbst";
-    options = [ "bind" ];
-  };
+fileSystems."/run/user/1002/borg-home-danbst" = {
+  device = "user@example.com:/media/backup/backups/station/home-danbst::station-home-danbst-2020-06-10T00:00:46";
+  noCheck = true;
+  fsType = "fuse.borgfs";      # note that this requires a custom binary, see below
+  options = [ "x-systemd.automount" "noauto" "uid=1002" "exec" ];    # I'm using automount here to skip mount on boot, which slows startup
+};
 
-  environment.systemPackages = [
-    ...
-    (pkgs.writeScriptBin "mount.fuse.borgfs" ''
-      #!/bin/sh
-      export BORG_RSH="ssh -i /home/danbst/.ssh/id_ed25519"
-      export BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK=yes
-      export BORG_RELOCATED_REPO_ACCESS_IS_OK=yes
-      exec ${pkgs.borgbackup}/bin/borgfs "$@"
-    '')
-  ];
+# this one should mount the actual directory from the root view of backup
+fileSystems."/run/user/1002/home-danbst" = {
+  device = "/run/user/1002/borg-home-danbst/home/danbst";
+  options = [ "bind" ];
+};
+
+environment.systemPackages = [
+  ...
+  (pkgs.writeScriptBin "mount.fuse.borgfs" ''
+    #!/bin/sh
+    export BORG_RSH="ssh -i /home/danbst/.ssh/id_ed25519"
+    export BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK=yes
+    export BORG_RELOCATED_REPO_ACCESS_IS_OK=yes
+    exec ${pkgs.borgbackup}/bin/borgfs "$@"
+  '')
+];
 ```
 
 If anybody reading this have found a way to mount as a user properly, please update the code above.

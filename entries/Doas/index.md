@@ -37,14 +37,18 @@
 
 </translate> <translate>
 
-` $ doas su`  
-``  $ nix shell nixpkgs#git  # Or you can use the legacy syntax `nix-shell -p git` ``  
-` $ nixos-rebuild --flake /path/to/your/flake#your-hostname test`
+``` console
+$ doas su
+$ nix shell nixpkgs#git  # Or you can use the legacy syntax `nix-shell -p git`
+$ nixos-rebuild --flake /path/to/your/flake#your-hostname test
+```
 
 </translate> <translate> If everything looks good, you can now add your rebuild to your boot options. </translate> <translate>
 
-` $ exit`  
-` $ doas nixos-rebuild --flake /path/to/your/flake#your-hostname switch`
+``` console
+$ exit
+$ doas nixos-rebuild --flake /path/to/your/flake#your-hostname switch
+```
 
 </translate>
 

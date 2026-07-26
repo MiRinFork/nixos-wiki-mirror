@@ -90,8 +90,8 @@ AppCenter has been available since 20.03. Starting from 21.11, the Flatpak backe
 
 If you are using Pantheon, AppCenter should be installed by default if you have Flatpak support enabled. If you also wish to add the appcenter Flatpak remote:
 
-``` shell
-flatpak remote-add --if-not-exists appcenter https://flatpak.elementary.io/repo.flatpakrepo
+``` console
+$ flatpak remote-add --if-not-exists appcenter https://flatpak.elementary.io/repo.flatpakrepo
 ```
 
 <a href="Category:Desktop_environment" class="wikilink" title="Category:Desktop environment">Category:Desktop environment</a> <a href="Category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="Category:NixOS_Manual" class="wikilink" title="Category:NixOS Manual">Category:NixOS Manual</a>

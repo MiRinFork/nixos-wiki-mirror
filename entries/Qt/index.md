@@ -6,49 +6,19 @@
 
 To develop Qt applications in NixOS you may use nix-shell or direnv. For using nix-shell just run this command in the terminal:
 
-`nix-shell -p qt5Full -p qtcreator --run qtcreator`
+``` console
+$ nix-shell -p qt5Full -p qtcreator --run qtcreator
+```
 
 Tip: if it finds no Qt Kits, `rm -rf ~/.config/QtProject*` and start again. Sometimes it finds a kit, but cannot find a suitable qt version for it, in this case you can also type `which qmake` in your nix-shell and add a new entry in the `QT-Versions` tab in `Tools->Options->Kits`.
 
 For using direnv, create a **shell.nix** file in the root of your project and paste these lines into it:
-
-``` nix
-# shell.nix
-{ pkgs ? import <nixpkgs> {} }:
-  pkgs.mkShell {
-    buildInputs = [
-      pkgs.qt5.full
-      pkgs.qtcreator
-    ];
-}
-```
 
 Also, create **.envrc** file and paste: `use_nix` into it.
 
 ### Explicit Dependencies
 
 If fetching the entirety of `pkgs.qt6.full` is not appealing and you know which parts of Qt you need, your first instinct might be adding something like `pkgs.qt6.qtdeclarative` for creating QML-based Qt programs to `buildInputs`, **however** that will not work and you will get compile errors for missing libraries. `pkgs.qt6.full` is actually [creating an environment that contains all Qt libraries](https://github.com/NixOS/nixpkgs/blob/nixos-24.11/pkgs/development/libraries/qt-6/default.nix#L94-L144) that allows `qmake` and tools to find those libraries, so you must do the same and `pkgs.qt6.env` will help make one. For example:
-
-``` nix
-# shell.nix
-{ pkgs ? import <nixpkgs> {} }:
-let
-  # pkgs.qt6.env already includes pkgs.qt6.qtbase
-  # And using `with` to prevent a lot of typing.
-  qtEnv = with pkgs.qt6; env "qt-custom-${qtbase.version}" [
-    qtdeclarative
-  ];
-in
-  pkgs.mkShell {
-    buildInputs = [
-      qtEnv
-      # pkgs.qt6.qtdeclarative depends on pkgs.libglvnd
-      # Also worth noting it could be in qtEnv if preferred for "relatedness" reasons
-      pkgs.libglvnd
-      pkgs.qtcreator
-    ];
-}
-```
 
 ## Packaging
 
@@ -119,8 +89,10 @@ mkDerivation rec {
 
 Call it with
 
-    { pkgs ? import <nixpkgs> {} }:
-    pkgs.libsForQt5.callPackage ./derivation.nix {}
+``` nix
+{ pkgs ? import <nixpkgs> {} }:
+pkgs.libsForQt5.callPackage ./derivation.nix {}
+```
 
 For actual python applications, you may also use something like that (to test) :
 

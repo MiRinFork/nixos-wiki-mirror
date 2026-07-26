@@ -78,38 +78,22 @@ Upstream tracking:
 
 Add this snippet to configuration.nix:
 
-``` nix
-systemd.services.inhibit-sleep-after-resume = {
-  description = "Temporary sleep inhibitor after resume (workaround for double-suspend)";
-  wantedBy = [ "post-resume.target" ];
-  after = [ "post-resume.target" ];
-  serviceConfig.Type = "oneshot";
-  script = ''
-    ${pkgs.systemd}/bin/systemd-inhibit \
-      --mode=block \
-      --what=sleep:idle \
-      --why="Workaround: avoid immediate second suspend after resume" \
-      ${pkgs.coreutils}/bin/sleep 60
-  '';
-};
-```
-
 #### Workaround 2: disable GNOME idle-suspend (low risk; lid-close suspend still works)
 
 ##### Quick (imperative) test
 
 Disable idle suspend on AC power:
 
-``` sh
-gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type 'nothing'
-gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-timeout 0
+``` console
+$ gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type 'nothing'
+$ gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-timeout 0
 ```
 
 Optionally also disable it on battery:
 
-``` sh
-gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-type 'nothing'
-gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-timeout 0
+``` console
+$ gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-type 'nothing'
+$ gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-timeout 0
 ```
 
 ##### Declarative configuration (recommended)
@@ -177,20 +161,9 @@ If you have the NVIDIA dGPU module, prefer the maintained nixos-hardware NVIDIA 
 
 Example override:
 
-``` nix
-{
-  # In your system configuration:
-  hardware.nvidia.prime = {
-    # Replace these values with your own system's IDs:
-    amdgpuBusId = "PCI:XXX:YY:Z";
-    nvidiaBusId = "PCI:AAA:BB:C";
-  };
-}
-```
-
 Find PCI IDs:
 
-``` sh
+``` console
 $ nix-shell -p pciutils --run 'lspci | grep -E "VGA|3D|Display"'
 ```
 
@@ -208,15 +181,15 @@ printf 'PCI:%d:%d:%d\n' "$((16#$BUS))" "$((16#$DEV))" "$FUN"
 
 Validation (hybrid/offload):
 
-``` sh
-# Default: should show AMD iGPU
-nix-shell -p mesa-demos --run 'glxinfo -B | grep -E "OpenGL vendor|OpenGL renderer"'
+``` console
+$ # Default: should show AMD iGPU
+$ nix-shell -p mesa-demos --run 'glxinfo -B | grep -E "OpenGL vendor|OpenGL renderer"'
 
-# Offload: should show NVIDIA dGPU
-nix-shell -p mesa-demos --run 'nvidia-offload glxinfo -B | grep -E "OpenGL vendor|OpenGL renderer"'
+$ # Offload: should show NVIDIA dGPU
+$ nix-shell -p mesa-demos --run 'nvidia-offload glxinfo -B | grep -E "OpenGL vendor|OpenGL renderer"'
 
-# Idle power check: should become "suspended" when idle
-cat /sys/bus/pci/devices/0000:??:??.?/power/runtime_status
+$ # Idle power check: should become "suspended" when idle
+$ cat /sys/bus/pci/devices/0000:??:??.?/power/runtime_status
 ```
 
 Note: `nvidia-smi` can wake the GPU, so it is not a reliable “is the GPU sleeping?” probe.
@@ -276,9 +249,9 @@ hardware.inputmodule.enable = true;
 
 Example (LED matrix clock):
 
-``` sh
-# Serial device is often /dev/ttyACM0 (or ttyACM1 if you have two modules)
-inputmodule-control --serial-dev /dev/ttyACM0 led-matrix --clock
+``` console
+$ # Serial device is often /dev/ttyACM0 (or ttyACM1 if you have two modules)
+$ inputmodule-control --serial-dev /dev/ttyACM0 led-matrix --clock
 ```
 
 ## External resources

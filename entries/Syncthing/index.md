@@ -10,8 +10,8 @@
 
 To temporarily use Syncthing in a shell environment without modifying your system configuration, you can run:
 
-``` bash
-nix-shell -p syncthing --run syncthing
+``` console
+$ nix-shell -p syncthing --run syncthing
 ```
 
 This provides Syncthing in your current shell without adding it to your system configuration. You can open the web interface at <http://127.0.0.1:8384/> to configure and use it.
@@ -160,7 +160,7 @@ This will ensure your node has a stable ID. You can optionally include the key.p
 
 To generate a new key.cert and key.pem for a deployment, you can use the -generate argument:
 
-``` bash
+``` console
 $ nix-shell -p syncthing --run "syncthing generate --home myconfig/"
 2024/04/23 11:41:17 INFO: Generating ECDSA key and certificate for syncthing...
 2024/04/23 11:41:17 INFO: Device ID: DMWVMM6-MKEQVB4-I4UZTRH-5A6E24O-XHQTL3K-AAI5R5L-MXNMUGX-QTGRHQ2

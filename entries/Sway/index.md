@@ -81,9 +81,7 @@ Sway may be configured for specific users using Home Manager or manually through
 
 Changing layout for all keyboards to German (de):
 
-``` console
-input * xkb_layout "de"
-```
+    input * xkb_layout "de"
 
 The same thing accomplished in Home Manager:
 
@@ -95,9 +93,7 @@ wayland.windowManager.sway.input."*".xkb_layout = "de";
 
 Changing scale for all screens to factor 1.5:
 
-``` console
-output * scale 1.5
-```
+    output * scale 1.5
 
 ### Brightness and volume
 
@@ -141,23 +137,23 @@ Using <a href="Home_Manager" class="wikilink" title="Home Manager">Home Manager<
 
 If fonts for certain languages are missing in Xorg applications (e.g. Japanese fonts don't appear in Discord) even though they're in the system, you can set them as default fonts in your configuration file.
 
-\<syntaxhighlight lang="nix\>
+\<syntaxhighlight lang="nix\> fonts = {
 
-` fonts = {`  
-`   packages = with pkgs; [`  
-`     noto-fonts`  
-`     noto-fonts-cjk`  
-`     noto-fonts-emoji`  
-`     font-awesome`  
-`     source-han-sans`  
-`     source-han-sans-japanese`  
-`     source-han-serif-japanese`  
-`   ];`  
-`   fontconfig.defaultFonts = {`  
-`     serif = [ "Noto Serif" "Source Han Serif" ];`  
-`     sansSerif = [ "Noto Sans" "Source Han Sans" ];`  
-`   };`  
+` packages = with pkgs; [`  
+`   noto-fonts`  
+`   noto-fonts-cjk`  
+`   noto-fonts-emoji`  
+`   font-awesome`  
+`   source-han-sans`  
+`   source-han-sans-japanese`  
+`   source-han-serif-japanese`  
+` ];`  
+` fontconfig.defaultFonts = {`  
+`   serif = [ "Noto Serif" "Source Han Serif" ];`  
+`   sansSerif = [ "Noto Sans" "Source Han Sans" ];`  
 ` };`
+
+};
 
 </syntaxhighlight>
 
@@ -165,9 +161,7 @@ If fonts for certain languages are missing in Xorg applications (e.g. Japanese f
 
 Add the following to your NixOS configuration.
 
-\<syntaxhighlight lang="nix\>
-
-` security.pam.services.swaylock = {};`
+\<syntaxhighlight lang="nix\> security.pam.services.swaylock = {};
 
 </syntaxhighlight>
 
@@ -204,19 +198,19 @@ See this [GitHub issue for Sway](https://github.com/swaywm/sway/issues/6590#issu
 Using <a href="Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> add the following to your Sway configuration:
 
 ``` nix
-   wayland.windowManager.sway = {
-     [...]
-     config = {
-       [...]
-       input = {
-         [...]
-         "type:touch" = {
-           # Replace touchscreen_output_identifier with the identifier of your touchscreen.
-           map_to_output = touchscreen_output_identifier;
-         };
-       };
-     };
-   };
+wayland.windowManager.sway = {
+  [...]
+  config = {
+    [...]
+    input = {
+      [...]
+      "type:touch" = {
+        # Replace touchscreen_output_identifier with the identifier of your touchscreen.
+        map_to_output = touchscreen_output_identifier;
+      };
+    };
+  };
+};
 ```
 
 ### GTK apps take an exceptionally long time to start
@@ -310,7 +304,7 @@ File managers that support [GVfs](https://wiki.gnome.org/Projects/gvfs), such as
 
 ### Screen dimming with wl-gammarelay-rs
 
-Add `wl-gammarelay-rs` to programs.sway.extraPackages, then add the following to sway config:
+Add `wl-gammarelay-rs` to `programs.sway.extraPackages`, then add the following to sway config:
 
     # start daemon
     exec wl-gammarelay-rs

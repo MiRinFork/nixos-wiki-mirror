@@ -8,7 +8,20 @@ New Technology File System (NTFS) is a proprietary journaling <a href="Filesyste
 
 Using <a href="nixos-generate-config" class="wikilink" title="nixos-generate-config">nixos-generate-config</a> to automatically generate Nix config is the recommended way to setup filesystems.
 
-1\. Run to list device names. 2. Mount the device using [](https://man7.org/linux/man-pages/man8/mount.8.html), where replaced with your device name and replaced with an existing folder path to mount your drive. 3. Run to generate hardware configuration. This will <strong>automatically</strong> add all currently mounted devices to . 4. Add to to get write access, where <strong>replaced with your UID</strong>:
+1\. Run to list device names.
+
+``` console
+sd...
+└─sdX
+```
+
+2\. Mount the device using [](https://man7.org/linux/man-pages/man8/mount.8.html), where replaced with your device name and replaced with an existing folder path to mount your drive.
+
+``` console
+$ mount /dev/sdX /mnt/sdX -t ntfs3 -o uid=$UID
+```
+
+3\. Run to generate hardware configuration. This will <strong>automatically</strong> add all currently mounted devices to . 4. Add to to get write access, where <strong>replaced with your UID</strong>:
 
 5\.
 
@@ -20,15 +33,19 @@ This is most likely caused by Windows not marking the disk as "clean" and unmoun
 
 To verify:
 
-    journalctl -b0 | grep -i "The disk contains an unclean file system"
+``` console
+$ journalctl -b0 | grep -i "The disk contains an unclean file system"
+```
 
 It should return a similar message to what follows:
 
-    The disk contains an unclean file system (0,0). Metadata
-    kept in Windows cache, refused to mount. Falling back to
-    read-only mount because the NTFS partition is in an unsafe
-    state. Please resume and shutdown Windows fully (no
-    hibernation or fast restarting.)
+``` console
+The disk contains an unclean file system (0,0). Metadata
+kept in Windows cache, refused to mount. Falling back to
+read-only mount because the NTFS partition is in an unsafe
+state. Please resume and shutdown Windows fully (no
+hibernation or fast restarting.)
+```
 
 If you have shutdown Windows fully, and not used hibernation, it may be caused by the <em>fast startup</em> or <em>fast boot</em> feature of Windows. It has been reported that major Windows updates may reset this setting to <strong>on</strong>.
 

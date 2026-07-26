@@ -119,12 +119,20 @@ Don't confuse GPU's memory bandwidth with GPU's memory (RAM).
 
 Once you've made `llama-cpp` available in your system. You can use `llama-cli`, which is a straightforward to use tool.
 
-In your shell:
+In your terminal try one of these (if they don't work, check you are running the latest llama-cpp version):
 
 ``` bash
-llama-cli \ 
-  -hf unsloth/Qwen3-Coder-Next-GGUF:UD-Q4_K_M \ 
-  --temp 1.0 --top-p 0.95 --top-k 40 \ 
+# LFM2.5-8B-A1B - Requires 8GB VRAM
+llama-cli \
+  -hf unsloth/LFM2.5-8B-A1B-GGUF:UD-Q4_K_XL \
+  --temp 0.2 --top-p 0.95 --top-k 80 \
+  --repeat-penalty 1.05 \
+  -p "briefly explain journalctl in one paragraph"
+
+# Qwen3-Coder-Next - Requires 56GB VRAM
+llama-cli \
+  -hf unsloth/Qwen3-Coder-Next-GGUF:UD-Q4_K_M \
+  --temp 1.0 --top-p 0.95 --top-k 40 \
   -p "briefly explain journalctl in one paragraph"
 ```
 
@@ -132,12 +140,21 @@ llama-cli \
 
 `llama-server` runs a server, and it can run models on demand. It supports OpenAI API standard. It's quite similar to <a href="Ollama" class="wikilink" title="Ollama">Ollama</a>.
 
-You can manually start the server from your terminal, it's usage, is not that different from `llama-cli`,
+You can manually start the server from your terminal, it's usage, is not that different from `llama-cli`.
+
+Try any of these models
 
 ``` bash
+# LFM2.5-8B-A1B - Requires 8GB VRAM
 llama-server \
-    -hf unsloth/Qwen3-Coder-Next-GGUF:UD-Q4_K_M \ 
-    --temp 1.0 --top-p 0.95 --top-k 40 
+  -hf unsloth/LFM2.5-8B-A1B-GGUF:UD-Q4_K_XL \
+  --temp 0.2 --top-p 0.95 --top-k 80 \
+  --repeat-penalty 1.05
+
+# Qwen3-Coder-Next - Requires 56GB VRAM 
+llama-server \
+    -hf unsloth/Qwen3-Coder-Next-GGUF:UD-Q4_K_M \
+    --temp 1.0 --top-p 0.95 --top-k 40
 ```
 
 Or alternatively, you can **enable the NixOS service** for llama-cpp, which runs the server.
@@ -152,6 +169,16 @@ Or alternatively, you can **enable the NixOS service** for llama-cpp, which runs
 
     # Takes care of downloading if model not present
     modelsPreset = {
+      # Requires 8GB VRAM 
+      "LFM2.5-8B-A1B" = {
+        hf-repo = "unsloth/LFM2.5-8B-A1B-GGUF";
+        hf-file = "LFM2.5-8B-A1B-UD-Q4_K_XL.gguf";
+        alias = "unsloth/LFM2.5-8B-A1B-GGUF";
+        temp = "0.2";
+        repeat-penalty = "1.05";
+        top-k = "80";
+      };
+      # Requires 56GB VRAM 
       "Qwen3-Coder-Next" = {
         hf-repo = "unsloth/Qwen3-Coder-Next-GGUF";
         hf-file = "Qwen3-Coder-Next-UD-Q4_K_XL.gguf";

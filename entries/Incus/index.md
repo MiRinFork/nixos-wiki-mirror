@@ -10,14 +10,18 @@ This document aims to provide NixOS specific information related to Incus. For n
 
 The service can be enabled and started by adding the service to your NixOS configuration. It must still be initialized.
 
-`virtualisation.incus.enable = true;`  
-`networking.nftables.enable = true;`
+``` nix
+virtualisation.incus.enable = true;
+networking.nftables.enable = true;
+```
 
 See <a href="#Networking/Firewall" class="wikilink" title="#Networking/Firewall">#Networking/Firewall</a> for more information on the latter option.
 
 To provide non-root access to the Incus server, you will want to add your user to the incus-admin group. Don't forget to reboot.
 
-`users.users.YOUR_USERNAME.extraGroups = ["incus-admin"];`
+``` nix
+users.users.YOUR_USERNAME.extraGroups = ["incus-admin"];
+```
 
 You should now be able to use the incus client to talk to the server.
 
@@ -41,7 +45,9 @@ For more complex setups, please refer to <https://linuxcontainers.org/incus/docs
 
 The simplest way to initialize, Incus will provide a basic directory backed storage pool and a bridged NAT network with DHCP.
 
-`incus admin init --minimal`
+``` console
+$ incus admin init --minimal
+```
 
 ### Preseed
 
@@ -126,11 +132,15 @@ networking.nftables.flushRuleset = false;
 
 To launch a new NixOS container use the following command.
 
-    incus launch images:nixos/unstable nixos -c security.nesting=true
+``` shell-session
+$ incus launch images:nixos/unstable nixos -c security.nesting=true
+```
 
 A NixOS virtual machine is launched with the following.
 
-`incus launch --vm images:nixos/unstable nixos -c security.secureboot=false`
+``` console
+$ incus launch --vm images:nixos/unstable nixos -c security.secureboot=false
+```
 
 ## NixOS Images
 
@@ -212,21 +222,21 @@ $ nix build .#nixosConfigurations.vm.config.system.build.metadata --print-out-pa
 
 Finally, you can manually import into an Incus storage pool and used to launch instances.
 
-``` bash
+``` console
 $ incus image import --alias nixos-gen/custom/jellyfin /nix/store/2snjw9y8brfh5gia44jv6bhdhmmdydva-tarball/tarball/nixos-system-x86_64-linux.tar.xz /nix/store/znk28bp34bycb3h5k0byb61bwda23q5l-nixos-disk-image/nixos.qcow2
 ```
 
 To build and import the VM in one command, follow the steps below.
 
-``` bash
+``` console
 $ incus image import --alias nixos-gen/custom/jellyfin $(nix build .#nixosConfigurations.vm.config.system.build.metadata --print-out-paths)/tarball/nixos-system-x86_64-linux.tar.xz $(nix build .#nixosConfigurations.vm.config.system.build.qemuImage --print-out-paths)/nixos.qcow2
 
-# Image imported with fingerprint: ***
+$ # Image imported with fingerprint: ***
 ```
 
 You can verify the import with the commands below.
 
-``` bash
+``` shell-session
 $ incus image list nixos/custom/vm
 +------------------------+--------------+--------+--------------------------------------------------+--------------+-----------+-----------+----------------------+
 |         ALIAS          | FINGERPRINT  | PUBLIC |                   DESCRIPTION                    | ARCHITECTURE |   TYPE    |   SIZE    |     UPLOAD DATE      |
@@ -246,7 +256,7 @@ $ incus shell square-heron
 
 ### Containers
 
-``` bash
+``` console
 $ nix build .#nixosConfigurations.container.config.system.build.squashfs --print-out-paths
 /nix/store/24djf2qlpkyh29va8z6pxrqp8x5z6xyv-nixos-lxc-image-x86_64-linux.img
 
@@ -277,8 +287,8 @@ $ incus shell square-heron
 
 Or, the all in one command:
 
-``` bash
-incus image import --alias nixos/custom/vm $(nix build .#nixosConfigurations.vm.config.system.build.metadata --print-out-paths)/tarball/nixos-system-x86_64-linux.tar.xz $(nix build .#nixosConfigurations.vm.config.system.build.qemuImage --print-out-paths)/nixos.qcow2
+``` console
+$ incus image import --alias nixos/custom/vm $(nix build .#nixosConfigurations.vm.config.system.build.metadata --print-out-paths)/tarball/nixos-system-x86_64-linux.tar.xz $(nix build .#nixosConfigurations.vm.config.system.build.qemuImage --print-out-paths)/nixos.qcow2
 ```
 
 <a href="Category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="Category:Container" class="wikilink" title="Category:Container">Category:Container</a> <a href="Category:Virtualization" class="wikilink" title="Category:Virtualization">Category:Virtualization</a>

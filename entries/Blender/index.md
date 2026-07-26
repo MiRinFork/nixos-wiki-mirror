@@ -158,4 +158,6 @@ WAYLAND_DISPLAY=0 blender
 
 <references />
 
+<a href="Category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a>
+
 [^1]:

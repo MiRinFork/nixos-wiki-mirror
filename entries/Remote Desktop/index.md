@@ -261,6 +261,8 @@ networking.firewall.allowedTCPPorts = [ 3389 ];
 If you want to use enhanced session mode in VMConnect while using Hyper-V for a NixOS VM, you need to specify some additional options:
 
 ``` nix
+programs.fuse.enable = true;
+
 services = {
   xrdp = {
     defaultWindowManager = "${pkgs.i3}/bin/i3";
@@ -284,6 +286,8 @@ virtualisation.hypervGuest.enable = true;
 As documented in [this issue](https://github.com/nixos/nixpkgs/issues/304855), the current behavior of the XRDP module in NixOS is to provide the `--port` parameter on the CLI in the systemD unit file. It does print a message indicating it's ignoring anything provided in the configuration saying `--port parameter found, ini override` in journalctl.
 
 If in doubt, you can always run `ss --vsock -l`. If nothing shows up, then XRDP isn't listening where it should be and something about the above has changed.
+
+Enabling fuse allows you to configure drive redirection in VMConnect and any drives selected will appear under `~/thinclient_drives` by default. Without enabling this programs option, you will receive a command not found error in `~/.local/share/xrdp/xrdp-chansrv.*.log` related to fusermount3.
 
 ### GNOME RDP
 

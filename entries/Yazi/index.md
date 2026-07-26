@@ -110,6 +110,21 @@ There are some additional yazi plugins packaged in the [nix-yazi-plugins](https:
 
 #### home-manager
 
+## Flavors
+
+With `plugins = {}` you can install plugins into your Yazi configuration directory (`~/.config/yazi` on unix-like systems by default). Similarly, when installing flavors or themes, use `flavors = {}`. For example:
+
+``` nix
+flavors = {
+  inherit (pkgs.yaziPlugins) kanagawa;
+};
+theme = {
+  flavor = {
+    dark = "kanagawa";
+  };
+};
+```
+
 ## Tips and tricks
 
 #### Bleeding edge
@@ -215,6 +230,6 @@ pkgs.yazi.override {_7zz = pkgs._7zz-rar; }
 
 <a href="Category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="Category:File_Manager" class="wikilink" title="Category:File Manager">Category:File Manager</a>
 
-[^1]: <https://yazi-rs.github.io/docs/installation/#nix-flakes>
+[^1]: <https://yazi-rs.github.io/docs/installation/#flakes>
 
 [^2]: <https://yazi-rs.github.io/docs/installation/#cache>

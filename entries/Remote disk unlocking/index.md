@@ -130,8 +130,6 @@ Last but not least add the `wireguard` kernel module to `boot.initrd.availableKe
 
 ### Tor in initrd
 
-An example with an ssh server listening at a tor hidden service address can be found at [krebs/2configs/tor/initrd.nix in stockholm](https://cgit.euer.krebsco.de/makefu/stockholm/src/commit/9b1008814e981dc01afe9ee7446322ad512c1d72/krebs/2configs/tor/initrd.nix)
-
 #### Prepare the Onion ID
 
 You need 3 files to create an onion id (a.k.a. tor hidden service).
@@ -142,7 +140,7 @@ You need 3 files to create an onion id (a.k.a. tor hidden service).
 
 To create these files:
 
-`$ nix-shell -p mkp224o --command "mkp224o-donna snow -n 1 -d ."`  
+`$ nix-shell -p mkp224o --command "mkp224o-donna a -n 1 -d ."`  
 `set workdir: ./`  
 `nixuum6flqthv6ar52j5e2ldulylfsfgezykeg37iy74kqowcp5gxfyd.onion`
 
@@ -151,9 +149,59 @@ The files you need are in the `*.onion` directory:
 `$ ls *.onion`  
 `hostname  hs_ed25519_public_key  hs_ed25519_secret_key`
 
-#### Setup Tor
+#### Setup Tor (systemd stage1, since NixOS 26.05)
 
-Now that you have your 3 files, you have to script a bit, but it’s not too complicated.
+Since version 26.05, NixOS uses systemd stage1 in initrd.
+
+The following module starts a tor daemon in the initrd and uses it to expose the ssh port on an onion address.
+
+``` nixos
+{ config, pkgs, ... }:
+let
+  onionDir = "/etc/tor/onion/bootup";
+  initrdTorRc = (pkgs.writeText "tor.rc" ''
+    DataDirectory /etc/tor
+    ShutdownWaitLength 0
+    HiddenServiceDir ${onionDir}
+    HiddenServicePort ${builtins.toString config.boot.initrd.network.ssh.port}
+  '');
+in
+{
+  boot.initrd = {
+    secrets = {
+      "${onionDir}" = /etc/secrets/initrd/onion; # Adapt to the location of your onion keys
+    };
+    systemd = {
+      initrdBin = [ pkgs.tor ];
+      storePaths = [ initrdTorRc ];
+      services."tor" = {
+        description = "Tor daemon";
+        preStart = ''
+          echo "tor: preparing onion keys"
+          chmod -R 700 /etc/tor
+        '';
+        script = ''
+          echo "tor: starting tor"
+          tor -f ${initrdTorRc} --verify-config
+          tor -f ${initrdTorRc}
+        '';
+        unitConfig.DefaultDependencies = false;
+        wantedBy = [ "initrd.target" ];
+        after = [
+          "network.target"
+          "initrd-nixos-copy-secrets.service"
+        ];
+        before = [ "shutdown.target" ];
+        conflicts = [ "shutdown.target" ];
+      };
+    };
+  };
+}
+```
+
+#### Setup Tor (pre NixOS 26.05)
+
+Now that you have your 3 files, you have to script a bit, but it’s not too complicated. The snippet is adapted from [krebs/2configs/tor/initrd.nix in stockholm](https://cgit.euer.krebsco.de/makefu/stockholm/src/commit/9b1008814e981dc01afe9ee7446322ad512c1d72/krebs/2configs/tor/initrd.nix).
 
 ``` nix
 # copy your onion folder

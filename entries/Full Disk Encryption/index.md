@@ -30,17 +30,17 @@ sda             8:0    0 233.8G  0 disk
 The initrd needs to be configured to unlock the encrypted `/dev/sda2` partition during stage 1 of the boot process. To do this, add the following options (replacing `UUID-OF-SDA2` with the actual UUID of the encrypted partition `/dev/sda2`. -- You can find it using `lsblk -f` or `sudo blkid -s UUID /dev/sda2`.)
 
 ``` nix
-    boot = {
-      loader = {
-        efi.canTouchEfiVariables = true;
-        grub = {
-          enable = true;
-          device = "nodev";
-          efiSupport = true;
-        };
-      };
-      initrd.luks.devices.cryptroot.device = "/dev/disk/by-uuid/UUID-OF-SDA2";
+boot = {
+  loader = {
+    efi.canTouchEfiVariables = true;
+    grub = {
+      enable = true;
+      device = "nodev";
+      efiSupport = true;
     };
+  };
+  initrd.luks.devices.cryptroot.device = "/dev/disk/by-uuid/UUID-OF-SDA2";
+};
 ```
 
 With `initrd.luks.devices.cryptroot.device = "/dev/disk/by-uuid/UUID-OF-SDA2";`, the initrd knows it must unlock `/dev/sda2` before activating LVM and proceeding with the boot process.
@@ -49,9 +49,9 @@ With `initrd.luks.devices.cryptroot.device = "/dev/disk/by-uuid/UUID-OF-SDA2";`,
 
 Sometimes it is necessary to boot a system without needing a keyboard and monitor. You will create a secret key, add it to a key slot and put it onto a USB stick.
 
-``` bash
-dd if=/dev/random of=hdd.key bs=4096 count=1
-cryptsetup luksAddKey /dev/sda1 ./hdd.key
+``` console
+# dd if=/dev/random of=hdd.key bs=4096 count=1
+# cryptsetup luksAddKey /dev/sda1 ./hdd.key
 ```
 
 You can enable fallback to password (in case the USB stick is lost or corrupted) by setting the `boot.initrd.luks.devices.`<name>`.fallbackToPassword` option to `true`. By default, this option is `false` so you will have to perform a manual recovery if the USB stick becomes unavailable (which you may prefer, depending on your use case).
@@ -60,8 +60,8 @@ You can enable fallback to password (in case the USB stick is lost or corrupted)
 
 This will make the USB stick unusable for any other operations than being used for decryption. Write the key onto the stick:
 
-``` bash
-dd if=hdd.key of=/dev/sdb
+``` console
+# dd if=hdd.key of=/dev/sdb
 ```
 
 Then add the following configuration to your `configuration.nix`:
@@ -122,12 +122,12 @@ A simpler but insecure option for unattended boots is to copy the keyfile into t
 
 First move the key to a safe location.
 
-``` bash
-mkdir /var/lib/secrets
-chown root:root /var/lib/secrets
-chmod 700 /var/lib/secrets
-mv -v hdd.key /var/lib/secrets/
-chmod 600 /var/lib/secrets/hdd.key
+``` console
+# mkdir /var/lib/secrets
+# chown root:root /var/lib/secrets
+# chmod 700 /var/lib/secrets
+# mv -v hdd.key /var/lib/secrets/
+# chmod 600 /var/lib/secrets/hdd.key
 ```
 
 Then add the key to the initrd.
@@ -168,13 +168,38 @@ You are looking for devices in the format of `luks-xxxxxxxx-xxxx-xxxx-xxxx-xxxxx
 
 Run the following command but replace `YOUR-UUID` with the UUID you found in the previous step **without the `luks-` at the start**:
 
-``` sh
-sudo systemd-cryptenroll --wipe-slot=tpm2 --tpm2-device=auto /dev/disk/by-uuid/YOUR-UUID
+``` console
+# systemd-cryptenroll --wipe-slot=tpm2 --tpm2-device=auto /dev/disk/by-uuid/YOUR-UUID
 ```
 
 Now the device should unlock without prompting you for the password. After this is working, you should add certain restrictions to your saved key using Platform Configuration Registers (PCR). All options for these can be found at the [Linux TPM PCR Registry](https://uapi-group.org/specifications/specs/linux_tpm_pcr_registry/). If using the default `systemd-boot` without <a href="Secure_Boot" class="wikilink" title="Secure Boot">Secure Boot</a>, then a standard set of options to use is `4+9+12`. This can be applied by running the above command again with `--tpm2-pcrs=4+9+12`. If your system uses secure boot with <a href="Limine" class="wikilink" title="Limine">Limine</a> you may want to use `--tpm2-pcrs=4+7+8+9` instead.
 
 Because the TPM is attached to your computer, it provides no protection against a stolen computer when used on its own (it usually allows for setting a password, but that is it). It can only protect against a stolen drive.
+
+# Encrypted /boot
+
+[Libreboot](https://libreboot.org/) supports decrypting boot partition with built-in GRUB.
+
+Example layout of unified LUKS-encrypted btrfs partition:
+
+- boot subvolume mounted at /boot
+- home subvolume mounted at /home
+- nix subvolume mounted at /nix
+- swap subvolume mounted at /swap
+
+NixOS-generated grub.cfg may cause problems when loaded with Libreboot GRUB, so using extlinux configuration file is recommended instead.
+
+``` nix
+boot.loader.grub.enable = false;
+boot.loader.generic-extlinux-compatible.enable = true;
+```
+
+Partition can be decrypted and booted with following GRUB commands:
+
+``` console
+# cryptomount -a
+# try_bootcfg crypto0 # assuming configuration file is located at /boot/extlinux/extlinux.conf
+```
 
 # zimbatm's laptop recommendation
 
@@ -191,54 +216,30 @@ Let's say that you have a GPT partition with EFI enabled. You might be booting o
 
 Boot the NixOS installer and partition things according to your taste. What we are then going to do is prepare sda4 with a luks encryption layer:
 
-``` bash
-# format the partition with the luks structure
-cryptsetup luksFormat /dev/sda4
-# open the encrypted partition and map it to /dev/mapper/cryptroot
-cryptsetup luksOpen /dev/sda4 cryptroot
-# format as usual
-mkfs.ext4 -L nixos /dev/mapper/cryptroot
-# mount
-mount /dev/disk/by-label/nixos /mnt
-mkdir /mnt/boot
-mount /dev/sda1 /mnt/boot
+``` console
+# # format the partition with the luks structure
+# cryptsetup luksFormat /dev/sda4
+# # open the encrypted partition and map it to /dev/mapper/cryptroot
+# cryptsetup luksOpen /dev/sda4 cryptroot
+# # format as usual
+# mkfs.ext4 -L nixos /dev/mapper/cryptroot
+# # mount
+# mount /dev/disk/by-label/nixos /mnt
+# mkdir /mnt/boot
+# mount /dev/sda1 /mnt/boot
 ```
 
 Now keep installing as usual, nixos-generate-config should detect the right partitioning. You should have something like this in your /etc/nixos/hardware-configuration.nix:
 
-``` nix
-{ # cut
-  fileSystems."/" =
-    { device = "/dev/disk/by-uuid/5e7458b3-dcd2-49c6-a330-e2c779e99b66";
-      fsType = "ext4";
-    };
-
-  boot.initrd.luks.devices."cryptroot".device = "/dev/disk/by-uuid/d2cb12f8-67e3-4725-86c3-0b5c7ebee3a6";
-
-  fileSystems."/boot" =
-    { device = "/dev/disk/by-uuid/863B-7B32";
-      fsType = "vfat";
-    };
-
-  swapDevices = [ ];
-}
-```
-
 To create a swap add the following in your /etc/nixos/configuration.nix:
-
-``` nix
-{
-  swapDevices = [{device = "/swapfile"; size = 10000;}];
-}
-```
 
 ## Perf test
 
-``` bash
-# compare
-nix-shell -p hdparm --run "hdparm -Tt /dev/mapper/cryptroot"
-# with
-nix-shell -p hdparm --run "hdparm -Tt /dev/sda1"
+``` console
+$ # compare
+$ nix-shell -p hdparm --run "hdparm -Tt /dev/mapper/cryptroot"
+$ # with
+$ nix-shell -p hdparm --run "hdparm -Tt /dev/sda1"
 ```
 
 I had to add a few modules to initrd to make it fast. Since cryptroot is opened really early on, all the AES descryption modules should already be made available. This obviously depends on the platform that you are on.
@@ -258,13 +259,13 @@ Consider the following example: a secondary hard disk `/dev/sdb` is to be LUKS-e
 
 Encrypt the drive and create the filesystem on it (LVM is used in this example):
 
-``` bash
-cryptsetup luksFormat --label CRYPTSTORAGE /dev/sdb
-cryptsetup open /dev/sdb cryptstorage
-pvcreate /dev/mapper/cryptstorage
-vgcreate vg-storage /dev/mapper/cryptstorage
-lvcreate -l 100%FREE -n storage vg-storage
-mkfs.ext4 -L STORAGE /dev/vg-storage/storage
+``` console
+# cryptsetup luksFormat --label CRYPTSTORAGE /dev/sdb
+# cryptsetup open /dev/sdb cryptstorage
+# pvcreate /dev/mapper/cryptstorage
+# vgcreate vg-storage /dev/mapper/cryptstorage
+# lvcreate -l 100%FREE -n storage vg-storage
+# mkfs.ext4 -L STORAGE /dev/vg-storage/storage
 ```
 
 To unlock this device on boot in addition to the encrypted root filesystem, there are two options:
@@ -291,10 +292,10 @@ Alternatively, you can create a keyfile stored on your root partition to unlock 
 
 First, create a keyfile for your secondary drive, store it safely and add it as a LUKS key:
 
-``` bash
-dd bs=512 count=4 if=/dev/random of=/root/mykeyfile.key iflag=fullblock
-chmod 400 /root/mykeyfile.key
-cryptsetup luksAddKey /dev/sdb /root/mykeyfile.key
+``` console
+# dd bs=512 count=4 if=/dev/random of=/root/mykeyfile.key iflag=fullblock
+# chmod 400 /root/mykeyfile.key
+# cryptsetup luksAddKey /dev/sdb /root/mykeyfile.key
 ```
 
 Next, create `/etc/crypttab` in `configuration.nix` using the following option (replacing `UUID-OF-SDB` with the actual UUID of `/dev/sdb`):

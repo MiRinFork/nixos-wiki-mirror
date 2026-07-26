@@ -4,23 +4,23 @@
 
 [Keyd](https://github.com/rvaiya/keyd) is a key remapping daemon, similar to kmonad.
 
-### Activate Keyd in NixOs
+### Activate Keyd in NixOS
 
-To activate keyd in NixOs, you can simply add in the rest of your `/etc/nixos/configuration.nix`
+To activate keyd in NixOS, you can simply add in the rest of your `/etc/nixos/configuration.nix`
 
 ``` nix
-  services.keyd = {
-    enable = true;
-  };
+services.keyd = {
+  enable = true;
+};
 
-  # Optional, but makes sure that when you type the make palm rejection work with keyd
-  # https://github.com/rvaiya/keyd/issues/723
-  environment.etc."libinput/local-overrides.quirks".text = ''
-    [Serial Keyboards]
-    MatchUdevType=keyboard
-    MatchName=keyd virtual keyboard
-    AttrKeyboardIntegration=internal
-  '';
+# Optional, but makes sure that when you type the make palm rejection work with keyd
+# https://github.com/rvaiya/keyd/issues/723
+environment.etc."libinput/local-overrides.quirks".text = ''
+  [Serial Keyboards]
+  MatchUdevType=keyboard
+  MatchName=keyd virtual keyboard
+  AttrKeyboardIntegration=internal
+'';
 ```
 
 After rebuilding your configuration, you should have keyd daemon running.
@@ -29,7 +29,7 @@ After rebuilding your configuration, you should have keyd daemon running.
 
 In order to configure your system, you have two options: if you want to quickly test your configuration (avoids you to wait a full `nixos-rebuild switch` every time you change one option), you can simply write your configuration files in a file like `/etc/keyd/test.conf` containing something like:
 
-``` conf
+``` ini
 [ids]
 *
 
@@ -39,7 +39,7 @@ capslock = layer(control);
 
 and apply your change via
 
-``` conf
+``` console
 $ systemctl restart keyd
 ```
 

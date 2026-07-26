@@ -16,14 +16,14 @@ programs.firejail.enable = true;
 
 To start an application in a sandboxed enviroment use Firejail like this
 
-``` bash
-firejail bash
+``` console
+$ firejail bash
 ```
 
 For a graphical application like <a href="Firefox" class="wikilink" title="Firefox">Firefox</a> web browser, it is recommended to also use a profile
 
-``` bash
-firejail --profile=$(nix --extra-experimental-features nix-command --extra-experimental-features flakes eval -f '<nixpkgs>' --raw 'firejail')/etc/firejail/firefox.profile firefox
+``` console
+$ firejail --profile=$(nix --extra-experimental-features nix-command --extra-experimental-features flakes eval -f '<nixpkgs>' --raw 'firejail')/etc/firejail/firefox.profile firefox
 ```
 
 ## Configuration
@@ -134,8 +134,8 @@ boot.kernel.sysctl = {
 
 Run your preferred application inside the isolated Tor network
 
-``` bash
-firejail --net=tornet --dns=46.182.19.48 --profile=$(nix --extra-experimental-features nix-command --extra-experimental-features flakes eval -f '<nixpkgs>' --raw 'firejail')/etc/firejail/firefox.profile firefox
+``` console
+$ firejail --net=tornet --dns=46.182.19.48 --profile=$(nix --extra-experimental-features nix-command --extra-experimental-features flakes eval -f '<nixpkgs>' --raw 'firejail')/etc/firejail/firefox.profile firefox
 ```
 
 You can use a custom DNS server if you don't want to use the one of your system. In this example, it's a server by the German privacy NGO [Digitalcourage](https://digitalcourage.de/support/zensurfreier-dns-server).

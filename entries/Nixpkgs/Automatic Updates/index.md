@@ -35,6 +35,18 @@ If you want functionality similar to that of unstableGitUpdater but with the add
 passthru.updateScript = nix-update-script { extraArgs = [ "--version=branch" ]; };
 ```
 
+#### Setting a custom for prefixed releases
+
+`nix-updater` expects an all-numeric version such as `1.2.3` and fails when there's a prefix (`v1.2.3`). When that happens, you'll need to set a custom regex:
+
+``` nix
+passthru.updateScript = nix-update-script {
+  extraArgs = [ "--version-regex=v([\\d.]+)" ];
+};
+```
+
+Note there's only one capturing group (in parentheses). Due to a quirk in the updater, nesting capturing groups won't give the results you expect. The regex implicitly matches the whole line.
+
 ### Git Updater
 
 Updates to the latest git tag. This updater only regenerates the source hash and is therefore unsuitable for package definitions with more than one FOD hash (e.g. Rust's `cargoHash`).
@@ -69,6 +81,22 @@ passthru.updateScript = unstableGitUpdater {
 ```
 
 Source: <https://github.com/NixOS/nixpkgs/blob/master/pkgs/common-updater/unstable-updater.nix>
+
+## Working with Monorepos
+
+A monorepo contains multiple packages that are released individually. You will need to define `passthru.updateScript` and add a version regex (`nix-update-script`) or a prefix (git updaters).
+
+### When automatic updates fail
+
+Updates can fail with "no matching tag found" when the repo pushes out a large number of packages. `nix-update-script` examines approximately the last 20 releases. In this case, you can switch to the git updater with `rev-prefix`.
+
+The git updaters also look at a limited window of changes. You still need to verify periodically that your package has updated to the latest version and make the edits by hand if it's behind.
+
+### A special note for Python monorepos
+
+The committers run a fast bulk python update script several times a year. This script ignores `passthru.updateScript` and use the latest git tag. That often breaks monorepo-based packages by setting the wrong `src.version` expression and/or version number.
+
+Set `passthru.skipBulkUpdate = true;` to have the special updater skip your package.
 
 ## Additional Resources
 

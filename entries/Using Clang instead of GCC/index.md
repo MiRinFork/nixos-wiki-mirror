@@ -24,9 +24,9 @@ If you have a set of packages in a repository tree, you can set the `stdenv` val
 
 ``` nix
 rec {
-    stdenv = pkgs.clangStdenv;
-    foo = callPackage ./foo { };
-    bar = callPackage ./bar { };
+  stdenv = pkgs.clangStdenv;
+  foo = callPackage ./foo { };
+  bar = callPackage ./bar { };
 }
 ```
 
@@ -44,8 +44,8 @@ Here only foo will be built with Clang, and only with Clang.
 
 ``` nix
 rec {
-    foo = callPackage ./foo { stdenv = pkgs.clangStdenv; };
-    bar = callPackage ./bar { };
+  foo = callPackage ./foo { stdenv = pkgs.clangStdenv; };
+  bar = callPackage ./bar { };
 }
 ```
 
@@ -53,9 +53,9 @@ But if you want both toolchains you can use:
 
 ``` nix
 rec {
-    foo_gcc = callPackage ./foo { };
-    foo_clang = callPackage ./foo { stdenv = pkgs.clangStdenv; };
-    bar = callPackage ./bar { };
+  foo_gcc = callPackage ./foo { };
+  foo_clang = callPackage ./foo { stdenv = pkgs.clangStdenv; };
+  bar = callPackage ./bar { };
 }
 ```
 
@@ -63,43 +63,25 @@ rec {
 
 Directly inline with CLI just do:
 
-``` bash
-nix-build -E "with import <nixpkgs> {}; pkgs.hello.override{ stdenv = pkgs.clangStdenv; }"
+``` console
+$ nix-build -E "with import <nixpkgs> {}; pkgs.hello.override{ stdenv = pkgs.clangStdenv; }"
 ```
 
 or, if you want a shell for development:
 
-``` bash
-nix-shell -E "with import <nixpkgs> {}; pkgs.hello.override{ stdenv = pkgs.clangStdenv; }"
+``` console
+$ nix-shell -E "with import <nixpkgs> {}; pkgs.hello.override{ stdenv = pkgs.clangStdenv; }"
 ```
 
 ## Using an external override definition
 
-``` nix
-# in file ./hello_with_clan.nix
-with import <nixpkgs> {};
-hello.override {
-    # use Clang instead of GCC
-    stdenv = pkgs.clangStdenv;
-}
-```
-
-``` bash
-nix-build ./hello_with_clan.nix
+``` console
+$ nix-build ./hello_with_clan.nix
 ```
 
 ## With nix-shell
 
 To use clang in nix-shell instead of gcc:
-
-``` nix
-# in file ./shell.nix
-with import <nixpkgs> {};
-clangStdenv.mkDerivation {
-  name = "clang-nix-shell";
-  buildInputs = [ /* add libraries here */ ];
-}
-```
 
 ## See also
 

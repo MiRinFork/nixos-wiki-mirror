@@ -62,8 +62,8 @@ For Plasma Login Manager in NixOS 26.05 or above, use:
 
 This is caused by a stale QML cache [(see this issue)](https://github.com/NixOS/nixpkgs/issues/177720). A dirty way to fix this is by running on a terminal the following command:
 
-``` sh
-find ${XDG_CACHE_HOME:-$HOME/.cache}/**/qmlcache -type f -delete
+``` console
+$ find ${XDG_CACHE_HOME:-$HOME/.cache}/**/qmlcache -type f -delete
 ```
 
 ### GTK themes are not applied in Wayland applications / Window Decorations missing / Cursor looks different
@@ -86,17 +86,17 @@ You may need to set a GTK theme *Breeze* imitating the KDE theme with the same n
 Add the following configuration (generally in hardware-configuration.nix):
 
 ``` nix
- hardware.bluetooth.enable = true;
+hardware.bluetooth.enable = true;
 ```
 
 This will add the following packages:
 
 ``` nix
 [
- bluedevil
- bluez-qt
- pkgs.openobex
- pkgs.obexftp
+  bluedevil
+  bluez-qt
+  pkgs.openobex
+  pkgs.obexftp
 ]
 ```
 
@@ -130,9 +130,9 @@ If you really want to configure locale in settings, you can use this workaround:
 
 Switch to that configuration, then run:
 
-``` bash
-sudo mkdir -p /usr/share/i18n
-sudo ln -s /run/current-system/sw/share/i18n/locales /usr/share/i18n/locales
+``` console
+# mkdir -p /usr/share/i18n
+# ln -s /run/current-system/sw/share/i18n/locales /usr/share/i18n/locales
 ```
 
 That is a very dirty command, and I don't know if it persists across reboots.

@@ -8,13 +8,13 @@
 
 #### With nix-shell
 
-``` bash
-nix-shell -p mpv
+``` console
+$ nix-shell -p mpv
 ```
 
 #### With NixOS
 
-``` text
+``` nix
 environment.systemPackages = [
   pkgs.mpv
 ];
@@ -22,7 +22,7 @@ environment.systemPackages = [
 
 #### With Home Manager
 
-``` text
+``` nix
 home.packages = [ 
   pkgs.mpv 
 ];
@@ -85,8 +85,8 @@ programs.mpv = {
 
 To find more scripts run this in a terminal:
 
-``` bash
-nix search nixpkgs mpvScripts
+``` console
+$ nix search nixpkgs mpvScripts
 ```
 
 The scripts are also defined in the following [Nixpkgs directory](https://github.com/NixOS/nixpkgs/tree/master/pkgs/by-name/mp/mpv/scripts).
@@ -97,23 +97,27 @@ The package override options are defined in the following [Nixpkgs directory](ht
 
 For example, here is an overlay showing how to enable JACK audio support:
 
-    nixpkgs.overlays = [
-      (final: prev: {
-        mpv = prev.mpv.override {
-          mpv = prev.mpv-unwrapped.override {
-            jackaudioSupport = true;
-          };
-        };
-      })
-    ];
+``` nix
+nixpkgs.overlays = [
+  (final: prev: {
+    mpv = prev.mpv.override {
+      mpv = prev.mpv-unwrapped.override {
+        jackaudioSupport = true;
+      };
+    };
+  })
+];
+```
 
 or alternatively, you can define the package inline:
 
-    (pkgs.mpv.override { mpv = pkgs.mpv-unwrapped.override { jackaudioSupport = true; }; })
+``` nix
+(pkgs.mpv.override { mpv = pkgs.mpv-unwrapped.override { jackaudioSupport = true; }; })
+```
 
 Also note that commands cannot be passed to mpv using socat when mpv is ran using the umpv python wrapper. For example, if you try to pause umpv with `echo '{"command": ["cycle", "pause"]}' | socat - /tmp/mpvsocket`, it will result in an error similar to the following:
 
-`2025/05/07 22:49:15 socat[115919] E GOPEN: /tmp/mpvsocket: Connection refused`
+    2025/05/07 22:49:15 socat[115919] E GOPEN: /tmp/mpvsocket: Connection refused
 
 ## Troubleshooting
 
@@ -121,7 +125,7 @@ Also note that commands cannot be passed to mpv using socat when mpv is ran usin
 
 If you get the following sort of error, note that MPV currently uses the small ffmpeg version (ffmpeg_5) instead of the full version (ffmpeg_5-full).
 
-``` shell
+``` console
 $ mpv --log-file=foo.log av://v4l2:/dev/video5
 [lavf] Unknown lavf format v4l2
 Failed to recognize file format.

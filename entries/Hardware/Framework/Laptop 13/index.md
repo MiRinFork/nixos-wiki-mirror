@@ -82,7 +82,9 @@ services.fwupd.enable = true;
 
 To check for updates and install them, run:
 
-`$ fwupdmgr update`
+``` console
+$ fwupdmgr update
+```
 
 Further instructions and release notes can be found on the [Framework BIOS and Drivers knowledgebase](https://knowledgebase.frame.work/bios-and-drivers-downloads-rJ3PaCexh).
 

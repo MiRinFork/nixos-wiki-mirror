@@ -48,16 +48,18 @@ pkgs.callPackage (
 
 Upload to an `Arduino Nano` board
 
-    time \
-    arduino --board arduino:avr:nano --port /dev/ttyUSB0 --upload Blink.cpp
+``` console
+$ time \
+arduino --board arduino:avr:nano --port /dev/ttyUSB0 --upload Blink.cpp
 
-    Loading configuration...
-    Initializing packages...
-    Preparing boards...
-    Verifying...
-    Uploading...
+Loading configuration...
+Initializing packages...
+Preparing boards...
+Verifying...
+Uploading...
 
-    real    0m28.913s
+real    0m28.913s
+```
 
 ## Arduino CLI
 
@@ -74,10 +76,12 @@ Ardunio-Nix allows generating all dependencies from an Arduino project as Nix de
 
 See: <a href="Serial_Console" class="wikilink" title="Serial Console">Serial Console</a>
 
-    screen /dev/ttyUSB0
+``` console
+$ screen /dev/ttyUSB0
 
-    # set baud rate. default is 9600
-    screen /dev/ttyUSB0 9600
+$ # set baud rate. default is 9600
+$ screen /dev/ttyUSB0 9600
+```
 
 see also: <https://wiki.archlinux.org/title/GNU_Screen>
 

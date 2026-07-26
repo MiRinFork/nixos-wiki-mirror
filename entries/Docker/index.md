@@ -18,8 +18,8 @@
 
 <translate> To temporarily use Docker in a shell environment, you can run: </translate>
 
-``` bash
-nix-shell -p docker
+``` console
+$ nix-shell -p docker
 ```
 
 <translate> This will provide a shell with Docker CLI available, but note that the Docker daemon will not be running. For full functionality, you'll need a system-level installation. </translate>
@@ -155,9 +155,9 @@ virtualisation.arion = {
 
 </translate> <translate> To use `compose2nix` with `nix-shell` you can use </translate>
 
-``` bash
-nix shell github:aksiksi/compose2nix
-compose2nix -h
+``` console
+$ nix shell github:aksiksi/compose2nix
+$ compose2nix -h
 ```
 
 <translate> To install `compose2nix` to NixOS, add the repo to your flake inputs </translate>
@@ -185,8 +185,8 @@ environment.systemPackages = [
 
 <translate> Alternatively, you can specify the input and output files with the following flags </translate>
 
-``` bash
-compose2nix -inputs input.yml -output output.nix -runtime docker
+``` console
+$ compose2nix -inputs input.yml -output output.nix -runtime docker
 ```
 
 <translate> The `-runtime` flag specifies the runtime. Here, we select `docker`. Options are `podman` and `docker`. The default is `podman` </translate>
@@ -369,15 +369,9 @@ pkgs.dockerTools.pullImage{
 
 <translate> can be manually generated with the following shell commands </translate>
 
-``` bash
-skopeo copy docker://lnl7/nix@sha256:632268d5fd9ca87169c65353db99be8b4e2eb41833b626e09688f484222e860f docker-archive:///tmp/image.tgz:lnl7/nix:2.0
-```
-
-``` bash
-nix-hash --base32 --flat --type sha256 /tmp/image.tgz 
-```
-
-``` shell
+``` console
+$ skopeo copy docker://lnl7/nix@sha256:632268d5fd9ca87169c65353db99be8b4e2eb41833b626e09688f484222e860f docker-archive:///tmp/image.tgz:lnl7/nix:2.0
+$ nix-hash --base32 --flat --type sha256 /tmp/image.tgz 
 1x00ks05cz89k3wc460i03iyyjr7wlr28krk7znavfy2qx5a0hfd
 ```
 
@@ -531,15 +525,13 @@ virtualisation.oci-containers = {
 
 </translate> <translate> If you have a service running on the host that exposes a socket, such as mariadb, you can also expose that socket to the container instead. You'll want to expose the folder the socket is in as a volume - so: </translate>
 
-``` bash
-      volumes = [
-        "/var/run/mysqld:/mysqld"
-      ];
+``` nix
+volumes = [
+  "/var/run/mysqld:/mysqld"
+];
 ```
 
-<translate> to provide access to `/var/run/mysqld/mysqld.sock`. Sadly, this means you'll have to restart the container when /var/run/mysqld is replaced, e.g. on an upgrade.
-
-</translate>
+<translate> to provide access to `/var/run/mysqld/mysqld.sock`. Sadly, this means you'll have to restart the container when /var/run/mysqld is replaced, e.g. on an upgrade. </translate>
 
 <translate>
 
@@ -573,7 +565,7 @@ virtualisation.oci-containers = {
 
 <translate> When Docker uses too much disk space: </translate>
 
-``` bash
+``` nix
 # Remove unused containers, networks, images, and volumes
 docker system prune -a --volumes
 
@@ -592,7 +584,7 @@ virtualisation.docker.daemon.settings = {
 
 </translate>
 
-<translate> Docker's default subnet (\`172.17.0.0/16\`) might conflict with your existing network. Configure a different subnet in your \`configuration.nix\`: </translate>
+<translate> Docker's default subnet (\`172.17.0.0/16\`) might conflict with your existing network. Configure a different subnet in your `configuration.nix`: </translate>
 
 ``` nix
 virtualisation.docker.daemon.settings = {

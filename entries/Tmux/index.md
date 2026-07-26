@@ -8,7 +8,13 @@
 
 #### Shell
 
-To temporarily use tmux in a shell environment without modifying your system configuration, you can run: This makes the tmux available in your current shell. You can then launch tmux by typing `tmux`.
+To temporarily use tmux in a shell environment without modifying your system configuration, you can run:
+
+``` console
+$ nix-shell -p tmux
+```
+
+This makes the tmux available in your current shell. You can then launch tmux by typing `tmux`.
 
 #### System setup
 

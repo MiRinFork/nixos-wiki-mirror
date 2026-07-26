@@ -74,7 +74,7 @@ If you don't want to receive any mails from a specific address, even not into yo
 
 Stalwart [does not yet](https://github.com/stalwartlabs/stalwart/issues/1664) automatically update the TLSA record if your ACME certificate changes.
 
-Following script is a possible workaounrd. It extracts the ACME cert every five minute, calculates the TLSA hash and compares it with the upstream record. If it doesn't match, it uses [gotlsaflare](https://github.com/Stenstromen/gotlsaflare) to update the TLSA record on Cloudflare.
+Following script is a possible workaround. It extracts the ACME cert every five minute, calculates the TLSA hash and compares it with the upstream record. If it doesn't match, it uses [gotlsaflare](https://github.com/Stenstromen/gotlsaflare) to update the TLSA record on Cloudflare.
 
 ``` nixos
 systemd.services.tlsa-cloudflare-update = {

@@ -8,19 +8,6 @@ For boot mount options, [check here](https://manpages.ubuntu.com/manpages/noble/
 
 Common example filesystem mount. You can put this in configuration.nix:
 
-``` nix
- fileSystems."/mnt/exampleDrive" = {
-   device = "/dev/disk/by-uuid/4f999afe-6114-4531-ba37-4bf4a00efd9e";
-   fsType = "exfat";
-   options = [ # If you don't have this options attribute, it'll default to "defaults" 
-     # boot options for fstab. Search up fstab mount options you can use
-     "users" # Allows any user to mount and unmount
-     "nofail" # Prevent system from failing if this drive doesn't mount
-     "exec" # Permit execution of binaries and other executable files
-   ];
- };
-```
-
 ## Making disk visible in your file explorer
 
 You might not see the disk in your file explorer (ie GNOME Nautilus). Add to the options: `x-gvfs-show` and it'll show up.

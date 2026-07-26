@@ -12,15 +12,13 @@ The digital signal chain for a guitar consists of:
 
 ## Installation
 
-### System configuration
+Add the following snippets to your `/etc/nixos/configuration.nix` or your flake. This configuration is optimized for high-performance CPUs (e.g., AMD Ryzen 7 9700X) running NixOS 26.05 "Yarara" or newer.
 
-Add the following to your `/etc/nixos/configuration.nix` or your flake. This configuration is optimized for high-performance CPUs like the AMD Ryzen 7 9700X (Zen 5 architecture) running NixOS 26.05 "Yarara" or newer.
+### Sound server
+
+Configure PipeWire with global low-latency defaults and disable node suspension to prevent audio pops on USB interfaces. Note that legacy `pulse.min.req` parameters are deprecated in PipeWire 0.3.80+ and handled globally by `default.clock.*`.
 
 ``` nix
-{ pkgs, ... }:
-
-{
-  # 1. Sound Server: PipeWire with JACK/PulseAudio support
   services.pipewire = {
     enable = true;
     alsa.enable = true;
@@ -29,19 +27,17 @@ Add the following to your `/etc/nixos/configuration.nix` or your flake. This con
     jack.enable = true;
     wireplumber.enable = true;
     
-    # Global low-latency defaults for native JACK and ALSA clients
-    # Note: PulseAudio specific latency settings (pulse.min.req) are deprecated 
-    # in PipeWire 0.3.80+ and handled globally by default.clock.* parameters.
+    # Global low-latency defaults
     extraConfig.pipewire."92-low-latency" = {
       "context.properties" = {
-        "default.clock.rate" = 48000;  # Fixed rate avoids resampling latency
+        "default.clock.rate" = 48000;       # Fixed rate avoids resampling latency
         "default.clock.quantum" = 128;      # ~5ms latency at 48kHz
         "default.clock.min-quantum" = 32;   # Allows top-tier interfaces to achieve ~1.5ms
         "default.clock.max-quantum" = 512;
       };
     };
 
-    # Disable node suspension to prevent audio pops on USB interfaces
+    # Disable node suspension and fix crackling on problematic USB interfaces
     wireplumber.extraConfig."99-disable-suspend" = {
       "monitor.alsa.rules" = [{
         matches = [
@@ -51,17 +47,24 @@ Add the following to your `/etc/nixos/configuration.nix` or your flake. This con
         actions = {
           update-props = {
             "session.suspend-timeout-seconds" = 0;
+            # Optional: Tweak by trial-and-error if crackling occurs on specific USB interfaces.
+            # Do not apply globally without testing, as it may break built-in audio.
+            # "api.alsa.period-size" = 2;
+            # "api.alsa.headroom" = 8192;
           };
         };
       }];
     };
   };
+```
 
-  # 2. Real-time Scheduling
-  # RTKit handles real-time privileges via D-Bus/Polkit.
+### Real-time scheduling
+
+RTKit handles real-time privileges via D-Bus/Polkit. Critical PAM limits must be set to allow unlimited memlock and high real-time priority for audio buffers.
+
+``` nix
   security.rtkit.enable = true;
   
-  # Critical: Allow unlimited memlock and high rtprio for real-time audio buffers
   security.pam.loginLimits = [
     { domain = "@audio"; item = "memlock"; type = "-"; value = "unlimited"; }
     { domain = "@audio"; item = "rtprio"; type = "-"; value = "99"; }
@@ -69,12 +72,13 @@ Add the following to your `/etc/nixos/configuration.nix` or your flake. This con
   ];
   
   users.users.yourname.extraGroups = [ "audio" ]; # Replace 'yourname' with your username
+```
 
-  # 3. Kernel and Performance Tweaks
-  # Since kernel 6.12, PREEMPT_RT patches are merged into mainline, but distros
-  # generally ship with CONFIG_PREEMPT_DYNAMIC. 'preempt=full' enables dynamic 
-  # preemption for best-effort low latency. For hard real-time requirements, 
-  # a custom kernel with CONFIG_PREEMPT_RT=y is still needed.
+### Kernel and performance
+
+Modern mainline kernels include merged PREEMPT_RT patches. Dynamic preemption (`preempt=full`) provides best-effort low latency without the overhead of a dedicated RT kernel. CPU frequency scaling must be locked to prevent sleep-state latency spikes.
+
+``` nix
   boot.kernelPackages = pkgs.linuxPackages_latest;
   boot.kernelParams = [ 
     "threadirqs"
@@ -83,15 +87,16 @@ Add the following to your `/etc/nixos/configuration.nix` or your flake. This con
     "usbcore.autosuspend=-1"    # Prevent USB audio interface sleep
   ];
 
-  # Disable power-profiles-daemon to prevent conflicts with manual cpuFreqGovernor
   services.power-profiles-daemon.enable = false;
   powerManagement.cpuFreqGovernor = "performance";
-  
-  # GameMode can elevate priorities for real-time audio applications
-  programs.gamemode.enable = true;
+  programs.gamemode.enable = true; # Can elevate priorities for real-time audio applications
+```
 
-  # 4. Plugin Search Paths (Crucial for NixOS DAWs)
-  # Use environment.variables for reliable global access in Wayland/X11 sessions
+### Plugin search paths
+
+Crucial for NixOS DAWs to find plugins reliably in Wayland/X11 sessions.
+
+``` nix
   environment.variables = let
     makePluginPath = format:
       (pkgs.lib.makeSearchPath format [
@@ -102,14 +107,17 @@ Add the following to your `/etc/nixos/configuration.nix` or your flake. This con
   in {
     LV2_PATH = makePluginPath "lv2";
     VST3_PATH = makePluginPath "vst3";
-    CLAP_PATH = makePluginPath "clap";  # Modern plugin format, supported by Bitwig/REAPER
+    CLAP_PATH = makePluginPath "clap";
   };
+```
 
-  # 5. Essential Packages
-  nixpkgs.config.allowUnfree = true; # Required for REAPER, Bitwig, etc.
+### System packages
+
+``` nix
+  nixpkgs.config.allowUnfree = true; # Required for REAPER, Bitwig Studio, etc.
   environment.systemPackages = with pkgs; [
-    # --- Utilities & Routing ---
-    qpwgraph            # Visual patchbay for PipeWire
+    # --- Utilities & routing ---
+    qpwgraph            # Visual patchbay for PipeWire (v1.0.3+)
     pwvucontrol         # Modern native PipeWire volume control
     pavucontrol         # Fallback for Pro Audio profile selection
     pw-top              # Real-time CPU usage per audio node
@@ -120,33 +128,32 @@ Add the following to your `/etc/nixos/configuration.nix` or your flake. This con
     reaper
     bitwig-studio       # Native Linux commercial DAW, excellent CLAP support
 
-    # --- Plugin Hosts ---
-    carla               # Modular plugin host / pedalboard, supports Windows VST via yabridge
+    # --- Plugin hosts ---
+    carla               # Modular plugin host, supports Windows VST via yabridge
 
-    # --- Standalone Guitar Processors ---
-    guitarix
+    # --- Standalone guitar processors ---
+    guitarix            # Includes native NAM and RTNeural module support
 
     # --- Plugins (LV2/CLAP) ---
-    neural-amp-modeler-lv2  # NAM: loads .nam files from tone3000.com
-    proteus                # Neural network modeling (LSTM) by GuitarML
-    lsp-plugins            # Includes latency meter, compressors, IR loader
-    calf
-    dragonfly-reverb
-    gxplugins-lv2
-    kapitonov-plugins-pack # Profile-based amp models (KPP)
-    chow-centaur           # Klon Centaur emulation
-    chow-phaser
+    neural-amp-modeler-lv2  # NAM: AI captures of real tube amps
+    proteus               # Neural network modeling (LSTM) by GuitarML
+    lsp-plugins           # Professional EQ, compression, IR loader (now available in CLAP)
+    calf                  # Vintage-style effects
+    dragonfly-reverb      # High-quality algorithmic reverb
+    gxplugins-lv2         # Guitarix project pedals as standalone LV2
+    kapitonov-plugins-pack # Profile-based traditional amp modeling (VST3/LV2)
+    chow-centaur          # Klon Centaur emulation
+    chow-phaser           # Phaser emulation
 
-    # --- Practice & Learning ---
+    # --- Practice & learning ---
     tuxguitar
     hydrogen
 
-    # --- Windows VST Compatibility ---
+    # --- Windows VST compatibility ---
     yabridge
-    (yabridgectl.override { wine = wineWowPackages.stable; }) # Explicit Wine path
+    (yabridgectl.override { wine = wineWow64Packages.stable; }) # Explicit Wine path
     wineWow64Packages.stable  # Use wineWow64Packages, as wineWowPackages is deprecated
   ];
-}
 ```
 
 ## Configuration
@@ -172,7 +179,7 @@ If the "Pro Audio" profile is missing (or listed as "Digital Stereo" / "Multicha
 
 ### Dynamic buffer control
 
-You can change latency without rebuilding the system. Note that this setting is temporary and will be lost after restarting PipeWire.
+You can change latency dynamically without rebuilding the system. Note that this setting is temporary and will be lost after restarting PipeWire.
 
 ``` bash
 # Force quantum to 64 samples (pw-metadata syntax):
@@ -197,14 +204,14 @@ Standard PC line-ins are unsuitable for guitar. Use a dedicated interface with a
 | **MOTU M2 / M4** | Native ALSA kernel support (requires kernel ≥6.1+). Direct hardware mixer control via `alsamixer`. Exceptionally stable USB-C latency. |
 | **Universal Audio Volt 276** | Reliable USB-C class-compliant interface. |
 | **Arturia MiniFuse 1** | Stable performance under PipeWire. |
-| **Audient iD4 (Gen 1)** | Fully functional on NixOS. No special drivers needed. |
+| **Audient iD4 / iD14 (All Generations)** | Fully functional on NixOS. No special drivers needed. |
 
 ### Hardware rules
 
 1.  Connect the interface **directly to the motherboard** (rear panel USB 3.0/3.2). Avoid USB hubs — they add latency and can cause Xruns.
 2.  Use a high-quality, shielded USB cable. Audio dropouts are frequently caused by cheap cables acting as antennas for electrical interference.
 3.  **Disable Bluetooth** during live playing: `rfkill block bluetooth`. The BT audio stack can generate interrupt storms causing Xruns.
-4.  **Limit GPU FPS**: High frame rates in 3D applications or GUI-heavy plugins (like Neural DSP) can generate PCIe interrupt storms causing DPC latency spikes. Cap your FPS or enable VSync in your compositor/games.
+4.  **Limit GPU FPS**: High frame rates in 3D applications or GUI-heavy plugins can generate PCIe interrupt storms causing DPC latency spikes. Cap your FPS or enable VSync in your compositor.
 
 ### Verification
 
@@ -222,24 +229,24 @@ This section explains the available software for guitar processing on NixOS, org
 
 | Software | Purpose | Notes |
 |----|----|----|
-| **Ardour** | Professional recording, mixing, editing | For absolute minimum RTL, use **ALSA backend** (bypasses PipeWire). Warning: ALSA locks device exclusively — no other app can produce sound. |
+| **Ardour** | Professional recording, mixing, editing | For absolute minimum RTL (\<5ms), use the **ALSA backend** (bypasses PipeWire). Warning: ALSA locks the device exclusively — no other app can produce sound. |
 | **REAPER** | Commercial DAW, lightweight, scriptable | Uses PipeWire-JACK natively. Excellent Linux support. Unlimited trial. |
-| **Bitwig Studio** | Modern commercial DAW | Native Linux support. Superior CLAP format integration and modular sound design. |
+| **Bitwig Studio** | Modern commercial DAW | Native Linux support. Superior CLAP format integration. *Note: Direct ALSA backend on NixOS may require manual USB latency compensation; PipeWire-JACK is often more stable out-of-the-box.* |
 
 ### Amp simulators and neural modelers
 
 | Software | Purpose | Notes |
 |----|----|----|
-| **Neural Amp Modeler (NAM)** | LV2 plugin. Loads `.nam` files — AI captures of real tube amps | No built-in GUI. In Carla/Ardour: look for `atom:Path` parameter and point to your `.nam` file. Models: [TONE3000](https://tone3000.com) (formerly ToneHunt). |
-| **Proteus** | LV2 plugin. Neural network modeling (LSTM) by GuitarML | Faster preset switching than NAM. Models: [GuitarML GitHub](https://github.com/GuitarML/Proteus). |
-| **Kapitonov Plugins Pack (KPP)** | Profile-based traditional amp modeling | Excellent for classic rock/metal. Lower CPU than neural nets. |
-| **Guitarix** | All-in-one virtual amp + pedals | Standalone or LV2. Good for quick practice. |
+| **Neural Amp Modeler (NAM)** | LV2 plugin. Loads `.nam` files | AI captures of real tube amps. Now supports **Architecture 2 (A2)** (June 2026), offering higher accuracy with lower CPU usage. Models: [TONE3000](https://tone3000.com) (formerly ToneHunt). |
+| **Proteus** | LV2 plugin. Neural network modeling (LSTM) | By GuitarML. Faster preset switching than NAM. |
+| **Kapitonov Plugins Pack (KPP)** | Profile-based traditional amp modeling | Excellent for classic rock/metal. Lower CPU than neural nets. Available in LV2 and VST3. |
+| **Guitarix** | All-in-one virtual amp + pedals | Standalone or LV2. Now includes native modules for loading `.nam` and RTNeural (`.json`/`.aidax`) models. |
 
 ### Effects plugins
 
 | Plugin Pack | Key Features |
 |----|----|
-| **LSP Plugins** | Professional EQ, compression, gating. Includes LSP Latency Meter and LSP Impulse Response Loader (required for cabinet sims). Available in CLAP. |
+| **LSP Plugins** | Professional EQ, compression, gating. Includes LSP Latency Meter and LSP Impulse Response Loader. Now available in CLAP format. |
 | **Dragonfly Reverb** | High-quality algorithmic reverb (Hall, Room, Plate). |
 | **Chow Plugins** | High-fidelity emulations of classic pedals using RNN/WDF. |
 | **Calf Studio Gear** | Vintage-style effects with "warm" analog character. |
@@ -250,14 +257,14 @@ This section explains the available software for guitar processing on NixOS, org
 | Software | Purpose |
 |----|----|
 | **Carla** | Modular plugin host. Chain plugins visually: Input → Tuner → NAM → IR Loader → Reverb → Output. Hosts Windows VSTs via yabridge. |
-| **qpwgraph** | Visual patchbay for PipeWire/JACK. Manually connect hardware inputs to software hosts (PipeWire does not auto-connect). |
+| **qpwgraph** | Visual patchbay for PipeWire/JACK (v1.0.3+). Manually connect hardware inputs to software hosts (PipeWire does not auto-connect). |
 
 ### Windows VST compatibility
 
 | Tool | Purpose |
 |----|----|
-| **yabridge + yabridgectl** | Bridge for running Windows VST2/VST3/CLAP plugins on Linux via Wine. Essential for commercial plugins (Neural DSP, STL Tones, Amplitube). |
-| **PipeASIO** | [Experimental](https://github.com/M0n7y5/pipeasio) ASIO-to-PipeWire driver. Bypasses JACK entirely, connecting ASIO directly to PipeWire. Early testing recommended for Windows DAWs (FL Studio, Ableton) in Proton. |
+| **yabridge + yabridgectl** | Bridge for running Windows VST2/VST3/**CLAP** plugins on Linux via Wine. Essential for commercial plugins (Neural DSP, STL Tones, Amplitube). Note: yabridge 5.0+ supports CLAP, and `yabridgectl sync` registers them in `~/.clap/yabridge`. |
+| **PipeASIO** | [Experimental](https://github.com/M0n7y5/pipeasio) ASIO-to-PipeWire driver (v1.2.3+). Bypasses JACK entirely, connecting ASIO directly to PipeWire via `libpipewire-0.3`. Highly recommended for Windows DAWs (FL Studio, Ableton) or games in Proton, as it bypasses the missing `libjack.so.0` in the Steam Runtime container. |
 
 ``` bash
 # After installing Windows plugins via Wine:
@@ -272,7 +279,7 @@ Rocksmith 2014 runs on NixOS via Proton and PipeWire. There are two distinct app
 
 #### Approach A: Declarative via nixos-rocksmith (WineASIO + JACK)
 
-This method uses the [nixos-rocksmith](https://github.com/re1n0/nixos-rocksmith) flake, which patches Steam to preload `libjack.so` and use `RS_ASIO` with WineASIO.
+This method uses the [nixos-rocksmith](https://codeberg.org/nizo/linux-rocksmith) flake, which patches Steam to preload `libjack.so` and use `RS_ASIO` with WineASIO.
 
 1.  Add the module to your flake and enable it:
 
@@ -291,7 +298,7 @@ programs.steam = {
 
 #### Approach B: PipeASIO (Direct ASIO to PipeWire)
 
-This method bypasses JACK and WineASIO entirely, connecting ASIO directly to PipeWire. It is experimental but offers excellent performance inside the Steam Runtime container.
+This method bypasses JACK and WineASIO entirely. It is the preferred experimental method for Steam Runtime, as it does not require `libjack.so`.
 
 1.  Build and install [PipeASIO](https://github.com/M0n7y5/pipeasio) under `$HOME/.local` (Proton cannot see system-wide `/usr/lib/wine`).
 2.  Register the driver in the game's Wine prefix:
@@ -304,9 +311,7 @@ env WINEPREFIX="$HOME/.steam/steam/steamapps/compatdata/221680/pfx" pipeasio-reg
 
 <!-- -->
 
-    WINEDLLPATH=$HOME/.local/lib/wine gamemoderun %command%
-
-1.  Note: When using PipeASIO, buffer size is negotiated directly via the ASIO control panel inside the game or PipeASIO settings, so `PIPEWIRE_LATENCY` may not be required.
+    WINEDLLPATH=$HOME/.local/lib/wine PROTON_USE_WOW64=1 gamemoderun %command%
 
 ### Measuring latency
 
@@ -356,11 +361,13 @@ echo $LV2_PATH  # Should include /run/current-system/sw/lib/lv2
 
 | Symptom | Cause & Solution |
 |----|----|
-| **Xruns (audio glitches)** | Ensure `powerManagement.cpuFreqGovernor = "performance"` is active. Check `pw-top` for high-CPU nodes. Close browsers/heavy apps during playing. Disable Wi-Fi. As a last resort, add `processor.max_cstate=1` to `boot.kernelParams` (disables CPU sleep — results in extreme power draw and heat, use with caution). |
+| **Xruns (audio glitches)** | Ensure `powerManagement.cpuFreqGovernor = "performance"` is active. Check `pw-top` for high-CPU nodes. Close browsers/heavy apps during playing. Disable Wi-Fi: `sudo modprobe -r <your_wifi_driver>` or `rfkill block wifi` to prevent interrupt storms. As a last resort, add `processor.max_cstate=1` to `boot.kernelParams` (disables CPU sleep — results in extreme power draw and heat, use with caution). |
+| **Input clipping / digital distortion** | High-output pickups are overloading the interface's Hi-Z preamp. Use a passive DI-box, an inline pad, or lower your guitar's volume/pickup height. |
 | **No sound** | Check `qpwgraph` — PipeWire does not auto-connect hardware. Verify Pro Audio profile in `pavucontrol`. Run `sudo lsof /dev/snd/*` to find conflicting processes. |
 | **DAW cannot find plugins** | Ensure `environment.variables` block is applied. Log out/in after rebuild. Verify paths: `echo $LV2_PATH`. |
 | **Audio pops a few seconds after playback stops** | WirePlumber suspends the ALSA node after 5 seconds of inactivity. Ensure `session.suspend-timeout-seconds = 0` is set in `wireplumber.extraConfig`. |
-| **GPU causing audio glitches** | Disable GPU power management. Limit FPS in games/DAW to reduce PCIe interrupt storms (DPC latency). Prefer X11 over Wayland for lowest latency if using JUCE-based plugins that render incorrectly. |
+| **USB crackling / dropouts** | Increase `api.alsa.period-size` and `api.alsa.headroom` in the WirePlumber `extraConfig` (see Installation section). |
+| **GPU causing audio glitches** | Disable GPU power management. Limit FPS in games/DAW to reduce PCIe interrupt storms (DPC latency). Prefer X11 session if you experience visual glitches with older JUCE-based plugins under Wayland. |
 | **Bluetooth causing Xruns** | Disable Bluetooth stack: `rfkill block bluetooth` during live sessions. |
 | **PipeWire config not applying** | Restart user services after rebuild: `systemctl --user restart pipewire wireplumber`. Check for WirePlumber overrides: `wpctl status`. |
 
@@ -371,7 +378,10 @@ echo $LV2_PATH  # Should include /run/current-system/sw/lib/lv2
 - [musnix](https://github.com/musnix/musnix) — Deep NixOS audio optimizations module
 - [LinuxMusicians Forum](https://linuxmusicians.com/) — Community support
 - [TONE3000](https://tone3000.com) — Largest library of NAM models and IRs (formerly ToneHunt)
-- [PipeASIO](https://github.com/M0n7y5/pipeasio) — Experimental ASIO to PipeWire bridge for Wine/Proton
+- [PipeASIO](https://github.com/M0n7y5/pipeasio) — ASIO to PipeWire bridge for Wine/Proton
 - [linux-rocksmith](https://codeberg.org/nizo/linux-rocksmith) — Comprehensive guide to Rocksmith on Linux
+- [Rustortion](https://github.com/OpenSauce/rustortion) — Modern Rust-based amp sim (experimental, build from source)
+- [AIDA-X](https://github.com/AidaDSP/AIDA-X) — RTNeural-based amp model player (experimental)
+- [Ratatouille.lv2](https://github.com/brummer10/Ratatouille.lv2) — Dual neural modeler (experimental)
 
 <a href="Category:Guides" class="wikilink" title="Category:Guides">Category:Guides</a> <a href="Category:Hardware" class="wikilink" title="Category:Hardware">Category:Hardware</a> <a href="Category:Sound" class="wikilink" title="Category:Sound">Category:Sound</a>

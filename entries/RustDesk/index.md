@@ -31,7 +31,7 @@ services.rustdesk-server = {
 
 The key is stored at: /var/lib/private/rustdesk/id_ed25519.pub
 
-[Some settings may only be set via ENV variables](https://github.com/rustdesk/rustdesk-server?tab=readme-ov-file#env-variables) like this:
+[Some settings may only be set via ENV variables](https://github.com/rustdesk/rustdesk-server/tree/235a3c326ceb665e941edb50ab79faa1208f7507#env-variables) like this:
 
 ``` nixos
 systemd.services.rustdesk-signal.environment.ALWAYS_USE_RELAY = "Y";

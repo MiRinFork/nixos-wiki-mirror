@@ -10,7 +10,7 @@ In Nix as in other Linux distributions those tools and plugins are split into se
 
 To activate this environment in your terminal run
 
-``` nix
+``` console
 $ nix develop 
 ```
 
@@ -20,7 +20,7 @@ You can find all available Nix package names through the \[<https://search.nixos
 
 You can test that the `gst_all_1.gstreamer` tools are available by running a dummy pipeline
 
-``` nix
+``` console
 $ gst-launch-1.0 videotestsrc ! videoconvert ! autovideosink
 ```
 
@@ -28,7 +28,7 @@ which should open a colored video window.
 
 You can test that the plugins like from `gst_all_1.gst-plugins-base` are available to the higher level tools by inspecting such a base plugin like `filesrc` with
 
-``` nix
+``` console
 $ gst-inspect-1.0 filesrc
 Factory Details:
   ...
@@ -44,13 +44,13 @@ Plugin Details:
 
 or by using it in a pipeline. Here, we could play a video from the local machine with
 
-``` nix
+``` console
 $ gst-launch-1.0 filesrc location=my_video.mp4 ! videoconvert ! autovideosink
 ```
 
 If the plugins are not correctly made available to the higher level tools, you'll get an error
 
-``` nix
+``` console
 $ gst-inspect-1.0 filesrc
 No such element or plugin 'filesrc'
 ```
@@ -63,7 +63,7 @@ In some cases while creating a shell using "mkShell" or "writeShellApplication" 
 
 Adding the following export to your script, sets "gstreamer" and "gst-plugins-base" and "gst-plugins-good" paths. Similarly you can add any other "gst-plugins" package as well.
 
-``` shell
+``` bash
 export GST_PLUGIN_SYSTEM_PATH_1_0="${gst_all_1.gstreamer.out}/lib/gstreamer-1.0:${gst_all_1.gst-plugins-base}/lib/gstreamer-1.0:${gst_all_1.gst-plugins-good}/lib/gstreamer-1.0"
 ```
 
@@ -77,9 +77,9 @@ Note: "gstreamer.out" is the derivative that contains "/lib" directory for that 
 
 - Using `nix-shell`:
 
-nix-shell -p gst_all_1.gstreamer gst_all_1.gst-plugins-base gst_all_1.gst-plugins-good gst_all_1.gst-plugins-bad gst_all_1.gst-plugins-ugly gst_all_1.gst-libav gst_all_1.gst-vaapi --run "nautilus"
-
-</syntaxhighlight>
+``` console
+$ nix-shell -p gst_all_1.gstreamer gst_all_1.gst-plugins-base gst_all_1.gst-plugins-good gst_all_1.gst-plugins-bad gst_all_1.gst-plugins-ugly gst_all_1.gst-libav gst_all_1.gst-vaapi --run "nautilus"
+```
 
 - Using the environment variable "`GST_PLUGIN_PATH`":!["Audio and Video Properties" of "Properties" window of nautilus after fix](Screenshot_From_2025-03-28_12-51-31.png ""Audio and Video Properties" of "Properties" window of nautilus after fix")
 

@@ -21,13 +21,13 @@ The package installs both desktop launchers and a CLI entry point aliased to `ze
 </translate>
 
 ``` console
-nix run github:zed-industries/zed
+$ nix run github:zed-industries/zed
 ```
 
 #### Nixpkgs
 
 ``` console
-nix run nixpkgs#zed-editor
+$ nix run nixpkgs#zed-editor
 ```
 
 <translate>
@@ -53,7 +53,7 @@ home.packages = [
 ```
 
 ``` console
-home-manager switch
+$ home-manager switch
 ```
 
 <translate>
@@ -325,6 +325,10 @@ programs.zed-editor = {
 ## Tips and tricks
 
 #### Vulkan diagnostics
+
+``` console
+$ vulkaninfo --summary
+```
 
 <translate> Run the command above to check your Vulkan support before launching Zed. Install `vulkan-tools` if the command is not available. On non-NixOS systems, you may need to wrap Zed with `nixGLVulkan` from the nixGL package. </translate>
 

@@ -38,39 +38,39 @@ This can be also done with <a href="SSHFS" class="wikilink" title="SSHFS">SSHFS<
 Home-manager users may wish to make a user-centric configuration of rclone. To do so add `pkgs.rclone` to your `~/.config/home-manager/home.nix` file. You can also configure remotes with home-manager. Here is an example below.
 
 ``` nix
-  home.packages = [ pkgs.rclone ];
-  xdg.configFile."rclone/rclone.conf".text = ''
-[fichier]
-type = fichier
-user = foo@bar.com
-pass = password
-  '';
+home.packages = [ pkgs.rclone ];
+xdg.configFile."rclone/rclone.conf".text = ''
+  [fichier]
+  type = fichier
+  user = foo@bar.com
+  pass = password
+'';
 ```
 
 Particular concern should be made when uploading such configurations online as your passwords will be plainly visible. It is recommended to instead put the passwords in a local file if such is needed. Keep in mind that if you do output to .config/rclone/rclone.conf, every time you switch your home-manager configuration it will be overwritten. It would be wiser to instead output to a separate file, especially if using systemd services as in the example below.
 
 ``` nix
-  xdg.configFile."rclone/example.conf".text = ''
-[fichier]
-type = fichier
-user = foo@bar.com
-pass = p4ssw0rd
+xdg.configFile."rclone/example.conf".text = ''
+  [fichier]
+  type = fichier
+  user = foo@bar.com
+  pass = p4ssw0rd
 '';
-  };
+};
 
-  systemd.user.services.example-mounts = {
-    Unit = {
-      Description = "Example programmatic mount configuration with nix and home-manager.";
-      After = [ "network-online.target" ];
-    };
-    Service = {
-      Type = "notify";
-      ExecStartPre = "${pkgs.coreutils}/bin/mkdir -p %h/Example Sync Dir";
-      ExecStart = "${pkgs.rclone}/bin/rclone --config=%h/.config/rclone/example.conf --vfs-cache-mode writes --ignore-checksum mount \"fichier:\" \"%h/Example Sync Dir\"";
-      ExecStop="/run/wrappers/bin/fusermount -u %h/Example Sync Dir/%i";
-    };
-    Install.WantedBy = [ "default.target" ];
+systemd.user.services.example-mounts = {
+  Unit = {
+    Description = "Example programmatic mount configuration with nix and home-manager.";
+    After = [ "network-online.target" ];
   };
+  Service = {
+    Type = "notify";
+    ExecStartPre = "${pkgs.coreutils}/bin/mkdir -p %h/Example Sync Dir";
+    ExecStart = "${pkgs.rclone}/bin/rclone --config=%h/.config/rclone/example.conf --vfs-cache-mode writes --ignore-checksum mount \"fichier:\" \"%h/Example Sync Dir\"";
+    ExecStop="/run/wrappers/bin/fusermount -u %h/Example Sync Dir/%i";
+  };
+  Install.WantedBy = [ "default.target" ];
+};
 ```
 
 <a href="Category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="Category:CLI_Applications" class="wikilink" title="Category:CLI Applications">Category:CLI Applications</a> <a href="Category:Backup" class="wikilink" title="Category:Backup">Category:Backup</a>

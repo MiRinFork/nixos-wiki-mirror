@@ -22,7 +22,7 @@ users.users.backup = {
 
 Now you should be able to backup to your directory with the rsync client:
 
-``` shell
+``` console
 $ rsync -Pav -e "ssh -i $HOME/.ssh/somekeys" photos backup@server:
 ```
 

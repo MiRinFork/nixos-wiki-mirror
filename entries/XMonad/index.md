@@ -97,8 +97,8 @@ More information can be found [here](https://discourse.nixos.org/t/haskell-langu
 
 #### Create a project around `xmonad.hs`
 
-``` bash
-echo "xmonad" >> $HIE_BIOS_OUTPUT 
+``` console
+$ echo "xmonad" >> $HIE_BIOS_OUTPUT 
 ```
 
 The "with-ghc" should be ghc that's in the "ghc-with-packages" dependency of the "xmonad-with-packages". It can be easily found with "[nix-tree](https://github.com/utdemir/nix-tree)", which shows dependencies between packages on the machine.

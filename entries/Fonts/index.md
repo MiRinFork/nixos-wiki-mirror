@@ -65,12 +65,12 @@ and run `fc-cache`. </translate>
 
 *Example*: Install `SourceCodePro-Regular`.
 
-``` bash
-font=$(nix-build --no-out-link '<nixpkgs>' -A source-code-pro)/share/fonts/opentype/SourceCodePro-Regular.otf
-cp $font ~/.local/share/fonts
-fc-cache
-# Verify that the font has been installed
-fc-list -v | grep -i source
+``` console
+$ font=$(nix-build --no-out-link '<nixpkgs>' -A source-code-pro)/share/fonts/opentype/SourceCodePro-Regular.otf
+$ cp $font ~/.local/share/fonts
+$ fc-cache
+$ # Verify that the font has been installed
+$ fc-list -v | grep -i source
 ```
 
 <translate>=== Install fonts in nix-shells === </translate>
@@ -80,7 +80,7 @@ fc-list -v | grep -i source
 <translate>
 
 ``` nix
-{pkgs ? import <nixpkgs> {} }:
+{ pkgs ? import <nixpkgs> {} }:
 let
   fontsConf = pkgs.makeFontsConf {
     fontDirectories = [
@@ -206,8 +206,8 @@ Note: There is no need to grant flatpak applications access to `$HOME/.local/sha
 
 Create a symlink in `XDG_DATA_HOME/fonts` pointing to `/run/current-system/sw/share/X11/fonts`, e. g.
 
-``` bash
-mkdir $HOME/.local/share/fonts && ln -s /run/current-system/sw/share/X11/fonts ~/.local/share/fonts/
+``` console
+$ mkdir $HOME/.local/share/fonts && ln -s /run/current-system/sw/share/X11/fonts ~/.local/share/fonts/
 ```
 
 <translate> Now you have two options.</translate>
@@ -218,22 +218,22 @@ mkdir $HOME/.local/share/fonts && ln -s /run/current-system/sw/share/X11/fonts ~
 
 </translate> <translate> By using the Flatpak CLI or the Flatseal Flatpak make the following directory available to all Flatpaks `$HOME/.local/share/fonts` and `$HOME/.icons` the appropriate commands for this are: </translate>
 
-``` bash
-flatpak --user override --filesystem=$HOME/.local/share/fonts:ro
-flatpak --user override --filesystem=$HOME/.icons:ro
+``` console
+$ flatpak --user override --filesystem=$HOME/.local/share/fonts:ro
+$ flatpak --user override --filesystem=$HOME/.icons:ro
 ```
 
 <translate> And, because `~/.local/share/fonts` is linked to `/run/current-system/sw/share/X11/fonts`, which in turn is linked to content in `/nix/store`. You need to grant flatpak applications access to the `/nix/store` directory, so that they can load fonts correctly. You may need to reboot for this to fully take effect.</translate>
 
-``` bash
-flatpak --user override --filesystem=/nix/store:ro
-flatpak --user override --filesystem=/run/current-system/sw/share/X11/fonts:ro
+``` console
+$ flatpak --user override --filesystem=/nix/store:ro
+$ flatpak --user override --filesystem=/run/current-system/sw/share/X11/fonts:ro
 ```
 
 <translate>===== Option 2: Allow access to the WHOLE filesystem ===== </translate> <translate> Allow them access the WHOLE filesystem of yours: `All system files` in Flatseal or equivalently `filesystem=host` available to your application, the command for this is: </translate>
 
-``` bash
-flatpak --user override --filesystem=host
+``` console
+$ flatpak --user override --filesystem=host
 ```
 
 <translate> It is important to keep in mind that some flatpak apps may refuse to launch if given certain permissions, such as the Steam flatpak. </translate>
@@ -241,60 +241,60 @@ flatpak --user override --filesystem=host
 <translate>==== Solution 3: Configure bindfs for fonts/cursors/icons support ==== </translate> <translate> Alternatively, you can expose relevant packages directly under `/usr/share/...` paths. This will also enable Flatpak to use a custom cursor theme if you have one. This solution doesn't require `fonts.fontDir.enable` to be enabled.
 
 ``` nix
-  system.fsPackages = [ pkgs.bindfs ];
-  fileSystems = let
-    mkRoSymBind = path: {
-      device = path;
-      fsType = "fuse.bindfs";
-      options = [ "ro" "resolve-symlinks" "x-gvfs-hide" ];
-    };
-    fontsPkgs = config.fonts.packages ++ (with pkgs; [
-        # Add your cursor themes and icon packages here
-        bibata-cursors
-        gnome-themes-extra
-        # etc.
-      ]);
-    x11Fonts = pkgs.runCommand "X11-fonts"
-      {
-        preferLocalBuild = true;
-        nativeBuildInputs = with pkgs; [
-          gzip
-          mkfontdir
-        ];
-      }
-      (''
-        mkdir -p "$out/share/fonts"
-        font_regexp='.*\.\(ttf\|ttc\|otb\|otf\|pcf\|pfa\|pfb\|bdf\)\(\.gz\)?'
-      ''
-      + (builtins.concatStringsSep "\n" (builtins.map (pkg: ''
-          find ${toString pkg} -regex "$font_regexp" \
-            -exec ln -sf -t "$out/share/fonts" '{}' \;
-        '') fontsPkgs
-        ))
-      + ''
-        cd "$out/share/fonts"
-        mkfontscale
-        mkfontdir
-        cat $(find ${pkgs.font-alias}/ -name fonts.alias) >fonts.alias
-      '');
-    aggregatedIcons = pkgs.buildEnv {
-      name = "system-icons";
-      paths = fontsPkgs;
-      pathsToLink = [
-        "/share/icons"
-      ];
-    };
-  in {
-    "/usr/share/icons" = mkRoSymBind (aggregatedIcons + "/share/icons");
-    "/usr/share/fonts" = mkRoSymBind (x11Fonts + "/share/fonts");
+system.fsPackages = [ pkgs.bindfs ];
+fileSystems = let
+  mkRoSymBind = path: {
+    device = path;
+    fsType = "fuse.bindfs";
+    options = [ "ro" "resolve-symlinks" "x-gvfs-hide" ];
   };
+  fontsPkgs = config.fonts.packages ++ (with pkgs; [
+      # Add your cursor themes and icon packages here
+      bibata-cursors
+      gnome-themes-extra
+      # etc.
+    ]);
+  x11Fonts = pkgs.runCommand "X11-fonts"
+    {
+      preferLocalBuild = true;
+      nativeBuildInputs = with pkgs; [
+        gzip
+        mkfontdir
+      ];
+    }
+    (''
+      mkdir -p "$out/share/fonts"
+      font_regexp='.*\.\(ttf\|ttc\|otb\|otf\|pcf\|pfa\|pfb\|bdf\)\(\.gz\)?'
+    ''
+    + (builtins.concatStringsSep "\n" (builtins.map (pkg: ''
+        find ${toString pkg} -regex "$font_regexp" \
+          -exec ln -sf -t "$out/share/fonts" '{}' \;
+      '') fontsPkgs
+      ))
+    + ''
+      cd "$out/share/fonts"
+      mkfontscale
+      mkfontdir
+      cat $(find ${pkgs.font-alias}/ -name fonts.alias) >fonts.alias
+    '');
+  aggregatedIcons = pkgs.buildEnv {
+    name = "system-icons";
+    paths = fontsPkgs;
+    pathsToLink = [
+      "/share/icons"
+    ];
+  };
+in {
+  "/usr/share/icons" = mkRoSymBind (aggregatedIcons + "/share/icons");
+  "/usr/share/fonts" = mkRoSymBind (x11Fonts + "/share/fonts");
+};
 
-  <!--T:69-->
-fonts.packages = with pkgs; [
-    noto-fonts
-    noto-fonts-color-emoji
-    noto-fonts-cjk-sans
-  ];
+<!--T:69-->
+nts.packages = with pkgs; [
+  noto-fonts
+  noto-fonts-color-emoji
+  noto-fonts-cjk-sans
+];
 ```
 
 Note that font cache inside flatpak container may not be recreated after changes to fonts in `/usr/share/fonts`, because font cache seem to be relying on file timestamps that are missing in `/nix/store`. </translate>

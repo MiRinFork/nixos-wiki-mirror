@@ -36,7 +36,7 @@ And the equivalent snippet in Home Manager:
 
 Thus the settings attribute accepts an attribute set whose keys are schemas with each schema's value being a nested attribute set of the schema's keys with their appropriate GVariant value.If you wish to revert all dconf settings back to their default state (reset GNOME essentially) then use the following command which resets all schemas directories available on your system, note that this will affect all programs that use dconf, including GNOME apps and extensions.
 
-``` bash
+``` console
 $ dconf reset -f /
 ```
 
@@ -114,13 +114,13 @@ GNOME does not currently support system tray icons. However, Ubuntu has created 
 Install as a *system* package (it won't work properly if installed against users). Then enable the associated service with
 
 ``` nix
-  services.sysprof.enable = true;
+services.sysprof.enable = true;
 ```
 
 ### Automatic screen rotation
 
 ``` nix
-  hardware.sensor.iio.enable = true;
+hardware.sensor.iio.enable = true;
 ```
 
 ### Dark mode
@@ -137,7 +137,7 @@ To exclude certain applications that are installed by default with GNOME, set th
 
 This occurs when installing GNOME from an existing NixOS installation that used a different desktop environment that modified dconf (most likely switching from KDE to GNOME). To easily fix this alongside any number of silent incompatabilities: reset all dconf settings.
 
-``` bash
+``` console
 $ dconf reset -f /
 ```
 

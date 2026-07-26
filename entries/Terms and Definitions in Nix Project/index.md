@@ -29,7 +29,7 @@
 <td><p>| (User) Profile</p></td>
 <td><p>| Nix</p></td>
 <td><p>| Profiles simplify managing and switching between <em>user environments</em>, and thus control which applications and system configurations are in active use. Generally, a <em>profile</em> is a link to a <em>generation</em>, and the corresponding <strong>profiles</strong> folder collects a list of generations. A standalone Nix installation (i.e. on a Linux distro that is not NixOS) operates mainly on <em>user</em> profiles. In NixOS, there is also a <em>system</em> profile that manages the system-wide configuration (e.g. <em>/etc</em>, the kernel, <em>initrd</em>, <em>systemd</em>). Other tools like <a href="Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> may also have their own profiles. By default, a user's active profile is stored at <em>~/.nix-profile</em>:</p>
-<pre class="shell"><code>$ ls -l ~/.nix-profile
+<pre class="console"><code>$ ls -l ~/.nix-profile
 lrwxrwxrwx ... /home/username/.nix-profile -&gt;
 /nix/var/nix/profiles/per-user/username/profile</code></pre></td>
 <td><p>| <a href="http://nixos.org/nix/manual/#sec-profiles">Nix Manual: Profiles</a><br />
@@ -55,7 +55,7 @@ lrwxrwxrwx ... /home/username/.nix-profile -&gt;
 <td><p>| Output path</p></td>
 <td><p>| Nix</p></td>
 <td><p>| A <em>store path</em> produced by a derivation. These are generally analogous to built packages, or pieces of them.</p>
-<pre class="shell"><code>$ ls -ld /nix/store/*-firefox-9*/
+<pre class="console"><code>$ ls -ld /nix/store/*-firefox-9*/
 dr-xr-xr-x ... /nix/store/v4b8...3d0w-firefox-92.0/</code></pre></td>
 <td><p>| <a href="http://nixos.org/nix/manual/#ssec-derivation">Nix Manual: Derivation</a></p></td>
 </tr>

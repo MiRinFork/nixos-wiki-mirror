@@ -14,13 +14,13 @@ For more information, you can visit the official [Tor Project website](https://w
 
 #### Using nix-shell
 
-``` bash
-nix-shell -p tor-browser
+``` console
+$ nix-shell -p tor-browser
 ```
 
 #### Using Global Configuration
 
-``` text
+``` nix
 environment.systemPackages = [
   pkgs.tor-browser
 ];
@@ -28,13 +28,13 @@ environment.systemPackages = [
 
 After modifying your configuration, apply the changes by running:
 
-``` bash
-sudo nixos-rebuild switch
+``` console
+# nixos-rebuild switch
 ```
 
 #### Using Home Configuration
 
-``` text
+``` nix
 home.packages = [ 
   pkgs.tor-browser
 ];
@@ -42,8 +42,8 @@ home.packages = [
 
 After updating your configuration, apply the changes by running:
 
-``` bash
-home-manager switch
+``` console
+$ home-manager switch
 ```
 
 ## Configuration
@@ -159,9 +159,9 @@ Tor can be enabled as a system service by enabling options . Configuration of to
 
 ``` nix
 services.tor.settings = {
-      UseBridges = true;
-      ClientTransportPlugin = "obfs4 exec ${pkgs.obfs4}/bin/lyrebird";
-      Bridge = "obfs4 IP:ORPort [fingerprint]";
+  UseBridges = true;
+  ClientTransportPlugin = "obfs4 exec ${pkgs.obfs4}/bin/lyrebird";
+  Bridge = "obfs4 IP:ORPort [fingerprint]";
 };
 ```
 
@@ -169,9 +169,9 @@ For a webtunnel bridge, use:
 
 ``` nix
 services.tor.settings = {
-      UseBridges = true;
-      ClientTransportPlugin = "webtunnel exec ${pkgs.webtunnel}/bin/client";
-      Bridge = "webtunnel IP:ORPort [fingerprint]";
+  UseBridges = true;
+  ClientTransportPlugin = "webtunnel exec ${pkgs.webtunnel}/bin/client";
+  Bridge = "webtunnel IP:ORPort [fingerprint]";
 };
 ```
 

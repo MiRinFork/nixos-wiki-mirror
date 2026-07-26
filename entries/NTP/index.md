@@ -2,7 +2,7 @@
 
 <!-- Source page: NTP -->
 
-[NTP](https://en.wikipedia.org/wiki/Network_Time_Protocol) is a protocol to synchronise time and date information through a network. It is used to set the clock of your system automatically when your computer is connected to the internet.
+[NTP](https://ntp.org/) (<a href="wikipedia:en:Network_Time_Protocol" class="wikilink" title="wikipedia:en:Network Time Protocol">wikipedia:en:Network Time Protocol</a>) is a protocol to synchronise time and date information through a network. It is used to set the clock of your system automatically when your computer is connected to the internet.
 
 ## NTP servers
 
@@ -10,11 +10,13 @@ To choose which servers to ask for time information to, use the `networking.time
 
 ## NTP daemon
 
-Different NTP daemons are available on NixOS. The default one is `systemd-timesyncd`. To switch to another implementation:
+The default NTP daemon is `systemd-timesyncd` (<a href="wikipedia:en:timesyncd" class="wikilink" title="wikipedia:en:timesyncd">wikipedia:en:timesyncd</a>).
 
-- for **ntpd**, use `services.ntp.enable = true;`
-- for **openntpd**, use `services.openntpd.enable = true;`
-- for **<a href="chrony" class="wikilink" title="chrony">chrony</a>**, use `services.chrony.enable = true;`
+However, there are several other NTP daemons available on NixOS. To switch to another implementation:
+
+- for **ntpd** (<a href="wikipedia:en:ntpd" class="wikilink" title="wikipedia:en:ntpd">wikipedia:en:ntpd</a>), use `services.ntp.enable = true;`
+- for **openntpd** (<a href="wikipedia:en:OpenNTPD" class="wikilink" title="wikipedia:en:OpenNTPD">wikipedia:en:OpenNTPD</a>), use `services.openntpd.enable = true;`
+- for **<a href="chrony" class="wikilink" title="chrony">chrony</a>** (<a href="wikipedia:en:chrony" class="wikilink" title="wikipedia:en:chrony">wikipedia:en:chrony</a>), use `services.chrony.enable = true;`
 
 ## Set NTP from DHCP servers
 
@@ -36,7 +38,7 @@ $ ntpdate -q 0.nixos.pool.ntp.org
 22 Nov 17:06:57 ntpdate[4020886]: no server suitable for synchronization found
 ```
 
-However, a replacement NTP is usually provided in that case via the DHCP protocol. You can see it for instance if you use Network Manager:
+However, a replacement NTP is usually provided in that case via the DHCP protocol. You can see it for instance if you use <a href="NetworkManager" class="wikilink" title="NetworkManager">NetworkManager</a>:
 
 ``` console
 $ nmcli connection show 'name-of-the-current-connection' | grep ntp

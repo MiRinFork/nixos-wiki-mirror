@@ -98,7 +98,7 @@ Next mount exports to your local directories:
 Generate hardware config:
 
 ``` console
-nixos-generate-config
+$ nixos-generate-config
 ```
 
 This will add the following to `hardware-configuration.nix`.

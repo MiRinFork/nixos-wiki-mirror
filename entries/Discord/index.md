@@ -10,21 +10,6 @@ Discord is an instant messaging and VoIP application with lots of functionality.
 
 Nixpkgs provides all three of Discord's release channels, accessible as `pkgs.discord`, `pkgs.discord-ptb`, and `pkgs.discord-canary` respectively. Add any of the previous derivations to your package's configuration. For <a href="NixOS" class="wikilink" title="NixOS">NixOS</a> this will be in `environment.systemPackages` or `users.users.`<name>`.packages`.
 
-``` nixos
-# configuration.nix
-{ config, lib, pkgs, ... }: {
-  # This will install Discord PTB for all users of the system
-  environment.systemPackages = with pkgs; [
-    discord-ptb
-  ];
-
-  # This installs Discord PTB only for the user "alice"
-  users.users.alice.packages = with pkgs; [
-    discord-ptb
-  ];
-}
-```
-
 ### Unofficial Clients
 
 Nixpkgs also provides a vast variety of community developed/modded Discord clients, which can usually serve as drop-in replacements for the official discord client with an extended set of features.
@@ -45,7 +30,7 @@ Lightweight, alternative desktop client with built-in modding extensibility. Nix
 
 Enhances Discord desktop app with new features. Nixpkgs provides the installer via `pkgs.betterdiscordctl`. This can be added to your configuration, though users may prefer to instead run it one-off via the <a href="Nix" class="wikilink" title="Nix">Nix</a> cli.
 
-``` bash
+``` console
 $ nix-shell -p betterdiscordctl --command 'betterdiscordctl install' # nix-legacy
 $ nix run nixpkgs#betterdiscordctl -- install # nix3
 
@@ -161,7 +146,9 @@ in
 
 After adding this to your Nix configuration and rebuilding, make sure Discord is completely closed, and then run:
 
-    $ krisp-patcher ~/.config/discord/0.0.76/modules/discord_krisp/discord_krisp.node
+``` console
+$ krisp-patcher ~/.config/discord/0.0.76/modules/discord_krisp/discord_krisp.node
+```
 
 Once you restart Discord and join a VC, you should see a sound wave icon to the left of the hangup icon.
 
@@ -194,11 +181,11 @@ Add the following to your Home Manager configuration
 
 ``` nixos
 {pkgs, ...}:{
-    services.arrpc = {
-        enable = true;
-        package = pkgs.arrpc; #Default
-        systemdTarget = "graphical-session.target"; #Default
-    };
+  services.arrpc = {
+    enable = true;
+    package = pkgs.arrpc; # Default
+    systemdTarget = "graphical-session.target"; # Default
+  };
 }
 ```
 

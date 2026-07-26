@@ -35,15 +35,15 @@ in pkgs.pkgsCross.aarch64-multiplatform.hello
 
 You can perform the same operations using the CLI, and Nix will correctly evaluate the `localSystem` based on your current system:
 
-``` bash
-nix-build '<nixpkgs>' -A pkgsCross.aarch64-multiplatform.hello # nix-legacy
-nix-build '<nixpkgs>' --arg crossSystem '(import <nixpkgs> {}).lib.systems.examples.aarch64-multiplatform' -A hello # alternative way
-nix build nixpkgs#pkgsCross.aarch64-multiplatform.hello # nix3
+``` console
+$ nix-build '<nixpkgs>' -A pkgsCross.aarch64-multiplatform.hello # nix-legacy
+$ nix-build '<nixpkgs>' --arg crossSystem '(import <nixpkgs> {}).lib.systems.examples.aarch64-multiplatform' -A hello # alternative way
+$ nix build nixpkgs#pkgsCross.aarch64-multiplatform.hello # nix3
 ```
 
 All of the above snippets will resolve to the exact same derivation result, which will provide a binary for GNU Hello that can execute only on an `aarch64` system. There are many other systems `pkgsCross` has defined, you can see an exhaustive list of all of them on your system:
 
-``` bash
+``` console
 $ nix-instantiate --eval --expr 'builtins.attrNames (import <nixpkgs> {}).pkgsCross' --json | nix-shell -p jq --command 'jq' # nix-legacy
 $ nix eval --impure --expr 'builtins.attrNames (import <nixpkgs> {}).pkgsCross' --json | nix run nixpkgs#jq # nix3
 ```
@@ -64,36 +64,15 @@ in pkgs.hello
 
 ### Basics
 
-Using the same ideas as above, we can create development environments which provide us with a compilation suite that can perform cross-compilation for us. A very simple <a href="Development_environment_with_nix-shell" class="wikilink" title="development shell">development shell</a> (colloquially called a "devshell") can be written as:
+Using the same ideas as above, we can create development environments which provide us with a compilation suite that can perform cross-compilation for us. A very simple <a href="Development_environment_with_nix-shell" class="wikilink" title="development shell">development shell</a> (colloquially called a "devshell") can be written as: Entering this development shell via `nix-shell shell.nix` will add the relevant compiler tools to your PATH temporarily. Similar to other Linux systems, all cross-compiling tools are prefixed with relevant platform prefixes, which means simply typing `gcc` will not work. However, the provided `mkShell` will introduce environment variables for your devshell, such as `$CC`, `$AR`, `$LD`, and more. At the time of writing, official documentation on an exhaustive list of these variables does not exist, but you can view them for your devshell through the command-line:
 
-``` nix
-# shell.nix
-{
-  pkgs ? import <nixpkgs> {
-    localSystem = "x86_64-linux";
-    crossSystem = "aarch64-linux";
-
-  },
-}:
-pkgs.callPackage (
-  {
-    mkShell,
-  }:
-  mkShell {
-    # By default this provides gcc, ar, ld, and some other bare minimum tools
-  }
-) { }
-```
-
-Entering this development shell via `nix-shell shell.nix` will add the relevant compiler tools to your PATH temporarily. Similar to other Linux systems, all cross-compiling tools are prefixed with relevant platform prefixes, which means simply typing `gcc` will not work. However, the provided `mkShell` will introduce environment variables for your devshell, such as `$CC`, `$AR`, `$LD`, and more. At the time of writing, official documentation on an exhaustive list of these variables does not exist, but you can view them for your devshell through the command-line:
-
-``` bash
+``` console
 $ $EDITOR $(nix-build ./shell.nix) # opens your EDITOR with a massive bash script full of declare -x ...
 ```
 
 Given these environment variables, you can run compile your software using the exact same commands with fairly minimal changes (changing hardcoded `gcc` values into \$CC, for example):
 
-``` bash
+``` console
 $ $CC -o main src/main.c
 $ file main
 main: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /nix/store/qa51m8r8rjnigk5hf7sxv0hw7qr7l4bc-glibc-aarch64-unknown-linux-gnu-2.39-52/lib/ld-linux-aarch64.so.1, for GNU/Linux 3.10.0, not stripped
@@ -151,7 +130,7 @@ By using <a href="QEMU" class="wikilink" title="QEMU">QEMU</a>, we can natively 
 
 If you are on NixOS, this functionality can be provided automatically on any cross-compiled binary by setting [boot.binfmt.emulatedSystems](https://nixos.org/manual/nixos/unstable/options#opt-boot.binfmt.emulatedSystems) in your configuration. After rebuilding, attempting to run a cross-compiled binary will automatically invoke `qemu` indirectly through the [binfmt_misc kernel feature](https://www.kernel.org/doc/html/latest/admin-guide/binfmt-misc.html).
 
-``` bash
+``` console
 $ ./result
 Hello World!
 $ ./result-aarch64-linux
@@ -160,7 +139,7 @@ Hello World!
 
 Otherwise, you can use the `pkgs.qemu-user` to download qemu user space programs (or use any installed by your distro) to run your package easily.
 
-``` bash
+``` console
 $ ./result
 Hello World!
 $ qemu-aarch64 ./result-aarch64-linux

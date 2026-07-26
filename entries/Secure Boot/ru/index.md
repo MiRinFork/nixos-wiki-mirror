@@ -10,11 +10,9 @@ Secure Boot имеет несколько реализаций, наиболее
 
 </div>
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
+## Проверка состояния безопасной загрузки
 
-## Checking Secure Boot status
-
-The easiest way to check if your machine has Secure Boot enabled is through the use of <a href="Systemd" class="wikilink" title="Systemd">Systemd</a>'s `bootctl`. There is no need to be using <a href="Systemd/boot" class="wikilink" title="systemd-boot">systemd-boot</a> as your bootloader for this command to work.
+самый лёгкий способ проверить, включена ли безопасная загрузка на вашем компьютере - использовать `bootctl` от <a href="Systemd" class="wikilink" title="Systemd">Systemd</a>. Необязательно использовать <a href="Systemd/boot" class="wikilink" title="systemd-boot">systemd-boot</a> как ваш основной загрузчик, чтобы эта команда работала.
 
 ``` console
 $ bootctl status
@@ -28,23 +26,13 @@ System:
 ...
 ```
 
-The system above has secure boot enabled and enforced. Other values include `disabled (setup)` for Setup Mode, `disabled (disabled)` or `disabled (unsupported)`. The unsupported tag only appears if your device firmware does not support Secure Boot at all. If you see `disabled (disabled)`, this means you will need to enable Secure Boot in your UEFI firmware settings before proceeding to use one of the projects outlined below.
+В продемонстрированной выше системе включена и используется безопасная загрузка. Другие значения включают `disabled (setup)` для режима настройки, `disabled (disabled)` или `disabled (unsupported)`. Тэг unsupported появляется только если ваша материнская плата или её программное обеспечение не поддерживает безопасную загрузку. Если вы видите `disabled (disabled)`, это значит, что вам нужно включить безопасную загрузку в настройках UEFI перед тем как продолжить, чтобы использовать один из описанных ниже проектов
 
-</div>
+## Включение безопасной загрузки на NixOS
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
+В NixOS на данный момент имеется два способа включения безопасной загрузки, <a href="Lanzaboote" class="wikilink" title="Lanzaboote">Lanzaboote</a> и <a href="Limine" class="wikilink" title="Limine">Limine</a>. Пошаговые инструкции по каждому из них вы найдете на соответствующих страницах вики.
 
-## Enabling Secure Boot on NixOS
-
-On NixOS, there are currently two main ways to enable Secure Boot, <a href="Lanzaboote" class="wikilink" title="Lanzaboote">Lanzaboote</a> and <a href="Limine" class="wikilink" title="Limine">Limine</a>. See their respective wiki pages for step by step instructions on each.
-
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-For Secure Boot to be most effective, there are certain conditions which should also be met. The most important are:
-
-</div>
+Чтобы безопасная загрузка была максимально эффективна, должны быть соблюдены определённые условия. Самими важными являются:
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 

@@ -2,19 +2,19 @@
 
 <!-- Source page: LibreOffice -->
 
-LibreOffice is a multi-platform office suite. It consists of programs for word processing (Writer); creating and editing spreadsheets (Calc), slideshows (Impress), diagrams and drawings (Draw); working with databases (Base); and composing mathematical formulae (Math).
+[LibreOffice](https://www.libreoffice.org) is a multi-platform office suite. It consists of programs for word processing (Writer); creating and editing spreadsheets (Calc), slideshows (Impress), diagrams and drawings (Draw); working with databases (Base); and composing mathematical formulae (Math).
 
 ## Spellcheck
 
 In order for spellcheck to work, you will need to install the `hunspell` package as well as the `hunspellDicts.` packages for the languages that you would like. For example this installs libreoffice with dictionaries for Ukrainian and Central Thai.
 
 ``` nix
-  environment.systemPackages = with pkgs; [
-    libreoffice-qt
-    hunspell
-    hunspellDicts.uk_UA
-    hunspellDicts.th_TH
-  ];
+environment.systemPackages = with pkgs; [
+  libreoffice-qt
+  hunspell
+  hunspellDicts.uk_UA
+  hunspellDicts.th_TH
+];
 ```
 
 ## Hyphenation
@@ -22,11 +22,11 @@ In order for spellcheck to work, you will need to install the `hunspell` package
 In order to add hyphenation dictionaries, use
 
 ``` nix
-  environment.systemPackages = with pkgs; [
-    libreoffice-qt
-    hyphenDicts.en_GB  # British English
-    hyphenDicts.de_DE  # German, etc.
-  ];
+environment.systemPackages = with pkgs; [
+  libreoffice-qt
+  hyphenDicts.en_GB  # British English
+  hyphenDicts.de_DE  # German, etc.
+];
 ```
 
 ## uno Python Library for API access
@@ -46,7 +46,7 @@ in {
 
 ## KDE / Plasma
 
-If you use KDE (Plasma) then you'll be better off with `libreoffice-qt` package. Otherwise you may lack, e.g. main menu bar.
+If you use <a href="KDE" class="wikilink" title="KDE (Plasma)">KDE (Plasma)</a> then you'll be better off with `libreoffice-qt` package. Otherwise you may lack, e.g. main menu bar.
 
 ## See also
 

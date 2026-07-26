@@ -29,27 +29,27 @@ Jonas Heinrich (GitHub user @onny) created a fork of the OSX-KVM repository with
 
 For the forked repo, git clone and run `nix run` to prepare and run a macOS system:
 
-``` bash
-git clone -b flake https://github.com/onny/OSX-KVM.git
-cd OSX-KVM
-nix run
+``` console
+$ git clone -b flake https://github.com/onny/OSX-KVM.git
+$ cd OSX-KVM
+$ nix run
 ```
 
 Alternatively, clone the original repo, <https://github.com/kholia/OSX-KVM>. Then, copy over @onny's flake and `nix run`, or run the following manually. You will need the `python3` and `qemu` packages.
 
-``` bash
-# to fetch BaseSystem.dmg
-python ./fetch-macOS-v2.py
+``` console
+$ # to fetch BaseSystem.dmg
+$ python ./fetch-macOS-v2.py
 
-# to convert BaseSystem.dmg to BaseSystem.img
-qemu-img convert BaseSystem.dmg -O raw BaseSystem.img
+$ # to convert BaseSystem.dmg to BaseSystem.img
+$ qemu-img convert BaseSystem.dmg -O raw BaseSystem.img
 
-# to create virtual hard drive image file mac_hdd_ng.img
-qemu-img create -f qcow2 mac_hdd_ng.img 128G
+$ # to create virtual hard drive image file mac_hdd_ng.img
+$ qemu-img create -f qcow2 mac_hdd_ng.img 128G
 
-# run launch script
-# this runs qemu-system-x86_64 with the necessary arguments
-source ./OpenCore-Boot.sh
+$ # run launch script
+$ # this runs qemu-system-x86_64 with the necessary arguments
+$ source ./OpenCore-Boot.sh
 ```
 
 In all cases, you can adjust the CPU count, memory, or other options in `./OpenCore-Boot.sh`. Currently (commit [da4b23b](https://github.com/kholia/OSX-KVM/tree/da4b23b5e92c5b939568700034367e8b7649fe90)), the script [recommends changing the CPU to `Haswell-noTSX` for macOS Sonoma](https://github.com/kholia/OSX-KVM/blob/da4b23b5e92c5b939568700034367e8b7649fe90/OpenCore-Boot.sh#L16).

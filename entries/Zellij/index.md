@@ -8,7 +8,13 @@
 
 #### Shell
 
-To temporarily use zellij in a shell environment without modifying your system configuration, you can run: This makes the zellij available in your current shell. You can then launch zellij by typing `zellij`.
+To temporarily use zellij in a shell environment without modifying your system configuration, you can run:
+
+``` console
+$ nix-shell -p zellij
+```
+
+This makes the zellij available in your current shell. You can then launch zellij by typing `zellij`.
 
 ## Configuration
 
@@ -27,6 +33,20 @@ This will generate `~/.config/zellij/config.kdl`, with something like this:
 All plugins are packaged in the `pkgs/by-name/ze/zellij/plugins/` folder. Currently, only Rust plugins are packaged, but if you figure out how to package other languages, contributions are welcome.
 
 To add a new plugin, you can just use [nix-init](https://github.com/nix-community/nix-init) like this:
+
+``` console
+$ nix-init pkgs/by-name/ze/zellij/plugins/rust/my-plugin-name.nix
+Enter url
+❯ https://github.com/hello/my-plugin-name
+Enter tag or revision (defaults to v0.1.0)
+❯ v0.1.0
+Enter version
+❯ 0.1.0
+Enter pname
+❯ my-plugin-name
+How should this package be built?
+❯ buildRustPackage - cargoHash
+```
 
 If the repository name starts with `zellij`, you should omit it in the actual package name. `zellijPlugins.autolock` looks better than `zellijPlugins.zellij-autolock`.
 

@@ -234,7 +234,7 @@ At the time of writing, there are now no less than 8 different solutions for bui
 
 | Name | Cargo.lock solution | Derivations | Build logic | Supports cross | Notes |
 |----|----|----|----|----|----|
-| [`buildRustPackage`](https://github.com/NixOS/nixpkgs/blob/master/doc/languages-frameworks/rust.section.md) | Checksum | 1 | cargo | Yes | Built into nixpkgs |
+| [`buildRustPackage`](https://github.com/NixOS/nixpkgs/blob/master/doc/languages-frameworks/rust.section.md) | Checksum or [`Import`](https://github.com/NixOS/nixpkgs/blob/master/doc/languages-frameworks/rust.section.md#importing-a-cargolock-file-importing-a-cargolock-file) | 1 | cargo | Yes | Built into nixpkgs |
 | [`crate2nix`](https://github.com/kolloch/crate2nix) | Codegen (with optional IFD) | Many | `buildRustCrate` | [experimental](https://github.com/kolloch/crate2nix/commit/8bfeb42bda097e0bdf5452691a5e157aad3cc11f) | Spiritual successor to [`carnix`](https://github.com/nix-community/carnix) |
 | [`naersk`](https://github.com/nmattia/naersk/) | Import | 2 | cargo | Yes | [Seems to only support building on x86](https://github.com/nmattia/naersk/blob/22b96210b2433228d42bce460f3befbdcfde7520/rust/rustc.nix#L22-L29) |
 | [`cargo2nix`](https://github.com/cargo2nix/cargo2nix) | Codegen | Many | cargo + custom | Yes | Defaults to the oxalica Rust overlay but this can be overridden with `rustToolchain` |

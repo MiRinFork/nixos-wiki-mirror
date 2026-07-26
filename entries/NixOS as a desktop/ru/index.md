@@ -2,13 +2,7 @@
 
 <!-- Source page: NixOS as a desktop/ru -->
 
-<languages/>
-
-<div class="mw-translate-fuzzy">
-
-NixOS может быть использована для разных целей. Если вы желаете использовать её как основную десктопную ОС для повседневного использования (на реальном железе или [виртуальной машине](https://twitter.com/mitchellh/status/1346136404682625024)(англ.)), то эта страница для вас. Даже если вы планируете использовать NixOS в облаке или на специально настроенных серверах, вы, возможно, хотите начать с уроков, изложенных здесь, чтобы ближе познакомиться с экосистемой Nix.
-
-</div>
+<languages/> <a href="NixOS" class="wikilink" title="NixOS">NixOS</a> это универсальная операционная система, которая подходит под широкий спектр вариантов применения. Эта страница предназначена для прользователей, которые хотят использовать NixOS в качестве их основной рабочей среды. Будь то на реальном железе, или внутри виртуальной машины. Также пользователи, планирующие развернуть NixOS в <a href="NixOS_friendly_hosters" class="wikilink" title="облачных">облачных</a> окружениях или на специализированной серверной инфраструктуре могут счесть полезным начать с представленных здесь концепций и методов, поскольку они служат хорошей основой для работы в рамках более широкой <a href="Nix_ecosystem" class="wikilink" title="экосистемы Nix">экосистемы Nix</a>.
 
 <span id="Installation"></span>
 
@@ -26,7 +20,7 @@ NixOS может быть использована для разных целе�
 
 <span id="System_Configuration"></span>
 
-### Систеиная конфигурация
+### Системная конфигурация
 
 Онсновным конфигурационным файлом яляется `/etc/nixos/configuration.nix`, который определяет общие и основные системные настройки. Такие как: активация сервисов, управлением системы пользователей, установки системных настроек, и установки указанных пакетов. Изменения можно увидеть с помощью комманды:
 
@@ -50,23 +44,13 @@ Home Manager работает независимо от системной ко�
 
 Смотрите <a href="NixOS_system_configuration#Defining_NixOS_as_a_flake" class="wikilink" title="NixOS system configuration#Defining NixOS as a flake">NixOS system configuration#Defining NixOS as a flake</a> для подробного понимания в начале.
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
+<span id="Beyond_initial_setup"></span>
 
-## Beyond initial setup
+## После первоначальной настройки
 
-</div>
+После завершения установки NixOS, вы можете дополнительно настроить вашу систему с помощью различных конфигураций, предназначенных для использования на настольных компьютерах. Список рекомендуемых начальных конфигураций системы см. в разделе <a href="NixOS_Installation_Guide#NixOS_configuration" class="wikilink" title="Руководство по установке NixOS#Конфигурация NixOS (англ.)">Руководство по установке NixOS#Конфигурация NixOS (англ.)</a>
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-Once your basic NixOS installation is complete and functional, you can further customize your system with a variety of optional configurations tailored for desktop use. For a list of recommended initial system configurations, see <a href="NixOS_Installation_Guide#NixOS_configuration" class="wikilink" title="NixOS Installation Guide#NixOS configuration">NixOS Installation Guide#NixOS configuration</a>.
-
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-Common configuration areas include:
-
-</div>
+Основные параметры конфигурации включают:
 
 <span id="Desktop_Environments"></span>
 
@@ -80,21 +64,15 @@ Common configuration areas include:
 
 #### Оконные Менеджеры
 
-Устновка легковесных или тайловых оконных менеджеров по типу <a href="i3" class="wikilink" title="i3">i3</a>, <a href="Sway" class="wikilink" title="Sway">Sway</a>, <a href="Hyprland" class="wikilink" title="Hyprland">Hyprland</a> или <a href="xmonad" class="wikilink" title="xmonad">xmonad</a>.
+Устновка легковесных или тайловых оконных менеджеров по типу <a href="i3" class="wikilink" title="i3">i3</a>, <a href="Sway" class="wikilink" title="Sway">Sway</a>, <a href="Hyprland" class="wikilink" title="Hyprland">Hyprland</a> или <a href="XMonad" class="wikilink" title="XMonad">XMonad</a>.
 
 Полный список <a href=":Category:Window_managers" class="wikilink" title=":Category:Window managers">:Category:Window managers</a>
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
+<span id="Display_Managers_(Login_Managers)"></span>
 
-#### Display Managers (Login Managers)
+#### Экранный менеджер (Менеджер входа)
 
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-Configure graphical session managers such as <a href="Gnome" class="wikilink" title="GDM">GDM</a>, <a href="KDE" class="wikilink" title="SDDM">SDDM</a>, or <a href="LightDM" class="wikilink" title="LightDM">LightDM</a>.
-
-</div>
+Настройка графических менеджеров сессий, таких как <a href="Gnome" class="wikilink" title="GDM">GDM</a>, <a href="KDE" class="wikilink" title="SDDM">SDDM</a>, или <a href="LightDM" class="wikilink" title="LightDM">LightDM</a>.
 
 <span id="Audio_Setup"></span>
 
@@ -114,11 +92,9 @@ Configure graphical session managers such as <a href="Gnome" class="wikilink" ti
 
 Настройте <a href="Bluetooth" class="wikilink" title="Bluetooth">Bluetooth</a> с помощью blueman или других похожих утилит.
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
+<span id="Power_Management"></span>
 
-#### Power Management
-
-</div>
+#### Управление питанием
 
 Настройте <a href="laptop" class="wikilink" title="laptop">laptop</a> <a href="Power_Management" class="wikilink" title="battery management">battery management</a>, сон, и гибернацию с такими инструментами как <a href="Laptop#tlp" class="wikilink" title="tlp">tlp</a> или <a href="systemd" class="wikilink" title="systemd">systemd</a> сервисом.
 

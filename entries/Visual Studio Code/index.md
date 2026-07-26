@@ -59,7 +59,7 @@ programs.vscode = {
 ### Nix-env
 
 ``` console
-nix-env -iA nixos.vscode
+$ nix-env -iA nixos.vscode
 ```
 
 ## Use VS Code extensions without additional configuration
@@ -187,13 +187,13 @@ The Nixpkgs vscode extensions directory contains [a script](https://github.com/N
 To run it in your current directory:
 
 ``` console
-curl -fsSL https://raw.githubusercontent.com/NixOS/nixpkgs/master/pkgs/applications/editors/vscode/extensions/update_installed_exts.sh | sh
+$ curl -fsSL https://raw.githubusercontent.com/NixOS/nixpkgs/master/pkgs/applications/editors/vscode/extensions/update_installed_exts.sh | sh
 ```
 
 ### Example output
 
 ``` console
-curl -fsSL https://raw.githubusercontent.com/NixOS/nixpkgs/master/pkgs/applications/editors/vscode/extensions/update_installed_exts.sh | sh
+$ curl -fsSL https://raw.githubusercontent.com/NixOS/nixpkgs/master/pkgs/applications/editors/vscode/extensions/update_installed_exts.sh | sh
 { extensions = [
   {
     name = "project-manager";
@@ -287,15 +287,21 @@ If you get an error similar to the following, enable a <a href="Secret_Service" 
 
 "No such file or directory" means that libc is not found, see
 
-    ldd ~/.vscode-server/bin/*/node
+``` console
+$ ldd ~/.vscode-server/bin/*/node
+```
 
 try to run the node binary on the server
 
-    ~/.vscode-server/bin/*/node
+``` console
+$ ~/.vscode-server/bin/*/node
+```
 
 if this fails, install node version 16, and try to patch the node binary
 
-    nix-env -iA nixos.nodejs-16_x
+``` console
+$ nix-env -iA nixos.nodejs-16_x
+```
 
 ``` bash
 #! /bin/sh
@@ -316,7 +322,7 @@ fi
 
 If you're using fish or other shell, set this in the user settings JSON on the client machine:
 
-``` bash
+``` json
 "remote.SSH.useLocalServer": false
 ```
 

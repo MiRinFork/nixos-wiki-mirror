@@ -10,14 +10,14 @@ This article is an extension of the [NixOS manual](https://nixos.org/manual/nixo
 
 ### Generate Secrets
 
-``` bash
-sudo install -d -m 0700 /var/lib/gitlab/secrets
-sudo sh -c 'openssl rand -hex 32 > /var/lib/gitlab/secrets/activeRecordPrimaryKey'
-sudo sh -c 'openssl rand -hex 32 > /var/lib/gitlab/secrets/activeRecordDeterministicKey'
-sudo sh -c 'openssl rand -hex 32 > /var/lib/gitlab/secrets/activeRecordSalt'
-sudo chown -R gitlab:gitlab /var/lib/gitlab/secrets
-sudo chmod 700 /var/lib/gitlab/secrets
-sudo chmod 0600 /var/lib/gitlab/secrets/*
+``` console
+# install -d -m 0700 /var/lib/gitlab/secrets
+# sh -c 'openssl rand -hex 32 > /var/lib/gitlab/secrets/activeRecordPrimaryKey'
+# sh -c 'openssl rand -hex 32 > /var/lib/gitlab/secrets/activeRecordDeterministicKey'
+# sh -c 'openssl rand -hex 32 > /var/lib/gitlab/secrets/activeRecordSalt'
+# chown -R gitlab:gitlab /var/lib/gitlab/secrets
+# chmod 700 /var/lib/gitlab/secrets
+# chmod 0600 /var/lib/gitlab/secrets/*
 ```
 
 ### Nix Configuration
@@ -61,14 +61,14 @@ Even though it is easy to provide the secrets in the `configuration.nix` with `p
 
 Query info about your Gitlab instance
 
-``` bash
-gitlab-rake gitlab:env:info
+``` console
+$ gitlab-rake gitlab:env:info
 ```
 
 Check for configuration errors
 
-``` bash
-gitlab-rake gitlab:check
+``` console
+$ gitlab-rake gitlab:check
 ```
 
 ## Tips and tricks
@@ -159,15 +159,15 @@ Apparently, it can happen that no root user is created (or at least not fully cr
 
 In this case, it can help to stop the Gitlab service, drop the postgres database and reboot the system. This sequence instantiates the Gitlab root user. With that, it's possible to log in with user "root" and the password configured in "initialRootPasswordFile".
 
-``` bash
-# stop the gitlab stack
-systemctl stop gitlab.service
+``` console
+$ # stop the gitlab stack
+$ systemctl stop gitlab.service
 
-# drop the database
-sudo -u postgres dropdb gitlab
+$ # drop the database
+$ sudo -u postgres dropdb gitlab
 
-# reboot (just starting the gitlab service again seems not to be sufficient)
-sudo reboot
+$ # reboot (just starting the gitlab service again seems not to be sufficient)
+$ sudo reboot
 ```
 
 ## Notes

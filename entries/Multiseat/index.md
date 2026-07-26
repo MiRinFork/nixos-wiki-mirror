@@ -26,7 +26,7 @@ The display manager should automatically show the login screen on each separate 
 ## See Also
 
 - [Multiseat on FreeDesktop wiki](https://www.freedesktop.org/wiki/Software/systemd/multiseat/)
-- [Multiseat on ArchWiki](https://wiki.archlinux.org/title/Xorg_multiseat)
+- [Multiseat on ArchWiki](https://wiki.archlinux.org/title/multiseat)
 - [Multiseat on Ubuntu wiki](https://wiki.ubuntu.com/Multiseat)
 
 <a href="Category:Desktop" class="wikilink" title="Category:Desktop">Category:Desktop</a>

@@ -9,7 +9,6 @@ Ext4 is a widely used journaling <a href="filesystems" class="wikilink" title="f
 In NixOS, Ext4 can be specified when formatting partitions during installation. For example:
 
 ``` console
- 
 # mkfs.ext4 /dev/sdX1
 ```
 

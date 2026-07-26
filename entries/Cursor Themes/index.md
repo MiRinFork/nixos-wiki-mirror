@@ -13,27 +13,27 @@ For a more fine-grained configuration, check the option `xsession.pointerCursor`
 Here's an example how you can get a cursor theme from a url and assign it to HM's pointerCursor:
 
 ``` nix
-  home.pointerCursor = 
-    let 
-      getFrom = url: hash: name: {
-          gtk.enable = true;
-          x11.enable = true;
-          name = name;
-          size = 48;
-          package = 
-            pkgs.runCommand "moveUp" {} ''
-              mkdir -p $out/share/icons
-              ln -s ${pkgs.fetchzip {
-                url = url;
-                hash = hash;
-              }} $out/share/icons/${name}
-          '';
-        };
-    in
-      getFrom 
-        "https://github.com/ful1e5/fuchsia-cursor/releases/download/v2.0.0/Fuchsia-Pop.tar.gz"
-        "sha256-BvVE9qupMjw7JRqFUj1J0a4ys6kc9fOLBPx2bGaapTk="
-        "Fuchsia-Pop"; 
+home.pointerCursor =
+  let
+    getFrom = url: hash: name: {
+      gtk.enable = true;
+      x11.enable = true;
+      name = name;
+      size = 48;
+      package = pkgs.runCommand "moveUp" { } ''
+        mkdir -p $out/share/icons
+        ln -s ${
+          pkgs.fetchzip {
+            url = url;
+            hash = hash;
+          }
+        } $out/share/icons/${name}
+      '';
+    };
+  in
+  getFrom "https://github.com/ful1e5/fuchsia-cursor/releases/download/v2.0.0/Fuchsia-Pop.tar.gz"
+    "sha256-BvVE9qupMjw7JRqFUj1J0a4ys6kc9fOLBPx2bGaapTk="
+    "Fuchsia-Pop";
 ```
 
 ## Troubleshooting
@@ -100,8 +100,8 @@ This already fixes themes for most apps like gnome. But not all (e.g. Obsidian o
 
 And since flatpaks are sandboxed and dont have access to the nix-store you need to give them permission, since the cursors are eventually linked to *`/nix/store/...`*:
 
-``` shell
-flatpak --user override --filesystem=/nix/store:ro
+``` console
+$ flatpak --user override --filesystem=/nix/store:ro
 ```
 
 OR with the <https://github.com/gmodena/nix-flatpak> homeManagerModule:

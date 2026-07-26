@@ -18,7 +18,7 @@ Be sure to read the [Nextcloud module's documentation](https://nixos.org/manual/
 
 ### Apps
 
-[Some apps](https://github.com/NixOS/nixpkgs/blob/2852f35f477e0f55e68b5f5e6d5a92242c215efc/pkgs/servers/nextcloud/packages/31.json) (use the file named <version>`.json`, where version is the installed Nextcloud version), which are already packaged on NixOS, can be installed directly with the following example configuration:
+[Some apps](https://github.com/NixOS/nixpkgs/blob/0d7bf2685cc69bcb51430bbc0493e221f9c21c2d/pkgs/servers/nextcloud/packages/34.json) (use the file named <version>`.json`, where version is the installed Nextcloud version), which are already packaged on NixOS, can be installed directly with the following example configuration:
 
 The apps mail, news and contacts will be installed and enabled in your instance automatically. Note that the Nextcloud version specified in `package` and `extraApps` need to match one of the stable Nextcloud versions available in the NixOS repository.
 
