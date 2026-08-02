@@ -22,9 +22,13 @@ Modify your Home Manager configuration to include the meaning of the following e
 
 Modify your Home Manager configuration to include the meaning of the following example.
 
-### `nix-env`
+### Imperative `nix-env`
 
 `nix-env -iA hello`
+
+### Declarative `nix-env`
+
+In an <a href="overlay" class="wikilink" title="overlay">overlay</a>, create a new package that is the list of packages you'd like installed. Example: Then run `nix-env -riA nixpkgs.userPackages` to make this the only installed package. Use the same command after a channel update to get package updates (don't use `nix-env --upgrade`—it's very slow and will run out of RAM on smaller machines).
 
 ### `nix profile` (Flakes)
 

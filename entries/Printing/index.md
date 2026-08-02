@@ -198,7 +198,7 @@ will enable anonymous access to your printer on all interfaces, you might want t
 ``` nix
 services.avahi = {
   enable = true;
-  nssmdns = true;
+  nssmdns4 = true;        # for IPv4 (use nssmdns6 for IPv6)
   openFirewall = true;
   publish = {
     enable = true;

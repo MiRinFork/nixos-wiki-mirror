@@ -2,123 +2,65 @@
 
 <!-- Source page: NixOS Installation Guide/ru -->
 
-<languages/> Это руководство служит вспомогательным руководством для [оффициального руководства](https://nixos.org/nixos/manual/index.html#ch-installation). Оно описывает установку <a href="NixOS" class="wikilink" title="NixOS">NixOS</a> как полноценной операционной системы, смотрите <a href="Nix_Installation_Guide" class="wikilink" title="Nix Installation Guide">Nix Installation Guide</a>.
+<languages/> Это руководство служит вспомогательным руководством для [официального руководства](https://nixos.org/nixos/manual/index.html#ch-installation). Оно описывает установку <a href="NixOS" class="wikilink" title="NixOS">NixOS</a> как полноценной операционной системы, смотрите <a href="Nix_Installation_Guide" class="wikilink" title="Nix Installation Guide">Nix Installation Guide</a>.
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
+Помимо описания действий из официального руководства, здесь приводятся проверенные инструкции для типичных сценариев использования. В случае расхождения между руководством и данным документом приоритетным считается вариант, описанный в руководстве.
 
-In addition to covering the steps from the official manual, it provides known good instructions for common use cases. When there is a discrepancy between the manual and this guide, the supported case is the one described in the manual.
+<span id="Installation_target"></span>
 
-</div>
+## Цель установки
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
+NixOS может быть установлена на различные типы устройств:
 
-## Installation target
+<div class="mw-translate-fuzzy">
 
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-NixOS can be installed on an increasing variety of hardware:
+- обычные (Intel или AMD) настольные компьютеры, ноутбуки или физически доступные сервера, представленные на этой странице
+- Мини-компьютеры (как Raspberry Pi's) или другие платы на архитектуре ARM, смотрите \[\[NixOS on ARM\]\[
+- Облачные или удаленные сервера, смотрите <a href="NixOS_friendly_hosters" class="wikilink" title="NixOS friendly hosters">NixOS friendly hosters</a>
 
 </div>
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
+<span id="Installation_method"></span>
 
-- regular (Intel or AMD) desktop computers, laptops or physically accessible servers, covered on this page
-- SBCs (like the Raspberry Pis) and other ARM boards, see <a href="NixOS_on_ARM" class="wikilink" title="NixOS on ARM">NixOS on ARM</a>
-- cloud and remote servers, see <a href="NixOS_friendly_hosters" class="wikilink" title="NixOS friendly hosters">NixOS friendly hosters</a>
+## Методы установки
 
-</div>
+NixOS, как и многие другие Linux-базированные операционные системы, может быть установлен разными путями
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-## Installation method
-
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-NixOS, as with most Linux-based operating systems, can be installed in different ways.
-
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-1.  The classic way, booting from the installation media. (Described below.)
+1.  Обычный способ, загрузка с загрузочного диска. (Написано ниже.)
 2.  <a href="Installing_from_Linux" class="wikilink" title="Booting the media from an existing Linux installation">Booting the media from an existing Linux installation</a>
 
-</div>
+<span id="Making_the_installation_media"></span>
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
+## Создание загрузочного диска
 
-## Making the installation media
+С NixOS 14.11 установочный ISO образ гибридный. Это значит что он может загружаться как с CD так и с USB накопителя. Он может загружаться как с EFI систем, с более современных материнских плат и компьютеров Apple. Данная инструкция покажет стандартный способ копирования образа на USB накопитель. Если у вас CD или DVD накопитель, используйте способы для записи диска с ISO образа.
 
-</div>
+<span id="&quot;Burning&quot;_to_USB_drive"></span>
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
+## Запись образа на USB накопитель
 
-Since NixOS 14.11 the installer ISO is hybrid. This means it is bootable on both CD and USB drives. It also boots on EFI systems, like most modern motherboards and apple systems. The following instructions will assume the standard way of copying the image to a USB drive. When using a CD or DVD, the usual methods to burn to disk should work with the iso.
+Для начала, скачайте образ [NixOS ISO image](https://nixos.org/download.html#nixos-iso) или <a href="Creating_a_NixOS_live_CD" class="wikilink" title="create a custom ISO">create a custom ISO</a>. Затем, вставьте USB накопитель, размер которого больше чем вес образа. Затем, следуйте инструкциям:
 
-</div>
+<span id="From_Linux"></span>
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
+### Для Linux
 
-### "Burning" to USB drive
+1.  Найдите правильное устройство с `lsblk` or `fdisk -l`. Переместите <i>`/dev/sdX`</i> на нужное устройство по следующим шагам.
+2.  Скопируйте на устройство: `cp nixos-xxx.iso `<em>`/dev/sdX`</em>
 
-</div>
+Запишите образ на диск с помощью команды: `dd if=nixos.iso of=/dev/sdX bs=4M status=progress conv=fdatasync`
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
+<span id="From_macOS"></span>
 
-First, download a [NixOS ISO image](https://nixos.org/download.html#nixos-iso) or <a href="Creating_a_NixOS_live_CD" class="wikilink" title="create a custom ISO">create a custom ISO</a>. Then plug in a USB stick large enough to accommodate the image. Then follow the platform instructions:
+### Для macOS
 
-</div>
+1.  Найдите правильное устройство: `diskutil list`, затем напишите: <i>`diskX`</i>.
+2.  Размонтируйте: `diskutil unmountDisk `<i>`diskX`</i>.
+3.  Запишите: `sudo dd if=`<b>`path_to_nixos.iso`</b>` of=/dev/`<i>`diskX`</i>
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
+<span id="From_Windows"></span>
 
-#### From Linux
-
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-1.  Find the right device with `lsblk` or `fdisk -l`. Replace <i>`/dev/sdX`</i> with the proper device in the following steps.
-2.  Copy to device: `cp nixos-xxx.iso `<em>`/dev/sdX`</em>
-
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-Writing the disk image with `dd if=nixos.iso of=/dev/sdX bs=4M status=progress conv=fdatasync` also works.
-
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-#### From macOS
-
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-1.  Find the right device with `diskutil list`, let's say <i>`diskX`</i>.
-2.  Unmount with `diskutil unmountDisk `<i>`diskX`</i>.
-3.  Burn with: `sudo dd if=`<b>`path_to_nixos.iso`</b>` of=/dev/`<i>`diskX`</i>
-
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-#### From Windows
-
-</div>
+## Для Windows
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
@@ -131,139 +73,65 @@ Writing the disk image with `dd if=nixos.iso of=/dev/sdX bs=4M status=progress c
 
 </div>
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
+<span id="Alternative_installation_media_instructions"></span>
 
-### Alternative installation media instructions
+## Альтернативные способы установки
 
-</div>
+Способы приведенные выше являются одними из способов создания USB накопителя для загрузки
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
+Эти методы написаны в гайде, но вы их можете использовать и для создания мультизагрузочной флешки. Этот способ не поддерживается, результат может получиться разным
 
-The previous methods are the supported methods of making the USB installation media.
+- <a href="NixOS_Installation_Guide/Unetbootin" class="wikilink" title="Установка с помощью Unetbootin">Установка с помощью Unetbootin</a>
+- <a href="NixOS_Installation_Guide/Manual_USB_Creation" class="wikilink" title="Ручное создание загрузочного USB накопителя">Ручное создание загрузочного USB накопителя</a>
+- <a href="NixOS_Installation_Guide/multibootusb" class="wikilink" title="Мультизагрузочная флешка">Мультизагрузочная флешка</a>
 
-</div>
+## Загрузка установочного накопителя
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
+Установочный накопитель гибридный и может загружаться как в legacy BIOS режиме так и в <a href="UEFI" class="wikilink" title="UEFI">UEFI</a> режиме
 
-Those methods are also documented, they can allow using the USB drive to boot multiple distributions. This is not supported, your mileage may vary.
+Вне зависимости от способа загрузки, на вашей материнской плате или компьютере возможно прийдется разрешить загрузку с CD/DVD диска или USB накопителя
 
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-- <a href="NixOS_Installation_Guide/Unetbootin" class="wikilink" title="Using Unetbootin">Using Unetbootin</a>
-- <a href="NixOS_Installation_Guide/Manual_USB_Creation" class="wikilink" title="Manual USB Creation">Manual USB Creation</a>
-- <a href="NixOS_Installation_Guide/multibootusb" class="wikilink" title="multibootusb">multibootusb</a>
-
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-## Booting the installation media
-
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-The installation media is hybrid and is capable of booting in both legacy BIOS mode and <a href="UEFI" class="wikilink" title="UEFI">UEFI</a> mode.
-
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-Whatever mode is used to boot the installation media, your motherboard or computer's configuration may need to be changed to allow booting from a Optical Disk Drive (for CD/DVD) or an external USB drive.
-
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
+<span id="Legacy_bios_boot"></span>
 
 ### Legacy bios boot
 
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-This is the only boot possible on machines lacking EFI/UEFI.
-
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
+Это единственный возможный вариант загрузки на компьютерах без EFI/UEFI
 
 ### UEFI boot
 
-</div>
+Загрузочный образ не подписан, поэтому EFI загрузчики могут ругаться. Для беспроблемной загрузки обязательно отключите Secure Boot в настройках
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
+<span id="Connecting_to_the_internet"></span>
 
-The EFI bootloader of the installation media is not signed and is not using a signed shim to boot. This means that Secure Boot will need to be disabled to boot.
+## Подключение к интернету
 
-</div>
+Для установки **обязательно** нужен работающий интернет. Также, возможна установка без интернета, но нужен специальный образ
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
+<span id="Wired"></span>
 
-## Connecting to the internet
+### Проводной интернет
 
-</div>
+Для сетевых интерфейсов, поддерживаемых ядром, получение адреса по DHCP должно завершиться к моменту, когда станет доступна консоль.
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
+<span id="Tethered_(Internet_Sharing)"></span>
 
-The installation will **definitely** need a working internet connection. It is possible to install without one, but the available set of packages is limited.
+## По модему (раздача интернета)
 
-</div>
+Если вы не можете подключить интернет с помощью кабеля или WiFi, просто подключите свой смартфон по проводу, и включите в настройках режим "USB-модема". Если ваш телефон поддерживается драйверами ядра, то у вас появится интернет.
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
+<span id="Wireless"></span>
 
-### Wired
+### Беспроводное подключение
 
-</div>
+<a href="NetworkManager" class="wikilink" title="NetworkManager">NetworkManager</a> устанавливается в образе с графическим интерфейсом, также возможно использование `nmtui` в консоли для подключения к интернету
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
+Используя вкладку "Приложения" в левом верхнем углу или панель запуска в нижней части экрана, выберите терминал и запустите в нем команду `nmtui`. Это позволит вам активировать (беспроводное) соединение: в списке должны отобразиться доступные сети (SSID); если нужной сети нет, можно добавить новое соединение. После активации и проверки беспроводного соединения программа установки, запущенная при старте системы, скорее всего, еще не обнаружит новое подключение. Закройте программу установки и запустите ее заново с панели в нижней части экрана — теперь она должна распознать новое соединение и продолжить работу.
 
-For network interfaces supported by the kernel, DHCP resolution should already have happened once the shell is available.
+На минимальном образе вам лучше использовать <a href="wpa_supplicant" class="wikilink" title="wpa_supplicant">wpa_supplicant</a> вы его можете запустить посредством этих команд:`wpa_passphrase ESSID | sudo tee /etc/wpa_supplicant.conf`, затем впишите свой пароль, `systemctl restart wpa_supplicant`.
 
-</div>
+<span id="Partitioning"></span>
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-## Tethered (Internet Sharing)
-
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-If you can not connect to the internet via cable or wifi, you may use smartphone's tethering capability to share internet. Depending on your smartphones capabilities, only stock kernel drivers may be required which can help providing a working network connection.
-
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-### Wireless
-
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-<a href="NetworkManager" class="wikilink" title="NetworkManager">NetworkManager</a> is installed on the graphical ISO, meaning that it is possible to use `nmtui` on the command line to connect to a network.
-
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-Using the "Applications" tab at top left or the launcher bar at bottom, choose a terminal application and from there launch `nmtui`. This will allow you to 'activate' a (wireless) connection - your local SSIDs should be visible in the list, else you can add a new connection. When the wireless connection is active and you have tested it, it is likely the install app which launched on startup has not detected the new connection. Close down the install app, and reopen it from the launcher bar at the bottom of the screen. This should then find the new connection and proceed.
-
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-On the minimal ISO, or if you are more familiar with <a href="wpa_supplicant" class="wikilink" title="wpa_supplicant">wpa_supplicant</a> then you can also run `wpa_passphrase ESSID | sudo tee /etc/wpa_supplicant.conf`, then enter your password and `systemctl restart wpa_supplicant`.
-
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-## Partitioning
-
-</div>
+## Разметка
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
@@ -275,85 +143,51 @@ To partition the persistent storage run `sudo fdisk /dev/diskX` and follow instr
 $ [ -d /sys/firmware/efi/efivars ] && echo "UEFI" || echo "Legacy"
 ```
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-A very simple example setup is given here.
-
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
+Очень простой вариант разметок дан тут.
 
 ### Legacy Boot (MBR)
 
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-- o (dos disk label)
+- o (раздел dos диска)
 - n new
-- p primary (4 primary in total)
-- 1 (partition number \[1/4\])
-- 2048 first sector (alignment for performance)
-- +500M last sector (boot sector size)
-- rm signature (Y), if ex. =\> warning of overwriting existing system, could use wipefs
+- p primary (4 главных в сумме)
+- 1 (номер раздела \[1/4\])
+- 2048 первый раздел (соответствуйте ради эффективности)
+- +500M последний сектор (сектор для загрузки)
+- rm signature (Y), если она существует =\> предупреждение о перезаписи существующей файловой системы; можно использовать wipefs
 - n
 - p
 - 2
-- default (fill up partition)
-- default (fill up partition)
-- w (write)
-
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
+- default (заполнить раздел)
+- default (заполнить раздел)
+- w (записать)
 
 ### UEFI
 
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-- g (gpt disk label)
+- g (раздел gpt диска)
 - n
-- 1 (partition number \[1/128\])
-- 2048 first sector
-- +500M last sector (boot sector size)
+- 1 (номер раздела \[1/128\])
+- 2048 первый сектор
+- +500M последний сектор (размер загрузочного раздела)
 - t
 - 1 (EFI System)
 - n
 - 2
-- default (fill up partition)
-- default (fill up partition)
-- w (write)
+- default (заполните раздел)
+- default (заполните раздел)
+- w (записать)
 
-</div>
+<span id="Format_partitions"></span>
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
+### Форматирование разделов
 
-### Format partitions
+Для примера возьмем файловую систему формата <a href="ext4" class="wikilink" title="ext4">ext4</a>, По желанию, можете также использовать и другие форматы такие как <a href="Btrfs" class="wikilink" title="Btrfs">Btrfs</a> или <a href="ZFS" class="wikilink" title="ZFS">ZFS</a>:
 
-</div>
+- <a href="Bcachefs#NixOS_установка_в_bcachefs" class="wikilink" title="Bcachefs#NixOS установка в bcachefs">Bcachefs#NixOS установка в bcachefs</a>
+- <a href="Btrfs#Установка_NixOS_на_btrfs" class="wikilink" title="Btrfs#Установка NixOS на btrfs">Btrfs#Установка NixOS на btrfs</a>
+- <a href="LVM#Обычная_установка" class="wikilink" title="LVM#Обычная установка">LVM#Обычная установка</a>
+- <a href="ZFS#Легкая_установка_NixOS_ZFS_в_root" class="wikilink" title="ZFS#Легкая установка NixOS ZFS в root">ZFS#Легкая установка NixOS ZFS в root</a>
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-The example below uses the <a href="ext4" class="wikilink" title="ext4">ext4</a> filesystem format. If you wish to use other filesystem formats such as <a href="Btrfs" class="wikilink" title="Btrfs">Btrfs</a> or <a href="ZFS" class="wikilink" title="ZFS">ZFS</a>:
-
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-- <a href="Bcachefs#NixOS_installation_on_bcachefs" class="wikilink" title="Bcachefs#NixOS installation on bcachefs">Bcachefs#NixOS installation on bcachefs</a>
-- <a href="Btrfs#Installation_of_NixOS_on_btrfs" class="wikilink" title="Btrfs#Installation of NixOS on btrfs">Btrfs#Installation of NixOS on btrfs</a>
-- <a href="LVM#Basic_Setup" class="wikilink" title="LVM#Basic Setup">LVM#Basic Setup</a>
-- <a href="ZFS#Simple_NixOS_ZFS_on_root_installation" class="wikilink" title="ZFS#Simple NixOS ZFS on root installation">ZFS#Simple NixOS ZFS on root installation</a>
-
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-This is useful for having multiple setups and makes partitions easier to handle
-
-</div>
+Это полезно для использования нескольких конфигураций и упрощает управление разделами.
 
 ``` console
 $ lsblk # lists current system block devices
@@ -364,113 +198,59 @@ $ lsblk # lists current system block devices
 # mount /dev/disk/by-label/boot /mnt/boot
 ```
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
+<span id="NixOS_configuration"></span>
 
-## NixOS configuration
+## Конфигурация NixOS
 
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-NixOS is configured through a <a href="Overview_of_the_NixOS_Linux_distribution#Declarative_Configuration" class="wikilink" title="declarative configuration">declarative configuration</a> file. To generate a default config file, run <a href="nixos-generate-config" class="wikilink" title="nixos-generate-config">nixos-generate-config</a>:
-
-</div>
+Настройка NixOS осуществляется с помощью файла <a href="Overview_of_the_NixOS_Linux_distribution#Declarative_Configuration" class="wikilink" title="декларативной конфигурации">декларативной конфигурации</a>. Чтобы создать файл конфигурации по умолчанию, выполните <a href="nixos-generate-config" class="wikilink" title="nixos-generate-config">nixos-generate-config</a>:
 
 ``` console
 # nixos-generate-config --root /mnt
 # nano /mnt/etc/nixos/configuration.nix
 ```
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
+Для информации как работать с системной конфигурацией, посмотрите <a href="NixOS_system_configuration" class="wikilink" title="NixOS system configuration">NixOS system configuration</a>. Для домашних видов конфигураций смотрите <a href="NixOS_as_a_desktop" class="wikilink" title="NixOS as a desktop">NixOS as a desktop</a>
 
-For information on working with a system configuration, see <a href="NixOS_system_configuration" class="wikilink" title="NixOS system configuration">NixOS system configuration</a>. For desktop-specific configurations, see <a href="NixOS_as_a_desktop" class="wikilink" title="NixOS as a desktop">NixOS as a desktop</a>.
+Самые ощутимые изменения:
 
-</div>
+- раскладка клавиатуры, т. е. <a href="Keyboard_Layout_Customization" class="wikilink" title="services.xserver.xkb.layout"><code>services.xserver.xkb.layout</code></a>
+- <a href="networking" class="wikilink" title="networking">networking</a> (Wi-Fi); если возникнут проблемы, решение приведено ниже
+- установка <a href=":Category:Text_Editor" class="wikilink" title="текстового редактора">текстового редактора</a> для правки конфигурации
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
+Поиск по самодокументируемым опциям NixOS можно выполнить с помощью [(инструмент поиска опций NixOS)](https://search.nixos.org/options).
 
-Most essential changes:
+<span id="Swap_file"></span>
 
-</div>
+### Файл подкачки
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
+Для дополнительных методов конфигурации файла подкачки, смотрите <a href="Swap" class="wikilink" title="Swap">Swap</a>. В следующем примере показано, как создать и включить <a href="Swap#Swap_file" class="wikilink" title="файл подкачки">файл подкачки</a>:
 
-- keyboard layout, ie <a href="Keyboard_Layout_Customization" class="wikilink" title="services.xserver.xkb.layout"><code>services.xserver.xkb.layout</code></a>
-- <a href="networking" class="wikilink" title="networking">networking</a> (wifi), see below for fix if it breaks
-- install <a href=":Category:Text_Editor" class="wikilink" title="editor">editor</a> to edit the configuration
+<span id="Bootloader"></span>
 
-</div>
+## Загрузчик
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
+NixOS поддерживает различные <a href="Bootloader" class="wikilink" title="загрузчики">загрузчики</a> такие как <a href="GNU_GRUB" class="wikilink" title="GNU GRUB">GNU GRUB</a> и <a href="Systemd/boot" class="wikilink" title="Systemd/boot">Systemd/boot</a>
 
-The self-documenting NixOS options can be searched with [NixOS options search](https://search.nixos.org/options).
+Systemd-boot — рекомендуемый загрузчик. В следующем примере показано, как включить systemd-boot в вашей конфигурации:
 
-</div>
+Возможно, вы также захотите настроить <a href="Secure_Boot" class="wikilink" title="Secure Boot">Secure Boot</a>.
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
+<span id="Users"></span>
 
-### Swap file
+### Пользователи
 
-</div>
+Для информации как создавать и редактировать пользователей, смотрите <a href="User_management" class="wikilink" title="User management">User management</a> и . Например:
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
+<span id="NixOS_installation"></span>
 
-For additional methods of configuring swap, see <a href="Swap" class="wikilink" title="Swap">Swap</a>. The following example demonstrates how to create and enable a <a href="Swap#Swap_file" class="wikilink" title="swap file">swap file</a>:
-
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-### Bootloader
-
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-NixOS supports multiple <a href="Bootloader" class="wikilink" title="bootloaders">bootloaders</a> such as <a href="GNU_GRUB" class="wikilink" title="GNU GRUB">GNU GRUB</a> and <a href="Systemd/boot" class="wikilink" title="Systemd/boot">Systemd/boot</a>.
-
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-Systemd-boot is the recommended bootloader. The following example demonstrates how to enable systemd-boot in your configuration:
-
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-You may also wish to configure <a href="Secure_Boot" class="wikilink" title="Secure Boot">Secure Boot</a>.
-
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-### Users
-
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-For information on creating and managing users, see <a href="User_management" class="wikilink" title="User management">User management</a> and the . See an example below:
-
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-## NixOS installation
-
-</div>
+## Установка NixOS
 
 ``` console
 # cd /mnt
 # nixos-install
 ```
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-after installation: Run `passwd` to change user password.
-
-</div>
+после установки: Запустите `passwd` для изменения пароля пользователя
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
@@ -483,34 +263,20 @@ if internet broke/breaks, try one of the following:
 # nixos-rebuild switch --option binary-caches "" # no downloads
 ```
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-- wpa_supplicant flags to connect to wifi
-
-</div>
+wpa_supplicant flags для подключения к wifi
 
 <hr />
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
+<span id="Additional_notes_for_specific_hardware"></span>
 
-## Additional notes for specific hardware
+## Дополнительные заметки для конкретных устройств
 
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-These are collected notes or links for specific hardware issues.
-
-</div>
+Здесь собраны заметки или ссылки для решения конкретных проблем у устройств.
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
 - Blog post how to install NixOS on a [Dell 9560](http://grahamc.com/blog/nixos-on-dell-9560)
 - Brand servers may require extra kernel modules be included into initrd (`boot.initrd.extraKernelModules` in configuration.nix) For example HP Proliant needs "hpsa" module to see the disk drive.
-
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
 
 </div>
 

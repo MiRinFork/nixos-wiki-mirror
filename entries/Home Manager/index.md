@@ -71,13 +71,7 @@ Here is the skeleton of how to add Home Manager as a module to your system(s) vi
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
-  outputs =
-    {
-      self,
-      nixpkgs,
-      home-manager,
-      ...
-    }@inputs:
+  outputs = { self, nixpkgs, home-manager, ... } @ inputs:
     {
       nixosConfigurations.<HOSTNAME> = nixpkgs.lib.nixosSystem { # replace <HOSTNAME> with your actual hostname
         system = "x86_64-linux";
@@ -88,6 +82,7 @@ Here is the skeleton of how to add Home Manager as a module to your system(s) vi
             home-manager = {
               useGlobalPkgs = true;
               useUserPackages = true;
+              extraSpecialArgs = { inherit inputs; } #If you want access to inputs in your home.nix
               users.<USERNAME> = ./home.nix; # replace <USERNAME> with your actual username
             };
           }

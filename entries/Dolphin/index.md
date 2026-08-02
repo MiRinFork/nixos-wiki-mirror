@@ -8,7 +8,9 @@ Dolphin is the <a href="KDE" class="wikilink" title="KDE">KDE</a> desktop's file
 
 ### **Open with menu fix**
 
-<https://github.com/rumboon/dolphin-overlay>
+When using dolphin on other Desktop or Window Managers, the Open With menu may not show any applications.
+
+A comprehensive solution can be found with [rumboon's dolphin-overlay](https://github.com/rumboon/dolphin-overlay), but a more straight-forward fix would be to add the following line to your configuration file:
 
 ### Icons
 

@@ -50,7 +50,7 @@ U-Boot for this board is packaged in nixpkgs, and Hydra builds can be found here
 
 <https://hydra.nixos.org/job/nixpkgs/trunk/ubootRock64.aarch64-linux>
 
-This bootloader is not entirely open, incorporating a binary blob for the tertiary program loader (TPL). If your have nix installed you can download the latest version with (This command also works on different architectures since it can be downloaded from the binary cache):
+This bootloader is not entirely open, incorporating a binary blob for the tertiary program loader (TPL). If you have nix installed, you can download the latest version with (This command also works on different architectures since it can be downloaded from the binary cache):
 
 ``` console
 $ nix-build '<nixpkgs>' -A ubootRock64 --argstr system aarch64-linux

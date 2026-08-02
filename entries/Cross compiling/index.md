@@ -1,6 +1,6 @@
 <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
 
-<!-- Source page: Cross Compiling -->
+<!-- Source page: Cross compiling -->
 
 <a href="Nixpkgs" class="wikilink" title="Nixpkgs">Nixpkgs</a> provides excellent support in configuring it for cross-platform compiling tasks since 18.09<sup>\[citation needed\]</sup>.
 

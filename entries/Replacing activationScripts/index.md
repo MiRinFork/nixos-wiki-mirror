@@ -4,7 +4,7 @@
 
 NixOS used to rely on so called activation scripts that were defined in `system.activationScripts` for various tasks that need to be performed during the boot and also when switching to a new system with switch-to-configuration. These scripts, however, are quite inflexible and unnecessarily serialize the boot process.
 
-There is a [larger effort to replace all activation scripts](https://github.com/NixOS/nixpkgs/issues/475305) with other means and it is now already possible to build NixOS systems without any activation scripts. To fully deprecated activation scripts, however, occurrences inside Nixpkgs and outside still need to be migrated. This page describes effective strategies to replace activation scripts in the order you should consider them.
+There is a [larger effort to replace all activation scripts](https://github.com/NixOS/nixpkgs/issues/475305) with other means and it is now already possible to build NixOS systems without any activation scripts. To fully deprecate activation scripts, however, occurrences inside Nixpkgs and outside still need to be migrated. This page describes effective strategies to replace activation scripts in the order you should consider them.
 
 #### [`systemd-tmpfiles`](https://www.freedesktop.org/software/systemd/man/latest/tmpfiles.d.html)
 

@@ -23,7 +23,7 @@ Git can be configured using <a href="Home_Manager" class="wikilink" title="Home 
 ``` nix
 programs.git = {
   enable = true;
-  config.user = {
+  settings.user = {
     name  = "John Doe";
     email = "johndoe@example.com";
   };

@@ -25,7 +25,7 @@ The example configuration below
 5.  does not store authentik's configuration such as users, groups, policies declaratively
 6.  uses the unstable version of authentik. authentik version 2026 introduced several configuration option changes and therefore, for a new installation, it is advisable to use the unstable nixpkgs package which is already on 2026.x.y. This reduces future required configuration changes.
 
-### Preresiquites
+### Prerequisites
 
 1.  This example suggest to use <https://auth.yourdomain.example> as the URL of authentik. Add the DNS records (A and AAAA) for `auth` to the DNS configuration of your domain. If you change the `domain` option, you can use any other subdomain.
 2.  Create an agenix secret file named `authentik-secret-key.age` and add a secret key using `openssl rand -base64 60 | tr -d '\n'`[^1]

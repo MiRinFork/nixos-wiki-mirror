@@ -175,8 +175,11 @@ If NixOS cannot find a scanner located on your network, you may be interested in
 ``` nix
 {
   ...
-  services.avahi.enable = true;
-  services.avahi.nssmdns = true;
+  services.avahi = {
+    enable = true;
+    nssmdns4 = true;  # for IPv4
+  # nssmdns6 = true;  # for IPv6
+  };
   ...
 }
 ```

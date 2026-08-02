@@ -1,10 +1,10 @@
 <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
 
-<!-- Source page: Shell scripts -->
+<!-- Source page: Shell scripts/en -->
 
 <languages/>
 
-<translate> The package `writeShellScript` can be used to add shell scripts to Nix expressions. </translate>
+The package `writeShellScript` can be used to add shell scripts to Nix expressions.
 
 ``` nix
 someBuildHelper = { name, sha256 }:
@@ -21,26 +21,22 @@ someBuildHelper = { name, sha256 }:
   };
 ```
 
-<translate>
-
 ## External builder.sh script
 
-Longer Bash scripts are usually stored as external script files, and called from Nix: </translate>
+Longer Bash scripts are usually stored as external script files, and called from Nix:
 
-<translate> See also:
+See also:
 
-- \[<tvar name="1"><https://github.com/NixOS/nixpkgs/issues/23099></tvar> Make a derivation with no source\]
-- \[<tvar name="2"><https://nixos.org/guides/nix-pills/working-derivation.html></tvar> Nix Pills: Chapter 7. Working Derivation\]
+- [Make a derivation with no source](https://github.com/NixOS/nixpkgs/issues/23099)
+- [Nix Pills: Chapter 7. Working Derivation](https://nixos.org/guides/nix-pills/working-derivation.html)
 
 ### runCommand + builder.sh
 
-Instead of `stdenv.mkDerivation`, `runCommand` can also be used to call an external Bash script: </translate>
-
-<translate>
+Instead of `stdenv.mkDerivation`, `runCommand` can also be used to call an external Bash script:
 
 ## Packaging
 
-Example: </translate>
+Example:
 
 ``` nix
 # nix-build -E 'with import <nixpkgs> { }; callPackage ./default.nix { }'
@@ -73,26 +69,24 @@ Example: </translate>
   }
 ```
 
-<translate> `wrapProgram` will move the original script to `.github-downloader.sh-wrapped`.
+`wrapProgram` will move the original script to `.github-downloader.sh-wrapped`.
 
 ### Command not found
 
 For example, the script throws the error `svn: command not found`, because the dependency `subversion` is missing.
 
-When a command is missing, you can use `nix-locate` to find the package name. for example, the `stat` command: </translate>
+When a command is missing, you can use `nix-locate` to find the package name. for example, the `stat` command:
 
 ``` console
 $ nix-locate bin/stat | grep 'bin/stat$'
 coreutils.out       0 s /nix/store/vr96j3cxj75xsczl8pzrgsv1k57hcxyp-coreutils-8.31/bin/stat
 ```
 
-<translate>
-
 ## Debugging embedded scripts
 
 When a bash script fails, it prints only an error message, but no code location.
 
-To trace commands and line numbers, one can use </translate>
+To trace commands and line numbers, one can use
 
 ``` console
 $ nix-build -E 'with import <nixpkgs> { }; callPackage ./test-trace.nix { }'
@@ -104,8 +98,6 @@ building '/nix/store/2v5biwny8plpyk2bv6cfr41ppp0a1i4k-output.txt.drv'...
 /nix/store/ppidmnpd5m762x9kqj8jd3g7df7dknrz-output.txt
 ```
 
-<translate>
-
 ## POSIX shell
 
 Some environments (like OpenWRT, via BusyBox) offer only a "limited" shell (`sh` instead of `bash`).
@@ -114,11 +106,9 @@ On NixOS, POSIX shells are provided by the packages `dash` and `posh`.
 
 ## See also
 
-- <a href="&lt;tvar_name=&quot;1&quot;&gt;Nix-shell_shebang&lt;/tvar&gt;" class="wikilink" title="Nix-shell shebang">Nix-shell shebang</a>
-- \[<tvar name="2"><https://nixos.org/manual/nixpkgs/stable/#ssec-stdenv-functions></tvar> Shell functions section in the Nixpkgs manual\]
-- \[<tvar name="3"><https://gist.github.com/travisbhartwell/f972aab227306edfcfea></tvar> nix-shell and Shebang Lines\]
-- \[<tvar name="4"><https://ertt.ca/nix/shell-scripts/></tvar> Shell Scripts with Nix\]
-
-</translate>
+- <a href="Nix-shell_shebang" class="wikilink" title="Nix-shell shebang">Nix-shell shebang</a>
+- [Shell functions section in the Nixpkgs manual](https://nixos.org/manual/nixpkgs/stable/#ssec-stdenv-functions)
+- [nix-shell and Shebang Lines](https://gist.github.com/travisbhartwell/f972aab227306edfcfea)
+- [Shell Scripts with Nix](https://ertt.ca/nix/shell-scripts/)
 
 <a href="Category:Development{{#translation:}}" class="wikilink" title="Shell scripts">Shell scripts</a> <a href="Category:Shell{{#translation:}}" class="wikilink" title="Shell scripts">Shell scripts</a>

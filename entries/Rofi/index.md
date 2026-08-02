@@ -13,3 +13,5 @@ You can install Rofi simply with:
 For a more declarative setup you can use Home Manager. You can find more options at [programs.rofi](https://search.nixos.org/options?query=programs.rofi&source=home_manager) in Home Manager options.
 
 A simple example:
+
+<a href="Category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="Category:App_launchers" class="wikilink" title="Category:App launchers">Category:App launchers</a>

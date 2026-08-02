@@ -34,8 +34,6 @@ Support for automatic logins is present when using the \`cosmic-greeter\` login 
 }
 ```
 
-Alternatively, there is a [flake](https://github.com/lilyinstarlight/nixos-cosmic) to setup COSMIC on NixOS.
-
 ### Excluding COSMIC applications
 
 To exclude certain applications that are installed by default with COSMIC, set the module option (only available in 25.11):

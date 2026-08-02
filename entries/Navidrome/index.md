@@ -4,7 +4,7 @@
 
 [Navidrome](https://www.navidrome.org) is a self-hosted music streaming server that allows users to manage and play their personal music collections from various devices. Designed with a user-friendly interface, it supports features like playlists, searching, and streaming, all while emphasizing privacy and data ownership.
 
-### Setup
+## Setup
 
 Simply add to your system configuration and apply
 
@@ -37,7 +37,34 @@ services.navidrome = {
 };
 ```
 
-### Tips and tricks
+## Plugins
+
+Navidrome plugins packaged in Nixpkgs can be installed declaratively with the option.
+
+``` nix
+{ pkgs, ... }:
+{
+  services.navidrome = {
+    enable = true;
+
+    plugins = with pkgs.navidromePlugins; [
+      audiomuseai
+      apple-music
+      listenbrainz-daily-playlist
+      lyrics-plugin
+    ];
+
+    # The lyrics plugin bundle is named lyrics-plugin.ndp.
+    settings.LyricsPriority = ".ttml,.yaml,.yml,.elrc,.srt,lyrics-plugin,embedded,.lrc,.txt";
+  };
+}
+```
+
+Available packages are exposed under `pkgs.navidromePlugins`. The NixOS module validates the selected packages, builds a Navidrome package containing their `.ndp` bundles, and manages the plugin folder automatically. The Nix attribute name can differ from the installed bundle name; use the attribute names shown above in .
+
+Installing a plugin makes it available to Navidrome. Enable it, grant its requested permissions, and configure plugin-specific settings in the Navidrome web interface under `Settings → Plugins`. Do not set `services.navidrome.settings.Plugins.Folder`, because the NixOS module manages that value.
+
+## Tips and Tricks
 
 #### Import playlists
 

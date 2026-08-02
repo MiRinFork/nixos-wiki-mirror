@@ -6,9 +6,9 @@
 
 ## Installation
 
-To install Mullvad VPN, you need to enable it in your system options:
+To install Mullvad VPN, simply enable the service in the system configuration:
 
-If you want to use the GUI application:
+The GUI application may be enabled in addition to the main Mullvad service:
 
 ## Configuration
 
@@ -18,6 +18,8 @@ The example below sets up a few custom lists that let you select a whole contine
 
 ### Autostarting the GUI application
 
-If you don't want to rely on Mullvad's autostart file in `~/.config/autostart`, (Perhaps because your configuration is <a href="Impermanence" class="wikilink" title="stateless">stateless</a>) you can set up an autostart file with `makeAutostartItem`:
+If you don't want to rely on Mullvad's autostart file in `~/.config/autostart`, you can set up an autostart file with `makeAutostartItem`:
+
+This is useful when the home directory is <a href="Impermanence" class="wikilink" title="stateless">stateless</a>, as the file configured by Mullvad would not be persistent.
 
 <a href="Category:VPN" class="wikilink" title="Category:VPN">Category:VPN</a> <a href="Category:Networking" class="wikilink" title="Category:Networking">Category:Networking</a>
