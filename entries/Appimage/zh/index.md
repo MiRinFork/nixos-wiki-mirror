@@ -16,7 +16,28 @@
 
 ``` shell
 $ nix-shell -p appimage-run
-$ appimage-run $AppImageFile
+$ appimage-run path/to/application.AppImage
+```
+
+<span id="Additional_Packages"></span>
+
+##### 额外软件包
+
+部分 AppImage 包仍存在问题，因此您可以用额外软件包进行覆盖，例如
+
+``` nix
+programs.appimage.enable = true;
+programs.appimage.binfmt = true;
+programs.appimage.package = pkgs.appimage-run.override 
+{
+  extraPkgs = pkgs: 
+  [
+    pkgs.icu
+    pkgs.libxcrypt-legacy
+    pkgs.python312
+    pkgs.python312Packages.torch
+  ]; 
+};
 ```
 
 <span id="Packaging"></span>
@@ -80,6 +101,6 @@ programs.appimage = {
 };
 ```
 
-这样 AppImage 文件就可以像普通程序一样直接调用
+这样 AppImage 文件就可以像普通程序一样直接调用。
 
 <a href="Category:Software" class="wikilink" title="Category:Software">Category:Software</a>

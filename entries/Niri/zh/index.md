@@ -18,6 +18,8 @@
 
 niri 的配置路径为 。因此，可以使用 <a href="Special:MyLanguage/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> 进行配置：
 
+如果您希望在构建过程中对配置进行验证，可以使用 ，用法如下：
+
 您可能想从[默认配置文件](https://github.com/niri-wm/niri/blob/main/resources/default-config.kdl)开始，如[这里](https://github.com/niri-wm/niri/wiki/Getting-Started#main-default-hotkeys)所述。
 
 有关 niri 的配置选项，请参阅 [此 wiki](https://niri-wm.github.io/niri/)。
@@ -42,71 +44,39 @@ niri 的配置路径为 。因此，可以使用 <a href="Special:MyLanguage/Hom
 
 ### IME 在 Electron 应用中无法正常工作
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
+有一种通用的解决方法，即按照<a href="Special:MyLanguage/Wayland#Electron_and_Chromium" class="wikilink" title="Wayland#Electron_and_Chromium">Wayland#Electron_and_Chromium</a>中的说明设置：
 
-There is a general workaround to set as described in <a href="Special:MyLanguage/Wayland#Electron_and_Chromium" class="wikilink" title="Wayland#Electron_and_Chromium">Wayland#Electron_and_Chromium</a>:
-
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-However, since niri does not support text-input-v1, sometimes enabling text-input-v3 by manually adding flag is necessary for IME to work:
-
-</div>
+然而，由于 niri 不支持 text-input-v1，有时需要通过手动添加 标志来启用 text-input-v3，IME 才能正常工作：
 
 ``` console
 $ slack --wayland-text-input-version=3
 ```
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-`wrapProgram` may be used to add the flag automatically:
-
-</div>
+`wrapProgram` 可用于自动添加该标志：
 
 <span id="XWayland_apps_not_working"></span>
 
 ### XWayland 应用无法正常工作
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-There is a optional dependency for niri which is highly recommended to install (you can read [this](https://github.com/niri-wm/niri/wiki/Xwayland) article to learn more about this)
-
-</div>
+Niri 有一个可选依赖，强烈建议安装（您可阅读 [这篇文章](https://github.com/niri-wm/niri/wiki/Xwayland) 以了解更多相关信息）。
 
 或者使用 <a href="Special:MyLanguage/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a>
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-After you installed niri will integrate it out of the box and all of your XWayland apps will function properly.
-
-</div>
+安装 后，niri 将会将其无缝集成，您的所有 XWayland 应用都将正常运行。
 
 <span id="File_picker_not_working"></span>
 
 ### 文件选择器无法正常工作
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
+如果您正在使用 `xdg-desktop-portal-gnome`，它会尝试将 Nautilus 用作文件选择器，但如果未安装 Nautilus，则会失败。
 
-If you are using `xdg-desktop-portal-gnome`, it will attempt to use Nautilus as the file picker, which will fail if Nautilus is not installed.
-
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-To work around this problem, you can force usage of the gtk or kde portals for file picker instead:
-
-</div>
+为解决此问题，您可以改为强制使用 GTK 或 KDE 的文件选择器门户：
 
 <span id="Waybar_launches_twice"></span>
 
 ### Waybar 启动两次
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-When using a configuration option like programs.waybar.enable, waybar may launch twice on Niri. This is because the [default Niri config file launches waybar on launch](https://github.com/niri-wm/niri/blob/b07bde3ee82dd73115e6b949e4f3f63695da35ea/resources/default-config.kdl#L271). Remove the spawn-at-startup "waybar" from the config file, or add waybar to your systems packages without using the home-manager option.
-
-</div>
+在使用诸如 programs.waybar.enable 这样的配置选项时，waybar 在 Niri 上可能会启动两次。这是因为[默认的 Niri 配置文件会在系统启动时自动启动 waybar](https://github.com/niri-wm/niri/blob/b07bde3ee82dd73115e6b949e4f3f63695da35ea/resources/default-config.kdl#L271)。请从该配置文件中移除 spawn-at-startup "waybar" 的设置，或者在不使用 home-manager 选项的情况下，将 waybar 添加到系统的软件包列表中。
 
 <span id="See_Also"></span>
 

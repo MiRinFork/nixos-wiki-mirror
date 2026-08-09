@@ -8,7 +8,7 @@
 
 Since Nix uses <a href="Wikipedia:Executable" class="wikilink" title="binary">binary</a> caching, this provides a unique compromise between the binary-oriented approach used by distributions such as Debian and the <a href="Wikipedia:Source_code" class="wikilink" title="source">source</a>-oriented approach used by distributions such as Gentoo. Binaries can be used for standard components, and custom-built packages and modules can be used automatically when a pre-built binary is not available.
 
-Stable NixOS releases are delivered twice a year (around the end of May and the end of November). NixOS was created by [Eelco Dolstra](https://edolstra.github.io/) and <a href="Wikipedia:Armijn_Hemel" class="wikilink" title="Armijn Hemel">Armijn Hemel</a>, and initially released in 2013[^1]. It is community developed and maintained under the stewardship of the <a href="Special:MyLanguage/Nix_Community#NixOS_Foundation" class="wikilink" title="NixOS Foundation">NixOS Foundation</a>.
+Stable NixOS releases are delivered twice a year (around the end of May and the end of November). NixOS was created by [Eelco Dolstra](https://edolstra.github.io/) and <a href="Wikipedia:Armijn_Hemel" class="wikilink" title="Armijn Hemel">Armijn Hemel</a>, and initially released in 2013<tvar name=ref>[^1]</tvar>. It is community developed and maintained under the stewardship of the <a href="Special:MyLanguage/Nix_Community#NixOS_Foundation" class="wikilink" title="NixOS Foundation">NixOS Foundation</a>.
 
 ## Installation
 

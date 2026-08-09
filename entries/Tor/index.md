@@ -85,6 +85,9 @@ services.tor = {
     Nickname = "YourNickname";  
     ContactInfo = "your-email@example.com"; 
 
+    # obfs4 proxy, use when running a bridge. Change port as needed
+    ServerTransportListenAddr = [ "obfs4 0.0.0.0:8443" ];
+
     # Bandwidth settings
     MaxAdvertisedBandwidth = "100 MB";  
     BandWidthRate = "50 MB";  

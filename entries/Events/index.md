@@ -6,6 +6,14 @@ At several conferences people meet and talk about Nix/NixOS. This article is an 
 
 ### NixCon
 
+#### NixCon 2026
+
+- <https://2026.nixcon.org/>
+
+#### NixCon 2025
+
+- <https://2025.nixcon.org/>
+
 #### NixCon 2024
 
 [^1]

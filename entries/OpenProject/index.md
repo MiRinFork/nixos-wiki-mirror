@@ -21,3 +21,5 @@ services.openproject = {
 ```
 
 OpenProject initialization will take some time, after that it will be available at <http://localhost:6346>. Default login is user `admin` with password `admin`.
+
+<a href="Category:Web_Applications" class="wikilink" title="Category:Web Applications">Category:Web Applications</a>

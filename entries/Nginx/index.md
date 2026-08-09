@@ -295,7 +295,7 @@ Nginx can be run with optional modules. You can add them like this:
 `    ...`  
 `  ]; });`
 
-See [this](https://github.com/NixOS/nixpkgs/blob/master/pkgs/servers/http/nginx/modules.nix#L69) for a more comprehensive list of modules available via configuration.
+See [this](https://github.com/NixOS/nixpkgs/tree/master/pkgs/servers/http/nginx/modules) for a more comprehensive list of modules available via configuration.
 
 ## Let's Encrypt certificates
 

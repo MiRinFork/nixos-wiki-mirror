@@ -8,7 +8,7 @@
 
 Clipboard managers provide additional features such as clipboard history or synchronization. Options supported by NixOS include (but are not limited to):
 
-- [cliphist](https://www.cliphist.com/)
+- [cliphist](https://github.com/sentriz/cliphist)
 - [clipman](https://github.com/NikitaBeloglazov/clipman)
 - [wl-clip-persist](https://github.com/Linus789/wl-clip-persist)
 - [clipse](https://github.com/savedra1/clipse)

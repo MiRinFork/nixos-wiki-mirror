@@ -2,7 +2,13 @@
 
 <!-- Source page: Appimage/ru -->
 
-<languages/> [AppImage](https://appimage.org/) - тип монолитных пакетов для приложений Linux. Содержит все зависимости приложения в одном файле, состоящем из исполняемого файла и встроенной файловой системы.
+<languages/>
+
+<div class="mw-translate-fuzzy">
+
+[AppImage](https://appimage.org/) - тип монолитных пакетов для приложений Linux. Содержит все зависимости приложения в одном файле, состоящем из исполняемого файла и встроенной файловой системы.
+
+</div>
 
 <span id="Usage"></span>
 
@@ -16,7 +22,34 @@
 
 ``` shell
 $ nix-shell -p appimage-run
-$ appimage-run $AppImageFile
+$ appimage-run path/to/application.AppImage
+```
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+##### Additional Packages
+
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+Some appimages still have issues, so you can override for additional pkgs such as
+
+</div>
+
+``` nix
+programs.appimage.enable = true;
+programs.appimage.binfmt = true;
+programs.appimage.package = pkgs.appimage-run.override 
+{
+  extraPkgs = pkgs: 
+  [
+    pkgs.icu
+    pkgs.libxcrypt-legacy
+    pkgs.python312
+    pkgs.python312Packages.torch
+  ]; 
+};
 ```
 
 <span id="Packaging"></span>
@@ -88,6 +121,10 @@ programs.appimage = {
 };
 ```
 
+<div class="mw-translate-fuzzy">
+
 Таким образом файлы AppImage могут вызываться напрямую, как если бы они были обычными программами
+
+</div>
 
 <a href="Category:Software" class="wikilink" title="Category:Software">Category:Software</a>

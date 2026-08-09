@@ -8,7 +8,11 @@
 
 Dado que Nix utiliza caché de <a href="Wikipedia:Executable" class="wikilink" title="binarios">binarios</a>, esto proporciona un equilibrio único entre el enfoque orientado a binarios utilizado por distribuciones como Debian y el enfoque orientado al <a href="Wikipedia:Source_code" class="wikilink" title="código fuente">código fuente</a> utilizado por distribuciones como Gentoo. Los binarios pueden utilizarse para componentes estándar, y los paquetes y módulos personalizados pueden utilizarse automáticamente cuando no hay disponible un binario precompilado.
 
+<div class="mw-translate-fuzzy">
+
 Las versiones estables de NixOS se publican dos veces al año (alrededor de finales de mayo y finales de noviembre). NixOS fue creado por Eelco Dolstra y <a href="Wikipedia:Armijn_Hemel" class="wikilink" title="Armijn Hemel">Armijn Hemel</a>, y publicado inicialmente en 2003. Es desarrollado y mantenido por la comunidad bajo la supervisión de la <a href="Special:MyLanguage/Nix_Community#NixOS_Foundation" class="wikilink" title="Fundación NixOS">Fundación NixOS</a>.
+
+</div>
 
 <span id="Installation"></span>
 

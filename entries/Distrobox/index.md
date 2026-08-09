@@ -35,6 +35,14 @@ For further usage, please refer to the [Distrobox](https://distrobox.it/#distrob
 
 ## Tips and tricks
 
+### Using host fonts/icons/themes inside Distrobox containers
+
+By default, Distrobox tries to bind mount the host's `/run/host/usr/share/{fonts, icons, themes}` directory inside the container as `/usr/local/share/{fonts, icons, themes}`[1](https://github.com/89luca89/distrobox/blob/d925c3f10315b72ec38a0405e57fe06c87edc754/distrobox-init#L997-L1000). However, on NixOS, the directory is non-existent due to NixOS not following the [FHS Standard](https://refspecs.linuxfoundation.org/FHS_3.0/fhs/index.html).
+
+If you have already installed fonts/icons/themes on your NixOS system and want them to be accessible inside Distrobox containers by default, follow the instructions provided in this page: <a href="Fixes_for_non-Nix_applications#Flatpak,_Distrobox,_Appimage_and_other_non-Nix_applications_can&#39;t_find_system_fonts/icons/themes" class="wikilink" title="Fixes for non-Nix applications#Flatpak, Distrobox, Appimage and other non-Nix applications can&#39;t find system fonts/icons/themes">Fixes for non-Nix applications#Flatpak, Distrobox, Appimage and other non-Nix applications can't find system fonts/icons/themes</a> .
+
+Note that although the aforementioned solution only bindmounts paths to `/usr/share/`, the container manager being used with Distrobox (`podman`, `docker`, `lilypod` etc) will automatically make the host's root filesystem (`/`) accessible inside the container as `/run/host/`, making the paths needed by Distrobox accessible as usual, thus the aforementioned fix is sufficient.
+
 ### Using different architecture
 
 The following example will run an Ubuntu container with a different architecture than the host, in this case arm64.

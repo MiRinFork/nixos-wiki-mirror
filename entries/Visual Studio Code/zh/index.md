@@ -639,12 +639,4 @@ See <https://github.com/microsoft/vscode-remote-release/issues/2509> and <https:
 
 </div>
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-</div>
-
 <a href="Category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="Category:IDE" class="wikilink" title="Category:IDE">Category:IDE</a>

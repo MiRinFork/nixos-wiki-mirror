@@ -22,8 +22,24 @@ services.gotosocial = {
 };
 ```
 
+## Usage
+
+To create users, following utility and commands can be used.
+
+``` bash
+sudo gotosocial-admin account create --username <nickname> --email <email> --password <password>
+sudo gotosocial-admin account confirm --username <nickname>
+```
+
+Promote a specific user to an administrator.
+
+``` bash
+sudo gotosocial-admin account promote --username <nickname>
+```
+
 ## See also
 
 - Upstream documentation in the [NixOS manual](https://nixos.org/manual/nixos/stable/#module-services-gotosocial).
+- Blog post describing how to migrate from Mastodon to GoToSocial <https://fedihost.co/blog/slug/migrating-to-gotosocial-from-mastodon>
 
 <a href="Category:ActivityPub" class="wikilink" title="Category:ActivityPub">Category:ActivityPub</a> <a href="Category:Web_Applications" class="wikilink" title="Category:Web Applications">Category:Web Applications</a> <a href="Category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="Category:NixOS_Manual" class="wikilink" title="Category:NixOS Manual">Category:NixOS Manual</a>

@@ -12,7 +12,26 @@ On most distros, all one has to do is download the `.AppImage` file, make it exe
 
 ``` shell
 $ nix-shell -p appimage-run
-$ appimage-run $AppImageFile
+$ appimage-run path/to/application.AppImage
+```
+
+##### Additional Packages
+
+Some appimages still have issues, so you can override for additional pkgs such as
+
+``` nix
+programs.appimage.enable = true;
+programs.appimage.binfmt = true;
+programs.appimage.package = pkgs.appimage-run.override 
+{
+  extraPkgs = pkgs: 
+  [
+    pkgs.icu
+    pkgs.libxcrypt-legacy
+    pkgs.python312
+    pkgs.python312Packages.torch
+  ]; 
+};
 ```
 
 ### Packaging
@@ -70,6 +89,6 @@ programs.appimage = {
 };
 ```
 
-This way AppImage files can be invoked directly as if they were normal programs
+This way AppImage files can be invoked directly as if they were normal programs.
 
 <a href="Category:Software" class="wikilink" title="Category:Software">Category:Software</a>

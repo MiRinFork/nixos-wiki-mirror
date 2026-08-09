@@ -2,7 +2,7 @@
 
 <!-- Source page: Appimage -->
 
-<languages/> <translate> [AppImage](https://appimage.org/) is a monolithic packaging format for linux applications. It contains all dependencies in one file that is composed of an executable with a tacked on filesystem.
+<languages/> <translate> \[<tvar name=1><https://appimage.org/></tvar> AppImage\] is a monolithic packaging format for linux applications. It contains all dependencies in one file that is composed of an executable with a tacked on filesystem.
 
 ## Usage
 
@@ -16,6 +16,10 @@ $ appimage-run path/to/application.AppImage
 ```
 
 <translate>
+
+##### Appimage apps cannot access host fonts, icons and themes
+
+See: <a href="Fixes_for_non-Nix_applications#Flatpak,_Distrobox,_Appimage_and_other_non-Nix_applications_can&#39;t_find_system_fonts/icons/themes" class="wikilink" title="Fixes for non-Nix applications#Flatpak, Distrobox, Appimage and other non-Nix applications can&#39;t find system fonts/icons/themes">Fixes for non-Nix applications#Flatpak, Distrobox, Appimage and other non-Nix applications can't find system fonts/icons/themes</a>
 
 ##### Additional Packages
 
@@ -40,7 +44,7 @@ programs.appimage.package = pkgs.appimage-run.override
 
 ### Packaging
 
-See the [nixpkgs manual on wrapping AppImage packages](https://nixos.org/manual/nixpkgs/stable/#sec-pkgs-appimageTools). In short, the AppImage is extracted and any dependencies are added as Nix build dependencies. Following example is a derivation for the program Quba, which is also distributed as AppImage. </translate>
+See the \[<tvar name=1><https://nixos.org/manual/nixpkgs/stable/#sec-pkgs-appimageTools></tvar> nixpkgs manual on wrapping AppImage packages\]. In short, the AppImage is extracted and any dependencies are added as Nix build dependencies. Following example is a derivation for the program Quba, which is also distributed as AppImage. </translate>
 
 ``` nix
 {
@@ -86,7 +90,7 @@ appimageTools.wrapType2 rec {
 
 ### Register AppImage files as a binary type to binfmt_misc
 
-You can tell the <a href="Linux_kernel" class="wikilink" title="Linux kernel">Linux kernel</a> to use an interpreter (e.g. `appimage-run`) when executing certain binary files through the use of [binfmt_misc](https://en.wikipedia.org/wiki/Binfmt_misc#External_links), either by filename extension or magic number matching. Below NixOS configuration registers AppImage files (ELF files with magic number "AI" + 0x02) to be run with `appimage-run` as interpreter: </translate>
+You can tell the <a href="Linux_kernel" class="wikilink" title="Linux kernel">Linux kernel</a> to use an interpreter (e.g. `appimage-run`) when executing certain binary files through the use of \[<tvar name=1><https://en.wikipedia.org/wiki/Binfmt_misc#External_links></tvar> binfmt_misc\], either by filename extension or magic number matching. Below NixOS configuration registers AppImage files (ELF files with magic number "AI" + 0x02) to be run with `appimage-run` as interpreter: </translate>
 
 ``` nixos
 programs.appimage = {

@@ -54,9 +54,27 @@ Both GNOME Tweaks (accessible as `gnome-tweaks`) and [Refine](https://gitlab.gno
 
 The GNOME shell extension [Just Perfection](https://extensions.gnome.org/extension/3843/just-perfection/) also allows for customizing nearly all parts of the GNOME shell interface.
 
-### GNOME Qt integration
+### Qt integration for GNOME
 
-Using the following example configuration, Qt applications will have a look similar to the adwaita style used by GNOME using a dark theme. For other themes, you may need the packages `libsForQt5.qt5ct` and `libsForQt5.qtstyleplugin-kvantum` and a symlink from `~/.config/Kvantum/` to your theme package. Here is an example using Arc-Dark and <a href="Home_Manager" class="wikilink" title="Home Manager">Home Manager</a>. In the Home Manager configuration: For more details, see [this](https://discourse.nixos.org/t/guide-to-installing-qt-theme/35523/2) forum post.
+As of NixOS 26.05, the `qt.platformTheme = "gnome";` option results in broken Qt app theming when GNOME is set to dark mode. If you only want "Adwaita-looking" Qt apps so they don't look too out of place, you can install the packages for QAdwaitaDecorations and QGnomePlatform, which provide quite decent GNOME theming for Qt apps.
+
+``` nixos
+# Install QAdwaitaDecorations and QGnomePlatform
+{ pkgs, ... }:
+
+{
+  environment.systemPackages = [
+    # Themes the app titlebars
+    pkgs.qadwaitadecorations
+    pkgs.qadwaitadecorations-qt6
+    # Themes the apps
+    pkgs.qgnomeplatform
+    pkgs.qgnomeplatform-qt6
+  ];
+}
+```
+
+Alternatively, the older `qt.platformTheme` docs have been included below. In the following example configuration, Qt applications will have a look similar to the adwaita style used by GNOME using a dark theme. For other themes, you may need the packages `libsForQt5.qt5ct` and `libsForQt5.qtstyleplugin-kvantum` and a symlink from `~/.config/Kvantum/` to your theme package. Here is an example using Arc-Dark and <a href="Home_Manager" class="wikilink" title="Home Manager">Home Manager</a>. In the Home Manager configuration: For more details, see [this](https://discourse.nixos.org/t/guide-to-installing-qt-theme/35523/2) forum post.
 
 ### Experimental features
 

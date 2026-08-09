@@ -85,11 +85,11 @@ Where `10.25.0.2` is the IP which is acquired via DHCP or configured via the ker
 
 ## Tips and tricks
 
-### Bcachefs unlocking
+### Remote bcachefs unlocking
 
-Unlocking encrypted Bcachefs root filesystems is [not yet supported](https://github.com/NixOS/nixpkgs/issues/291529). As a workaround, following script, in combination with the setup above, can be used as SSH shell, to unlock the disk `/dev/vda2`.
+Starting with NixOS 26.05, the bcachefs module (boot.supportedFilesystems = \[ "bcachefs" \]) automatically creates an unlock-bcachefs-<mountpoint>.service in the systemd initrd for boot-critical bcachefs filesystems. This service calls systemd-ask-password and pipes the response to bcachefs unlock, running before the generated sysroot.mount unit.
 
-Using systemd in initrd automatically continues the boot process after the target `/sysroot` is mounted.
+For remote unlocking via SSH, set the initrd root shell to systemd-tty-ask-password-agent --watch, which picks up the pending password request and displays the prompt over the SSH connection. The agent must be added to the initrd's /bin via extraBin, as it is not included by default.
 
 ### Wireguard in initrd
 

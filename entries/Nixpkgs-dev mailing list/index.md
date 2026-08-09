@@ -1,8 +1,6 @@
 <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
 
-<!-- Source page: Nixpkgs-dev-ml -->
-
-## nixpkgs-dev mailinglist
+<!-- Source page: Nixpkgs-dev mailing list -->
 
 This is a mailing list where developers can contribute to nixpkgs without needing to go through GitHub, or requiring a GitHub account.
 

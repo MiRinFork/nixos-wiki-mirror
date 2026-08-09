@@ -6,7 +6,7 @@
 
 ## Platform Support
 
-Heroic in nixpkgs is only supported on `x86_64-linux`. Upstream does not support 32-bit Linux. If you are on macOS, you should use the official builds from upstream, unless you are willing to take on maintaining the Heroic package in nixpkgs for <a href="Nix-darwin" class="wikilink" title="nix-darwn">nix-darwn</a>. If you are using just Nix on any non-NixOS Linux distribution, you should use the official builds from upstream.
+Heroic in nixpkgs is only supported on `x86_64-linux`. Upstream does not support 32-bit Linux. If you are on macOS, you should use the official builds from upstream, unless you are willing to take on maintaining the Heroic package in nixpkgs for <a href="Nix-darwin" class="wikilink" title="nix-darwin">nix-darwin</a>. If you are using just Nix on any non-NixOS Linux distribution, you should use the official builds from upstream.
 
 ## Optional Dependencies
 

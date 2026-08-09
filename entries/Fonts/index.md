@@ -156,13 +156,21 @@ $ fc-query DejaVuSans.ttf | grep '^\s\+family:' | cut -d'"' -f2
 
 <translate> The new preferred location is in `$XDG_DATA_HOME/fonts`, which for most users will resolve to `~/.local/share/fonts`</translate>[^3]
 
-<translate>=== Flatpak applications can't find system fonts === </translate>
+<translate>
 
-<translate> To expose available fonts under `/run/current-system/sw/share/X11/fonts`, enable `fontDir` in your NixOS configuration.</translate>
+### Flatpak applications can't find system fonts
 
-<translate> You will then need to link/copy this folder to one of the Flatpak-supported locations - see below.</translate>
+See: <a href="Fixes_for_non-Nix_applications#Flatpak,_Distrobox,_Appimage_and_other_non-Nix_applications_can&#39;t_find_system_fonts/icons/themes" class="wikilink" title="Fixes for non-Nix applications#Flatpak, Distrobox, Appimage and other non-Nix applications can&#39;t find system fonts/icons/themes">Fixes for non-Nix applications#Flatpak, Distrobox, Appimage and other non-Nix applications can't find system fonts/icons/themes</a>
 
-<translate>==== Solution 1: Copy fonts to `$HOME/.local/share/fonts` ==== </translate> <translate> Create fonts directory `$HOME/.local/share/fonts` and copy system fonts with option `-L, --dereference`. You will need to repeat this step whenever the fonts change.
+#### Alternative fixes for Flatpak apps
+
+This section documents alternative fixes for Flatpak apps. Note that font cache inside flatpak container may not be recreated after changes to fonts in `/usr/share/fonts`, because font cache seem to be relying on file timestamps that are missing in `/nix/store`.
+
+You can make sure that font directory is bind-mounted properly inside flatpak container by running`flatpak enter `<instance>` findmnt | grep /run/host/fonts` or by running `flatpak enter `<instance>` ls -alh /run/host/fonts` and compare it to `ls -alh /usr/share/fonts`. If everything is mounted properly, but you still do not see fonts in flatpak app - force font cache recreation inside flatpak container: `flatpak run --command=fc-cache `<application id>` -f -v`
+
+##### Solution 1: Copy fonts to `$HOME/.local/share/fonts`
+
+</translate> <translate> Create fonts directory `$HOME/.local/share/fonts` and copy system fonts with option `-L, --dereference`. You will need to repeat this step whenever the fonts change.
 
 ``` console
 $ mkdir $HOME/.local/share/fonts && cp -L /run/current-system/sw/share/X11/fonts/* $HOME/.local/share/fonts/
@@ -193,7 +201,11 @@ Note: There is no need to grant flatpak applications access to `$HOME/.local/sha
 
 </translate>
 
-<translate>==== Solution 2: Symlink to system fonts at `$HOME/.local/share/fonts` ==== </translate> <translate>
+<translate>
+
+##### Solution 2: Symlink to system fonts at `$HOME/.local/share/fonts`
+
+</translate> <translate>
 
 > **Note:** this method doesn't work for some flatpak applications (for example, steam)! </translate>
 >
@@ -214,7 +226,7 @@ $ mkdir $HOME/.local/share/fonts && ln -s /run/current-system/sw/share/X11/fonts
 
 <translate>
 
-##### Option 1: Allow access to the fonts folder and `/nix/store`
+###### Option 1: Allow access to the fonts folder and `/nix/store`
 
 </translate> <translate> By using the Flatpak CLI or the Flatseal Flatpak make the following directory available to all Flatpaks `$HOME/.local/share/fonts` and `$HOME/.icons` the appropriate commands for this are: </translate>
 
@@ -230,78 +242,17 @@ $ flatpak --user override --filesystem=/nix/store:ro
 $ flatpak --user override --filesystem=/run/current-system/sw/share/X11/fonts:ro
 ```
 
-<translate>===== Option 2: Allow access to the WHOLE filesystem ===== </translate> <translate> Allow them access the WHOLE filesystem of yours: `All system files` in Flatseal or equivalently `filesystem=host` available to your application, the command for this is: </translate>
+<translate>
+
+###### Option 2: Allow access to the WHOLE filesystem
+
+</translate> <translate> Allow them access the WHOLE filesystem of yours: `All system files` in Flatseal or equivalently `filesystem=host` available to your application, the command for this is: </translate>
 
 ``` console
 $ flatpak --user override --filesystem=host
 ```
 
 <translate> It is important to keep in mind that some flatpak apps may refuse to launch if given certain permissions, such as the Steam flatpak. </translate>
-
-<translate>==== Solution 3: Configure bindfs for fonts/cursors/icons support ==== </translate> <translate> Alternatively, you can expose relevant packages directly under `/usr/share/...` paths. This will also enable Flatpak to use a custom cursor theme if you have one. This solution doesn't require `fonts.fontDir.enable` to be enabled.
-
-``` nix
-system.fsPackages = [ pkgs.bindfs ];
-fileSystems = let
-  mkRoSymBind = path: {
-    device = path;
-    fsType = "fuse.bindfs";
-    options = [ "ro" "resolve-symlinks" "x-gvfs-hide" ];
-  };
-  fontsPkgs = config.fonts.packages ++ (with pkgs; [
-      # Add your cursor themes and icon packages here
-      bibata-cursors
-      gnome-themes-extra
-      # etc.
-    ]);
-  x11Fonts = pkgs.runCommand "X11-fonts"
-    {
-      preferLocalBuild = true;
-      nativeBuildInputs = with pkgs; [
-        gzip
-        mkfontdir
-      ];
-    }
-    (''
-      mkdir -p "$out/share/fonts"
-      font_regexp='.*\.\(ttf\|ttc\|otb\|otf\|pcf\|pfa\|pfb\|bdf\)\(\.gz\)?'
-    ''
-    + (builtins.concatStringsSep "\n" (builtins.map (pkg: ''
-        find ${toString pkg} -regex "$font_regexp" \
-          -exec ln -sf -t "$out/share/fonts" '{}' \;
-      '') fontsPkgs
-      ))
-    + ''
-      cd "$out/share/fonts"
-      mkfontscale
-      mkfontdir
-      cat $(find ${pkgs.font-alias}/ -name fonts.alias) >fonts.alias
-    '');
-  aggregatedIcons = pkgs.buildEnv {
-    name = "system-icons";
-    paths = fontsPkgs;
-    pathsToLink = [
-      "/share/icons"
-    ];
-  };
-in {
-  "/usr/share/icons" = mkRoSymBind (aggregatedIcons + "/share/icons");
-  "/usr/share/fonts" = mkRoSymBind (x11Fonts + "/share/fonts");
-};
-
-<!--T:69-->
-nts.packages = with pkgs; [
-  noto-fonts
-  noto-fonts-color-emoji
-  noto-fonts-cjk-sans
-];
-```
-
-Note that font cache inside flatpak container may not be recreated after changes to fonts in `/usr/share/fonts`, because font cache seem to be relying on file timestamps that are missing in `/nix/store`. </translate>
-
-<translate> You can make sure that font directory is bind-mounted properly inside flatpak container by running `flatpak enter `<instance>` findmnt | grep /run/host/fonts`, or by running `flatpak enter `<instance>` ls -alh /run/host/fonts` and compare it to `ls -alh /usr/share/fonts`. </translate>
-
-<translate> If everything is mounted properly, but you still do not see fonts in flatpak app - force font cache recreation inside flatpak container: `flatpak run --command=fc-cache `<application id>` -f -v` </translate>
 
 <translate>=== Noto Color Emoji doesn't render on Firefox === </translate>
 

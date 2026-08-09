@@ -14,6 +14,8 @@ Simply enable :
 
 The configuration path for niri is . Therefore <a href="Special:MyLanguage/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> can be used for configuration:
 
+If you want to validate your configuration as part of the build process you can use like this:
+
 You might want to start from [the default configuration file](https://github.com/niri-wm/niri/blob/main/resources/default-config.kdl) described at [here](https://github.com/niri-wm/niri/wiki/Getting-Started#main-default-hotkeys).
 
 See [the wiki](https://niri-wm.github.io/niri/) for configuration options for niri.

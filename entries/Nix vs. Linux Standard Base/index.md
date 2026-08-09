@@ -4,7 +4,7 @@
 
 This article is a comparison between the <a href="Nix_package_manager" class="wikilink" title="Nix package manager">Nix package manager</a> and the [Linux Standard Base](https://en.wikipedia.org/wiki/Linux_Standard_Base) (LSB) standard that the package managers of most conventional Linux distributions follow.
 
-## Package Installation
+## Package installation
 
 In most distributions, files of an installed package are stored under `/{,usr}/{bin,etc,lib,...}`.
 
@@ -14,7 +14,7 @@ By default, the only part of the system made aware of the contents of the user p
 
 If other kind of files are to be found by programs looking at the usual `/{,usr}/{bin,etc,lib,sbin,...}` locations, other variables may be of help. For example, gcc would welcome `CPATH` and `LIBRARY_PATH`. And the dynamic loader will welcome `LD_LIBRARY_PATH`.
 
-## Build and install from Source
+## Build and install from source
 
 In most LSB distributions, you ask for the development tools to be installed into the system. And then you also install dependencies of the package you want to build, and then go on building the source you downloaded. The dependencies are found, and your program builds fine.
 
@@ -41,7 +41,7 @@ A common situation is that LSB distribution users want to keep their habits, but
 
 That can be achieved only following the nix style. So, letting nix build your program from source, instead of doing that on your own in your interactive shell through profiles. Nix will provide a common build system, with whatever stated dependencies available at build time, and will also provide a target installation directory. This requires knowing how to write [simple stdenv derivations](http://hydra.nixos.org/job/nix/trunk/tarball/latest/download-by-type/doc/manual/#id460419), and knowing [where to write them](https://nixos.org/nix/manual/#chap-quick-start).
 
-## Modifying a Package
+## Modifying a package
 
 In LSB distributions, files installed under can be edited by the user as needed.
 

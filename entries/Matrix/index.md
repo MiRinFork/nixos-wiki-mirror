@@ -18,7 +18,7 @@ An unofficial service provides Matrix accounts for members of the NixOS organiza
 
 The clients `element-desktop` [1](https://element.io/) and `fractal` [2](https://gitlab.gnome.org/World/fractal) are known to work and are kept up to date.
 
-Other clients packaged in Nixpkgs, such as `matrix-commander`, `neochat`, `nheko`, depend on the insecure `olm` library susceptible to various security vulnerabilities.[3](https://nvd.nist.gov/vuln/detail/CVE-2024-45191)[4](https://nvd.nist.gov/vuln/detail/CVE-2024-45193)[5](https://nvd.nist.gov/vuln/detail/CVE-2024-45192)
+Other clients packaged in Nixpkgs, such as `matrix-commander`, `neochat`, `nheko`, depend directly or transitively on the insecure `olm` library susceptible to various security vulnerabilities.[3](https://nvd.nist.gov/vuln/detail/CVE-2024-45191)[4](https://nvd.nist.gov/vuln/detail/CVE-2024-45193)[5](https://nvd.nist.gov/vuln/detail/CVE-2024-45192)
 
 If this is not a concern, the guide to [install insecure packages](https://nixos.org/manual/nixpkgs/stable/#sec-allow-insecure) may be followed.
 

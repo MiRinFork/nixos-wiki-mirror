@@ -8,7 +8,7 @@
 
 由于 Nix 使用了 <a href="Wikipedia:Executable" class="wikilink" title="二进制">二进制</a> 缓存机制，这便为面向二进制分发（如 Debian）和面向 <a href="Wikipedia:Source_code" class="wikilink" title="源码">源码</a> 分发（如 Gentoo）的方法提供了一种独特的折中方案。预编译的二进制程序被视作标准组件，在其无法获取时，自助编译的软件包与模块将被自动构建。
 
-NixOS 稳定版本每年发布两次（大约在五月底和十一月底）。NixOS 由 [Eelco Dolstra](https://edolstra.github.io/) 和 <a href="Wikipedia:Armijn_Hemel" class="wikilink" title=" Armijn Hemel"> Armijn Hemel</a> 创建，并于 2003 年首次发布。目前由 <a href="Special:MyLanguage/Nix_Community#NixOS_Foundation" class="wikilink" title="NixOS 基金会">NixOS 基金会</a> 管理下的社区开发与维护。
+NixOS 稳定版本每年发布两次（大约在五月底和十一月底）。NixOS 由 [Eelco Dolstra](https://edolstra.github.io/) 和 <a href="Wikipedia:Armijn_Hemel" class="wikilink" title=" Armijn Hemel"> Armijn Hemel</a> 创建，并于 2003 年首次发布[^1]。目前由 <a href="Special:MyLanguage/Nix_Community#NixOS_Foundation" class="wikilink" title="NixOS 基金会">NixOS 基金会</a> 管理下的社区开发与维护。
 
 <span id="Installation"></span>
 
@@ -35,7 +35,7 @@ NixOS 对大多数 x86_64 设备和通用 ARM64 设备提供了开箱即用的�
 
 #### 32 位 x86 架构
 
-对于 32 位 x86 架构（即 `i686`）的支持正在减少。大多数包仍然可以编译和运行，但它们的缓存可用性显著降低[^1]。32 位 x86 架构不再提供预构建的 ISO 镜像文件，但其仍可手动构建。
+对于 32 位 x86 架构（即 `i686`）的支持正在减少。大多数包仍然可以编译和运行，但它们的缓存可用性显著降低[^2]。32 位 x86 架构不再提供预构建的 ISO 镜像文件，但其仍可手动构建。
 
 <span id="64-bit_x86_architectures"></span>
 
@@ -203,4 +203,6 @@ $ nix-env --profile /nix/var/nix/profiles/system --delete-generations 205 206
 
 <a href="Category:Pedias" class="wikilink" title="Category:Pedias">Category:Pedias</a> <a href="Category:NixOS" class="wikilink" title="Category:NixOS">Category:NixOS</a> <a href="Category:Nix" class="wikilink" title="Category:Nix">Category:Nix</a>
 
-[^1]: <https://discourse.nixos.org/t/limited-cache-availability-for-i686-32-bits-x86-architecture/37626>
+[^1]: <https://nixos.org/blog/announcements/2013/nixos-1310/>
+
+[^2]: <https://discourse.nixos.org/t/limited-cache-availability-for-i686-32-bits-x86-architecture/37626>

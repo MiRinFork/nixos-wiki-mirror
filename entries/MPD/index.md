@@ -11,7 +11,9 @@ Home-manager has a module for MPD which runs it as a systemd user service, givin
 ``` nix
 services.mpd = {
   enable = true;
-  musicDirectory = "/path/to/music";
+  settings = {
+    music_directory = "/path/to/music";
+  };
   # Optional:
   network.listenAddress = "any"; # if you want to allow non-localhost connections
   network.startWhenNeeded = true; # systemd feature: only start MPD service upon connection to its socket
@@ -25,11 +27,11 @@ A typical NixOS config, running MPD system-wide, will look like this:
 ``` nix
 services.mpd = {
   enable = true;
-  musicDirectory = "/path/to/music";
   settings = {
+    music_directory = "/path/to/music";
     # must specify one or more audio_output blocks in order to play audio!
     # (e.g. ALSA, PulseAudio, PipeWire), see next sections
-  };
+ };
 
   # Optional:
   network.listenAddress = "any"; # if you want to allow non-localhost connections

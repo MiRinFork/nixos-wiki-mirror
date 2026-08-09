@@ -58,7 +58,9 @@ The Lutris documentation shows [how to make your system esync compatible](https:
 { config, pkgs, lib, ... }:
 
 {
-  systemd.extraConfig = "DefaultLimitNOFILE=524288";
+  systemd.settings.Manager = {
+    DefaultLimitNOFILE = 524288;
+  };
   security.pam.loginLimits = [{
     domain = "yourusername";
     type = "hard";

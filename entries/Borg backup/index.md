@@ -214,4 +214,8 @@ environment.systemPackages = [
 
 If anybody reading this have found a way to mount as a user properly, please update the code above.
 
+## External Links
+
+- [services.borgmatic](https://search.nixos.org/options?&query=services.borgmatic), an easy to use wrapper around borg with additional features
+
 <a href="Category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="Category:Backup" class="wikilink" title="Category:Backup">Category:Backup</a> <a href="Category:NixOS_Manual" class="wikilink" title="Category:NixOS Manual">Category:NixOS Manual</a> <a href="Category:Cookbook" class="wikilink" title="Category:Cookbook">Category:Cookbook</a>
