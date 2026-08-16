@@ -11,13 +11,15 @@
 Just add the following to your <a href="Overview_of_the_NixOS_Linux_distribution#Declarative_Configuration" class="wikilink" title="NixOS configuration">NixOS configuration</a> i.e. the `configuration.nix` file:
 
 ``` nix
+{
   services._3proxy = {
     enable = true;
     services = [
       {
         type = "socks";
-          auth = [ "strong" ];
-          acl = [ {
+        auth = [ "strong" ];
+        acl = [
+          {
             rule = "allow";
             users = [ "test1" ];
           }
@@ -33,6 +35,7 @@ Just add the following to your <a href="Overview_of_the_NixOS_Linux_distribution
       test2:CR:$1$rkpibm5J$Aq1.9VtYAn0JrqZ8M.1ME.
     '';
   };
+}
 ```
 
 This sample configuration runs a single instance as socks proxy with user/password auth. The password can be clear text, as indicated by the `CL` for user `test1` or it can be encrypted as indicated by the `CR` for user `test2`. You can generate md5-crypted passwords via <https://unix4lyfe.org/crypt/>

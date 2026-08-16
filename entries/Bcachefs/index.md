@@ -34,7 +34,7 @@ The same works with partitions, which is probably better for future proofing dep
 Format drive with encryption enabled, unlock and mount it afterwards. Following bcachefs commands will ask for a password:
 
 ``` console
-# bcachefs format --encrypt /dev/sda
+# bcachefs format --encrypted /dev/sda
 # bcachefs unlock /dev/sda
 # mount -t bcachefs /dev/sda /mnt
 ```
@@ -162,50 +162,29 @@ See article on <a href="Remote_disk_unlocking#Bcachefs_unlocking" class="wikilin
 
 ### Automatically mount encrypted device on boot
 
-Since the Bcachefs mount options do [not support supplying a key file yet](https://github.com/koverstreet/bcachefs-tools/pull/266), we could use the `bcachefs` command and run it on boot using a <a href="Systemd" class="wikilink" title="Systemd">Systemd</a> unit:
+Since the Bcachefs mount options do [not support supplying a key file yet](https://github.com/koverstreet/bcachefs-tools/pull/266), we could use the `bcachefs unlock` command and run it on boot using a <a href="Systemd" class="wikilink" title="Systemd">Systemd</a> unit:
 
 ``` nix
-systemd.services."bcachefs-mount" = {
-  after = [ "local-fs.target" ];
-  wantedBy = [ "multi-user.target" ];
-  environment = {
-    DEVICE_PATH = "/dev/sda1";
-    MOUNT_POINT = "/mnt";
-  };
-  script = ''
-    #!${pkgs.runtimeShell} -e
+fileSystems."/mnt" = {
+  device = "/dev/disk/by-uuid/3c0d7d93-3293-49a3-842e-d9ef77576d97";
+  fsType = "bcachefs";
+  options = [ "nofail" ];
+};
 
-    ${pkgs.keyutils}/bin/keyctl link @u @s
-
-    # Check if the device path exists
-    if [ ! -b "$DEVICE_PATH" ]; then
-      echo "Error: Device path $DEVICE_PATH does not exist."
-      exit 1
-    fi
-
-    # Check if the drive is already mounted
-    if ${pkgs.util-linux}/bin/mountpoint -q "$MOUNT_POINT"; then
-      echo "Drive already mounted at $MOUNT_POINT. Skipping..."
-      exit 0
-    fi
-
-    # Wait for the device to become available
-    while [ ! -b "$DEVICE_PATH" ]; do
-      echo "Waiting for $DEVICE_PATH to become available..."
-      sleep 5
-    done
-
-    # Mount the device
-    ${pkgs.bcachefs-tools}/bin/bcachefs mount -f /etc/keyfile_test "$DEVICE_PATH" "$MOUNT_POINT"
+# Ensure to match the correct systemd unit name which gets created by NixOS
+# in the first place. We override the script part.
+systemd.services."unlock-bcachefs-mnt" = {
+  serviceConfig.LoadCredential = [ "bcachefs-mnt:/etc/secret.key" ];
+  script = lib.mkForce ''
+    ${lib.getExe' pkgs.keyutils "keyctl"} link @u @s
+    ${config.boot.initrd.systemd.package}/bin/systemd-ask-password --credential=bcachefs-mnt --timeout=0 "enter passphrase for /mnt" | \
+      exec ${lib.getExe pkgs.bcachefs-tools} unlock \
+      "/dev/disk/by-uuid/3c0d7d93-3293-49a3-842e-d9ef77576d97"
   '';
-  serviceConfig = {
-    Type = "oneshot";
-    User = "root";
-  };
 };
 ```
 
-This example unit mounts the Bcachefs encrypted partition `/dev/sda1` to the target `/mnt` by using the key file `/etc/keyfile_test`.
+This example unit unlocks the Bcachefs encrypted partition `/dev/disk/by-uuid/3c0d7d93-3293-49a3-842e-d9ef77576d97` whereas the fstab entry mounts it to the target `/mnt` by using the key file `/etc/secret.key`. Ensure that you replace all disk uuid and target file path occurences.
 
 <a href="Category:Filesystem" class="wikilink" title="Category:Filesystem">Category:Filesystem</a>
 

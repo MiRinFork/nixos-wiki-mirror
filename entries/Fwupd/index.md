@@ -40,4 +40,12 @@ To install updates:
 $ fwupdmgr update
 ```
 
+## Troubleshooting
+
+### UEFI ESP is not detected even though it is mounted
+
+`WARNING: UEFI ESP partition not detected or configured`
+
+Make sure your ESP has the partition type of `EFI System`
+
 <a href="Category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="Category:Desktop" class="wikilink" title="Category:Desktop">Category:Desktop</a>

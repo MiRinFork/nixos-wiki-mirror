@@ -75,11 +75,9 @@ true;</code> which sets to true.</span>}}
 
 </div>
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
+<span id="Improving_Performance"></span>
 
-### Improving Performance
-
-</div>
+### Повышение производительности
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 

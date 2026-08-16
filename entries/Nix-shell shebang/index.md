@@ -58,6 +58,41 @@ var since = DateTimeOffset.Now - dotNet9Released;
 Console.WriteLine($"It has been {since.Humanize()} since .NET 9 was released.");
 ```
 
+### Haskell
+
+``` haskell
+#! /usr/bin/env nix-shell
+#! nix-shell -p "haskellPackages.ghcWithPackages (p: with p; [turtle])" -i runghc
+
+{-# LANGUAGE OverloadedStrings #-}
+
+import Turtle
+
+main = echo "Hello world!"
+```
+
+### Lua
+
+Stable CLI
+
+``` lua
+#!/usr/bin/env nix-shell
+--[[
+#!nix-shell -i lua -p lua5_3
+--]]
+print("Hello, world!")
+```
+
+Pinned and eval-cached
+
+``` lua
+#!/usr/bin/env nix
+--[[
+#!nix shell github:NixOS/nixpkgs?ref=88a6078fc5d104f480d1b4a0b58ffec5de965b1b#lua5_3 -c lua
+--]]
+print("Hello, world!")
+```
+
 ### Python
 
 ``` python
@@ -124,17 +159,17 @@ fn main() {
 }
 ```
 
-### Haskell
+### Wolfram Language
 
-``` haskell
-#! /usr/bin/env nix-shell
-#! nix-shell -p "haskellPackages.ghcWithPackages (p: with p; [turtle])" -i runghc
+Using [Woxi](https://woxi.ad-si.com/), the Rust reimplementation.
 
-{-# LANGUAGE OverloadedStrings #-}
+``` mathematica
+#!/usr/bin/env nix-shell
+(*
+#! nix-shell -p woxi -i woxi
+*)
 
-import Turtle
-
-main = echo "Hello world!"
+RandomInteger[{1, 9}, 5] // Map[#^2&] // Map[Print]
 ```
 
 ## Pinning nixpkgs

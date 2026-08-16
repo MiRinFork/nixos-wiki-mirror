@@ -8,13 +8,15 @@
 
 ## Installation
 
-</translate> <translate>
-
 ### Intel
 
-</translate> <translate> Note, `intel-vaapi-driver` still performs better for browsers (gecko/chromium based) on newer Skylake (2015) processors.[^1] </translate>
+</translate>
 
-<translate> For 32-bit support, use </translate> : <translate>
+<translate> Note, `intel-vaapi-driver` still performs better for browsers (gecko/chromium based) on newer Skylake (2015) processors.[^1]
+
+For 32-bit support, use </translate> :
+
+<translate>
 
 ### AMD
 
@@ -34,29 +36,29 @@ Users with only an NVIDIA GPU can attempt to use the third party implementation;
 
 ## Testing your configuration
 
-You can test your configuration by running: `nix-shell -p libva-utils --run vainfo` </translate> <translate> See [Arch Linux wiki#Hardware video acceleration](https://wiki.archlinux.org/index.php/Hardware_video_acceleration#Verification) for more information. </translate> <translate>
+You can test your configuration by running: `nix-shell -p libva-utils --run vainfo`
+
+See [Arch Linux wiki#Hardware video acceleration](https://wiki.archlinux.org/index.php/Hardware_video_acceleration#Verification) for more information.
 
 ## Applications
 
-</translate> <translate>
-
 ### Chromium
 
-See <a href="Chromium#Accelerated_video_playback" class="wikilink" title="Chromium#Accelerated_video_playback">Chromium#Accelerated_video_playback</a>. </translate> <translate>
+See <a href="Chromium#Accelerated_video_playback" class="wikilink" title="Chromium#Accelerated_video_playback">Chromium#Accelerated_video_playback</a>.
 
 ### Firefox
 
-See [Arch Linux wiki#Firefox](https://wiki.archlinux.org/index.php/Firefox#Hardware_video_acceleration). </translate> <translate>
+See [Arch Linux wiki#Firefox](https://wiki.archlinux.org/index.php/Firefox#Hardware_video_acceleration).
 
 ### MPV
 
-</translate> <translate> You can place the following configuration in : </translate>
+You can place the following configuration in : </translate>
 
 ``` ini
 hwdec=auto
 ```
 
-<translate> See [Arch Linux wiki#mpv](https://wiki.archlinux.org/title/mpv#Hardware_video_acceleration). </translate> <translate>
+<translate> See [Arch Linux wiki#mpv](https://wiki.archlinux.org/title/mpv#Hardware_video_acceleration).
 
 ## Also see
 

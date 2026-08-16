@@ -94,10 +94,6 @@ services.bookstack.nginx.listen = [
 
 ## Troubleshooting
 
-### "No such file or directory" in bookstack-setup
-
-You need to connect Bookstack to a MySQL database, the service definition can install and configure one on your system with `services.bookstack.database.createLocally = true;`, otherwise you need to configure it yourself.
-
 ### "An unknown error occurred" when viewing your wiki in a browser
 
 If you set up BookStack with NixOS \< 25.11, you might have used an un-prefixed base64-encoded app key. Make sure your app key file contents include the "base64:" prefix.

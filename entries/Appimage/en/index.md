@@ -15,6 +15,10 @@ $ nix-shell -p appimage-run
 $ appimage-run path/to/application.AppImage
 ```
 
+##### Appimage apps cannot access host fonts, icons and themes
+
+See: <a href="Fixes_for_non-Nix_applications#Flatpak,_Distrobox,_Appimage_and_other_non-Nix_applications_can&#39;t_find_system_fonts/icons/themes" class="wikilink" title="Fixes for non-Nix applications#Flatpak, Distrobox, Appimage and other non-Nix applications can&#39;t find system fonts/icons/themes">Fixes for non-Nix applications#Flatpak, Distrobox, Appimage and other non-Nix applications can't find system fonts/icons/themes</a>
+
 ##### Additional Packages
 
 Some appimages still have issues, so you can override for additional pkgs such as

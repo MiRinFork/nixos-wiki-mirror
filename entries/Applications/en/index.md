@@ -27,9 +27,9 @@ Projects which leverage Nix.
 
 Projects which add support (e.g. for extra platforms or major capabilities) to Nix.
 
-- [nix-darwin](https://github.com/LnL7/nix-darwin) - NixOS modules for Darwin
+- [nix-darwin](https://github.com/nix-darwin/nix-darwin) - NixOS modules for Darwin
 - [musnix](https://github.com/musnix/musnix) - real-time audio modules for NixOS
-- [nixGl](https://github.com/guibou/nixGL) - A wrapper to run OpenGL applications outside of NixOS
+- [nixGl](https://github.com/nix-community/nixGL) - A wrapper to run OpenGL applications outside of NixOS
 
 ## Nix Tooling
 
@@ -39,8 +39,8 @@ Various tools built for working with the Nix Ecosystem (e.g. enhancements or alt
 
 - [home-manager](https://github.com/nix-community/home-manager) - System for managing a user environment using Nix
 - [plasma-manager](https://github.com/nix-community/plasma-manager) - manage KDE Plasma with Home-manager
-
-## About
+- [Nixvim](https://github.com/nix-community/nixvim) - A Neovim distribution built around Nix modules
+- [nvf](https://github.com/NotAShelf/nvf) - Modular, extensible and portable Neovim configuration framework
 
 ### Flakes
 
@@ -62,30 +62,41 @@ Various tools built for working with the Nix Ecosystem (e.g. enhancements or alt
 
 - [nix-diff](https://github.com/Gabriel439/nix-diff) - Compare Nix derivations
 - [niff](https://github.com/FRidh/niff) - Compare two Nix expressions to determine what attributes changes
-- [nvd](https://gitlab.com/khumba/nvd) - Nix/NixOS package version diff tool
-- [lix-diff](https://github.com/tgirlcloud/lix-diff) - Nix/NixOS closure diffing tool
+- [nvd](https://khumba.net/projects/nvd/) - Nix/NixOS package version diff tool
+- [lix-diff](https://github.com/isabelroses/lix-diff) - Nix/NixOS closure diffing tool
 
 ### Dependencies
 
 - [nix-tree](https://github.com/utdemir/nix-tree) - Interactive dependency browser for Nix derivations
 - [nix-visualize](https://github.com/craigmbooth/nix-visualize) - Visualize the dependencies of a given package as a graph
+- [npins](https://github.com/andir/npins) - Simple tool for handling different types of dependencies in a Nix project
 - [niv](https://github.com/nmattia/niv) - Painless dependencies for Nix projects
+- [Nixtamal](https://nixtamal.toast.al/) - Fulfilling input pinning for Nix
 
-### Nix lang comprehension
+### Nix language tools
+
+#### Language servers
+
+- [nil](https://github.com/oxalica/nil) - Nix language server, an incremental analysis assistant for writing in Nix
+- [nixd](https://github.com/nix-community/nixd) - Nix language server, newer than nil, with more features
+
+#### Static analysis / linters
 
 - [deadnix](https://github.com/astro/deadnix) - Removes unused code from .nix files
+- [statix](https://github.com/oppiliappan/statix) - Linter and suggestions for the nix programming language
+- [nixf-diagnose](https://github.com/inclyc/nixf-diagnose) - Linter - CLI wrapper around nixf-tidy (part of the [nixd](https://github.com/nix-community/nixd) project)
 
-<!-- -->
+#### Formatters
 
-- [statix](https://github.com/nerdypepper/statix) - Linter and suggestions for the nix programming language
-- [nil](https://github.com/oxalica/nil) - Nix Language server, an incremental analysis assistant for writing in Nix.
 - [nixfmt](https://github.com/NixOS/nixfmt) - The official formatter for Nix code
-- [nixpkgs-fmt](https://github.com/nix-community/nixpkgs-fmt) - Alternative code formatter, originally used in <a href="Nixpkgs" class="wikilink" title="Nixpkgs">Nixpkgs</a>.
+- [alejandra](https://github.com/kamadorueda/alejandra) - Unofficial Nix code formatter
 
 ### Package maintenance
 
 - [nix-update](https://github.com/Mic92/nix-update/) - Swiss-knife for updating nix packages.
 - [nixpkgs-review](https://github.com/Mic92/nixpkgs-review) - Review nixpkgs pull requests
+- [nix-init](https://github.com/nix-community/nix-init) - Generate Nix packages from URLs
+- [nixpkgs-hammering](https://github.com/jtojnar/nixpkgs-hammering) - Enforce a set of nit-picky rules that aim to point out and explain common mistakes in nixpkgs package pull requests
 
 ### Debugging
 
@@ -94,7 +105,7 @@ Various tools built for working with the Nix Ecosystem (e.g. enhancements or alt
 
 ### Search
 
-- [nix-index](https://github.com/bennofs/nix-index) - Quickly locate nix packages with specific files
+- [nix-index](https://github.com/nix-community/nix-index) - Quickly locate nix packages with specific files
 - [nix-du](https://github.com/symphorien/nix-du) - Find which gc-roots take disk space in a nix store
 - [nix-info](https://github.com/nix-hackers/nix-info) - Homebrew info querying for Nix
 - [userscan](https://github.com/flyingcircusio/userscan) - Scans directories containing manually compiled programs and registers them with the Nix garbage collector
@@ -109,9 +120,9 @@ Various tools built for working with the Nix Ecosystem (e.g. enhancements or alt
 
 ### Other
 
-- [nix-bundle](https://github.com/matthewbauer/nix-bundle) - package Nix attributes into single-file executables.
-- [nix-user-chroot](https://github.com/lethalman/nix-user-chroot) - install Nix as an unpriviliged user on any system
-- [nh](https://github.com/ViperML/nh) - a rewrite of nixos-rebuild featuring diffs with nvd and a tree of builds with nix-output-manager, as well as other quality of life features such as package searching.
+- [nix-bundle](https://github.com/nix-community/nix-bundle) - package Nix attributes into single-file executables
+- [nix-user-chroot](https://github.com/lucabrunox/nix-user-chroot) - install Nix as an unpriviliged user on any system
+- [nh](https://github.com/nix-community/nh) - a rewrite of nixos-rebuild featuring diffs with nvd and a tree of builds with nix-output-manager, as well as other quality of life features such as package searching
 - [nixos-cli](https://github.com/nix-community/nixos-cli) - an all-in-one tool to manage any NixOS installation with ease, combining the features of all the \`nixos-\*\` commands.
 
 ## Nix Operations
@@ -120,8 +131,8 @@ Operations tools for the Nix Ecosystem:
 
 ### Official
 
-- [Hydra](https://github.com/nixos/hydra) - Nix's official continuous integration and build system.
-- [NixOps](https://github.com/NixOS/nixops) - Nix's official (but unmaintained) tool for deploying to NixOS machines in a network or the cloud.
+- [Hydra](https://github.com/nixos/hydra) - Nix's official continuous integration and build system
+- [NixOps](https://github.com/NixOS/nixops) - Nix's official (but unmaintained) tool for deploying to NixOS machines in a network or the cloud
 
 ### Deployment
 
@@ -130,7 +141,7 @@ Operations tools for the Nix Ecosystem:
 <!-- -->
 
 - [colmena](https://github.com/zhaofengli/colmena) - a NixOS deployment tool
-- comin - A deployment tool to continuously pull from Git repositories.
+- [comin](https://github.com/nlewo/comin) - A deployment tool to continuously pull from Git repositories
 - [deploy-rs](https://github.com/serokell/deploy-rs) - a simple multi-profile Nix-flake deploy tool
 
 <!-- -->
@@ -138,10 +149,10 @@ Operations tools for the Nix Ecosystem:
 - <a href="Special:MyLanguage/krops" class="wikilink" title="krops">krops</a> - a lightweight toolkit to deploy NixOS systems, remotely or locally
 - [lollypops](https://github.com/pinpox/lollypops) - a parallel and stateless NixOS deployment tool
 - [Morph](https://github.com/DBCDK/morph) - a NixOS deployment tool
-- [Nixinate](https://github.com/MatthewCroughan/nixinate) - A Nix flake library to provide app outputs for managing existing NixOS hosts over SSH.
+- [Nixinate](https://github.com/MatthewCroughan/nixinate) - A Nix flake library to provide app outputs for managing existing NixOS hosts over SSH
 - `nixos-build --target-host`
-- [NixOps](https://github.com/NixOS/nixops) - \[Not recommended for new projects\] a tool for deploying to NixOS machines in a network or cloud.
 - [Nixus](https://github.com/Infinisil/nixus) - an experimental NixOS deployment tool
+- [wire](https://github.com/forallsys/wire) - A tool to deploy NixOS systems. Its usage is inspired by colmena however it is not a fork.
 
 ### Docker
 
@@ -155,10 +166,12 @@ Operations tools for the Nix Ecosystem:
 
 ## Alternative nix implementations & parser
 
-- [hnix](https://github.com/jwiegley/hnix) (haskell, parser & evaluator)
+- [hnix](https://github.com/haskell-nix/hnix) (haskell, parser & evaluator)
 - [rnix](https://github.com/nix-community/rnix-parser) (rust, parser)
 - [go-nix](https://github.com/orivej/go-nix) (go, parser & nix-compatible file hasher)
 - [nix-idea](https://github.com/NixOS/nix-idea/tree/master/src/main/java/org/nixos/idea/lang) (java, parser)
+- [lix](https://lix.systems/) (c++, fork of [NixOS/nix](https://github.com/NixOS/nix))
+- [snix](https://snix.dev/) (rust, cli & evaluator & store)
 
 ## Additional unofficial ecosystem
 

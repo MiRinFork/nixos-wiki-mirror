@@ -68,9 +68,21 @@ See [Arch Linux wiki#Hardware video acceleration](https://wiki.archlinux.org/ind
 
 ## Приложения
 
+<span id="Chromium"></span>
+
+<div class="mw-translate-fuzzy">
+
 ### Chromium
 
 См. <a href="Chromium#Accelerated_video_playback" class="wikilink" title="Chromium#Accelerated_video_playback">Chromium#Accelerated_video_playback</a>.
+
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+See <a href="Chromium#Accelerated_video_playback" class="wikilink" title="Chromium#Accelerated_video_playback">Chromium#Accelerated_video_playback</a>.
+
+</div>
 
 ### Firefox
 
@@ -98,7 +110,12 @@ See [Arch Linux wiki#mpv](https://wiki.archlinux.org/title/mpv#Hardware_video_ac
 
 ## Also see
 
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
 - [Arch Linux wiki#Hardware video acceleration](https://wiki.archlinux.org/index.php/Hardware_video_acceleration).
+- [Gentoo Wiki#VAAPI.](https://wiki.gentoo.org/wiki/VAAPI)
 - [nixos-hardware](https://github.com/NixOS/nixos-hardware) has example configurations for various types of hardware.
 
 </div>

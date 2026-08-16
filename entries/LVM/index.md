@@ -56,6 +56,43 @@ NixOps can repartition Hetzner Physical Machines, see [NixOps Manual](https://ni
 
 <a href="Disko" class="wikilink" title="Disko">Disko</a> provides means to automatically generate the creation and configuration of logical volumes, see <https://github.com/nix-community/disko>
 
+## Troubleshooting
+
+### LVM keeps ZFS zvol busy
+
+The LVM service will possibly manage zfs zvol devices. If you want to destroy a zvol which contains a vm which uses LVM it can give an error.
+
+``` shell
+zfs destroy -r vmstorage/vm-alma
+dataset is busy
+```
+
+Issue `lvs` to see if the zvol device is in use.
+
+The nixpkgs options of LVM (26.05) does not provide an entry where you could enter your own configurations in /etc/lvm/lvm.conf. Other nixpkgss options will use the lvm.conf also.
+
+A workaround is to define a device filter which instructs lvm no to use zfs zvols:
+
+``` shell
+devices {
+filter="r|^/dev/zvol*|"
+global_filter="r|^/dev/zvol*|"
+}
+```
+
+Setup a lvm.conf in NixOS such as:
+
+``` shell
+environment.etc."lvm/lvm.conf".text = pkgs.lib.mkForce ''
+devices { 
+    filter = [ "r|^/dev/zvol*|" ]
+    global_filter = [ "r|^/dev/zvol*|" ]
+}
+'';
+```
+
+After reboot remove the zfs zvol. The workaround needs to be removed if NixOS previousely had a lvm.conf.
+
 ## See also
 
 - [The corresponding ArchWiki page](https://wiki.archlinux.org/title/LVM)

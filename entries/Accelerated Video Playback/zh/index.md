@@ -30,13 +30,29 @@ NVIDIA 官方并未支持 Linux 上的视频播放加速。虽然存在第三方
 
 ## 测试您的配置
 
-您可以通过运行以下命令来测试您的配置：`nix-shell -p libva-utils --run vainfo` 有关更多信息，请参阅 [Arch Linux wiki 的硬件视频加速](https://wiki.archlinux.org/index.php/Hardware_video_acceleration#Verification)。 <span id="Applications"></span>
+您可以通过运行以下命令来测试您的配置：`nix-shell -p libva-utils --run vainfo`
+
+有关更多信息，请参阅 [Arch Linux wiki 的硬件视频加速](https://wiki.archlinux.org/index.php/Hardware_video_acceleration#Verification)。
+
+<span id="Applications"></span>
 
 ## 应用
+
+<span id="Chromium"></span>
+
+<div class="mw-translate-fuzzy">
 
 ### Chromium
 
 请参阅 <a href="Special:MyLanguage/Chromium#Accelerated_video_playback" class="wikilink" title="Chromium 视频加速">Chromium 视频加速</a>.
+
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+See <a href="Chromium#Accelerated_video_playback" class="wikilink" title="Chromium#Accelerated_video_playback">Chromium#Accelerated_video_playback</a>.
+
+</div>
 
 ### Firefox
 
@@ -52,10 +68,24 @@ hwdec=auto
 
 请参阅 [Arch Linux wiki 的 mpv 部分](https://wiki.archlinux.org/title/mpv#Hardware_video_acceleration).
 
+<span id="Also_see"></span>
+
+<div class="mw-translate-fuzzy">
+
 ## 另请参阅
 
 - [Arch Linux wiki 的硬件视频加速](https://wiki.archlinux.org/index.php/Hardware_video_acceleration)。
 - [nixos-hardware](https://github.com/NixOS/nixos-hardware) 包含各种硬件类型的示例配置。
+
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+- [Arch Linux wiki#Hardware video acceleration](https://wiki.archlinux.org/index.php/Hardware_video_acceleration).
+- [Gentoo Wiki#VAAPI.](https://wiki.gentoo.org/wiki/VAAPI)
+- [nixos-hardware](https://github.com/NixOS/nixos-hardware) has example configurations for various types of hardware.
+
+</div>
 
 <a href="Category:Video" class="wikilink" title="Category:Video">Category:Video</a>
 

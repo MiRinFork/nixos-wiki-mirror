@@ -15,7 +15,7 @@ Depending on how your computer is configured, you need to refer to the relevant 
 
 Different modules have different capabilities. systemd.network support routing traffic on a per user basis. For example, you can route all torrenting traffic through a wireguard tunnel, see below.
 
-systemd.network is recommended due to its powerful configuration interface. wg-quick is suitable for common usage patterns. networking.wireguard seems to have issues with routing. NetworkManager does not support Proxy server setup, and is cubersome to use.
+systemd.network is recommended due to its powerful configuration interface. wg-quick is suitable for common usage patterns. networking.wireguard seems to have issues with routing. NetworkManager does not support Proxy server setup, and is cumbersome to use.
 
 Skip to Generate Keys section if you are in a hurry.
 

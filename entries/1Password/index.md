@@ -20,15 +20,17 @@ This is automatically configured for <a href="Firefox" class="wikilink" title="F
 - Add that binary name to `/etc/1password/custom_allowed_browsers`:
 
 ``` nix
-    environment.etc = {
-      "1password/custom_allowed_browsers" = {
-        text = ''
-          vivaldi-bin
-          wavebox
-        '';
-        mode = "0755";
-      };
+{
+  environment.etc = {
+    "1password/custom_allowed_browsers" = {
+      text = ''
+        vivaldi-bin
+        wavebox
+      '';
+      mode = "0755";
     };
+  };
+}
 ```
 
 ### Unlocking with System Authentication
@@ -46,10 +48,17 @@ For fingerprint unlocking to work, <a href="Fingerprint_scanner" class="wikilink
 Add the following to your <a href="Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> configuration:
 
 ``` nix
+{
+  pkgs,
+  ...
+}:
+
+{
   home.packages = [
     pkgs._1password
     pkgs._1password-gui
   ];
+}
 ```
 
 ### SSH key management
@@ -61,11 +70,20 @@ Add the following to your <a href="Home_Manager" class="wikilink" title="Home Ma
 If 1Password manages your <a href="SSH" class="wikilink" title="SSH">SSH</a> keys and you use <a href="Home_Manager" class="wikilink" title="Home Manager">Home Manager</a>, you may also configure your `~/.ssh/config` file using Nix:
 
 ``` nix
+{
+  config,
+  pkgs,
+  ...
+}:
+
 let
-  onePassPath = if pkgs.stdenv.isDarwin
-    then "${config.home.homeDirectory}/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
-    else "${config.home.homeDirectory}/.1password/agent.sock";
-in {
+  onePassPath =
+    if pkgs.stdenv.isDarwin then
+      "${config.home.homeDirectory}/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
+    else
+      "${config.home.homeDirectory}/.1password/agent.sock";
+in
+{
   home.sessionVariables.SSH_AUTH_SOCK = onePassPath;
 
   # or, alternatively, set it in `.ssh/config` which has higher precedence:
@@ -84,6 +102,11 @@ in {
 You can enable <a href="Git" class="wikilink" title="Git">Git</a>'s <a href="SSH" class="wikilink" title="SSH">SSH</a> signing with <a href="Home_Manager" class="wikilink" title="Home Manager">Home Manager</a>:
 
 ``` nix
+{
+  lib,
+  pkgs,
+  ...
+}:
 {
   programs.git = {
     enable = true;

@@ -143,7 +143,7 @@ Below is an example service unit with annotations explaining the configuration s
         # For TLS
         "${config.security.pki.caBundle}:/etc/ssl/certs/ca-certificates.crt"
         # For DNS, failably attempts to mount the file
-        "-/etc/resolve.conf"
+        "-/etc/resolv.conf"
       ]
       # For if the user uses systemd-resolved instead
       ++ lib.optionals config.services.resolved.enable [
@@ -168,7 +168,7 @@ Below is an example service unit with annotations explaining the configuration s
       # Restrict the types of networking that the service can use
       # 
       # Can almost always be set, or set to an empty string if no network access is required.
-      RestrictAddresFamilies = [
+      RestrictAddressFamilies = [
         "AF_UNIX" # Unix sockets
         "AF_INET" # ipv4
         "AF_INET6" # ipv6

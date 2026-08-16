@@ -26,7 +26,9 @@ Users with only an NVIDIA GPU can attempt to use the third party implementation;
 
 ## Testing your configuration
 
-You can test your configuration by running: `nix-shell -p libva-utils --run vainfo` See [Arch Linux wiki#Hardware video acceleration](https://wiki.archlinux.org/index.php/Hardware_video_acceleration#Verification) for more information.
+You can test your configuration by running: `nix-shell -p libva-utils --run vainfo`
+
+See [Arch Linux wiki#Hardware video acceleration](https://wiki.archlinux.org/index.php/Hardware_video_acceleration#Verification) for more information.
 
 ## Applications
 
@@ -51,6 +53,7 @@ See [Arch Linux wiki#mpv](https://wiki.archlinux.org/title/mpv#Hardware_video_ac
 ## Also see
 
 - [Arch Linux wiki#Hardware video acceleration](https://wiki.archlinux.org/index.php/Hardware_video_acceleration).
+- [Gentoo Wiki#VAAPI.](https://wiki.gentoo.org/wiki/VAAPI)
 - [nixos-hardware](https://github.com/NixOS/nixos-hardware) has example configurations for various types of hardware.
 
 <a href="Category:Video" class="wikilink" title="Category:Video">Category:Video</a>
