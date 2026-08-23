@@ -86,6 +86,6 @@ As of right now, there is no consensus within Linux distros about the topic of m
 
 This current setup relies on the platform firmware providing an appropriate device tree for the kernel that will run.
 
-With *U-Boot*, it is possible to make it load a device tree, for example a more up-to-date one, by placing the dtb folder from a kernel build output at the `/dtb` location in the ESP. *U-Boot* will automatically load a device tree according to heuristics, which should be the right one.
+With *U-Boot*, it is possible to make it load a device tree, for example a more up-to-date one, by placing the dtb folder from a kernel build output at the `/dtb` location in the ESP. *U-Boot* will automatically load a device tree according to heuristics, which should be the right one. Device trees are not automatically copied to the ESP by NixOS, and this may be potentially problematic when one wants to use NixOS `hardware.deviceTree.overlays` options - a rebuild will succeed, but the overlay will not be applied on the next boot.
 
-It is unknown how much of an actual issue this is in practice. </translate>
+If one is using systemd-boot, this can be worked around by providing the device tree's full path to `hardware.deviceTree.name` - for example, `hardware.deviceTree.name = "rockchip/rk3328-rock64.dtb";` for a PINE64 ROCK64 board. </translate>

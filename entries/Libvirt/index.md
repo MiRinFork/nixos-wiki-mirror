@@ -82,13 +82,13 @@ The host should now be able to reach the guest via the bridge interface and vice
 
 ### File sharing via virtiofs mount
 
-One of the best ways to share a host directory with the guest OS is with [virtiofs](https://virtio-fs.gitlab.io/). On the host system, install the `virtiofsd` package:
+One of the best ways to share a host directory with the guest OS is with [virtiofs](https://virtio-fs.gitlab.io/). On the host system, install the `virtiofsd` package as an out-of-tree vhost-user driver. for example:
 
 ``` nix
-environment.systemPackages = with pkgs; [
-  guestfs-tools
-  virtiofsd
-];
+virtualisation.libvirtd = {
+  enable = true;
+  qemu.vhostUserPackages = with pkgs; [ virtiofsd ];
+};
 ```
 
 Next, a few sections of the XML must be edited, which can be done manually or via virt-manager in the guest configuration GUI. If using virt-manager, first navigate on the toolbar to Edit \> Preferences \> General, and click "Enable XML Editing". Next, open the virtual machine and under the hardware configuration, navigate to Memory and check the box "Enable shared memory". This will add an "access" block to the XML for you, similar to this:
@@ -107,7 +107,6 @@ While still in the hardware configuration, click "Add Hardware" and select "File
 ``` xml
 <filesystem type="mount" accessmode="passthrough">
   <driver type="virtiofs"/>
-  <binary path="/run/current-system/sw/bin/virtiofsd"/>
   <source dir="/media"/>
   <target dir="my_host_media_share"/>
   <alias name="fs0"/>
@@ -132,7 +131,9 @@ This error means virtiofsd was not installed on the host system. Ensure the syst
 
 #### Error starting domain: operation failed: Unable to find a satisfying virtiofsd
 
-The virtiofsd binary path needs to be specified in the filesystem configuration. virt-manager doesn't add this by default and instead assumes a default path that doesn't exist under NixOS. Open the guest machine's hardware details page, click on the passthrough filesystem created earlier, open the XML tab and inside the \`<filesystem>...</filesystem>\` add the following element to tell virtio where to find the virtiofsd binary:
+If the \`virtiofsd\` package isn't in \`virtualisation.libvirtd.qemu.vhostUserPackages\`, libvirt won't be able to find the \`virtiofsd\` binary. Put the \`virtiofsd\` package there instead of, for example, \`environment.systemPackages\`.
+
+Another fix is to specify the virtiofsd binary path in the filesystem configuration. virt-manager doesn't add this by default and instead assumes a default path that doesn't exist under NixOS. Open the guest machine's hardware details page, click on the passthrough filesystem created earlier, open the XML tab and inside the \`<filesystem>...</filesystem>\` add the following element to tell virtio where to find the \`virtiofsd\` binary:
 
 ``` xml
 <binary path="/run/current-system/sw/bin/virtiofsd"/>

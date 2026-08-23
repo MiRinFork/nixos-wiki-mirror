@@ -24,6 +24,20 @@ Swap partitions are typically created during the initial disk partitioning phase
 
 Swap partitions can be defined in `configuration.nix` like above or (if GPT) be automatically discovered by `systemd-gpt-auto-generator(8)`. Using the former allows you to have some control over swap mounting options and to enable features such as encrypted swap.
 
+## Zram vs Zswap
+
+As both are doing a similar thing, you are supposed to pick only one (https://linuxreviews.org/Zram#zram_and_zswap)
+
+Here is an over-simple summary:
+
+- If you have no swap, use zram
+- If you have swap, use zswap
+
+Here some good related articles:
+
+- <https://chrisdown.name/2026/03/24/zswap-vs-zram-when-to-use-what.html>
+- <https://askubuntu.com/questions/471912/zram-vs-zswap-vs-zcache-ultimate-guide-when-to-use-which-one>
+
 ## Zram swap
 
 Zram is a kernel module for creating a compressed block device in RAM.

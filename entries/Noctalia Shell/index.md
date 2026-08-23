@@ -16,4 +16,4 @@ You can also get the latest Git version of Noctalia by using <a href="flakes" cl
 
 [^1]: [<https://github.com/noctalia-dev/noctalia/blob/d1c0374f73ea687ae33b30fe6c4257dc0995d4f3/README.md>](https://github.com/noctalia-dev/noctalia-shell/blob/d1c0374f73ea687ae33b30fe6c4257dc0995d4f3/README.md)
 
-[^2]: <https://docs.noctalia.dev/getting-started/nixos/>
+[^2]: <https://docs.noctalia.dev/noctalia/getting-started/nixos/>

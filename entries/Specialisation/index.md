@@ -6,7 +6,7 @@ Specialisations allow you to define variations of your system configuration. For
 
 ## Config
 
-Specialisations are defined with the following options \[1\]: <https://search.nixos.org/options?from=0&size=50&sort=relevance&query=specialisation>
+Specialisations are defined with the following options[^1]: <https://search.nixos.org/options?from=0&size=50&sort=relevance&query=specialisation>
 
 ``` nix
 specialisation = {
@@ -59,7 +59,7 @@ However, if there are no specialisations defined, then `config.specialisation !=
 
 ## Activating a specialization
 
-After rebuilding your system, you can choose a specialisation during boot; it's also possible to switch into a specialisation at runtime - following the example above, we'd run:
+After rebuilding your system, you can choose a specialisation during boot; it's also possible to switch into a specialisation at runtime - following the example above, you would run:
 
 ``` console
 $ nixos-rebuild switch --specialisation chani
@@ -69,8 +69,6 @@ Note that not all configurations can be fully switched into at runtime - e.g. if
 
 ## Further reading
 
-\[1\] <https://www.tweag.io/blog/2022-08-18-nixos-specialisations/>
+- <https://discourse.nixos.org/t/nixos-specialisations-how-do-you-use-them/10367/4>
 
-\[2\] <https://discourse.nixos.org/t/nixos-specialisations-how-do-you-use-them/10367/4>
-
-\[3\] <https://discourse.nixos.org/t/what-does-mkdefault-do-exactly/9028>
+[^1]: <https://www.tweag.io/blog/2022-08-18-nixos-specialisations/>

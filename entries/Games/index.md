@@ -2,55 +2,59 @@
 
 <!-- Source page: Games -->
 
-## Open source games and their status on NixOS
+## Game launchers
 
-| Name | Category | nixpkg status | Short Description |
+Games can be run by different applications. Some are able to include libraries from different platforms.
+
+| Application | Platform | Description | nixpkgs |
 |----|----|----|----|
-| [The Dark Mod](https://www.thedarkmod.com/main/) | Stealth, FPS | [pending pull request](https://github.com/NixOS/nixpkgs/pull/356578) | Stealth game inspired by the Thief series. |
-| [Endless Sky](https://endless-sky.github.io/) | Space simulation, RPG | In nixpkgs | Explore a universe with different factions and ships. |
-| [Veloren](https://www.veloren.net/) | RPG, Sandbox | In nixpkgs | Multiplayer voxel RPG set in a procedurally generated world. |
-| [Armagetron Advanced](https://www.armagetronad.org/) | Arcade, Racing | In nixpkgs | A multiplayer Tron-like lightcycle racing game. |
-| [0 A.D.](https://play0ad.com/) | Strategy, Historical | In nixpkgs | Historical real-time strategy game. |
-| [SuperTuxKart](https://supertuxkart.net/de/Main_Page) | Arcade, Racing | In nixpkgs | Kart racing game (like Super Mario Kart) featuring Tux and friends. |
-| [OpenRA](https://www.openra.net/) | Strategy, RTS | In nixpkgs | Open-source implementation of Command & Conquer. |
-| [FreeCiv](https://freeciv.org/) | Strategy, Turn-based | In Nixpkgs | Civilization-building strategy game. |
-| [FreeDink](https://www.gnu.org/software/freedink/) | Adventure, RPG | In Nixpkgs | Free, portable and enhanced version of the Dink Smallwood game engine |
-| [OpenTTD](https://www.openttd.org/) | Simulation, Management | In nixpkgs | Business simulation game based on Transport Tycoon Deluxe. |
-| [Battle for Wesnoth](https://www.wesnoth.org/) | Strategy, Turn-based | In nixpkgs | Turn-based strategy game with fantasy themes. |
-| [FreeDoom](https://freedoom.github.io/) | FPS | ***Not in nixpkgs*** | Free alternative to the Doom series. |
-| [Xonotic](https://xonotic.org/) | FPS, Arena shooter | In nixpkgs | Fast-paced multiplayer shooter. |
-| [LinCity](https://sourceforge.net/projects/lincity/) | Simulation, Management | In nixpkgs | City simulation game |
-| [LinCity-NG](https://github.com/lincity-ng/lincity-ng) | Simulation, Management | In nixpkgs | City simulation game |
-| [Mindustry](https://mindustrygame.github.io/) | Strategy, Sandbox | In nixpkgs | Sandbox tower defense game. |
-| [NetHack](https://nethack.org/) | Rogue-like, RPG | In nixpkgs | Rogue-like game |
-| [Cataclysm: Dark Days Ahead](https://cataclysmdda.org/) | Survival, Rogue-like | In nixpkgs | Post-apocalyptic survival game. |
-| [Shattered Pixel Dungeon](https://shatteredpixel.com/) | Rogue-like, RPG | In nixpkgs | Rogue-like dungeon crawler with pixel graphics. |
-| [Simon Tatham's Portable Puzzle Collection](https://www.chiark.greenend.org.uk/~sgtatham/puzzles/) | Puzzle | In nixpkgs | Simon Tatham's portable puzzle collection |
-| [Luanti](https://luanti.org) | Sandbox | In nixpkgs | An open source voxel game engine. |
+| <a href="Steam" class="wikilink" title="Steam">Steam</a> | Steam | Stable support for Windows games. Linux games often incompatible due to interoperating differences. | `steam` `steam-run` `steam-runtime` `steam-original` `steam-unwrapped` `steam-small` |
+| <a href="Lutris" class="wikilink" title="Lutris">Lutris</a> | Epic Games, EA App, Flatpak, GOG, Humble Bundle, Steam, Ubisoft Connect, Wine |  | `lutris` `lutris-free` `lutris-unwrapped` |
+| <a href="Heroic_Games_Launcher" class="wikilink" title="Heroic">Heroic</a> | Epic Games, GOG, Prime Gaming, Wine | Supports gamepad navigation. Unlike Lutris, uses open-source Legendary for Epic Games. | `heroic` `heroic-unwrapped` |
+| Itch.io | Itch.io |  | `itch` |
+| PPSSPP | PSP emulation |  | `ppsspp` |
+| <a href="Playstation2" class="wikilink" title="PCSX2">PCSX2</a> | PS2 emulation |  |  |
+| RPCS3 | PS3 emulation | Contains unfree blobs (PS3 firmware). | `rpcs3` |
+| <a href="RetroArch" class="wikilink" title="RetroArch">RetroArch</a> | Retro games emulation |  |  |
+| <a href="Wine" class="wikilink" title="Wine">Wine</a> | Windows emulation |  | `wineWow64Packages` `winetricks` |
+| Dosbox | DOS emulation |  | `dosbox` |
+| <a href="Nixpkgs" class="wikilink" title="Nixpkgs">Nixpkgs</a> | Linux games |  |  |
+|  |  |  |  |
 
-## Other resources
+## List of NixOS supported games
 
-- [List of existing games in nixpkgs](https://github.com/NixOS/nixpkgs/tree/master/pkgs/games)
-- [Open Source Game Clones](https://osgameclones.com/)
-- [open-source-games list on Github by bobeff](https://github.com/bobeff/open-source-games)
-- [100 highest rated (by stars on Github) playable open source games](https://trilarion.github.io/opensourcegames/games/top.html)
-- <a href="wikipedia:List_of_open-source_video_games" class="wikilink" title="List of open-source video games (en.wikipedia)">List of open-source video games (en.wikipedia)</a>
-- [Topic "open-source-game" on github](https://github.com/topics/open-source-game)
+| Name | Category | Description | nixpkgs |
+|----|----|----|----|
+| [The Dark Mod](https://www.thedarkmod.com/main/) | Stealth, FPS | Stealth game inspired by the Thief series. | [pending pull request](https://github.com/NixOS/nixpkgs/pull/356578) |
+| [Endless Sky](https://endless-sky.github.io/) | Space simulation, RPG | Explore a universe with different factions and ships. | available |
+| [Veloren](https://www.veloren.net/) | RPG, Sandbox | Multiplayer voxel RPG set in a procedurally generated world. | available |
+| [Armagetron Advanced](https://www.armagetronad.org/) | Arcade, Racing | A multiplayer Tron-like lightcycle racing game. | available |
+| [0 A.D.](https://play0ad.com/) | Strategy, Historical | Historical real-time strategy game. | available |
+| [SuperTuxKart](https://supertuxkart.net/de/Main_Page) | Arcade, Racing | Kart racing game (like Super Mario Kart) featuring Tux and friends. | available |
+| [OpenRA](https://www.openra.net/) | Strategy, RTS | Open-source implementation of Command & Conquer. | available |
+| [FreeCiv](https://freeciv.org/) | Strategy, Turn-based | Civilization-building strategy game. | available |
+| [FreeDink](https://www.gnu.org/software/freedink/) | Adventure, RPG | Free, portable and enhanced version of the Dink Smallwood game engine | available |
+| [OpenTTD](https://www.openttd.org/) | Simulation, Management | Business simulation game based on Transport Tycoon Deluxe. | available |
+| [Battle for Wesnoth](https://www.wesnoth.org/) | Strategy, Turn-based | Turn-based strategy game with fantasy themes. | available |
+| [FreeDoom](https://freedoom.github.io/) | FPS | Free alternative to the Doom series. | ***unavailable*** |
+| [Xonotic](https://xonotic.org/) | FPS, Arena shooter | Fast-paced multiplayer shooter. | available |
+| [LinCity](https://sourceforge.net/projects/lincity/) | Simulation, Management | City simulation game. | available |
+| [LinCity-NG](https://github.com/lincity-ng/lincity-ng) | Simulation, Management | City simulation game. |  |
+| [Mindustry](https://mindustrygame.github.io/) | Strategy, Sandbox | Sandbox tower defense game. | available |
+| [NetHack](https://nethack.org/) | Rogue-like, RPG | Rogue-like game. | available |
+| [Cataclysm: Dark Days Ahead](https://cataclysmdda.org/) | Survival, Rogue-like | Post-apocalyptic survival game. | available |
+| [Shattered Pixel Dungeon](https://shatteredpixel.com/) | Rogue-like, RPG | Rogue-like dungeon crawler with pixel graphics. | available |
+| [Simon Tatham's Portable Puzzle Collection](https://www.chiark.greenend.org.uk/~sgtatham/puzzles/) | Puzzle | Simon Tatham's portable puzzle collection. | available |
+| [Luanti](https://luanti.org) | Sandbox | An open source voxel game engine. | available |
+| [Tales of Maj'Eyal (ToME 4)](https://te4.org/) | Rogue-like, RPG, Turn-based | Rogue-like focused on exploration of procedurally generated dungeons. | available |
+| [OpenMW](https://openmw.org/) | RPG, Open world, Action-adventure | Unofficial open source engine reimplementation of the game Morrowind. | available |
+| [The Powder Toy](https://powdertoy.co.uk/) | Sandbox | Classic 'falling sand' physics sandbox game.Classic 2D jump'n run sidescroller game. | available |
+| [Super Tux](https://www.supertux.org/) | Platformer, Side-scroller | Classic 2D jump'n run side-scroller game. | available |
+| [Chromium B.S.U.](https://chromium-bsu.sourceforge.io/) | Arcade, Space Shooter | Fast paced, arcade-style, top-scrolling space shooter. | available |
+| [Dwarf Fortress](https://www.bay12games.com/dwarves/) | Simulation, Management, Rogue-like, Sandbox | Single-player fantasy game with a randomly generated adventure world. | available |
+| [Dungeon Crawl](https://crawl.develz.org/) | Rogue-like, Adventure, Turn-based | Open-source, single-player, role-playing roguelike game. | available |
 
-## Game starters
-
-Games can be run by different applications. Some are able to include libraries from different plattforms.
-
-| Application | Platform | Remarks |
-|----|----|----|
-| <a href="Steam" class="wikilink" title="Steam">Steam</a> | Steam | Windows games work fine. Linux games are often incompatible due to how NixOS works. |
-| <a href="Lutris" class="wikilink" title="Lutris">Lutris</a> | GOG, Humble Bundle, Epic, EA App, Ubisoft Connect, Steam, Flatpak, Wine |  |
-| <a href="Heroic_Games_Launcher" class="wikilink" title="Heroic">Heroic</a> | Epic, GOG, Prime Gaming, Wine | Supports gamepad navigation. Unlike Lutris, uses open-source Legendary for Epic Games Store. |
-| <a href="Wine" class="wikilink" title="Wine">Wine</a> | Windows applications/games | often easier to use Lutris install scripts for wine applications/games |
-| nixpgs | Linux games | There are several games in nixpgs. You can install them directly, e.g. vintagestory, flightgear, lots of racing games. |
-| <a href="Dosbox" class="wikilink" title="Dosbox">Dosbox</a> | DOS applications/games |  |
-
-## List of games
+## Example of games installation
 
 ### Renowned Explorers: International Society
 
@@ -77,5 +81,15 @@ Tested with version `renowned_explorers_international_society_522_26056.sh` from
 ```
 
 Adding `libxkbcommon`, `mesa`, and `wayland` is straightforward. The game expects the shared library `sdnio.so.6.1` to exist, so we need to create a symbolic link after the installation of `sndio`.
+
+## See also
+
+- [List of existing games in nixpkgs](https://github.com/NixOS/nixpkgs/tree/master/pkgs/games)
+- [Open Source Game Clones](https://osgameclones.com/)
+- [open-source-games list on Github by bobeff](https://github.com/bobeff/open-source-games)
+- [100 highest rated (by stars on Github) playable open source games](https://trilarion.github.io/opensourcegames/games/top.html)
+- <a href="wikipedia:List_of_open-source_video_games" class="wikilink" title="List of open-source video games (en.wikipedia)">List of open-source video games (en.wikipedia)</a>
+- [Topic "open-source-game" on github](https://github.com/topics/open-source-game)
+- <a href="Chess" class="wikilink" title="NixOS Wiki Chess page">NixOS Wiki Chess page</a>
 
 <a href="Category:Gaming" class="wikilink" title="Category:Gaming">Category:Gaming</a> <a href="Category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="Category:Lists" class="wikilink" title="Category:Lists">Category:Lists</a>

@@ -16,19 +16,23 @@ environment.systemPackages = with pkgs; [
 
 ## Installing Extensions
 
-Gram, unlike Zed, builds extensions locally. This makes getting extensions working on NixOS require some configuration. The two main ways are the <a href="#Adhoc_Method" class="wikilink" title="adhoc method">adhoc method</a>, or using <a href="#Nix-Gram-Extensions" class="wikilink" title="nix-gram-extensions">nix-gram-extensions</a> which currently requires <a href="Home_Manager" class="wikilink" title="home manager">home manager</a> or [hjem](https://hjem.feel-co.org/).
+Gram, unlike Zed, builds extensions locally. This makes installing extensions on NixOS require some setup. There are multiple ways to handle extensions, in no particular order:
 
-### Adhoc Method
+- <a href="#System_Method" class="wikilink" title="System Method">System Method</a>: if you don't mind modifying your system configuration, requires <a href="Nix-ld" class="wikilink" title="Nix-ld">Nix-ld</a>.
+- <a href="#Nix-Gram-Extensions" class="wikilink" title="Nix-Gram-Extensions">Nix-Gram-Extensions</a>: if you want to manage extensions with <a href="Home_Manager" class="wikilink" title="home manager">home manager</a> or [hjem](https://hjem.feel-co.org/)
+- <a href="#Temp_FHS_Environment" class="wikilink" title="Temp FHS Environment">Temp FHS Environment</a>: if you don't want to modify your system. Includes full copy-pastable example.
 
-This allows you to use Gram as you'd expect on other distros, able to click Install From URL or Install Local and have Gram compile the extension. This method is definitely more hacky, so if you don't mind managing your extensions with nix, <a href="#Nix-Gram-Extensions" class="wikilink" title="#Nix-Gram-Extensions">#Nix-Gram-Extensions</a> is recommended.
+### System Method
 
-There are a number of known things needed for Gram to successfully compile extensions itself. Aside from <a href="#Nix-ld" class="wikilink" title="#Nix-ld">#Nix-ld</a>, which needs to be enabled in your system configuration, everything else can be installed either to system packages, in a devShell, user packages, home manager packages, etc. All examples are primarily for reference, and as such will only demonstrate installation to system packages. If you want to install using any of the previously listed methods, it should hopefully be fairly simple to translate to your method of choosing.
+This allows you to use Gram as you'd expect on other distros, able to click Install From URL or Install Local and have Gram compile the extension. This method is a bit hacky, and requires some setup.
+
+There are a number of known things needed for Gram to successfully compile extensions itself. Aside from <a href="#Nix-ld" class="wikilink" title="#Nix-ld">#Nix-ld</a>, which needs to be enabled in your system configuration, everything else can be installed either to system packages, in a devShell, user packages, home manager packages, etc. All examples are primarily for reference, and will only demonstrate installation to system packages. If you want to install using any of the previously listed methods, it should hopefully be fairly simple to translate to your method of choosing.
 
 The known requirements are the following:
 
 - <a href="#Nix-ld" class="wikilink" title="#Nix-ld">#Nix-ld</a>
 - <a href="#Clang" class="wikilink" title="#Clang">#Clang</a>
-- <a href="#Wasm32-Wasip2_Toolchain" class="wikilink" title="#Wasm32-Wasip2 Rust Toolchain">#Wasm32-Wasip2 Rust Toolchain</a>
+- <a href="#Rust_Wasm32-Wasip2" class="wikilink" title="#Wasm32-Wasip2 Rust Toolchain">#Wasm32-Wasip2 Rust Toolchain</a>
 - <a href="#Other_Needed_Packages" class="wikilink" title="#Other Needed Packages">#Other Needed Packages</a>
 
 #### Nix-ld
@@ -49,25 +53,29 @@ You can verify if clang is configured correctly in your environment by opening G
 
 Both should return with a version of .
 
-#### Wasm32-Wasip2 Toolchain
+#### Rust Wasm32-Wasip2
 
-A valid [wasm32-wasip2](https://doc.rust-lang.org/nightly/rustc/platform-support/wasm32-wasip2.html) rust toolchain needs to be installed into your environment. This can be done declaratively with either [fenix](https://github.com/nix-community/fenix) or [rust-overlay](https://github.com/oxalica/rust-overlay). Or you can have Gram install the toolchain itself by installing to your environment. The rustup option is less declarative, but much simpler if that doesn't bother you.
+A valid [wasm32-wasip2](https://doc.rust-lang.org/nightly/rustc/platform-support/wasm32-wasip2.html) rust toolchain needs to be installed into your environment.
+
+This can be done declaratively with either <a href="#Fenix" class="wikilink" title="#Fenix">#Fenix</a> or <a href="#Rust-Overlay" class="wikilink" title="#Rust-Overlay">#Rust-Overlay</a>. Or you can have Gram install the toolchain itself by installing <a href="#Rustup" class="wikilink" title="#Rustup">#Rustup</a> to your environment.
+
+The <a href="#Rustup" class="wikilink" title="#Rustup">#Rustup</a> option is less declarative, but much simpler if that doesn't bother you.
 
 If you've installed with fenix or rust-overlay, you can confirm that it's installed correctly by entering Gram's terminal and running
 
-If in the command's output is a directory named `wasm32-wasip2`, it should be installed correctly and Gram will be able to detect it. If it's listed as `wasm32-unknown-unknown`, see <a href="Gram#Wasm32_Wrong_Target" class="wikilink" title="Gram#Wasm32_Wrong_Target">Gram#Wasm32_Wrong_Target</a>.
+If in the command's output is a directory named `wasm32-wasip2`, it should be installed correctly and Gram will be able to detect it. If it's listed as `wasm32-unknown-unknown`, see <a href="Gram#Wasm32_Wrong_Target" class="wikilink" title="Wasm32 Wrong Target">Wasm32 Wrong Target</a>.
 
 ##### Rustup
 
-To configure rustup, just run
+To configure , just run
 
 As whatever user is using Gram to add the stable toolchain as your default to `~/.rustup`.
 
 ##### Fenix
 
-This example uses the `latest` branch, but other options are available, just make sure the versions all match across `toolchain` and `target` or `rustc`, `cargo` and `target`.
+This example uses the `latest` branch, but other options are available, just make sure the versions all match across `toolchain` and `targets` or `rustc`, `cargo` and `targets`.
 
-Add `fenix` to your flake
+Add [fenix](https://github.com/nix-community/fenix) to your flake
 
 ``` nix
 {inputs, pkgs, system, ... }:
@@ -94,7 +102,7 @@ Add `fenix` to your flake
 
 Like the fenix example, this assumes the `latest` branch, though rust-overlay provides others.
 
-Add `rust-overlay` to your flake
+Add [rust-overlay](https://github.com/oxalica/rust-overlay) to your flake
 
 ``` nix
 { inputs, pkgs, ... }:
@@ -115,7 +123,13 @@ Add `rust-overlay` to your flake
 
 ### Nix-Gram-Extensions
 
-`nix-gram-extensions` is a project to bring declarative management of Gram extensions to Nix using custom builders and integration with <a href="Home_Manager" class="wikilink" title="home manager">home manager</a> and [hjem](https://hjem.feel-co.org/). It is hosted on [codeberg](https://codeberg.org/niklaskorz/nix-gram-extensions) and [tangled](https://tangled.org/niklaskorz.eu/nix-gram-extensions). If you want to install it to your system, it has a detailed section on installation in its [README](https://codeberg.org/niklaskorz/nix-gram-extensions#installation). More information can be found at its [discourse announcement](https://discourse.nixos.org/t/gram-extensions-the-nix-way/79024).
+Nix-Gram-Extensions is a project to bring declarative management of Gram extensions to Nix using custom builders and integration with <a href="Home_Manager" class="wikilink" title="home manager">home manager</a> and [hjem](https://hjem.feel-co.org/). It is hosted on [codeberg](https://codeberg.org/niklaskorz/nix-gram-extensions) and [tangled](https://tangled.org/niklaskorz.eu/nix-gram-extensions). If you want to install it to your system, it has a detailed section on installation in its [README](https://codeberg.org/niklaskorz/nix-gram-extensions#installation). More information can be found at its [discourse announcement](https://discourse.nixos.org/t/gram-extensions-the-nix-way/79024).
+
+### Temp FHS Environment
+
+If you do not want to or cannot enable <a href="Nix-ld" class="wikilink" title="Nix-ld">Nix-ld</a>, you can make a temporary FHS Environment and run Gram in there to build extensions. Provided below are an example `flake.nix` and `shell.nix`. Just add these files to a directory, enter it and run `nix develop`. Then, once you're dropped into the environment's shell, run `gram` and install your extensions as you would on any other distro. Once they're built, you can run Gram outside of that environment too and they should just work.
+
+And of course, if you prefer <a href="#Fenix" class="wikilink" title="#Fenix">#Fenix</a> or <a href="#Rustup" class="wikilink" title="#Rustup">#Rustup</a>, you can modify this example to use them instead of <a href="#Rust-Overlay" class="wikilink" title="#Rust-Overlay">#Rust-Overlay</a>.
 
 ### More About Extensions
 

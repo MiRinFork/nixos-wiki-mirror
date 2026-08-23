@@ -57,7 +57,7 @@ You can manage SSH authorized public keys declaratively by adding them to your s
 
 Alternatively, you can reference a custom file containing the authorized keys:
 
-For additional configuration options, see the module documentation.
+The keys will be stored in `/etc/ssh/authorized_keys.d/`<user>, and that file, in addition to `~`<user>`/.ssh/authorized_keys`, will be used by the ssh daemon for authentication (as per `AuthorizedKeysFile` in `/etc/ssh/sshd_config`). For additional configuration options, see the module documentation.
 
 After configuring user keys, it is recommended to improve server security by disabling password-based authentication and requiring public key authentication. This can be done on a NixOS-based server (e.g. `another-machine`). For additional security measures, see <a href="SSH#Security_hardening" class="wikilink" title="SSH#Security hardening">SSH#Security hardening</a>.
 

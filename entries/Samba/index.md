@@ -249,7 +249,7 @@ Replace all <FIELDS> with concrete values:
     fsType = "cifs";
     options = let
       # this line prevents hanging on network split
-      automount_opts = "x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s";
+      automount_opts = "x-systemd.automount,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s";
 
     in ["${automount_opts},credentials=/etc/nixos/smb-secrets" "nofail"];
   };
@@ -271,7 +271,7 @@ By default, CIFS shares are mounted as root. If mounting as user is desirable, \
   fileSystems."/mnt/share" = {
     # ... rest of the filesystem config omitted
     options = let
-      automount_opts = "x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s,user,users";
+      automount_opts = "x-systemd.automount,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s,user,users";
 
       in ["${automount_opts},credentials=/etc/nixos/smb-secrets,uid=1000,gid=100"];
     # or if you have specified `uid` and `gid` explicitly through NixOS configuration,

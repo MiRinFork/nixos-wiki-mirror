@@ -8,7 +8,7 @@ By using DDNS, users can maintain consistent access to their services over the i
 
 There are [many](https://wiki.archlinux.org/title/Dynamic_DNS) options to choose from, some are provider specific.
 
-## Confiuration example
+## Configuration example
 
 One easy way to setup DNS updater is [ddns-updater](https://github.com/qdm12/ddns-updater). It may be configured like so:
 

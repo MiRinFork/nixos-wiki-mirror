@@ -44,8 +44,8 @@ Use this page to check whether your Yubikey supports **FIDO U2F** before startin
 
 ``` nix
 security.pam.services = {
-  login.u2fAuth = true;
-  sudo.u2fAuth = true;
+  login.u2f.enable = true;
+  sudo.u2f.enable = true;
 };
 ```
 
@@ -62,15 +62,17 @@ If you don't want to be able to use your password to login to your user account 
 ``` nixos
   security.pam.services = {
     login = {
-      u2fAuth = true;
+      u2f.enable = true;
       unixAuth = false;
     };
     sudo = {
-      u2fAuth = true;
+      u2f.enable = true;
       unixAuth = false;
     };
   };
 ```
+
+You can also set `security.pam.u2f.control` to "required" in order to have multi-factor authentication.
 
 ### yubico-pam
 

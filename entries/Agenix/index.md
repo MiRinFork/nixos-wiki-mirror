@@ -45,6 +45,24 @@ environment.systemPackages = [ inputs.agenix.packages.x86_64-linux.default ];
 
 <translate>
 
+### Adding an age plugin
+
+When using an age plugin, such as `age-plugin-yubikey`, it must be added to `age`'s `$PATH`. </translate>
+
+``` nix
+age.ageBin = "PATH=$PATH:${lib.makeBinPath [ pkgs.age-plugin-yubikey ]} ${pkgs.age}/bin/age"
+```
+
+<translate> When using the Home Manager module, the plugin can be installed in the user's profile with: </translate>
+
+``` nix
+home.packages = [
+  pkgs.age-plugin-yubikey
+];
+```
+
+<translate>
+
 ## Configuration
 
 ### Choose a public/private key

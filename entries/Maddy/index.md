@@ -129,6 +129,7 @@ You can use several online tools to test your mail server configuration:
 
 - [en.internet.nl/test-mail](https://en.internet.nl/test-mail): Test your mail server configuration for validity and security.
 - [mail-tester.com](https://www.mail-tester.com): Send a mail to this service and get a rating about the "spaminess" of your mail server.
+- <https://www.suped.com/tools/email-tester> Test your email authentication and configuration, including SPF, DKIM, and DMARC.
 - Send a mail to the echo server `echo@univie.ac.at`. You should receive a response containing your message in several seconds.
 
 ### Autoconfig

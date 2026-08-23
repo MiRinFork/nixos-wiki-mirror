@@ -14,7 +14,7 @@ There are many ways to patch Nixpkgs, each with its own advantages and disadvant
 | gh-cherry-pick | git cherry-pick |  |  |
 | Nixtamal | .patch files | X |  |
 
-Most of the solutions work on the `.patch` files, but those have a huge disadvantage - they quickly go out of date and have to be constantly rebased. This is especially true for solutions that use Git to apply patches. Another disadvantage may be [IFD](https://nixos.org/manual/nix/stable/language/import-from-derivation), which may result in [performance and runtime issues](https://nixcademy.com/posts/what-is-ifd-ups-and-downs/).
+Most of the solutions work using the reliable `.diff` / `.patch` files. [Patch files](https://en.wikipedia.org/wiki/Patch_(Unix)) have some disadvantages, namely they can go out of date, needing rebasing if the patch no longer applies[^1]. [IFD](https://nixos.org/manual/nix/stable/language/import-from-derivation) usage may result in [performance and runtime issues](https://nixcademy.com/posts/what-is-ifd-ups-and-downs/).
 
 ## Usage
 
@@ -199,9 +199,15 @@ nix-repl> :p pkgs.movim.version
 0.33.1
 ```
 
+## Notes
+
+<references group="footnotes" />
+
 ## Resources
 
 The following are resources that go into more depth on this topic.
 
 - [Patching <nixpkgs>](https://ertt.ca/nix/patch-nixpkgs/)
 - [gh-cherry-pick announcement (and discussion about other tools)](https://discourse.nixos.org/t/patch-nixpkgs-using-cherry-picks-without-local-clone/76925)
+
+[^1]: <a href="Nixtamal" class="wikilink" title="Nixtamal">Nixtamal</a> will automatically refetch any updates/rebases to patches referencing a dynamic URL, such as an in-review pull request on a code forge, on running `nixtamal refresh`
