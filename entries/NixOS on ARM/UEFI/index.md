@@ -6,31 +6,31 @@
 
 This section of the NixOS on ARM documentation aims to document as much as possible about booting *any* ARM boards using UEFI. This will be written with a heavy bias about *Single Board Computers* (SBCs), as this is where booting is seen as complicated, cumbersome, when not described as impossible.
 
-## The Basics First
+# The Basics First
 
-### Target Support
+## Target Support
 
 Some things will not be specific to UEFI. For example, board support by the kernel used. This is written assuming that mainline Linux works enough on the target system so that you can install from the generic iso image.
 
 Just as you could on `x86_64` if your platform required it, you can build a customized iso image. Explaining this is out of scope for this article. The same pitfalls apply. For example, the generated configuration will not take into account configuring the customized kernel.
 
-### Platform Firmware
+## Platform Firmware
 
 Let's define what a **Platform Firmware** is. It is a generic term I'm using to describe the first thing the CPU starts at boot time. On your typical `x86_64` system, it would be what was previously called the *BIOS*. Now often diminutively called by the name *EFI*. This is what initializes enough of the hardware so that the operating system can start. Additionally, it often provides facilities for the user to do basic configuration, and manage boot options.
 
 In the ARM with SBCs landscape, ***<a href="U-Boot" class="wikilink" title="U-Boot">U-Boot</a>*** is the de facto solution for the *Platform Firmware*. Though *U-Boot* is confusingly, but rightly, often referred to as a *Boot Loader*. *U-Boot* plays double duties often. It is tasked with *initializing the hardware*, and often also used to handle *loading and booting* the operating system.
 
-### UEFI
+## UEFI
 
 The *[Unified Extensible Firmware Interface](https://en.wikipedia.org/wiki/Unified_Extensible_Firmware_Interface)* it not in itself a tangible thing. Wrongly abstracted, it is a specification used to provide an *interface* to describe a standard boot process, including an environment before the operating system starts, and protocols for operating systems.
 
 There are multiple implementations of UEFI. Vendors like *American Megatrends*, *Phoenix Technologies* and *Insyde Software* may have produced the one on your personal `x86_64` machine. **TianoCore** is *the* reference UEFI implementation, and Open Source. Luckily enough, *U-Boot* implements enough (and a bit more) of the UEFI spec.
 
-#### SBBR? EBBR?
+### SBBR? EBBR?
 
 Other than letter salads, they are *Server Base Boot Requirements* and *Embedded Base Boot Requirements*. Two specifications for ARM. If your target is in compliance with either, booting with UEFI should already be supported. With the minimal UEFI support in *U-Boot*, targets that were not made to be EBBR compliant can be made compliant, or be close enough for what it matters.
 
-## UEFI, on my SBC???
+# UEFI, on my SBC???
 
 Believe me or not, it's more likely that you can, if your SBC is well supported by mainline *<a href="U-Boot" class="wikilink" title="U-Boot">U-Boot</a>*. *U-Boot* provides enough UEFI to comply with EBBR, which in turn is enough to allow us to boot the `AArch64` UEFI NixOS iso, and with almost no differences compared to the `x86_64` guide, simply follow the installation instruction to boot into an installed system.
 
@@ -42,11 +42,13 @@ Where supported, Nix can be used to build U-boot from its main-line repositories
 
 Any other UEFI compliant *Platform Firmware* can be used.
 
-### Getting the installer image (ISO)
+## Getting the installer image (ISO)
+
+=
 
 Choose one of the images (in rough order of preference):
 
-- [NixOS unstable, new kernel](https://hydra.nixos.org/job/nixos/trunk-combined/nixos.iso_minimal_new_kernel_no_zfs.aarch64-linux) – rolling release, latest mainline kernel, does not build with ZFS as it would often lag behind.
+- [NixOS unstable, new kernel](https://hydra.nixos.org/job/nixos/trunk-combined/nixos.iso_minimal_new_kernel_no_zfs.aarch64-linux) – rolling release, latest mainline kernel, does not build with ZFS as it would often lag behind. (This image hasn't built in over a year as of August 2026, avoid using it)
 - [NixOS unstable, LTS kernel](https://hydra.nixos.org/job/nixos/trunk-combined/nixos.iso_minimal.aarch64-linux) – may be less compatible with specific hardware, but tracks a more recent Nixpkgs
 - [NixOS stable](https://nixos.org/download.html#download-nixos) – release branch, LTS kernel, generally not recommended unless you are confident your hardware is well-supported upstream
 
@@ -74,13 +76,13 @@ Know if your *Platform Firmware**s UEFI implementation has writable EFI vars. Th
 
 This sample uses GRUB2, but systemd-boot was also verified to work. Since EFI variables cannot be manipulated, using `efiInstallAsRemovable` handles installing GRUB2 to the default fallback location.
 
-### General Tips
+# General Tips
 
 Using the latest kernel is probably a good idea. Hardware support for ARM platforms is always improving, and using the latest kernel, rather than the "latest LTS", might be enough to break it or make it.
 
-## Known Issues
+# Known Issues
 
-### Device Trees
+## Device Trees
 
 As of right now, there is no consensus within Linux distros about the topic of managing device trees for the boot process with UEFI.
 

@@ -15,9 +15,7 @@ VirtualBox can be installed on NixOS without problems, put this snippet in your 
 }
 ```
 
-Adding users to the group vboxusers allows them to use the virtualbox functionality.
-
-true</code>. If you put `virtualbox` into your `environment.systemPackages`, VirtualBox won't be able to access it's driver, and attempting to start a VM will fail with the error NS_ERROR_FAILURE (0X80004005).}}
+Adding users to the group vboxusers allows them to use the virtualbox functionality. true</code>. If you put `virtualbox` into your `environment.systemPackages`, VirtualBox won't be able to access it's driver, and attempting to start a VM will fail with the error NS_ERROR_FAILURE (0X80004005).}}
 
 ## VirtualBox Oracle Extensions
 

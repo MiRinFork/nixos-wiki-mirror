@@ -11,13 +11,14 @@ An instance of Loops can be enabled on the domain `loops.example.org` using foll
 ``` nixos
 environment.etc."loops-secret.env".text = "APP_KEY=adKK9EcY8Hcj3PLU7rzG9rJ6KKTOtYfA";
 
-services.loops = {
+services.loops-server = {
   enable = true;
   domain = "loops.example.org";
   nginx = {
     enableACME = true;
     forceSSL = true;
   };
+  settings.AWS_DRIVER = "local";
   secretFile = "/etc/loops-secret.env";
 };
 ```
@@ -29,5 +30,7 @@ To create an administrator account that can also be used to log into Loops, run 
 ``` bash
 loops-manage create-admin-account
 ```
+
+Access your running instance via <https://loops.example.org/login>
 
 <a href="Category:Web_Applications" class="wikilink" title="Category:Web Applications">Category:Web Applications</a>

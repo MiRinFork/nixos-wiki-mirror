@@ -419,7 +419,7 @@ See the [MAS configuration reference](https://search.nixos.org/options?channel=u
 
 #### Example configuration
 
-This configuration is provided for demonstration purposes only (mas+synapse+authelia with agenix for secret management): <https://github.com/hatch01/flake/blob/d8e8a74b8b3df01283b79a777c46513dd78c9d10/apps/matrix/mas.nix>
+This configuration is provided for demonstration purposes only (mas+synapse+authelia with agenix for secret management): <https://github.com/hatch01/flake/blob/df086206d148ee4120bc57d3e62ccb4883d4d0ec/apps/matrix/mas.nix>
 
 ## Application services (a.k.a. bridges)
 

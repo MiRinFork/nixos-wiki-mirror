@@ -20,6 +20,10 @@ Also, create **.envrc** file and paste: `use_nix` into it.
 
 If fetching the entirety of `pkgs.qt6.full` is not appealing and you know which parts of Qt you need, your first instinct might be adding something like `pkgs.qt6.qtdeclarative` for creating QML-based Qt programs to `buildInputs`, **however** that will not work and you will get compile errors for missing libraries. `pkgs.qt6.full` is actually [creating an environment that contains all Qt libraries](https://github.com/NixOS/nixpkgs/blob/nixos-24.11/pkgs/development/libraries/qt-6/default.nix#L94-L144) that allows `qmake` and tools to find those libraries, so you must do the same and `pkgs.qt6.env` will help make one. For example:
 
+#### Resolving linker issues in custom Qt6 environment
+
+If your application's build process uses `qmake -query` to determine the location of the Qt libraries to link against **and** uses the value of the `$QMAKE` environment variable to determine the location of `qmake`, it may fail to find certain libraries. This is because the value of `$QMAKE` set by the dev environment points directly to the path to the `qmake` binary, which is located in `pkgs.qt6.qtbase`. If you were to run `$QMAKE -query QT_INSTALL_PREFIX`, it would point to `pkgs.qt6.qtbase`, instead of the `qt-custom` package created by the dev environment. Oddly, `which qmake` does point to the symlink to `qmake` in `qt-custom`, so this can be fixed by adding a shell hook to the above setup that overrides the value of `$QMAKE`.
+
 ## Packaging
 
 [See](https://nixos.org/manual/nixpkgs/stable/#sec-language-qt) for the entry in the nixpkgs manual.

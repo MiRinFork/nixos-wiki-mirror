@@ -39,6 +39,7 @@ programs.git = {
     ci = "commit";
     co = "checkout";
     s = "status";
+    sync = "!git pull --rebase && git push";
   };
 };
 ```

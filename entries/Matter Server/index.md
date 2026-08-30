@@ -7,9 +7,9 @@
 you can enable the matter server with the following configuration
 
 ``` nixos
-    matter-server = {
-      enable = true;
-      # logLevel = "debug";
-      extraArgs = [];
-    };
+services.matter-server = {
+  enable = true;
+  # logLevel = "debug";
+  extraArgs = [];
+};
 ```

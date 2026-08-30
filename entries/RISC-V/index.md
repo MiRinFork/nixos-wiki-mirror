@@ -86,7 +86,6 @@ There is a dedicated room for the upstream effort on Matrix, [matrix:r/riscv:nix
 ### Awaiting upstream RISC-V support
 
 - [LuaJIT](https://github.com/LuaJIT/LuaJIT/issues/628)
-- <a href="RISC-V/GHC" class="wikilink" title=" GHC"> GHC</a>
 
 ## Resources
 

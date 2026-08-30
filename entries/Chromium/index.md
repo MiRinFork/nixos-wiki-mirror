@@ -81,7 +81,7 @@ If accelerated video playback is not working, check relevant flags at <tvar name
 
 ## Enabling native Wayland support
 
-You can enable native Wayland support in all Chromium based and most Electron apps by setting the \`NIXOS_OZONE_WL\` environment variable to \`1\`.
+You can enable native Wayland support in all Chromium based and most Electron apps by setting the environment variable to 1.
 
 ## Enabling DRM (Widevine support)
 
