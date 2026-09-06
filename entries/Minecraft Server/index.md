@@ -62,6 +62,28 @@ services.minecraft-server.package = pkgs.papermc;
 
 To use IPv4 by default, add `-Djava.net.preferIPv4Stack=true` to `jvmOpts`.
 
+## Server.jar
+
+Some mods like [Fabric](https://fabricmc.net/use/server/) or [BTA!](https://www.betterthanadventure.net/installation-guide/), that might not be available through nixpkgs, provide their own `server.jar` files.
+
+*<sup>Make sure to move the `server.jar` file inside a separate directory, or else it might spawn server files where you don't want them.</sup>*
+
+### Server.jar dependencies
+
+In order to run `server.jar` (or any jar file in general), you will need to install *[the appropriate version of Java](https://minecraft.wiki/w/Tutorial:Setting_up_a_Java_Edition_server#Version_requirements) .*
+
+``` nixos
+pkgs.jdkX # replace the 'X' with the correct java version number here
+```
+
+Now the `server.jar` file is ready to be run :) Add/remove any extra JVM flags as you see fit
+
+``` nixos
+java -Xmx4G -jar /path/to/server.jar -nogui
+```
+
+*The `-Xmx` flag sets the max memory allocation (here 4GB). The `-nogui` flag disables the minecraft server gui*
+
 ## See also
 
 - [nix-minecraft](https://github.com/Infinidoge/nix-minecraft), a <a href="flake" class="wikilink" title="flake">flake</a> based attempt to better support Minecraft related content for the Nix ecosystem. It can be used for more complex server setups, including mods and plugins.

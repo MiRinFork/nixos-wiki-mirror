@@ -56,7 +56,13 @@ to avoid accidentally checking in your personal setup (as seen in Nixpkgs’s re
 
 Depending on the shell you are using, you need to add a line in your shell configuration file. See the [*Hook* section of the Direnv Documentation](https://direnv.net/docs/hook.html) for more information.
 
-Setting Direnv up using the NixOS module should do this by default.
+Setting Direnv up using the NixOS module should do this by default. If direnv is not hooked, after having setup the NixOS module as described above please ensure, that you have no unmanaged shell configuration files, e.g. `.bashrc`, `.zshrc`, `.profile`, etc.. To determine whether a configuration file is unmanged, use the *list directory contents* command with the *long listing format* flag as shown below; if the file points to the nix store, it is managed, otherwise, it is unmanaged. If the appropriate configuration files are managed, and direnv is still not hooked, please ensure that your shell session has been reloaded after your latest rebuild.
+
+``` shell-session
+# Supposing managed .bashrc
+$ ls -l ~/.bashrc
+lrwxrwxrwx 1 ghb users 70 sep  1 11:41 /home/user/.bashrc -> /nix/store/wfzbf11b0mff8d1isp3lx5pr4ainbc7p-home-manager-files/.bashrc
+```
 
 ## See Also
 

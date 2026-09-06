@@ -22,6 +22,10 @@ If you would like to use a config file instead you may instead specify a config 
 
 You can add background declaratively using similar to <a href="Wallpapers_for_Wayland" class="wikilink" title="Wallpapers for Wayland">Wallpapers for Wayland</a>. In this example, a wallpaper in [nixos-artwork](https://github.com/NixOS/nixos-artwork/tree/master/wallpapers) is set to attribute and the remaining configuration from are merged.
 
+### Locking on suspend/timeout (swayidle)
+
+While swaylock works in isolation, it might be desirable to use it in conjunction with <a href="Swayidle" class="wikilink" title="Swayidle">Swayidle</a> to lock after a timeout or on suspend. When swayidle is configured to trigger `swaylock` on a `lock` event, it's also possible to use `loginctl lock-session` to lock the session.
+
 ## Forks
 
 allows built-in screenshots and image manipulation effects like blurring.

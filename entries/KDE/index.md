@@ -234,4 +234,59 @@ kdePackages = prev.kdePackages.overrideScope(kdeFinal: kdePrev: {
 });
 ```
 
+## KPlugins
+
+KDE has many types of plugins, such as KWin-scripts or wallpapers. Installing a KPlugin for all users can be done in multiple ways:
+
+If the KPlugin is in [pkgs](https://search.nixos.org/), it can be simply added to environment.systemPackages:
+
+``` nix
+environment.systemPackages = with pkgs; [
+  ...
+  kdePackages.some_kplugin
+  ...
+];
+```
+
+If it is only available on Git, and you don't want to make a package for it, the KPlugin can be installed with:
+
+``` nix
+let
+  ...
+  InstallKPlugin = x: pkgs.stdenv.mkDerivation {
+    name = x.repo;
+    src = pkgs.fetchgit {
+      url = "${x.gitprofile}/${x.repo}";
+      hash = x.hash;
+    };
+    nativeBuildInputs = [ pkgs.jq ];
+    installPhase = ''
+      metadata=$(find . -type f -name "metadata.json" -print -quit)
+      outputpath="$out/share/$(jq -r '.KPackageStructure | ascii_downcase' $metadata)s/$(jq -r '.KPlugin.Id' $metadata)"
+      mkdir -p "$outputpath"
+      cp $metadata "$outputpath"
+      cp -r "''${metadata/metadata.json/contents}" "$outputpath"
+    '';
+  };
+  ...
+in
+{
+  ...
+  environment.systemPackages = with pkgs; [
+    ...
+    (InstallKPlugin {
+      gitprofile = "https://github.com/creator";
+      repo = "name-in-url-after-the-last-slash";
+      hash = "sha256-000000000000000000000000000000000000000000=";
+    })
+    ...
+  ];
+  ...
+}
+```
+
+The part between "let" and "in" does not contain anything specific to the KPluigin and does not need to be repeated to add a second KPlugin.
+
+nixos-rebuild will generate an error that displays the hash that should come after "hash = ".
+
 <a href="Category:Desktop_environment" class="wikilink" title="Category:Desktop environment">Category:Desktop environment</a> <a href="Category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="Category:KDE" class="wikilink" title="Category:KDE">Category:KDE</a>

@@ -72,4 +72,14 @@ To get [Netbird's client-side DNS resolution](https://docs.netbird.io/manage/dns
 
 For issues setting up a client, consult the official [Netbird "Troubleshooting client issues" documentation](https://docs.netbird.io/help/troubleshooting-client).
 
+#### NetBird UI not working?
+
+When your system is connected to your NetBird network, but the UI does not reflect this (and does not seem to do anything when you click 'Connect', then your user is probably not part of the `netbird-wt0` group. To fix this, add this group to your user section in your NixOS config, i.e.
+
+``` nix
+extraGroups = [ "networkmanager" "wheel" "netbird-wt0" ];
+```
+
+Then save the file and rebuild - `sudo nixos-rebuild switch`. After a reboot, the UI should work.
+
 <a href="Category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="Category:Networking" class="wikilink" title="Category:Networking">Category:Networking</a> <a href="Category:Server" class="wikilink" title="Category:Server">Category:Server</a>

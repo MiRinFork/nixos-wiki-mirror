@@ -38,9 +38,9 @@ Nouveau is enabled by default whenever graphics are enabled, and does not need a
 
 ### Hybrid graphics with PRIME
 
-Laptops often feature both an integrated GPU (iGPU) and a dedicated GPU (dGPU) in order to strive a balance between performance and power consumption ­— while the dGPU is used for performance-intensive tasks such as gaming, video editing, 3D rendering, compute jobs, etc., the iGPU can be used to render common 2D elements like application windows and the desktop environment.
+Laptops often feature both an integrated GPU (iGPU) and a dedicated GPU (dGPU) in order to strike a balance between performance and power consumption by allowing the dGPU to be used for performance-intensive tasks such as gaming, video editing, 3D rendering, compute jobs, etc., leaving the iGPU to render common 2D elements like application windows and the desktop environment.
 
-PRIME, therefore, is a technology developed to facilitate the cooperation between the two GPUs and is critical for the laptop's graphical performance. Depending on your needs, you can configure PRIME in one of three modes, which have different tradeoffs in terms of performance and battery life.
+PRIME is a technology developed to facilitate the cooperation between the two GPUs and is critical for the laptop's graphical performance. Depending on your needs, you can configure PRIME in one of three modes, which have different tradeoffs in terms of performance and battery life.
 
 #### Common setup
 

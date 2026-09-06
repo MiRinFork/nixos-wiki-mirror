@@ -26,7 +26,7 @@ It would be easier to edit the Fcitx5 profile through GUI tools (i.e. ) [as reco
 
 ### Add-ons Not Detected
 
-**Do not** install fcitx5 using `environment.systemPackages` can interfere with add-on detection. Make sure to only add fcitx5 to your config as shown in <a href="Special:MyLanguage/Fcitx5#Setup" class="wikilink" title=" Setup"> Setup</a>.
+**Do not** install fcitx5 using `environment.systemPackages`, since it can interfere with add-on detection. Make sure to only add fcitx5 to your config as shown in <a href="Special:MyLanguage/Fcitx5#Setup" class="wikilink" title=" Setup"> Setup</a>.
 
 </translate> ![<translate>Fcitx5 failing to load IME module (claims "使用不可" (unusable))</translate>](Fcitx5-mozc-load-fail.jpg "Fcitx5 failing to load IME module (claims "使用不可" (unusable))") <translate>
 

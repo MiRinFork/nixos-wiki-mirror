@@ -127,7 +127,7 @@ Nix-Gram-Extensions is a project to bring declarative management of Gram extensi
 
 ### Temp FHS Environment
 
-If you do not want to or cannot enable <a href="Nix-ld" class="wikilink" title="Nix-ld">Nix-ld</a>, you can make a temporary FHS Environment and run Gram in there to build extensions. Provided below are an example `flake.nix` and `shell.nix`. Just add these files to a directory, enter it and run `nix develop`. Then, once you're dropped into the environment's shell, run `gram` and install your extensions as you would on any other distro. Once they're built, you can run Gram outside of that environment too and they should just work.
+If you do not want to or cannot enable <a href="Nix-ld" class="wikilink" title="Nix-ld">Nix-ld</a>, you can make a temporary FHS Environment and run Gram in there to build extensions. Provided below is an example `flake.nix`. Just add the file to a directory, enter it and run `nix develop`. Then, once you're dropped into the environment's shell, run `gram` and install your extensions as you would on any other distro. Once they're built, you can run Gram outside of that environment too and they should just work.
 
 And of course, if you prefer <a href="#Fenix" class="wikilink" title="#Fenix">#Fenix</a> or <a href="#Rustup" class="wikilink" title="#Rustup">#Rustup</a>, you can modify this example to use them instead of <a href="#Rust-Overlay" class="wikilink" title="#Rust-Overlay">#Rust-Overlay</a>.
 

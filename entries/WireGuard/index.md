@@ -94,7 +94,7 @@ You need to generate a new key for each peer.
 
 Make sure the private key has the correct file permission as required by the WireGuard service. Wrong file permission may cause the service to fail. Check system log to rule out this scenario.
 
-You can use ryamtm/agenix to declaratively store and manage the WireGuard key.
+You can use ryantm/agenix to declaratively store and manage the WireGuard key.
 
 For systemd.network:
 

@@ -92,15 +92,15 @@ Steam will periodically replace this modification with its own binary when steam
 
 To set SteamVR as the default OpenXR runtime, you have to add the following snippet to your Home Manager config:
 
-## wlx-overlay-s
+## WayVR
 
-[wlx-overlay-s](https://github.com/galister/wlx-overlay-s) is a lightweight OpenXR/OpenVR overlay for Wayland and X11 desktops. It works with SteamVR as well as Monado/WiVRn natively.
+[WayVR](https://github.com/wayvr-org/wayvr) is a lightweight OpenXR/OpenVR overlay for Wayland and X11 desktops. It works with SteamVR as well as Monado/WiVRn natively. It was formerly named wlx-overlay-s.
 
 #### SteamVR autostart
 
 When launching wlx-overlay-s in SteamVR (or any OpenVR compositor) it will register an autostart manifest. Currently, this manifest will reference a Nix store path of wlx-overlay-s, which might get garbage collected after rebuilds of your NixOS/Nix profile. A workaround is to regularly run the following command to update the manifest's store path: </translate>
 
-<translate>
+<translate> You might also consider using a systemd user service to automatically do this when you log in to your account: </translate> <translate>
 
 ## See also
 

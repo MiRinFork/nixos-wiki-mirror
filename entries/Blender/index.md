@@ -14,11 +14,11 @@ environment.systemPackages = with pkgs; [
 ];
 ```
 
-If you want to install Blender with support for compute APIs, see: <a href="#Advanced_Installation" class="wikilink" title="#Advanced Installation">#Advanced Installation</a>
+If you want to install Blender with support for compute APIs, see: <a href="#Advanced_installation" class="wikilink" title="#Advanced installation">#Advanced installation</a>
 
 ## Configuration
 
-### Installing With Additional Python Packages
+### Installing with additional Python packages
 
 To install additional Python modules into Blender, use the `withPackages` attribute.
 
@@ -61,21 +61,21 @@ environment.systemPackages = with pkgs; [
 
 Or if it fits your use case better, you can install them in a nix-shell and run Blender from within that shell.
 
-## Tips & Tricks
+## Tips and tricks
 
 ### Blendfarm
 
 The Blendfarm network renderer for Blender is handled by . A very simple example configuration is shown below.
 
-## Advanced Installation
+## Advanced installation
 
-- <a href="#Binary_Packages" class="wikilink" title="#Binary Packages">#Binary Packages</a> for Blender binary packages with support for all APIs
+- <a href="#Binary_packages" class="wikilink" title="#Binary packages">#Binary packages</a> for Blender binary packages with support for all APIs
 - <a href="#CUDA_&amp;_OptiX" class="wikilink" title="#CUDA &amp; OptiX">#CUDA &amp; OptiX</a> for support for NVIDIA's CUDA & OptiX
 - <a href="#HIP" class="wikilink" title="#HIP">#HIP</a> for support for AMD's HIP
 - <a href="#oneAPI" class="wikilink" title="#oneAPI">#oneAPI</a> for support for Intel's oneAPI
-- <a href="#Last_Resorts" class="wikilink" title="#Last Resorts">#Last Resorts</a> if all other methods don't work for your situation
+- <a href="#Last_resorts" class="wikilink" title="#Last resorts">#Last resorts</a> if all other methods don't work for your situation
 
-### Binary Packages
+### Binary packages
 
 These are alternative distribution methods that package the Blender binaries, meaning they have support for all APIs.
 
@@ -83,7 +83,7 @@ These are alternative distribution methods that package the Blender binaries, me
 
 Installing [Blender through Steam](https://store.steampowered.com/app/365670/Blender/) will run Linux native Blender in the Steam Runtime environment, and it will receive automatic updates through Steam. Note that if you make Steam run the Windows version (through Proton) by selecting "Force the use of a specific Steam Play compatibility tool" under Properties \> Compatibility, the APIs will fail as they will not have the relevant Windows drivers.
 
-#### The blender-bin Flake
+#### The blender-bin flake
 
 The unofficial [blender-bin](https://github.com/edolstra/nix-warez/tree/master/blender) flake, provided by edolstra, packages the binary release of Blender for NixOS, and hosts it on FlakeHub [here](https://flakehub.com/flake/edolstra/blender-bin?view=usage). The following demonstrates how to add the flake to a <a href="NixOS_system_configuration#Defining_NixOS_as_a_flake" class="wikilink" title="flake-based configuration">flake-based configuration</a>.
 
@@ -111,7 +111,7 @@ If installing Blender with `cudaSupport`, it is highly recommended you set up a 
 
 Compiling Blender is very resource-intensive, so if you are unable to use a binary cache, please see the associated warning and information in <a href="CUDA#Enabling_CUDA_In_Packages" class="wikilink" title="CUDA#Enabling CUDA In Packages">CUDA#Enabling CUDA In Packages</a>.
 
-#### Community Flakes
+#### Community flakes
 
 In addition to the <a href="#The_blender-bin_Flake" class="wikilink" title="#blender-bin flake">#blender-bin flake</a>, there is also [blender-cuda-nixos](https://github.com/adithyagenie/blender-cuda-nixos), which compiles Blender with `cudaSupport` enabled and caches it on cachix so you don't need to build it yourself. For the most up-to-date instructions on adding it to your configuration, see its [README](https://github.com/adithyagenie/blender-cuda-nixos/blob/master/README.md).
 
@@ -140,11 +140,11 @@ environment.systemPackages = with pkgs; [
 
 Currently, Nixpkgs has extremely limited oneAPI support (see ), which is explicitly blocking . As such, the current only way to have oneAPI support on NixOS is through one of the <a href="#Binary_Packages" class="wikilink" title="#Binary Packages">#Binary Packages</a>.
 
-### Last Resorts
+### Last resorts
 
 If nothing else works for your situation, you can also download the Blender binary from [blender.org](https://www.blender.org/download/) and run it in NixOS using a program like <a href="Nix-ld" class="wikilink" title="nix-ld">nix-ld</a> or [nix-alien](https://github.com/thiagokokada/nix-alien), patch the binary manually (see: <a href="Packaging/Binaries" class="wikilink" title="Packaging/Binaries">Packaging/Binaries</a>), or try using a container like <a href="Distrobox" class="wikilink" title="Distrobox">Distrobox</a> (see: [Distrobox: Using the GPU Inside the Container](https://distrobox.it/useful_tips/#using-the-gpu-inside-the-container)).
 
-## Known Issues
+## Known issues
 
 ### UI is dim on Vulkan backend and KDE Plasma
 

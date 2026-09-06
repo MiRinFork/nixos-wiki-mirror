@@ -27,6 +27,7 @@ The ecosystem is developed and maintained by many individuals and self-organised
 
 There are several qualified consultants that can provide support for Nix-based systems:
 
+- [atvari](https://atvari.eu/)
 - [Determinate Systems](https://determinate.systems/)
 - [Nixcademy](https://nixcademy.com/)
 - [Numtide](https://numtide.com/)

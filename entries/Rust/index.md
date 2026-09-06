@@ -101,7 +101,7 @@ rustPlatform.buildRustPackage {
 
 The rustup tool is maintained by the Rust community and offers an interface to install and switch between Rust toolchains. In this scenario, rustup handles the "package management" of Rust toolchains and places them in `$PATH`. Nixpkgs offers rustup via the `rustup` derivation. More info on using rustup can be found on their official website: <https://rustup.rs/>.
 
-If you want the most "normal" Rust experience I recommend using rustup with the following example shell.nix:
+If you want the most "normal" Rust experience it is recommend using rustup with the following example shell.nix:
 
 ``` nix
 {
