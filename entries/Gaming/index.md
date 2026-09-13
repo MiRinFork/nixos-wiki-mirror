@@ -93,6 +93,35 @@ Tested with version `renowned_explorers_international_society_522_26056.sh` from
 
 Adding `libxkbcommon`, `mesa`, and `wayland` is straightforward. The game expects the shared library `sdnio.so.6.1` to exist, so we need to create a symbolic link after the installation of `sndio`.
 
+## Possible performance optimisations
+
+While NixOS should provide perfectly reasonable performance, there does exist a number of ways to increase gaming performance on existing hardware in the system. Do note however, that all of the below suggestions, only increase the number of generated frames per second by a margin. To achieve much greater performance, better hardware is usually needed.
+
+### Disabling kernel split-lock mitigation
+
+In kernel version 6.2, `split_lock_mitigate` was added, in order to disable the punishment implemented in kernel version 5.19 for abusing the kernel's split locks[^1]. Disabling `split_lock_mitigate` should see significant performance improvements, in the games affected by the split lock's "misery mode"[^2][^3]. The kernel parameter can be enabled, or disabled in the system's `configuration.nix`.
+
+``` nix
+boot.kernelParams = [
+  # Split lock mitigation disabled.
+  "split_lock_mitigate=0"
+];
+```
+
+### Enabling GameMode
+
+Enabling <a href="GameMode" class="wikilink" title="GameMode">GameMode</a> should also yield some performance improvement. How to install and enable <a href="GameMode" class="wikilink" title="GameMode">GameMode</a> is described its' wiki page. Please note, that by default, <a href="GameMode" class="wikilink" title="GameMode">GameMode</a> disables split-lock mitigation[^4].
+
+### Increase vm.max_map_count
+
+If the value of the kernel parameter `vm.max_map_count` is too low, it can affect the stability and performance of some games[^5]. As of writing the default value of `vm.max_map_count` in NixOS is `1048576`[^6]. According the the Arch Linux Wiki, SteamOS uses a default value of `2147483642`[^7], equivalent to maximum value of a 32-bit signed integer subtracted by 6. The value of `vm.max_map_count` can be altered in the system's `configuration.nix` file, as shown below.
+
+``` nix
+boot.kernel.sysctl = {
+  "vm.max_map_count" = 2147483642;
+};
+```
+
 ## See also
 
 - [Games in Nixpkgs](https://github.com/NixOS/nixpkgs/tree/master/pkgs/games)
@@ -110,3 +139,17 @@ Adding `libxkbcommon`, `mesa`, and `wayland` is straightforward. The game expect
 - <a href="Chess" class="wikilink" title="NixOS Wiki Chess page">NixOS Wiki Chess page</a>
 
 <a href="Category:Gaming" class="wikilink" title="Category:Gaming">Category:Gaming</a> <a href="Category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="Category:Lists" class="wikilink" title="Category:Lists">Category:Lists</a>
+
+[^1]: "Linux Adding New Control Since Its Splitlock Detector Is Wrecking Some Steam Play Games", Michael Larabel, 2022-12-13, <https://www.phoronix.com/news/Linux-Splitlock-Hurts-Gaming> (Fetched 2026-09-12)
+
+[^2]:
+
+[^3]: "Gaming", Arch Linux Wiki, <https://wiki.archlinux.org/title/Gaming> (Fetched 2026-09-12)
+
+[^4]: <https://github.com/FeralInteractive/gamemode/blob/a74b8106a2236d1f2696aa44c93bc4c8ef13b42e/example/gamemode.ini#L47> (Fetched 2026-09-12)
+
+[^5]:
+
+[^6]: <https://github.com/NixOS/nixpkgs/blob/dbf04e179e41d471e6abb307d393329a27dfdfe7/nixos/modules/config/sysctl.nix#L118> (Fetched, 2026-09-12)
+
+[^7]:

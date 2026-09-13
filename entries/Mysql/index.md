@@ -9,23 +9,23 @@
 
 # Setup MySQL
 
-Setup and enable Mysql database daemon (in this example: latest stable version in nixpkgs)
+Setup and enable Mysql database daemon (in this example: version 8.4)
 
 ``` nix
 services.mysql = {
   enable = true;
-  package = pkgs.mysql;
+  package = pkgs.mysql84;
 };
 ```
 
 # Setup MariaDB
 
-Setup and enable MariaDB database daemon (in this example: version 11.0)
+Setup and enable MariaDB database daemon (in this example: latest stable version in nixpkgs)
 
 ``` nix
 services.mysql = {
   enable = true;
-  package = pkgs.mariadb_110;
+  package = pkgs.mariadb;
 };
 ```
 

@@ -16,7 +16,9 @@ It is recommended to disable the setup wizard after installation is complete. Ad
 
 ### Invoice templates
 
-Invoiceplane will render and export invoices as PDF. You can create your own invoice templates or reuse existing ones. The following example fetches an invoice template and makes it available to your running Invoiceplane instance
+Invoiceplane will render and export invoices as PDF. You can create your own invoice templates or reuse existing ones. The following example fetches an invoice template and makes it available to your running Invoiceplane instance.
+
+Further your custom template needs to get whitelisted via the settings options `CUSTOM_INVOICE_TEMPLATES_PDF` and `CUSTOM_QUOTE_TEMPLATES_PDF` with a list of corresponding filenames (without extension ".php"), separated by an ",".
 
 ### Invoice mail delivery
 

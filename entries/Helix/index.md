@@ -4,7 +4,7 @@
 
 [Helix](https://helix-editor.com/) is a modal text-editor inspired by <a href="Neovim" class="wikilink" title="Neovim">Neovim</a> and <a href="Kakoune" class="wikilink" title="Kakoune">Kakoune</a>, written in Rust. Compared to neovim, it is preconfigured with the functions that most people need (for example tree-sitter for syntax highlighting). It uses (neo-)vim motions keybindings, but it uses the object-verb approach (visually highlighting text and then executing a function on it). It is intended for people who like to use a modal text editor but don't want to spend a lot of time configuring it.
 
-## Seup
+## Setup
 
 Helix can be installed system-wide on NixOS with the `helix` package:
 
@@ -32,7 +32,7 @@ programs.helix = {
   languages.language = [{
     name = "nix";
     auto-format = true;
-    formatter.command = lib.getExe pkgs.nixfmt-rfc-style;
+    formatter.command = lib.getExe pkgs.nixfmt;
   }];
   themes = {
     autumn_night_transparent = {

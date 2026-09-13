@@ -22,6 +22,7 @@ pkgs.mkShell {
     cargo-tauri # Optional, Only needed if Tauri doesn't work through the traditional way.
     nodejs # Optional, this is for if you have a js frontend
     rustc # Needed for dev server (npm tauri dev)
+    gst_all_1.gst-plugins-base # Optional, if you get `GStreamer element appsink not found. Please install it.`
   ];
 
   buildInputs = with pkgs; [

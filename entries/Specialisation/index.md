@@ -2,7 +2,7 @@
 
 <!-- Source page: Specialisation -->
 
-Specialisations allow you to define variations of your system configuration. For instance, if you don't usually use GPU, you might create a base system with your GPU disabled and create a dedicated specialization with Nvidia/AMD drivers installed - later, during boot, you can choose which configuration you want to boot into this time.
+Specialisations allow you to define variations of your system configuration. For instance, if you don't usually use GPU, you might create a base system with your GPU disabled and create a dedicated specialisation with Nvidia/AMD drivers installed - later, during boot, you can choose which configuration you want to boot into this time.
 
 ## Config
 
@@ -40,7 +40,7 @@ In this example, the `chani` specialisation inherits the parent config (that con
 
 ## Special case: the default non-specialized entry
 
-Specializations are receiving options in addition to your default configuration, but what if you want to have options in your default configuration that shouldn't be pulled by the specializations?
+Specialisations are receiving options in addition to your default configuration, but what if you want to have options in your default configuration that shouldn't be pulled by the specialisations?
 
 Use the conditional `config.specialisation != {}` to declare values for the non-specialized case. For example, you could write a module (as variable, or separate file), imported from `configuration.nix` via `imports = [...]` like this:
 
@@ -57,7 +57,7 @@ Use the conditional `config.specialisation != {}` to declare values for the non-
 
 However, if there are no specialisations defined, then `config.specialisation != {}` always evaluate to `false`.
 
-## Activating a specialization
+## Activating a specialisation
 
 After rebuilding your system, you can choose a specialisation during boot; it's also possible to switch into a specialisation at runtime - following the example above, you would run:
 
@@ -65,7 +65,7 @@ After rebuilding your system, you can choose a specialisation during boot; it's 
 $ nixos-rebuild switch --specialisation chani
 ```
 
-Note that not all configurations can be fully switched into at runtime - e.g. if your specialization uses a different kernel, switching into it will not actually reload the kernel (but if you were to restart your computer and pick the specialisation from the boot menu, the alternative kernel would get loaded).
+Note that not all configurations can be fully switched into at runtime - e.g. if your specialisation uses a different kernel, switching into it will not actually reload the kernel (but if you were to restart your computer and pick the specialisation from the boot menu, the alternative kernel would get loaded).
 
 ## Further reading
 

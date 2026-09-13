@@ -179,6 +179,10 @@ In case port 80 is already used by a different application or you're using a dif
 
 Two-factor authentication can be enabled for your server via the administration interface in your browser. There is no way to declare this setting via nix configuration, so you should follow the [official documentation](https://docs.nextcloud.com/server/latest/admin_manual/configuration_user/two_factor-auth.html) to set up Two-factor authentication.
 
+### Boost image preview generation speed
+
+Using the microservice [Imaginary](https://fly.io/docs/app-guides/run-a-global-image-service), it is possible to boost image preview generation speed of Nextcloud. Just add following configs.
+
 ### Enable HEIC image preview
 
 HEIC image preview needs to be explicitly enabled. This is done by adjusting the `enabledPreviewProviders` option. Beside the default list of supported formats, add an additional line `"OC\\Preview\\HEIC"` for HEIC image support. See also [this list of preview providers](https://docs.nextcloud.com/server/latest/admin_manual/configuration_server/config_sample_php_parameters.html#enabledpreviewproviders) for additional file types.

@@ -101,6 +101,7 @@
 {{Configuration_Collection/line|@yurrriq's NixOS & home-manager configs|https://github.com/yurrriq/dotfiles}}
 {{Configuration_Collection/line|@yusdacra's NixOS & home-manager configs|https://github.com/yusdacra/nixos-config}}
 {{Configuration_Collection/line|@Zaechus's NixOS flake + home-manager config|https://github.com/Zaechus/nixos-config}}
+{{Configuration_Collection/line|@zimward's NixOS config|https://github.com/zimward/nixos}}
 {{Configuration_Collection/line|stockholm configuration and deployment of machines owned by the members of <code>#krebs</code>|https://cgit.krebsco.de/stockholm/tree/}}
 {{Configuration_Collection/line|NixOS configurations of the OpenLab Augsburg|https://github.com/openlab-aux/vuizvui}} (@aszlig, @devhell, @sternenseemann, @Profpatsch)
 |}

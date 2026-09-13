@@ -8,27 +8,17 @@ Discord is an instant messaging and VoIP application with lots of functionality.
 
 ### Official Clients
 
-Nixpkgs provides all three of Discord's release channels, accessible as `pkgs.discord`, `pkgs.discord-ptb`, and `pkgs.discord-canary` respectively. Add any of the previous derivations to your package's configuration. For <a href="NixOS" class="wikilink" title="NixOS">NixOS</a> this will be in `environment.systemPackages` or `users.users.`<name>`.packages`.
+Nixpkgs provides all three of Discord's release channels: `pkgs.discord`, `pkgs.discord-ptb`, and `pkgs.discord-canary`. Add any of these packages in `environment.systemPackages` or `users.users.`<name>`.packages`.
 
 ### Unofficial Clients
 
 Nixpkgs also provides a vast variety of community developed/modded Discord clients, which can usually serve as drop-in replacements for the official discord client with an extended set of features.
 
-#### Legcord (formerly ArmCord)[^1]
+**Legcord[^1]** is a lightweight alternative desktop client featuring built-in modding extensibility via Vencord and Equicord. Provided via `pkgs.legcord`.
 
-Lightweight, alternative desktop client with built-in modding extensibility. Nixpkgs provides this client via `pkgs.legcord`.
+**GoofCord[^2]** is a security oriented fork of Legcord. Provided via `pkgs.goofcord`.
 
-``` nixos
-{ config, lib, pkgs, ... }: {
-  environment.systemPackages = with pkgs; [
-    legcord
-  ];
-}
-```
-
-#### BetterDiscord[^2]
-
-Enhances Discord desktop app with new features. Nixpkgs provides the installer via `pkgs.betterdiscordctl`. This can be added to your configuration, though users may prefer to instead run it one-off via the <a href="Nix" class="wikilink" title="Nix">Nix</a> cli.
+**BetterDiscord[^3]** enhances Discord desktop app with new features. Installer provided via `pkgs.betterdiscordctl`, but users may prefer to instead run it one-off via cli:
 
 ``` console
 $ nix-shell -p betterdiscordctl --command 'betterdiscordctl install' # nix-legacy
@@ -38,77 +28,47 @@ $ nix-shell -p betterdiscordctl --command 'betterdiscordctl self-upgrade' # nix-
 $ nix run nixpkgs#betterdiscordctl -- self-upgrade # nix3
 ```
 
-#### OpenAsar[^3]
+**OpenAsar[^4]** is an open-source alternative to Discord's `app.asar`. Provided via `pkgs.openasar` without usable client. Users should instead prefer to override the official discord package and add `withOpenASAR = true`:
 
-Open-source alternative to Discord's `app.asar`. Nixpkgs provides this via `pkgs.openasar`, though this doesn't provide a usable client. Users should instead prefer overriding the official discord package and add `withOpenASAR = true`.
+**Vencord[^5]**, the cutest Discord client mod. Provided via `pkgs.vencord`. Standalone can be installed by overriding the official Discord package via `withVencord = true`:
 
-``` nixos
-{ config, lib, pkgs, ... }: {
-  environment.systemPackages = with pkgs; [
-    (discord.override {
-      withOpenASAR = true;
-      # withVencord = true; # can do this here too
-    })
-  ];
-}
-```
+**Vesktop[^6]** is a customizable and privacy friendly desktop app by the developers of Discord's cutest client mod. Provided via `pkgs.vesktop`. Can be configured in <a href="Home_Manager" class="wikilink" title="Home Manager">Home Manager</a>:
 
-#### Vencord[^4]
+**Equicord[^7]**, other cutest Discord client mod. Provided via `pkgs.equicord`.
 
-The cutest Discord client mod. The standalone Vencord client can be installed by overriding the official Discord package via `withVencord = true`.
+**Equibop[^8]**, a Vesktop fork by Equicord developers. Provided via `pkgs.equibop`.
 
-#### Vesktop[^5]
+**Dissent[^9]** is a simple, practical Discord client prioritizing speed over feature completeness. Provided via `pkgs.dissent`.
 
-As opposed to just Vencord, the same developers also offer an integrated solution which aims to make the Linux experience better.
+**Discordo[^10]** is a TUI Discord client provided via `pkgs.discordo`. *Development in progress, possible crashes and breaking changes.*
 
-It can be neatly managed via <a href="Home_Manager" class="wikilink" title="Home Manager">Home Manager</a>, or just installed as a regular package via `pkgs.vesktop`.
+**Webcord[^11]** is a Discord and [Spacebar](https://spacebar.chat/) client implemented without using official Discord API. Provided via `pkgs.webcord`.
 
-#### Webcord[^6]
-
-Discord and [Spacebar](https://spacebar.chat/) client implemented without using the official Discord API. Nixpkgs provides this client via `pkgs.webcord`.
-
-``` nixos
-{ config, lib, pkgs, ... }: {
-  environment.systemPackages = with pkgs; [
-    webcord
-  ];
-}
-```
+**Ripcord[^12]** is an unfree client for Discord and [Slack](https://slack.com/intl/) with a traditional compact interface for power users. Provided via `pkgs.ripcord`.
 
 ## Troubleshooting
 
-### Screen sharing on Wayland
+### Wayland screen sharing
 
 Since December 2024, Discord Canary supports screen sharing on Wayland. Alternatively, you can use the web version on a browser that supports screen sharing on Wayland, or an <a href="Discord#Unofficial_Clients" class="wikilink" title="unofficial client">unofficial client</a> like *Webcord* or *Vesktop*, both of which have fixed this issue in their own ways.
 
-### Notifications causing crashes
+### Notifications-related crash
 
 Discord will crash if there is no compatible notification daemon running. This issue is only prevalent in custom desktop environments, such as <a href="Sway" class="wikilink" title="Sway">Sway</a> or <a href="Hyprland" class="wikilink" title="Hyprland">Hyprland</a>. Comprehensive documentation usually exists for most window managers/compositors and can be found on their respective wikis. Nixpkgs provides a few standalone notification daemons such as `pkgs.dunst` and `pkgs.mako`. You may optionally use a notification daemon from a larger DE, such as `pkgs.lxqt.lxqt-notificationd`, however it is unclear how effective these will be outside of their normal environment.
 
-``` nixos
-{ config, lib, pkgs, ... }: {
-  # You will need to add a call for the daemon to actually function.
-  # This is usually done within the configuration of your respective WM.
-  # See the official wiki/documentation for your WM for more info.
-  environment.systemPackages = with pkgs; [
-    mako
-  ];
-}
-```
-
-### Crash on start-up
+### Start-up crash
 
 Occasionally, Discord's code can become corrupted, causing it to crash on start-up. You can force it to re-download the latest version by deleting the `~/.config/discord/1.0.138`directory, where `1.0.138` is replaced with Discord's current version number (the second line of output when running `discord` from a terminal).
 
-### "Must be your lucky day" popup
+### "Must be your lucky day"
 
-Although Nixpkgs is usually very fast with updates (if you use *nixos-unstable*), you may still run into this issue intermittently. You may override the discord package with a more up-to-date source, or you may disable this popup entirely by adding `"SKIP_HOST_UPDATE": true` to `~/.config/discord/settings.json`.
+Although Nixpkgs is usually very fast with updates (if you use *nixos-unstable*), you may still run into this issue intermittently. You may override the discord package with a more up-to-date source, or you may disable this popup entirely by adding `"SKIP_HOST_UPDATE": true` to `~/.config/discord/settings.json`:
 
 ### Krisp noise suppression
 
 The Krisp noise suppression option will not work on NixOS because the Discord binary is patched before installation, and there is a DRM-style integrity check in the Krisp binary which prevents Krisp from working if the Discord binary is modified. See <https://github.com/NixOS/nixpkgs/issues/195512> for details.
 
-#### Python Script Workaround
+#### Python script workaround
 
 One way to enable Krisp noise suppression is by patching the `discord_krisp.node` binary to bypass its DRM verification. Below is a Nix configuration that creates a Python script that patches the binary by modifying specific bytes to bypass the license check:
 
@@ -162,43 +122,34 @@ TTS is disabled by default; you may enable it via an override:
 
 ### Discord RPC not functioning
 
-#### NixOS
+Install **arRPC**[^13]:
 
-Install [arRPC](https://github.com/OpenAsar/arrpc):
-
-``` nixos
-{pkgs, ...}:{
-  enviroment.systemPackages = with pkgs; [
-    arrpc
-  ];
-  systemd.packages = with pkgs; [ arrpc ];
-}
-```
-
-#### Home Manager
-
-Add the following to your Home Manager configuration
-
-``` nixos
-{pkgs, ...}:{
-  services.arrpc = {
-    enable = true;
-    package = pkgs.arrpc; # Default
-    systemdTarget = "graphical-session.target"; # Default
-  };
-}
-```
+Or add the following to your Home Manager configuration:
 
 <a href="Category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="Category:Gaming" class="wikilink" title="Category:Gaming">Category:Gaming</a>
 
 [^1]: <https://github.com/Legcord/Legcord>
 
-[^2]: <https://github.com/BetterDiscord/BetterDiscord>
+[^2]: <https://github.com/Milkshiift/GoofCord>
 
-[^3]: <https://github.com/GooseMod/OpenAsar>
+[^3]: <https://github.com/BetterDiscord/BetterDiscord>
 
-[^4]: <https://github.com/Vendicated/Vencord>
+[^4]: <https://github.com/GooseMod/OpenAsar>
 
-[^5]: <https://github.com/Vencord/Vesktop>
+[^5]: <https://github.com/Vendicated/Vencord>
 
-[^6]: <https://github.com/SpacingBat3/WebCord>
+[^6]: <https://github.com/Vencord/Vesktop>
+
+[^7]: <https://github.com/equicord/equicord>
+
+[^8]: <https://github.com/Equicord/equibop>
+
+[^9]: <https://github.com/diamondburned/dissent>
+
+[^10]: <https://github.com/ayn2op/discordo>
+
+[^11]: <https://github.com/SpacingBat3/WebCord>
+
+[^12]: <https://cancel.fm/ripcord/>
+
+[^13]: <https://github.com/OpenAsar/arrpc>

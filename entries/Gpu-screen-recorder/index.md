@@ -8,23 +8,27 @@
 
 ##### Video
 
-- H264 (default on Intel)
-- HEVC (default on AMD and NVIDIA)
-- AV1
+- H264 (default)
+- HEVC (Optionally with HDR)
+- AV1 (Optionally with HDR)
+- VP8
+- VP9
 
 ##### Audio
 
 - Opus (default)
 - AAC
-- FLAC
 
 ## Installation
 
 ``` nix
-  programs.gpu-screen-recorder.enable = true; # For promptless recording on both CLI and GUI
+  programs.gpu-screen-recorder = {
+    enable = true;
+    ui.enable = true; # For overlay
+  };
 
-  environment.systemPackages = with pkgs; [
-    gpu-screen-recorder-gtk # GUI app
+  environment.systemPackages = with pkgs; [ 
+    gpu-screen-recorder-gtk # For 'deprecated' GTK interface
   ];
 ```
 

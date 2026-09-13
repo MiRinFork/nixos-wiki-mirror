@@ -4,7 +4,7 @@
 
 <languages />
 
-<translate> **Nix flakes** are an [experimental feature](https://nix.dev/manual/nix/stable/development/experimental-features) first introduced in the 2.4 <a href="Nix" class="wikilink" title="Nix">Nix</a> release, aiming to address a number of areas of improvement for the Nix ecosystem: they provide a uniform structure for Nix projects, allow for pinning specific versions of each dependencies, and sharing these dependencies via lock files, and overall make it more convenient to write reproducible Nix expressions.
+<translate> **Nix flakes** are an [experimental feature](https://nix.dev/manual/nix/stable/development/experimental-features) first introduced in the 2.4 <a href="Nix" class="wikilink" title="Nix">Nix</a> release, aiming to address a number of areas of improvement for the Nix ecosystem: they provide a uniform structure for Nix projects, allow for pinning specific versions of each dependency, and sharing these dependencies via lock files, and overall make it more convenient to write reproducible Nix expressions.
 
 A flake is a directory which directly contains a Nix file called `flake.nix`, that follows a very specific structure. Flakes introduce a URL-like syntax for specifying remote resources. To simplify the URL syntax, flakes use a registry of symbolic identifiers, allowing the direct specification of resources through syntax such as `github:NixOS/nixpkgs`.
 
@@ -95,7 +95,7 @@ A `devShell` is a Nix-provided <a href="Development_environment_with_nix-shell#n
 {
   description = "Example flake with a devShell";
 
-  inputs.nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
+  inputs.nixpkgs.url = "https://channels.nixos.org/nixos-unstable/nixexprs.tar.zst";
 
   outputs = { self, nixpkgs }:
     let
@@ -160,13 +160,15 @@ It has 4 top-level attributes:
 
 The inputs attribute defines the dependencies of the flake. For example, nixpkgs has to be defined as a dependency for a system flake in order for the system to build properly.
 
-<a href="Nixpkgs" class="wikilink" title="Nixpkgs">Nixpkgs</a> can be defined using the following code: </translate>
+<a href="Nixpkgs" class="wikilink" title="Nixpkgs">Nixpkgs</a> can be defined using the following code, which points at a URL cached by the NixOS organization:
 
-`inputs.nixpkgs.url = "github:NixOS/nixpkgs/`<branch name>`";`
+</translate>
 
-<translate> Nixpkgs can alternatively also point to an url cached by the NixOS organization: </translate>
+`inputs.nixpkgs.url = "https://nixos.org/channels/nixos-unstable/nixexprs.tar.zst";`
 
-`inputs.nixpkgs.url = "https://nixos.org/channels/nixpkgs-unstable/nixexprs.tar.xz";`
+<translate> Alternatively, a specific commit can be fetched directly from GitHub: </translate>
+
+`inputs.nixpkgs.url = "github:NixOS/nixpkgs/`<commit SHA>`";`
 
 <translate> In this example the input would point to the \`nixpkgs-unstable\` channel.
 
@@ -184,7 +186,7 @@ For example, adding <a href="Hyprland" class="wikilink" title="Hyprland">Hyprlan
 
 ``` nix
 inputs = {
-  nixpkgs.url = "github:NixOS/nixpkgs/<branch name>";
+  nixpkgs.url = "https://channels.nixos.org/<branch name>/nixexprs.tar.zst";
   hyprland = {
     url = "github:hyprwm/Hyprland";
     inputs.nixpkgs.follows = "nixpkgs";
@@ -300,7 +302,7 @@ Flakes force you to specify a program for each supported architecture. An exampl
   description = "A flake targeting multiple architectures";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
+    nixpkgs.url = "https://channels.nixos.org/nixos-unstable/nixexprs.tar.zst";
   };
   
   outputs = { self, nixpkgs }: let
@@ -332,7 +334,7 @@ To allow for <a href="Unfree_software" class="wikilink" title="unfree software">
 
 ``` nix
 {
-  inputs.nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
+  inputs.nixpkgs.url = "https://channels.nixos.org/nixos-unstable/nixexprs.tar.zst";
   outputs = { self, nixpkgs, flake-compat }:
     let
       system = "x86_64-linux";

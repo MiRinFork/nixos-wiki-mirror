@@ -58,31 +58,59 @@ or
 services.minecraft-server.package = pkgs.papermc;
 ```
 
+#### Other versions
+
+``` nix
+# This example uses Nix-minecraft to declare a <version> NeoForge server called <name> 
+services.minecraft-servers.<name>.package = pkgs.neoforgeServers.neoforge-<version>;
+```
+
+<sup>*Note that the <version> is formatted as `26_1_2`, `1_18_2`, or `25w10a`. Using a specific version could look like this: `pkgs.vanillaServer.vanilla-1_8_9`*</sup>
+
+[Nix-minecraft](https://github.com/Infinidoge/nix-minecraft) is a <a href="Flakes" class="wikilink" title="nix flakes">nix flakes</a> based attempt at supporting a few more modded servers:
+
+| Server   | \*  | Package name               |
+|----------|-----|----------------------------|
+| Vanilla  | Yes | `vanillaServers.vanilla`   |
+| Fabric   | No  | `fabricServers.fabric`     |
+| Quilt    | No  | `quiltServers.quilt`       |
+| Paper    | Yes | `paperServers.paper`       |
+| Purpur   | Yes | `purpurServers.purpur`     |
+| NeoForge | No  | `neoforgeServers.neoforge` |
+| Velocity | No  | `velocityServers.velocity` |
+
+*<small>\*Does it use the correct version of Java for Minecraft `≥26.1`?</small>*
+
+As stated above, since Minecraft 26.1, some packages *[use the wrong version of Java](https://github.com/Infinidoge/nix-minecraft/issues/211)* (presumably due to the [change in Minecraft version formatting](https://www.minecraft.net/en-us/article/minecraft-new-version-numbering-system)). To correct this, override with *[the appropriate version of Java](https://minecraft.wiki/w/Tutorial:Setting_up_a_Java_Edition_server#Version_requirements).*
+
+``` nix
+# This example declares a 26.1 fabric server called <name>. Needing an override for java 25
+services.minecraft-servers.<name>.package = pkgs.fabricServers.fabric-26_1.override 
+{ jre_headless = pkgs.openjdk25_headless; };
+```
+
+### Use a custom server.jar
+
+Some mods like [BTA!](https://www.betterthanadventure.net/installation-guide/) are not supported through previously explored methods. In that case running the server through the provided `server.jar` is an option *(if one is provided).*
+
+*<sup>Do note that doing this is not recommended, and should be seen as a last resort. Also if you really do not want to touch flakes.</sup>*
+
+1.  Download the `server.jar`*<small>Make sure to move the `server.jar` file inside a separate directory, or else it might spawn server files where you don't want them.</small>*
+2.  Install *[the appropriate version of Java](https://minecraft.wiki/w/Tutorial:Setting_up_a_Java_Edition_server#Version_requirements) .*
+    ``` nixos
+    pkgs.jdkX # replace the X with the correct Java version number here
+    ```
+3.  Run the provided `server.jar` with java
+
+java -Xmx4G -jar /path/to/server.jar -nogui
+
+</syntaxhighlight>
+
+*<small>The `-Xmx` flag sets the max memory allocation (here 4GB). The `-nogui` flag disables the minecraft server gui</small>*
+
 ### Prefer IPv4
 
 To use IPv4 by default, add `-Djava.net.preferIPv4Stack=true` to `jvmOpts`.
-
-## Server.jar
-
-Some mods like [Fabric](https://fabricmc.net/use/server/) or [BTA!](https://www.betterthanadventure.net/installation-guide/), that might not be available through nixpkgs, provide their own `server.jar` files.
-
-*<sup>Make sure to move the `server.jar` file inside a separate directory, or else it might spawn server files where you don't want them.</sup>*
-
-### Server.jar dependencies
-
-In order to run `server.jar` (or any jar file in general), you will need to install *[the appropriate version of Java](https://minecraft.wiki/w/Tutorial:Setting_up_a_Java_Edition_server#Version_requirements) .*
-
-``` nixos
-pkgs.jdkX # replace the 'X' with the correct java version number here
-```
-
-Now the `server.jar` file is ready to be run :) Add/remove any extra JVM flags as you see fit
-
-``` nixos
-java -Xmx4G -jar /path/to/server.jar -nogui
-```
-
-*The `-Xmx` flag sets the max memory allocation (here 4GB). The `-nogui` flag disables the minecraft server gui*
 
 ## See also
 
