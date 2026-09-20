@@ -20,7 +20,7 @@ Before calling one of the commands above, you will have to create a user with an
 Here is an example for a default user which you can simply add to your system config:
 
 ``` nix
-users.users.nixosvmtest.isSystemUser = true;
+users.users.nixosvmtest.isNormalUser = true;
 users.users.nixosvmtest.initialPassword = "test";
 
 users.groups.nixosvmtest = {};

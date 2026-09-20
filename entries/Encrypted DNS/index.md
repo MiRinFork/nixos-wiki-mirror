@@ -84,16 +84,14 @@ See [the upstream example configuration file](https://github.com/DNSCrypt/dnscry
 
 ### Blocklist
 
-Fetch a blocklist file (e.g. oisd) as a flake input:
+Fetch blocklist files (e.g. hagezi) as a flake inputs:
 
 ``` nixos
 { config, lib, pkgs, inputs, ... }:
 let
-  blocklist_base = builtins.readFile inputs.oisd;
-  extraBlocklist = '''';
   blocklist_txt = pkgs.writeText "blocklist.txt" ''
-    ${extraBlocklist}
-    ${blocklist_base}
+    ${builtins.readFile inputs.hagezi_pro}
+    ${builtins.readFile inputs.hagezi_piracy}
   '';
 in
 {

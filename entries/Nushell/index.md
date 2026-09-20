@@ -8,6 +8,10 @@
 
 Using nushell as a login shell is not recommended. Since nushell is not a POSIX shell, it cannot execute the global shell rcfiles, which means that various environment variables that the general NixOS configuration expects to be set will not be set. To avoid these problems use the default bash interactive shell as a login shell and launch nushell from there: The <a href="Command_Shell" class="wikilink" title="Command Shell">Command Shell</a> page explains the process for setting shells as login shells if this is still desired.
 
+#### Overriding package version
+
+The nushell package can be overridden to build from a GitHub revision: The revision string can be found either in the URL of a GitHub commit, or via `git ls-remote `[`https://github.com/nushell`](https://github.com/nushell). To get the correct sha256 and hash, first run the NixOS configuration with an empty string, then substitute in the expected sha256 from the build failure log. For more information, see <a href="Overlays#Overriding_a_version" class="wikilink" title="Overlays#Overriding a version">Overlays#Overriding a version</a>.
+
 ## Configuration
 
 Nushell can be configured with <a href="Home_Manager" class="wikilink" title="Home Manager">Home Manager</a>

@@ -60,6 +60,77 @@ However, some NixOS Options should be set to make it work: </translate>
 
 <translate>
 
+### FIDO2
+
+Nitrokey devices with FIDO2 support (*Nitrokey 3*, *Nitrokey FIDO2*) can unlock LUKS volumes and authenticate PAM services such as `sudo` or the GNOME Display Manager.
+
+</translate>
+
+<translate>
+
+#### LUKS unlock
+
+Enroll the key in a free LUKS slot of every encrypted device: </translate>
+
+``` shell
+systemd-cryptenroll --fido2-device=auto /dev/disk/by-uuid/38f1c94c-5dfa-4e0a-8ec0-ae78126ac3c0
+```
+
+<translate> Then point the initrd at it: </translate>
+
+``` nix
+boot.initrd.luks.devices."crypted" = {
+  device = "/dev/disk/by-uuid/38f1c94c-5dfa-4e0a-8ec0-ae78126ac3c0";
+  crypttabExtraOpts = [ "fido2-device=auto" ];
+};
+```
+
+<translate> </translate>
+
+<translate>
+
+#### PAM: sudo and GDM login
+
+Register the key for your user. reads `$XDG_CONFIG_HOME/Yubico/u2f_keys` (i.e. `~/.config/Yubico/u2f_keys`) by default: </translate>
+
+``` shell
+mkdir -p ~/.config/Yubico
+nix-shell -p pam_u2f --run pamu2fcfg > ~/.config/Yubico/u2f_keys
+```
+
+<translate> Touch the key when it blinks. Append additional keys with `pamu2fcfg -n >> ~/.config/Yubico/u2f_keys`.
+
+Enable the module and the PAM services you want to protect: </translate>
+
+``` nix
+security.pam.u2f = {
+  enable = true;
+  cue = true; # ask to touch the device
+  # A system-wide mapping file can be set instead of the per-user one:
+  # settings.authfile = "/etc/u2f_keys";
+};
+
+security.pam.services.gdm-password.u2f.enable = true;
+security.pam.services.sudo.u2f.enable = true;
+```
+
+<translate> </translate>
+
+<translate>
+
+#### Lock the session when the key is removed
+
+Nitrokey devices use the USB vendor ID `20a0`: </translate>
+
+``` nix
+services.udev.extraRules = ''
+  ACTION=="remove", ENV{ID_BUS}=="usb", ENV{ID_VENDOR_ID}=="20a0", \
+    RUN+="${pkgs.systemd}/bin/loginctl lock-sessions"
+'';
+```
+
+<translate>
+
 ## References
 
 <references/>

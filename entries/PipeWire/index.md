@@ -416,5 +416,6 @@ services.pipewire.wireplumber.extraConfig = {
 
 - <https://github.com/NixOS/nixpkgs/issues/102547>
 - <https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/3858>
+- For using `pw-jack` see <https://discourse.nixos.org/t/confusing-errors-suggestions/29473>
 
 <a href="Category:Audio" class="wikilink" title="Category:Audio">Category:Audio</a>

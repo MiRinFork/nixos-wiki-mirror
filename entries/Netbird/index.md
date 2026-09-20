@@ -60,6 +60,8 @@ This enables IP forwarding, which is required for routing peers.
 
 ### Management Server Setup
 
+Please take a look at the [NixOS Manual: Netbird Server](https://nixos.org/manual/nixos/stable/#module-services-netbird-server)
+
 ## Configuration
 
 #### DNS Resolution

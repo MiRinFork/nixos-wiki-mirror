@@ -2,6 +2,16 @@
 
 <!-- Source page: Qt -->
 
+## Theme configuration
+
+### NixOS
+
+Qt may be configured using option as follows:
+
+### Home Manager
+
+<a href="Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> allows to write configuration for several themes using .
+
 ## Development
 
 To develop Qt applications in NixOS you may use nix-shell or direnv. For using nix-shell just run this command in the terminal:

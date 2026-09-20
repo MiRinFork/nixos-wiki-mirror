@@ -148,6 +148,40 @@ hardware.graphics = {
 hardware.amdgpu.opencl.enable = true;
 ```
 
+### GPU memory full (missing Nvidia offloading)
+
+If DaVinci Resolve shows an error about the GPU memory being full upon opening a small or empty timeline, it may be worth investigating whether Resolve actually uses the correct GPU.
+
+The following has been tested using an Nvidia RTX 40-series mobile graphics card. As such, these troubleshooting steps only apply for running Resolve on an Nvidia GPU. Note that Resolve may show your GPU as correctly detected and in use (under Preferences → System → Memory and GPU), despite not having access to it due to the missing offload configuration. First, examine if offloading is actually the problem:
+
+``` bash
+__NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia davinci-resolve
+```
+
+If this fixes the problem, you may want to auto-apply these environment variables upon launching DaVinci Resolve:
+
+``` nix
+{ pkgs }:
+
+pkgs.callPackage "${pkgs.path}/pkgs/by-name/da/davinci-resolve/package.nix" {
+  buildFHSEnv = args:
+    pkgs.buildFHSEnv (args // {
+      extraBwrapArgs = (args.extraBwrapArgs or []) ++ [
+        "--setenv" "__NV_PRIME_RENDER_OFFLOAD" "1"
+        "--setenv" "__GLX_VENDOR_LIBRARY_NAME" "nvidia"
+      ];
+    });
+}
+```
+
+Use this overridden package like so:
+
+``` nix
+(pkgs.callPackage ./davinci-resolve-nvidia-fix.nix {
+  inherit pkgs;
+})
+```
+
 <a href="Category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a>
 
 [^1]: <https://github.com/zelikos/davincibox#resolve-studio-crashes-on-checking-licences>

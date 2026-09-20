@@ -146,6 +146,12 @@ services.fail2ban
 
 These settings are written to `/etc/fail2ban/jail.local`, where fail2ban will read them.
 
+## Interacting with Fail2Ban
+
+The Fail2Ban service can be interacted with via a Unix domain socket, whose location is determined by the option (defaulting to `/run/fail2ban/fail2ban.sock`).
+
+A command line front end is being provided by the `fail2ban-client` command, which allows you to change settings, query the status of jails, unban IP addresses and more. A user has to be root or a member of the `fail2ban` group in order to be granted access to the socket.
+
 ## Extending Fail2ban
 
 Fail2ban capabilities can be freely extended by adding new jails, filters, and actions; the first ones of them are already covered in the "Basic usage" section, while the other two need dedicated config files to be created in the

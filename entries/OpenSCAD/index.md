@@ -60,9 +60,9 @@ pkgs.mkShell {
 
 ## Namespace conflicting libraries
 
-Some libraries like [dotSCAD](https://github.com/JustinSDK/dotSCAD) or [threads.scad](https://github.com/rcolyer/threads-scad) are designed to be installed in the root of the path where OpenSCAD searches for files. That is, they are meant to be called as `use threads.scad`. This introduces namespace conflict problems, so libraries like this are packaged in a way such that you must call the libraries as `use dotSCAD/example.scad` or similar, which may differ from what upstream documentation will look like.
+Some libraries like [dotSCAD](https://github.com/JustinSDK/dotSCAD) or [threads.scad](https://github.com/rcolyer/threads-scad) are designed to be installed in the root of the path where OpenSCAD searches for files. That is, they are meant to be called as `use threads.scad`. This introduces namespace conflict problems, so libraries like this are packaged in a way such that you must call them as `use dotSCAD/example.scad` or similar, which may differ from what upstream documentation will look like.
 
-In general terms, the root of each installed library is determined by the `libName` attribute of its package which we as maintainers try and make the best effort to set to a logical name. This may not be always the case, so in order to know the value of that attribute for a given library, you may run this command:
+In general terms, the root of each installed library is determined by the `libName` attribute of its package which we as maintainers try and make the best effort to set to a logical name (usually the name of the project's repository). This may not be always the case, so in order to know the value of that attribute for a given library, you may run this command:
 
 ``` bash
 nix eval --expr '(import <nixpkgs> {}).openscadPackages.bosl2.libName' --raw --impure

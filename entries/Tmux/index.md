@@ -32,7 +32,7 @@ Note that `extraConfig` writes directly to `/etc/tmux.conf`
 
 Tmux plugins can be also configured using `programs.tmux.plugins`. They can be found as NixOS packages: [tmuxPlugins](https://search.nixos.org/packages?type=packages&query=tmuxPlugins). Each of the tmux plugin is run via `run-shell` automatically.
 
-Some plugins need to be run after having had some custom configuration done\>, but extraConfig gets executed after. For example `tmuxPlugins.cpu` needs the status line be declared before the plugin is run. For that scenario, `run-shell` can be added within `extraConfig`:
+Some plugins need to be run after having had some custom configuration done, but `extraConfig` gets executed after. For example `tmuxPlugins.cpu` needs the status line be declared before the plugin is run. For that scenario, `extraConfigBeforePlugins` can be used instead:
 
 #### Per-user configuration
 
