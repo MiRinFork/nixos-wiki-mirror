@@ -90,17 +90,16 @@ services = {
 
 ### Gamescope HDR
 
-In order for HDR to work within gamescope, you might need to separately enable the `enableWsi` option </translate>
+In order for HDR to work within gamescope, enable it and disable the following option: </translate>
 
 ``` nix
 programs.gamescope = {
   enable = true;
-  enableWsi = true;
   capSysNice = false;
 };
 ```
 
-<translate> Additionally, it may be necessary to force HDR in gamescope with the argument `--hdr-debug-force-output` when configuring your game's launch options in steam (see the example below). </translate>
+<translate> It may be necessary to force HDR in gamescope with the argument `--hdr-debug-force-output` when configuring your game's launch options in steam (see the example below). </translate>
 
 ``` bash
 gamescope -W 3840 -H 2160 -r 120 -f --adaptive-sync --hdr-enabled --hdr-debug-force-output --mangoapp -- %command%

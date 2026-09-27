@@ -294,8 +294,6 @@ security.apparmor.enable = true;
 security.apparmor.killUnconfinedConfinables = true;
 ```
 
-## Lower-level
-
 ### Secure Boot
 
 See <a href="Secure_Boot" class="wikilink" title="Secure Boot">Secure Boot</a>. <a href="Limine" class="wikilink" title="Limine">Limine</a> bootloader supports coreboot's Secure Boot.

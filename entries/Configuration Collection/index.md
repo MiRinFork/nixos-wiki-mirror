@@ -60,6 +60,7 @@
 {{Configuration_Collection/line|@kenranunderscore's NixOS + home-manager config|https://github.com/kenranunderscore/dotfiles}}
 {{Configuration_Collection/line|@khaneliman’s snowfall-lib + home-manager + nixvim + sops-nix flake config for darwin and NixOS|https://github.com/khaneliman/khanelinix}}
 {{Configuration_Collection/line|@l0b0's NixOS config|https://gitlab.com/engmark/root}}
+{{Configuration_Collection/line|@leana8959's NixOS/home-manager modules + overlays + package set, uses npins|https://codeberg.org/leana8959/jardin}}
 {{Configuration_Collection/line|@Lord-Valen's Hive|https://github.com/Lord-Valen/configuration.nix}}
 {{Configuration_Collection/line|@marijanp's NixOS + home-manager config|https://github.com/marijanp/nixos-configurations}}
 {{Configuration_Collection/line|@mbledkowski's NixOS (and other) config|https://github.com/mbledkowski/dotfiles}}

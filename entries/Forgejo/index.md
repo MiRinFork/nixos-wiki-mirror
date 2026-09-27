@@ -80,7 +80,7 @@ in
 
 ## Setting up OpenSSH integration
 
-If you plan to use SSH keys for authenticating your git usage, there's a little extra configuration to be done to set that up:
+If you plan to use SSH keys for authenticating your git usage, there's a little extra configuration to be done to set that up: If `services.openssh.settings.AllowUsers` is configured, ensure you add the `forgejo` user to that list to allow SSH access.
 
 ## Actions Runner
 

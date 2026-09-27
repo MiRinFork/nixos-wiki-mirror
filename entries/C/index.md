@@ -255,8 +255,8 @@ $ nix-shell --command 'gcc --version'
 gcc (GCC) 8.3.0
 ```
 
-- Available gcc based stdenv variants: gcc{49,6-12}Stdenv, gccMultiStdenv (32bit/64bit mixed support)
-- Available clang based stdenv variants: llvmPackages\_\[5-13\].{stdenv,libcxxStdenv}, clangMultiStdenv (32bit/64bit mixed support)
+- Available gcc based stdenv variants: `gcc{13-16}Stdenv`, `gccMultiStdenv` (32bit/64bit mixed support)
+- Available clang based stdenv variants: `llvmPackages{_[18-23]}.{stdenv,libcxxStdenv}`, `clangMultiStdenv` (32bit/64bit mixed support). For the differences between `llvmPackages.stdenv` and `llvmPackages.libcxxStdenv`, see the [Nixpkgs Reference Manual](https://nixos.org/manual/nixpkgs/stable/#sec-building-packages-with-llvm-using-clang-stdenv).
 
 Those stdenv instances can be also constructed using the `overrideCC` function: Here we are creating a shell environment that will always have the latest available gcc:
 

@@ -9,7 +9,7 @@
 
 ## Launchers
 
-**Official Minecraft Launcher:** [Website](https://www.minecraft.net/download) —
+**Official Minecraft Launcher:** [Website](https://www.minecraft.net/download) — Not packaged since 25.11, due to incompatibility issues. See alternative launchers below.
 
 **<a href="Prism_Launcher" class="wikilink" title="Prism Launcher">Prism Launcher</a>:** A free, open source launcher. [Website](https://prismlauncher.org/) —
 
@@ -91,6 +91,8 @@ It is possible that you are attempting to start a version of Minecraft that is 1
 - [Minecraft on Arch Wiki](https://wiki.archlinux.org/title/Minecraft)
 
 ## References
+
+<references />
 
 <a href="Category:_Applications" class="wikilink" title="Category: Applications">Category: Applications</a> <a href="Category:_Gaming" class="wikilink" title="Category: Gaming">Category: Gaming</a>
 

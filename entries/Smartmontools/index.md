@@ -20,6 +20,14 @@ ls /dev/disk/by-id/
 
 </translate>
 
+<translate>
+
+## Detecting devices automatically
+
+Instead of listing every device explicitly, smartd can be configured to automatically look for and monitor all detected disks by enabling . This is equivalent to adding a `DEVICESCAN` entry to a `smartd.conf` file.
+
+Options applied to devices found this way can be adjusted with . **Most of the time you do not need to change this** because the default option already checks every attribute on the disk. </translate>
+
 <translate> </translate>
 
 <a href="Category:Hardware" class="wikilink" title="Category:Hardware">Category:Hardware</a> <a href="Category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a>

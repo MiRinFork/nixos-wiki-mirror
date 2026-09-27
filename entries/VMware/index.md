@@ -30,6 +30,23 @@ For example, in the GDM and GNOME desktop environments, to use Xorg, click on th
 
 This section covers issues you might have running NixOS as a guest VM in VMware Workstation or similar.
 
+#### Copy-pasting and file dragging integration not working in GNOME Wayland
+
+The VMware guest tools install in headless mode by default if `services.xserver.enable` is `false`. Add:
+
+``` nix
+virtualisation.vmware.guest.headless = false;
+environment.etc."xdg/autostart/vmware-user.desktop".text = ''
+  [Desktop Entry]
+  Type=Application
+  Name=VMware User Agent
+  Exec=/run/wrappers/bin/vmware-user-suid-wrapper
+  NoDisplay=true
+'';
+```
+
+to your config to override this and add the necessary XDG autostart entry.
+
 #### Display issues
 
 ##### Cannot change resolution in KDE Plasma ISO

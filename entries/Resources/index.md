@@ -59,8 +59,7 @@ Also, see <a href="Applications" class="wikilink" title="Applications">Applicati
 - [Nix Channel Status](https://status.nixos.org/) - when nixpkgs/nixos channels were updated last
 - [Hydra](https://hydra.nixos.org/) - official Nixpkgs CI/CD
 - [Nix Review Tools Reports](https://malob.github.io/nix-review-tools-reports/) - reports showing problematic dependencies for major Hydra jobsets
-
-\- [mynixos](https://mynixos.com) - full-text search through packages in nixpkgs and all options of NixOS, home-manager, nix-darwin
+- [mynixos](https://mynixos.com) - full-text search through packages in nixpkgs and all options of NixOS, home-manager, nix-darwin
 
 ### Tutorials
 

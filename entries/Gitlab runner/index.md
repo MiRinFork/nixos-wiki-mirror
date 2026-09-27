@@ -8,18 +8,13 @@ This is the partner page to <a href="Gitlab" class="wikilink" title="Gitlab">Git
 
 Once you have Gitlab installed and running you can install a Gitlab Runner. The Runner does not need to run on the same machine as Gitlab and you will need to register the Runner with Gitlab, to do this you will generate a token in Gitlab.
 
-## The state of gitlab-runner in nixpkgs
+As of 20.09 NixOS comes with a revamped Gitlab Runner module which provides the capabilities to set up custom to meet your needs. The documents a number of typical setups and this article gives an overview of some of the more complex setups.
 
-As of 20.09 NixOS comes with a revamped gitlab-runner module which provides the capabilities to set up custom to meet your needs. The documents a number of typical setups and this article gives an overview of some of the more complex setups.
+## Configuring a `podman`-Executor with Nix Store Caching
 
-The NixOS manual [gives an extensive runner example (the VM test)](https://nixos.org/manual/nixos/unstable/#module-services-gitlab-runner) which demonstrates the following features:
+The repository <https://github.com/gabyx/nixos-gitlab-runner> gives a production-ready runner setup for your Nix CI. It was motivated by the below simpler examples but provides more features.
 
-- a `docker`-executor using `podman` and serving a containerized Nix Store daemon among all jobs.
-- Multiple Gitlab job container images which work with `nix`.
-
-The following examples give some motivations for the above.
-
-## Configuring a caching dockerized gitlab build runner
+## Configuring a `docker`-Executor with Nix Store Caching
 
 With the configuration defined below a gitlab runner will be created which provides a caching docker container to run nix-build.
 

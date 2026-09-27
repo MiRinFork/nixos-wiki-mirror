@@ -36,4 +36,10 @@ After the installation, you can set an admin user yourself via the following com
 sudo paperless-manage createsuperuser
 ```
 
+## FAQ
+
+### Why is Paperless being rebuilt from source, even if there is a version in the package cache?
+
+If you have set `PAPERLESS_OCR_LANGUAGE`, the tesseract OCR engine and consequently paperless-ngx are recompiled for your specified languages.
+
 <a href="Category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="Category:Web_Applications" class="wikilink" title="Category:Web Applications">Category:Web Applications</a>

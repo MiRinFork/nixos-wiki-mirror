@@ -6,42 +6,25 @@
 
 ## Setup
 
-The following example enables the Stalwart mail server for the domain *example.org*, listening on mail delivery SMTP/Submission (`25, 465`), IMAPS (`993`) and JMAP ports (8080/443) for mail clients to connect to. Mailboxes for the accounts `postmaster@example.org` and `user1@example.org` get created if they don't exist yet.
+The following example enables the Stalwart mail server for the domain *example.org*, listening on mail delivery SMTP/Submission (`25, 465`), IMAPS (`993`) and JMAP ports (8080/443) for mail clients to connect to. Mailboxes for the accounts `postmaster@example.org` and `info@example.org` get created if they don't exist yet.
 
-TLS key generation is done using DNS-01 challenge through Cloudflare domain provider, see dns-update library for [further providers](https://github.com/stalwartlabs/dns-update) or configure [manual certificates](https://stalw.art/docs/server/tls/certificates).
+Most of the DNS entries are managed by Stalwart including TLS key generation. In this example we configure INWX as domain provider. For supported protocols and hosts see [upstream documentation](https://github.com/stalwartlabs/dns-update).
+
+Change the user and password of your DNS provider. The password for the `info@` mailbox and admin user is stored in plain-text here for demonstration purpose, please consider using a secret-management tool <a href="Comparison_of_secret_managing_schemes" class="wikilink" title="such as agenix or sops-nix">such as agenix or sops-nix</a>.
 
 ### DNS records
 
-Before adding required records to the example domain `example.org`, we need to register the domain on the Stalwart server.
+Following DNS records need to be configured manually since they are not managed by Stalwart.
 
-``` shell
-stalwart-cli --url https://webadmin.example.org domain create example.org
-```
+| Record Type | Name        | Value / Target                    | Notes     |
+|-------------|-------------|-----------------------------------|-----------|
+| A           | example.org | *IPv4 address of the mail server* | Required  |
+| AAAA        | example.org | *IPv6 address of the mail server* | Required  |
+| CNAME       | mail        | example.org                       | Mail host |
 
-Authenticate using the fallback-admin password.
+### rDNS setup
 
-Review the list of which DNS records are required including their values for the mail server to work at <https://webadmin.example.org/manage/directory/domains/tuxtux.com.co/view>. Especially following records are essential:
-
-| Record Type | Name | Value / Target | Notes |
-|----|----|----|----|
-| A | example.org | *IPv4 address of the mail server* | Required |
-| AAAA | example.org | *IPv6 address of the mail server* | Required |
-| CNAME | autoconfig | example.org | Mail client autoconfiguration |
-| CNAME | autodiscover | example.org | Outlook / Exchange compatibility |
-| CNAME | mail | example.org | Mail host |
-| CNAME | mta-sts | example.org | MTA-STS |
-| CNAME | webadmin | example.org | Stalwart web administration interface |
-| MX | example.org | mx1.example.org | Mail delivery |
-| SRV | \_imaps.\_tcp | *See Web Admin for exact values* | IMAPS service |
-| SRV | \_submissions.\_tcp | *See Web Admin for exact values* | SMTP Submission service |
-| TLSA | \_25.\_tcp.example.org. | 3 1 1 … | Only the record starting with `3 1 1` is required |
-| TLSA | \_25.\_tcp.mx1.example.org. | 3 1 1 … | Only the record starting with `3 1 1` is required |
-| TXT | 202409e.\_domainkey | *DKIM public key* | DKIM |
-| TXT | 202409r.\_domainkey | *DKIM public key* | DKIM |
-| TXT | \_dmarc | *DMARC policy* | DMARC |
-| TXT | mx1 | *SPF or server information* | Depends on configuration |
-| TXT | \_smtp.\_tls | *MTA-STS policy* | SMTP TLS reporting |
-| TXT | example.org | *SPF record* | SPF |
+Configure rDNS in your VPS provider configuration dashbord to the IPv4 and IPv6 addresses, used in the DNS records above.
 
 ### DNSSEC
 
@@ -49,10 +32,10 @@ Ensure that DNSSEC is enabled for your primary and mail server domain. It can be
 
 For example, check if DNSSEC is working correctly for your new TLSA record
 
-`# nix shell nixpkgs#dnsutils --command delv _25._tcp.mx1.example.org TLSA @1.1.1.1`  
+`# nix shell nixpkgs#dnsutils --command delv _25._tcp.mail.example.org TLSA @1.1.1.1`  
 `; fully validated`  
-`_25._tcp.mx1.example.org. 10800 IN TLSA 3 1 1 7f59d873a70e224b184c95a4eb54caa9621e47d48b4a25d312d83d96 e3498238`  
-`_25._tcp.mx1.example.org. 10800 IN RRSIG   TLSA 13 5 10800 20230601000000 20230511000000 39688 example.org. He9VYZ35xTC3fNo8GJa6swPrZodSnjjIWPG6Th2YbsOEKTV1E8eGtJ2A +eyBd9jgG+B3cA/jw8EJHmpvy/buCw==`
+`_25._tcp.mail.example.org. 10800 IN TLSA 3 1 1 7f59d873a70e224b184c95a4eb54caa9621e47d48b4a25d312d83d96 e3498238`  
+`_25._tcp.mail.example.org. 10800 IN RRSIG  TLSA 13 5 10800 20230601000000 20230511000000 39688 example.org. He9VYZ35xTC3fNo8GJa6swPrZodSnjjIWPG6Th2YbsOEKTV1E8eGtJ2A +eyBd9jgG+B3cA/jw8EJHmpvy/buCw==`
 
 ### Running behind reverse proxy
 
@@ -69,126 +52,6 @@ Considering the configuration above, we could add a mail alias for `user1@exampl
 If you don't want to receive any mails from a specific address, even not into your spam folder, you can add it to the spam-trap array.
 
 ## Tips and tricks
-
-### Auto update TLSA records
-
-Stalwart [does not yet](https://github.com/stalwartlabs/stalwart/issues/1664) automatically update the TLSA record if your ACME certificate changes.
-
-Following script is a possible workaround. It extracts the ACME cert every five minute, calculates the TLSA hash and compares it with the upstream record. If it doesn't match, it uses [gotlsaflare](https://github.com/Stenstromen/gotlsaflare) to update the TLSA record on Cloudflare.
-
-``` nixos
-systemd.services.tlsa-cloudflare-update = {
-  description = "Check and update TLSA/DANE record for mx1 from Stalwart ACME Cert";
-  
-  after = [
-    "network-online.target"
-    "stalwart.service"
-  ];
-  wants = [
-    "network-online.target"
-    "stalwart.service"
-  ];
-  
-  serviceConfig = {
-    Type = "oneshot";
-    User = "stalwart";
-    Group = "stalwart";
-    EnvironmentFile = config.age.secrets.gotlsaflare-cloudflare-token.path;
-    RuntimeDirectory = "stalwart-tlsa";
-  };
-  environment = {
-    DOMAIN = "example.org";
-    SUBDOMAIN = "mail";
-    PORT = "25";
-    ACME_PROVIDER_ID = "cloudflare";
-  };
-  path = with pkgs; [
-    bash
-    coreutils
-    openssl
-    dnsutils
-    gotlsaflare
-    rocksdb.tools
-    gawk
-  ];
-
-  script = ''
-    set -eu
-
-    TLSA_RECORD="_$PORT._tcp.$SUBDOMAIN.$DOMAIN"
-    DB_PATH="/var/lib/stalwart/db"
-    TEMP_RAW="/run/stalwart-tlsa/cert.bundle"
-    TEMP_CRT="/run/stalwart-tlsa/cert.crt"
-
-    echo "Starting TLSA update process for $DOMAIN"
-
-    ldb --db="$DB_PATH" --column_family=s get "acme.$ACME_PROVIDER_ID.cert" | base64 -d > "$TEMP_RAW"
-
-    if [ ! -s "$TEMP_RAW" ]; then
-      echo "ERROR: ACME certificate extraction failed"
-      exit 1
-    fi
-
-    openssl x509 -in "$TEMP_RAW" -out "$TEMP_CRT"
-
-    LOCAL_HASH=$(openssl x509 -in "$TEMP_CRT" -pubkey -noout | openssl pkey -pubin -outform DER | openssl sha256 | awk '{print tolower($2)}')
-    echo "Local hash: $LOCAL_HASH"
-
-    UPSTREAM_HASH=$(dig +nosplit +short TLSA "$TLSA_RECORD" | awk '{print tolower($4)}' | head -n1)
-    echo "Upstream hash: $UPSTREAM_HASH"
-
-    if [ "$LOCAL_HASH" = "$UPSTREAM_HASH" ]; then
-      echo "Hashes match. DNS is up to date."
-      exit 0
-    fi
-
-    echo "Hashes differ! Updating Cloudflare..."
-    gotlsaflare update \
-      --url "$DOMAIN" \
-      --subdomain "$SUBDOMAIN" \
-      --tcp"$PORT" \
-      --cert "$TEMP_CRT"
-
-    echo "TLSA update completed successfully."
-  '';
-};
-
-systemd.timers.tlsa-cloudflare-update = {
-  description = "Run TLSA check and update every 5 minutes";
-  wantedBy = [ "timers.target" ];
-  timerConfig = {
-    OnBootSec = "2m";
-    OnUnitActiveSec = "5m";
-    Unit = "tlsa-cloudflare-update.service";
-  };
-};
-```
-
-Adapt the variables `DOMAIN`, `SUBDOMAIN`, and `PORT` according to your needs. The variable `ACME_PROVIDER_ID` corresponds to the ACME profile name you've setup in the Stalwart webadmin interface. `EnvironmentFile` points to a file containing the secret Cloudflare api token in the format: TOKEN=12345678\[...\].
-
-#### deSEC.io
-
-In case you want to update your TLSA records at deSEC you can use [dyndns-tlsa-desec](https://codeberg.org/Cameo007/dyndns-tlsa-desec) (**install via flake**) which checks your existing records and updates them if necessary. The certificate and key are taken from the specified directory (like your <a href="ACME" class="wikilink" title="ACME">ACME</a> directory)
-
-It defaults to `3 1 1` but you can choose other values as described <a href="wikipedia:DNS-based_Authentication_of_Named_Entities#RR_data_fields" class="wikilink" title="here">here</a>.
-
-``` nixos
-services.dyndns-tlsa-desec = {
-  enable = true;
-  api_token_file = config.age.secrets.dyndns-tlsa-desec-api-key.path;
-
-  tlsa_zones."example.com" = {
-    cert_path = "/var/lib/acme/example.com/";
-    records."_25._tcp.mail" = { };
-  };
-};
-```
-
-The program is executed hourly per default but you can set the `interval` option to any [systemd calendar event](https://www.freedesktop.org/software/systemd/man/latest/systemd.time.html#Calendar%20Events).
-
-``` nixos
-services.dyndns-tlsa-desec.interval = "5m"; # Every 5 minutes
-```
 
 ### Sending from subaddresses
 

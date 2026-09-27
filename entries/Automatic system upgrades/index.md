@@ -2,7 +2,7 @@
 
 <!-- Source page: Automatic system upgrades -->
 
-Automatic system upgrades can be used to upgrade a system regularly at a specific time. This can help to reduce the time period of applying important security patches to your running software but might also introduce some breakage in case an automatic upgrade fails. For automatic upgrades an automatic <a href="Garbage_Collection" class="wikilink" title="garbage collection">garbage collection</a> is important to prevent full
+Automatic system upgrades can be used to upgrade a system regularly at a specific time. This can help to reduce the time period of applying important security patches to your running software, but might also introduce some breakage in the case that an automatic upgrade fails. For automatic upgrades, automatic <a href="Garbage_Collection" class="wikilink" title="garbage collection">garbage collection</a> is important to prevent full
 
 ``` bash
 /boot
@@ -26,7 +26,7 @@ Most NixOS installations use channels by default. If you're unsure which you're 
 nix-channel --list
 ```
 
-. If that returns results, you're using channels.
+. If that returns any results, you're using channels.
 
 For channel-based systems, use this configuration:
 
@@ -34,31 +34,37 @@ For channel-based systems, use this configuration:
 
 ### Flake-based systems
 
-To enable unattended automatic system updates on a flake-enabled host, add following part to your configuration:
+To enable unattended automatic system updates on a flake-enabled host, add following to your configuration:
 
-Previously this page advised to set the flags `--update-input nixpkgs` to trigger updating a specific input. However that flag will just be handed through to `nix build` where it was deprecated and removed. Follow [this Bug for details and resolutions](https://github.com/NixOS/nixpkgs/issues/349734).
+Previously, this page advised to set the flags
+
+``` bash
+--update-input nixpkgs
+```
+
+to trigger an update of the nixpkgs input. However, that flag will only be passed to nixos-rebuild, where it was deprecated. Follow [this issue](https://github.com/NixOS/nixpkgs/issues/349734) for details and resolutions.
 
 ## Monitoring
 
-Check that automatic system upgrades run successfully. Force an automatic system upgrade by running
+Check that automatic system upgrades run successfully. Force an automatic system upgrade by running:
 
 ``` bash
 # systemctl start nixos-upgrade
 ```
 
-Check the upgrade log with
+Check the upgrade log with:
 
 ``` bash
 # systemctl status nixos-upgrade.service
 ```
 
-Or, to see the full log
+Or, to see the full log:
 
 ``` bash
 # journalctl -u nixos-upgrade.service
 ```
 
-To see the status of the upgrade timer run
+To see the status of the upgrade timer, run:
 
 ``` bash
 # systemctl status nixos-upgrade.timer
@@ -68,19 +74,7 @@ To see the status of the upgrade timer run
 
 ### Git "repository is not owned by current user"
 
-The flake repository directory is not owned by
-
-``` bash
-root
-```
-
-(which
-
-``` bash
-nixos-upgrade
-```
-
-runs as). To fix this, add the following to
+The flake repository directory is not owned by root, which nixos-upgrade runs as. To fix this, add the following to
 
 ``` bash
 /root/.gitconfig
@@ -90,12 +84,6 @@ runs as). To fix this, add the following to
 
 ### Git "fatal: unable to auto-detect email address"
 
-The root user doesn't have specified the user and email in the git configuration. To fix this, you can extend the
-
-``` bash
-nixos-upgrade
-```
-
-service with:
+The root user doesn't have specified the user and email in the git configuration. To fix this, you can extend the nixos-upgrade service with:
 
 <a href="Category:NixOS" class="wikilink" title="Category:NixOS">Category:NixOS</a>

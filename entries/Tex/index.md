@@ -29,7 +29,7 @@ For the sake of this text we will assume that you you want to create a PDF from 
 A good starting point is to install the TeX-Live basic setup:
 
 ``` console
-$ nix-env -iA nixpkgs.texlive.combined.scheme-basic
+$ nix-env -iA nixpkgs.texliveBasic
 ```
 
 After installation, the command `pdflatex` should be available. Save the minimal example above in a file called minimal.tex and compile it with `pdflatex minimal.tex`
@@ -75,7 +75,7 @@ You can then use any PDF viewer to display it, e.g. `evince` in GNOME, `okular` 
 
 ### Using Texlive packages
 
-If you need many different packages or find that you are missing packages, consider to install the package **nixpkgs.texlive.combined.scheme-full**, but be aware that it is pretty huge (about 5 GB).
+If you need many different packages or find that you are missing packages, consider to install the package **nixpkgs.texliveFull**, but be aware that it is pretty huge (about 5 GB).
 
 If you don't want to install the Full scheme, but still need a collection of specific packages, follow the instructions on the <a href="TexLive" class="wikilink" title="TexLive">TexLive</a> page.
 
@@ -126,7 +126,7 @@ pkgs.texlive.combine {
 As noted on <a href="TexLive" class="wikilink" title="TexLive">TexLive</a> there are several schemas available. If you know exactly which packages you are going to need you can follow the recipe on the <a href="TexLive" class="wikilink" title="TexLive">TexLive</a> page. Installing the Full-schema is always an option to be sure that you have everything you need, like so:
 
 ``` console
-$ nix-env -iA nixpkgs.texlive.combined.scheme-full
+$ nix-env -iA nixpkgs.texliveFull
 ```
 
 If you are looking for a smaller package, you need to go the [Nixpkg's package specification](https://raw.githubusercontent.com/NixOS/nixpkgs/refs/heads/master/pkgs/tools/typesetting/tex/texlive/tlpdb.nix) and search for the scheme-name. For each scheme the list of packages is listed there. Since the inclusion of packages is organized hierarchically, this will require some digging. (TODO: Is there a nix-command to find out?)

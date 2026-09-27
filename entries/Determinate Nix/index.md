@@ -1,12 +1,12 @@
 <!-- Generated from https://wiki.nixos.org/wikidump.xml.zst. Do not edit by hand. -->
 
-<!-- Source page: Determinate-nix -->
+<!-- Source page: Determinate Nix -->
 
 [Determinate Nix](https://docs.determinate.systems/determinate-nix/) is [Determinate Systems](https://determinate.systems)’ enterprise‑grade, validated downstream distribution of NixOS/Nix that retains full compatibility with upstream Nix while adding performance‑boosting features such as parallel evaluation and lazy trees.
 
 ## Setup
 
-Add the input `determinate` and the module `determinate.nixosModules.default` to your system flake.nix configuration
+Add the input `determinate` and the module `determinate.nixosModules.default` to your system flake.nix configuration:
 
 ``` nix
 {
@@ -25,7 +25,7 @@ Add the input `determinate` and the module `determinate.nixosModules.default` to
 }
 ```
 
-After that add the two extra options to your `nixos-rebuild` command and apply changes
+After that, add the two extra options to the nixos-rebuild command and apply changes:
 
 ``` bash
 sudo nixos-rebuild \
