@@ -90,16 +90,17 @@ services = {
 
 ### Gamescope HDR
 
-In order for HDR to work within gamescope, enable it and disable the following option: </translate>
+In order for HDR to work within gamescope, you might need to separately enable the `enableWsi` option </translate>
 
 ``` nix
 programs.gamescope = {
   enable = true;
+  enableWsi = true;
   capSysNice = false;
 };
 ```
 
-<translate> It may be necessary to force HDR in gamescope with the argument `--hdr-debug-force-output` when configuring your game's launch options in steam (see the example below). </translate>
+<translate> Additionally, it may be necessary to force HDR in gamescope with the argument `--hdr-debug-force-output` when configuring your game's launch options in steam (see the example below). </translate>
 
 ``` bash
 gamescope -W 3840 -H 2160 -r 120 -f --adaptive-sync --hdr-enabled --hdr-debug-force-output --mangoapp -- %command%
@@ -305,6 +306,8 @@ To "reset" your driver to radv when both radv and amdvlk are installed, set eith
 ### SteamVR
 
 The setcap issue at SteamVR start can be fixed with: `sudo setcap CAP_SYS_NICE+ep ~/.local/share/Steam/steamapps/common/SteamVR/bin/linux64/vrcompositor-launcher`
+
+The <a href="Steam_Frame" class="wikilink" title="Steam Frame">Steam Frame</a> headset is discovered through these Remote Play ports. See <a href="Steam_Frame" class="wikilink" title="Steam Frame">Steam Frame</a>.
 
 ### Gamescope fails to launch when used within Steam
 

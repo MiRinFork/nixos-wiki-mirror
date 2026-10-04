@@ -12,7 +12,39 @@ Add following line to your configuration to enable ONLYOFFICE
 
 ### Install and use missing corefonts
 
-According to one [upstream bug](https://github.com/ONLYOFFICE/DocumentServer/issues/1859) ONLYOFFICE is unable to locate <a href="Fonts" class="wikilink" title="font">font</a> files on NixOS. A workaround is to install missing or additional fonts and copy them to the user directory
+According to one [upstream bug](https://github.com/ONLYOFFICE/DocumentServer/issues/1859) ONLYOFFICE is unable to locate <a href="Fonts" class="wikilink" title="font">font</a> files on NixOS.
+
+Currently, the best workaround to add all fonts on your NixOS system is given as follows:
+
+``` nixos
+# onlyoffice-font-fix.nix
+
+{ config, pkgs, ... }:
+
+{
+  # Expose installed fonts under /run/current-system/sw/share/X11/fonts
+  fonts.fontDir.enable = true;
+
+  # OnlyOffice font fix
+  nixpkgs.overlays = [
+    (final: prev: {
+      onlyoffice-desktopeditors = prev.buildFHSEnv (
+        prev.onlyoffice-desktopeditors.passthru.args
+        // {
+          extraBwrapArgs = (prev.onlyoffice-desktopeditors.passthru.args.extraBwrapArgs or [ ]) ++ [
+            # Bind mount host system fonts into the FHS container's /usr/share/fonts:
+            "--ro-bind"
+            "/run/current-system/sw/share/X11/fonts"
+            "/usr/share/fonts"
+          ];
+        }
+      );
+    })
+  ];
+}
+```
+
+Another workaround is to install missing or additional fonts and copy them to the user directory
 
 ``` console
 $ mkdir -p ~/.local/share/fonts

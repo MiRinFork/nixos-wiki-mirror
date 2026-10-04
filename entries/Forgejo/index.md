@@ -26,7 +26,7 @@ let
 in
 {
   services.nginx = {
-    virtualHosts.${cfg.settings.server.DOMAIN} = {
+    virtualHosts.${srv.DOMAIN} = {
       forceSSL = true;
       enableACME = true;
       extraConfig = ''
@@ -94,26 +94,30 @@ You can create a server-wide Runner by going to *Profile Picture \> Site Adminis
 
 ``` nixos
 { pkgs, config, ... }: {
-  services.gitea-actions-runner = {
+  # Configure a single host local runner with default package set access
+  services.forgejo-runner = {
     package = pkgs.forgejo-runner;
     instances.default = {
       enable = true;
-      name = "monolith";
-      url = "https://git.example.com";
-      # Obtaining the path to the runner token file may differ
-      # tokenFile should be in format TOKEN=<secret>, since it's EnvironmentFile for systemd
-      tokenFile = config.age.secrets.forgejo-runner-token.path;
-      labels = [
+      runtimes.host = true;
+      settings.runner.labels = [
+        # Native Execution on the Host
+        "native:host"
+        
+        # Assuming Docker has been setup on the host machine
         "ubuntu-latest:docker://node:16-bullseye"
         "ubuntu-22.04:docker://node:16-bullseye"
         "ubuntu-20.04:docker://node:16-bullseye"
-        "ubuntu-18.04:docker://node:16-buster"     
-        ## optionally provide native execution on the host:
-        # "native:host"
+        "ubuntu-18.04:docker://node:16-buster" 
       ];
+      secrets.server.connections."forgejo".token_url = "/var/lib/forgejo/forgejoToken.key"; # Path to forgejo runner key file provided by forgejo.
+      settings.server.connections.forgejo = {
+        url = "https://localhost:3000"; # Forgejo Instance URL
+        uuid = "aaaaaaaa-bbbbbbbbbb-cccccccccc-ddddddd"; # UUID of forgejo runner instance
+      };
     };
   };
-}
+};
 ```
 
 ## Ensure users

@@ -4,7 +4,43 @@
 
 [ESP-IDF](https://github.com/espressif/esp-idf) is the official framework to develop programs for the Espressif Systems [ESP32](https://en.wikipedia.org/wiki/ESP32) series microcontrollers. This guide explains how to install and use ESP-IDF on NixOS.
 
-## The easy way
+## The easy way (eim)
+
+EIM stands for ESP-IDF Installation Manager, which is a new toolkit manager by espressif, and replaces the legacy install.sh approach. It automatically downloads the tooling and compilers needed for your project. You can easily switch between different versions and targets. It uses the official prebuilt binaries from espressif github releases, so versions are available as soon as they are released. This has been packaged in <https://github.com/hnaderi/espidf-nix>. You can use it directly like:
+
+``` sh
+nix develop github:hnaderi/espidf-nix
+```
+
+or in your flake files like this:
+
+``` nix
+{
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+  inputs.espidf.url = "github:hnaderi/espidf-nix";
+
+  outputs =
+    { nixpkgs, espidf, ... }:
+    let
+      pkgs = import nixpkgs {
+        system = "x86_64-linux";
+        overlays = [ espidf.overlays.default ];
+      };
+    in
+    {
+      devShells.x86_64-linux.default = pkgs.mkShell {
+        packages = [
+          pkgs.esp-idf
+          pkgs.clang-tools
+        ];
+      };
+    };
+}
+```
+
+You can also override the default idf version and available targets. For more details take a look at the project docs.
+
+## The easy way (direct)
 
 The ESP32 toolchain and ESP-IDF have been packaged in <https://github.com/mirrexagon/nixpkgs-esp-dev>. If you have Nix 2.4 or later, you can get a shell with everything you need to build ESP-IDF projects for ESP32 with this command (no need to download anything yourself):
 

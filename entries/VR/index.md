@@ -64,7 +64,7 @@ After installing SteamVR through Steam and plugging in a SteamVR-compatible head
 
 On initial setup, SteamVR will ask for elevated permissions, to set up a file capability for one of its binaries. This is needed to allow asynchronous reprojection to work. Clients need the `CAP_SYS_NICE` capability to acquire a high-priority context, which is a requirement for asynchronous reprojection. </translate>
 
-<translate>
+<translate>For wireless streaming from a <a href="Steam_Frame" class="wikilink" title="Steam Frame">Steam Frame</a>, see <a href="Steam_Frame" class="wikilink" title="Steam Frame">Steam Frame</a>.
 
 ### Patching AMDGPU to allow high priority queues
 

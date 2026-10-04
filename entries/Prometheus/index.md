@@ -12,6 +12,12 @@ Prometheus works by scraping from HTTP endpoints, which are often provided by **
 
 Below is an example of [prometheus node_exporter](https://prometheus.io/docs/guides/node-exporter/) with additional collectors enabled. [`node_exporter` is documented in the NixOS manual](https://nixos.org/manual/nixos/stable/#module-services-prometheus-exporters).
 
+### <sub>`blackbox-exporter`</sub>
+
+The [blackbox exporter](https://github.com/prometheus/blackbox_exporter) allows blackbox probing of endpoints over HTTP, HTTPS, DNS, TCP, ICMP and gRPC.
+
+Below is an example of blackbox-exporter monitoring a https-webservice:
+
 ## Usage
 
 The Prometheus service daemon can be enabled and configured by further options.

@@ -54,6 +54,8 @@ systemd.services.your-service-name = {
 
 Hibernation requires a configured swap device. See [installation instructions](https://nixos.org/manual/nixos/stable/#ch-installation) on how to create a swap partition.
 
+Systemd (systemd-sleep and systemd-hibernate-resume) automates finding locating the resume data[^1][^2] if you have systemd in initrd enabled (, on by default)[^3]. Otherwise you must set `boot.resumeDevice` and optionally the `resume_offset` kernel parameter[^4].
+
 Please note that `resumeDevice` must match the output of `swapon -s` especially if you're dealing with mapped volumes (LUKS, logical volumes, logical volumes under LUKS, etc.). If you're using a swapfile, you must also [specify the offset to it.](https://search.nixos.org/options?channel=unstable&show=boot.resumeDevice&from=0&size=50&sort=relevance&type=packages&query=resume+offset)
 
 Therefore, an example configuration could look like this:
@@ -240,4 +242,16 @@ An existing suspend operation that is hung may be interrupted using **`systemctl
 
 - 
 
+## References
+
+<references />
+
 <a href="Category:Configuration" class="wikilink" title="Category:Configuration">Category:Configuration</a>
+
+[^1]: <https://www.freedesktop.org/software/systemd/man/latest/systemd-hibernate-resume.html#>
+
+[^2]: <https://wiki.archlinux.org/title/Power_management/Suspend_and_hibernate#Pass_hibernate_location_to_initramfs>
+
+[^3]: <https://github.com/nix-community/disko/issues/651#issuecomment-2381644055>
+
+[^4]: <https://docs.kernel.org/power/swsusp.html>

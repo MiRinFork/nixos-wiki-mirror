@@ -4,9 +4,9 @@
 
 ## Current status
 
-We can cross-compile ([\#305392](https://github.com/NixOS/nixpkgs/pull/305392)) but we are missing bootstrap tarballs for native builds.
+Since [\#549823](https://github.com/NixOS/nixpkgs/pull/549823), we can now build GHC natively.
 
-`cannot bootstrap GHC on this platform ('riscv64-linux' with libc 'defaultLibc')`
+For cross-compilation, support had already been added in [\#305392](https://github.com/NixOS/nixpkgs/pull/305392).
 
 - [RISC-V Label](https://gitlab.haskell.org/ghc/ghc/-/issues/?label_name%5B%5D=RISC-V)
 - [Main issue](https://gitlab.haskell.org/ghc/ghc/-/issues/16783) ✅
@@ -14,7 +14,7 @@ We can cross-compile ([\#305392](https://github.com/NixOS/nixpkgs/pull/305392)) 
 - [LLVM backend](https://gitlab.haskell.org/ghc/ghc/-/commit/31e265c1df948d1bcc82d08affe995fd1d1c1438) ✅
 - **[Binary tarballs](https://gitlab.haskell.org/ghc/ghc/-/issues/23519)**
 
-Some popular affected packages are:
+Some popular packages depending on GHC are:
 
 - nix-tree
 - nixfmt
@@ -175,5 +175,6 @@ See <https://github.com/AlexandreTunstall/nixos-riscv> for an example of a pure 
 
 - [Nixpkgs PR 243619 (fix cross-built native GHC)](https://github.com/NixOS/nixpkgs/pull/243619)
 - [Nixpkgs PR 305392 (fix cross-built native GHC, version 2)](https://github.com/NixOS/nixpkgs/pull/305392)
+- [Nixpkgs PR 549823 (fix native-built GHC)](https://github.com/NixOS/nixpkgs/pull/549823)
 
 <a href="Category:Haskell" class="wikilink" title="Category:Haskell">Category:Haskell</a>

@@ -6,7 +6,7 @@
 
 ## Run the game
 
-The game can be run by opening it in a web browser and accepting persistent storage of the game files.
+The game can be ran by opening it in a web browser and accepting persistent storage of the game files.
 
 ## Setup of a dedicated server
 
@@ -22,6 +22,6 @@ services.quakejs = {
 };
 ```
 
-Join your own dedicated server using the url: `http://quakejs.example.org/play?connect%20192.0.2.0:27960, where` 192.0.2.0 `is the public IP of your dedicated server.`
+Join your own dedicated server using the URL `http://quakejs.example.org/play?connect%20192.0.2.0:27960`, where `192.0.2.0` is the public IP of your dedicated server.
 
 <a href="Category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="Category:Gaming" class="wikilink" title="Category:Gaming">Category:Gaming</a> <a href="Category:Server" class="wikilink" title="Category:Server">Category:Server</a>

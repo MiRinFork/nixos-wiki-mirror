@@ -70,7 +70,7 @@ You can use several online tools to test your mail server configuration:
 
 ### Unsecure setup for testing environments
 
-The following minimal configuration example is unsecure and for testing purpose only. It will run the Stalwart mail server on `localhost`, listening on port `143` (IMAP) and `587` (Submission). Users `alice` and `bob` are configured with the password `foobar`.
+The following minimal configuration example is unsecure and for testing purpose only. It will run the Stalwart mail server on `localhost`, listening on port `143` (IMAP) and `587` (Submission). Users `alice@localhost.localdomain` and `bob@localhost.localdomain` are configured with the password `Dev-Mail-Test-2026!`.
 
 ## See also
 

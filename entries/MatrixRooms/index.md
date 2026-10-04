@@ -8,6 +8,7 @@ If your Matrix client supports spaces, see [NixOS Community Space](https://matri
 |----|----|
 | [\#users:nixos.org](https://matrix.to/#/#users:nixos.org) | Nix/NixOS Help Channel |
 | [\#dev:nixos.org](https://matrix.to/#/#dev:nixos.org) | Nixpkgs/NixOS Contributions |
+| [\#docs:nixos.org](https://matrix.to/#/#docs:nixos.org) | Nix Documentation |
 | [\#offtopic:nixos.org](https://matrix.to/#/#offtopic:nixos.org) | Nix Offtopic |
 | [\#review-requests:nixos.org](https://matrix.to/#/#review-requests:nixos.org) | Have a PR that is ready for review but remains unreviewed for a week or longer? Post it here! |
 | [\#nix-lang:nixos.org](https://matrix.to/#/#nix-lang:nixos.org) | Nix Language |

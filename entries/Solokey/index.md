@@ -17,7 +17,7 @@ security.pam.services = {
     login.u2fAuth = true;
     sudo.u2fAuth = true;
 };
-# https://github.com/solokeys/solo2-cli/blob/main/70-solo2.rules
+# https://github.com/solokeys/solo2/blob/main/cli/70-solo2.rules
 services.udev.packages = [
     pkgs.yubikey-personalization
     (pkgs.writeTextFile {

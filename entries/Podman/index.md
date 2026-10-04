@@ -117,4 +117,18 @@ virtualisation.containers.registries.search = [ "docker.io" ];
 
 For user-scoped registries you can do using <a href="Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> manually:
 
+### **Rootless Podman containers**
+
+Rootless Podman containers can be run using Home Manager's `services.podman` module
+
+Create a user to run the rootless container: Allow the new user to use Home Manager: Set up Home Manager configuration for the new user, e.g. in your `flakes.nix`: Set up the container using Home Manager's `services.podman` module. Ensure `${config.home.homeDirectory}/www` exists beforehand
+
+#### Limitations and quirks
+
+- Rootless containers can't bind to ports below 1024 by default. You can allow it system-wide with `boot.kernel.sysctl."net.ipv4.ip_unprivileged_port_start" = 80;`, or map a high port instead (`-p 8080:80`)
+- Rootless images and volumes are stored in `~/.local/share/containers/storage`, separate from root's storage
+- Files that a non-root container writes to a bind mount are owned by an unprivileged host UID (for example `100000–165535`), not by you. Use `:U` parameter on the volume mount to ensure the mount is owned by the user and group the container runs , or `--userns=keep-id` to change the UID inside the container to the one of the host user [^1]
+
 <a href="Category:Software" class="wikilink" title="Category:Software">Category:Software</a> <a href="Category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="Category:Container" class="wikilink" title="Category:Container">Category:Container</a>
+
+[^1]: <https://docs.podman.io/en/latest/markdown/podman-run.1.html#volume-v-source-volume-host-dir-container-dir-options>

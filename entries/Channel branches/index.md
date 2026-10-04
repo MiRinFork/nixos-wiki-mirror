@@ -77,9 +77,54 @@ Once the job succeeds at a particular nixpkgs commit, cache.nixos.org will downl
 
 For the `NixOS` channel command-not-found index is generated, which can take some time since it has to fetch all packages. `nixpkgs` is quickly updated since none of the above needs to happen once a channel update is triggered.
 
+The resulting channel artifacts (`nixexprs.tar.zstd`, ISO images, command-not-found index, etc.) are then available on [releases.nixos.org](https://releases.nixos.org). The exact URL depends on the channel branch (see <a href="#Channel_Versioning" class="wikilink" title="#Channel Versioning">#Channel Versioning</a> for more info on `full_version`):
+
+| Channel name | URL template |
+|----|----|
+| `nixpkgs-unstable` | `/nixpkgs/nixpkgs-{full_version}/{artifact}` |
+| `nixpkgs-*-darwin` | `/nixpkgs/{major}.{minor}-darwin/nixpkgs-darwin-{full_version}/{artifact}` |
+| `nixos-unstable` | `/nixos/unstable/nixos-{full_version}/{artifact}` |
+| `nixos-unstable-small` | `/nixos/unstable-small/nixos-{full_version}/{artifact}` |
+| `nixos-*` | `/nixos/{major}.{minor}/nixos-{full_version}/{artifact}` |
+| `nixos-*-small` | `/nixos/{major}.{minor}-small/nixos-{full_version}/{artifact}` |
+
+`channels.nixos.org/{channel_name}` will redirect to the most recent release's directory of artifacts ([example](https://channels.nixos.org/nixos-unstable)).
+
 Updates for the -unstable channels typically take a few days after commits land in the master branch.
 
-To find out when a channel was last updated, check [<https://status.nixos.org/>](https://status.nixos.org/). The progress of a particular pull request can be tracked via the (third-party) [Nixpkgs Pull Request Tracker](https://nixpk.gs/pr-tracker.html).
+To find out when a channel was last updated, check <https://status.nixos.org/>. The progress of a particular pull request can be tracked via the (third-party) [Nixpkgs Pull Request Tracker](https://nixpk.gs/pr-tracker.html).
+
+### Channel Versioning
+
+Each successful run of this process corresponds to a specific version of that channel. The version format differs slightly based on the channel:
+
+- `nixpkgs-unstable`, `nixos-unstable`, `nixos-unstable-small`, and `nixpkgs-*-darwin` use the format `XX.YYpreN.C`, where:
+  - `XX.YY` is the major-minor version: for unstable channels, this is the yet-unreleased version (e.g. if the latest stable version is 26.11, then this would be 27.05); for darwin channels, this is the corresponding version (e.g. 26.05 for `nixpkgs-26.05-darwin`).
+  - `C` is an abbreviation of the nixpkgs commit that was used by Hydra to build this release: this can be found in the "Input" tab of the Hydra job (\[<https://hydra.nixos.org/eval/1829620#tabs-inputs>:~:text=b6c8664de9b6cc07fe5666a29f91884ba81197c4 example\]), and should only contain the first 12 characters of the hash (except for versions older than 22.05, check [the exhaustive list of artifacts for those](https://releases.nixos.org/?prefix=nixpkgs/)).
+  - `N` is the number of commits between `C` and the nixpkgs repo's root commit.
+
+<!-- -->
+
+- `nixos-*` uses a similar format, `XX.YY.N.C`, but where `N` has a slightly different meaning: in this case, it should be the number of commit between `master` and the merge base between `master` and `C`.
+
+For example, `nixpkgs-unstable`'s version `26.11pre1081052.f45c6f04c2f0` is an unstable version released while the latest stable version was 26.05 (which means the next version was 26.11), and it was based on [commit f45c6f04c2f0](https://github.com/NixOS/nixpkgs/commit/f45c6f04c2f0), which is the 1081052nd commit of the repo. (For completeness's sake, it corresponds to [Hydra job 1829602](https://hydra.nixos.org/eval/1829602), if you're curious.)
+
+#### Computing the channel version
+
+If you have already downloaded that channel, you can evaluating `lib.version` (e.g. with `nix-instantiate /path/to/nixpkgs -A lib.version --eval`) to find the exact channel version it corresponds to, which can be used to manually fetch it from [releases.nixos.org](https://releases.nixos.org) if needed later.
+
+If you don't already have a download of the exact channel version you want, you can still try to determine it yourself using a git checkout of the nixpkgs repo. For this, you will need to start from a specific commit that was used by a Hydra job. If you already have a commit but don't know if it corresponds to a Hydra job, you will probably need to try and manually find a close commit in the listing of the corresponding jobset. Once you have that commit you can determine the `N` of the version string:
+
+| Channel name | Command |
+|----|----|
+| `nixpkgs-unstable`, `nixos-unstable`, `nixpkgs-unstable-small`, `nixpkgs-*-darwin` | `git rev-list $C | wc -l` |
+| `nixos-*`, `nixos-*-small` | `git rev-list $(git merge-base master $C)..$C | wc -l` |
+
+Find the value of N for a given commit C depending on the channel
+
+Once you have gathered all this information, you can use it to form the version string using the earlier information.
+
+For example, if you want to find the `nixos-26.05` version that corresponds to [commit 7fc6f2c20af0](https://github.com/NixOS/nixpkgs/commit/7fc6f2c20af0) ([Hydra job 1829619](https://hydra.nixos.org/eval/1829619)), you would compute `N` using `git rev-list $(git merge-base master 7fc6f2c20af0)..7fc6f2c20af0 | wc -l`, which would give you a value of `N = 10882`, allowing you to determine that its exact version string is `26.05.10882.7fc6f2c20af0` (and indeed, [its artifact page](https://releases.nixos.org/nixos/26.05/nixos-26.05.10882.7fc6f2c20af0) does prove we're right!).
 
 ### Check build status
 

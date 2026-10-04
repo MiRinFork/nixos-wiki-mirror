@@ -177,6 +177,8 @@ Some laptops, mostly those based on Intel Atom (and first-gen 2006-2007 Intel Ma
 
 to the grub section of your configuration.
 
+Since 32-bit installation files are no longer provided, you can instead create a <a href="Creating_a_NixOS_live_CD" class="wikilink" title="live CD">live CD</a> with this grub config set yourself.
+
 ### Manually adding EFI boot entry
 
 If you somehow lost all EFI boot entries (e.g. by resetting your BIOS), then you can manually add it again. Firstly, find out which disk and partition `/EFI/NixOS-boot/grubx64.efi` is located (can be x86 or something else), which in the example will be `/dev/sda1`. Then use efibootmgr to add the entry again, where the disk device is specified, with the partition number followed by the index and finally the path to the grub boot loader.

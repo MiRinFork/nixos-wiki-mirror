@@ -33,7 +33,7 @@ $ cloudflared tunnel create <tunnel-name-of-choice>
 
 The command will output the tunnel ID in the format 00000000-0000-0000-0000-000000000000, which will be needed for setting up the tunnel service. The following example uses flakes and [sops-nix](https://github.com/Mic92/sops-nix) to hide the credentials file secret. You can now use the Cloudflare dashboard to add your public hosts.
 
-#### Declarative igress
+#### Declarative ingress
 
 However, if you would instead like to do so in your configuration file you may specify ingress rules in your configuration file.Finally, create a CNAME record with the following command.
 

@@ -17,7 +17,7 @@ Below is a basic configuration that will host a Minetest server on port 30000:
 }
 ```
 
-With this configuration, a user named will be created, along with its home folder '/var/lib/minetest'. All default Minetest configuration and world files are stored in .
+With this configuration, a user named will be created, along with its home folder . All default Minetest configuration and world files are stored in .
 
 The Minetest service will be started after running nixos-rebuild. It can be controlled using systemctl:
 

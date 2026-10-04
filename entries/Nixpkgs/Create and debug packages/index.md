@@ -2,15 +2,15 @@
 
 <!-- Source page: Nixpkgs/Create and debug packages -->
 
-This article describes how to work with the nix related repositories to add new packages, edit and debug existing packages. For details on the NixOS module system see <a href="NixOS:Modules" class="wikilink" title="NixOS:Modules">NixOS:Modules</a>. <a href="NixOS:extend_NixOS" class="wikilink" title="NixOS:extend_NixOS">NixOS:extend_NixOS</a> explains how to write, test and debug your own modules.
+This article describes how to work with the nix related repositories to add new packages, edit and debug existing packages. For details on the NixOS module system see <a href="NixOS:Modules" class="wikilink" title="NixOS:Modules">NixOS:Modules</a>. <a href="NixOS:extend_NixOS" class="wikilink" title="NixOS:extend_NixOS">NixOS:extend_NixOS</a> explains how to write, test, and debug your own modules.
 
-There is a chapter about hacking packages and modules in the NixOS manual: [development](http://nixos.org/nixos/manual/index.html#ch-development)
+There is a chapter about hacking packages and modules in the NixOS manual: [Development](http://nixos.org/nixos/manual/index.html#ch-development).
 
-Writing packages is covered in [nixpkgs/blob/master/pkgs/README.md](https://github.com/NixOS/nixpkgs/blob/master/pkgs/README.md) and writing modules is covered in the [manual](http://nixos.org/nixos/manual)
+Writing packages is covered in [nixpkgs/blob/master/pkgs/README.md](https://github.com/NixOS/nixpkgs/blob/master/pkgs/README.md) and writing modules is covered in the [manual](http://nixos.org/nixos/manual).
 
-If you've read the manual and still don't know how to go about creating a package, read on.
+If you've read the manual and still don't know how to go about creating a package, continue reading.
 
-The nix repositories are hosted at <https://github.com/NixOS>
+The Nix repositories are hosted at <https://github.com/NixOS>.
 
 ## Basics
 
@@ -25,7 +25,7 @@ The steps to take for your first change should look something like this:
 5.  Open a pull request
 6.  Profit!
 
-This is pretty much the standard way to use github, so if you have trouble using git or github any general guide on these should get you going, or just ask on the NixOS IRC channel. The rest of this guide deals with the "Hack hack hack" step :)
+This is pretty much the standard way to use GitHub, so if you have trouble using git or GitHub any general guide on these should get you going, or just ask on the NixOS IRC channel. The rest of this guide deals with the "Hack hack hack" step :)
 
 ## Rough process for creating a package
 
@@ -47,24 +47,24 @@ There are different steps here depending on whether you're building from source 
 ### Packages from binaries
 
 1.  There's probably a package for it for some other distro. Use that package definition to figure out the dependencies. For example, if you have a deb package you can view its dependencies by running `dpkg -I <package.deb>`. [Arch packages](https://aur.archlinux.org/packages/) can also be useful to look up for reference (view the package's PKGBUILD):
-2.  Sometimes the definitions for other distros won't be enough by nix's standards. If that's the case, use `ldd` and/or `strace` to find the rest of the dependencies. If you're not familiar with `ldd`/`strace` see [How to find out the dynamic libraries executables loads when run?](https://unix.stackexchange.com/questions/120015/how-to-find-out-the-dynamic-libraries-executables-loads-when-run)
+2.  Sometimes the definitions for other distros won't be enough by Nix's standards. If that's the case, use `ldd` and/or `strace` to find the rest of the dependencies. If you're not familiar with `ldd`/`strace` see [How to find out the dynamic libraries executables loads when run?](https://unix.stackexchange.com/questions/120015/how-to-find-out-the-dynamic-libraries-executables-loads-when-run)
 3.  See how other nix binary packages deal with dependencies. For example [nix packages based on deb packages](https://github.com/NixOS/nixpkgs/search?q=%22dpkg+-x%22).
 4.  If the application contains some helper executable or vendored dlopen'd library you will probably need to give the nix treatment to it as well. For example, [JetBrains Rider vendors dotnet so it needs to be replaced with the dotnet nix package](https://github.com/NixOS/nixpkgs/blob/42c154d332eb4eb17c74b587c1d4c2fcc3042ba1/pkgs/applications/editors/jetbrains/default.nix#L196-L200).
-5.  Because there's no real build step here you'll have to rely more on testing the actual execution of the package.
+5.  Because there's no real build step here, you'll have to rely more on testing the actual execution of the package.
 
 ### Both source code packages and binary packages
 
-1.  Once you have the package building successfully, test the output. Ensure the build completes using`nix-build`, then run `result/bin/<executableName>`. Test as much functionality of the application as you can to ensure that it works as intended.
-2.  Now that your package builds and runs, it's time to move it to nixpkgs. Read [nixpkgs/CONTRIBUTING.md](https://github.com/NixOS/nixpkgs/blob/master/CONTRIBUTING.md), make sure your package is up to the standards e.g. add a suitable [`meta` section](https://nixos.org/manual/nixpkgs/stable/#sec-standard-meta-attributes).
-3.  Git clone <https://github.com/NixOS/nixpkgs>, figure out the best category / directory for the application (within <https://github.com/NixOS/nixpkgs/tree/master/pkgs/>), create the directory for your application, and move your default.nix there.
-4.  If you used `with import `<nixpkgs>` {};` to iterate more quickly, now is the time to replace that with the actual dependencies as an attribute set at the beginning of the file e.g. `{ lib, stdenv, fetchFromGitHub }:`
-5.  Add the package to the top level declaration of packages. Most of the time this will be <https://github.com/NixOS/nixpkgs/blob/master/pkgs/top-level/all-packages.nix> .
+1.  Once you have the package building successfully, test the output. Ensure the build completes using nix-build, then run `result/bin/<executableName>`. Test as much functionality of the application as you can to ensure that it works as intended.
+2.  Now that your package builds and runs, it's time to move it to nixpkgs. Read [nixpkgs/CONTRIBUTING.md](https://github.com/NixOS/nixpkgs/blob/master/CONTRIBUTING.md) and make sure your package is up to the standards. For example, add a suitable [`meta` section](https://nixos.org/manual/nixpkgs/stable/#sec-standard-meta-attributes).
+3.  Clone <https://github.com/NixOS/nixpkgs> with git, figure out the best category / directory for the application (within <https://github.com/NixOS/nixpkgs/tree/master/pkgs/>), create the directory for your application, and move your default.nix there.
+4.  If you used `with import `<nixpkgs>` {};` to iterate faster, now is the time to replace that with the actual dependencies as an attribute set at the beginning of the file, e.g. `{ lib, stdenv, fetchFromGitHub }:`
+5.  Add the package to the top level declaration of packages. Most of the time this will be <https://github.com/NixOS/nixpkgs/blob/master/pkgs/top-level/all-packages.nix>.
 6.  If this is your first package in nixpkgs, add yourself in <https://github.com/NixOS/nixpkgs/blob/master/maintainers/maintainer-list.nix> in a separate commit.
-7.  Read on about the final steps of branching and sending your PR in <https://github.com/NixOS/nixpkgs/blob/master/CONTRIBUTING.md> .
+7.  Read on about the final steps of branching and sending your PR in <https://github.com/NixOS/nixpkgs/blob/master/CONTRIBUTING.md>.
 
 ## How to install from the local repository
 
-For expediency just for this article, we'll shallow clone direct from the distribution repo and set an environment variable pointing to it.
+For expediency just for this article, we'll shallow clone directly from the distribution repo and set an environment variable pointing to it.
 
 ``` bash
 $ mkdir -p ~/tmpdev && cd ~/tmpdev
@@ -73,33 +73,33 @@ $ export NIXPKGS=~/tmpdev/nixpkgs
 $ ls $NIXPKGS
 ```
 
-make some changes ...
+Make some changes...
 
-**example: list all available software** from the local repository \$NIXPKGS
+**Example: List all available software** from the local repository \$NIXPKGS
 
 ``` console
 $ nix-env -f $NIXPKGS -qaP '*'
 ```
 
-**example: update the system** based on your local **\$NIXPKGS**
+**Example: Update the system** based on your local **\$NIXPKGS**
 
 ``` console
 $ nixos-rebuild -I nixpkgs=$NIXPKGS switch
 ```
 
-**example: build an expression and put the output in to \`pwd\`/results**
+**Example: Build an expression and put the output in to \`pwd\`/results**
 
 ``` console
 $ nix-build $NIXPKGS -A irssi
 ```
 
-**example: get an environment which is used to build irssi (also see nix-shell)**
+**Example: Get an environment which is used to build irssi (also see nix-shell)**
 
 ``` console
 $ nix-build $NIXPKGS --run-env -A irssi
 ```
 
-**example: get a persistent environment which is used to build irssi**
+**Example: Get a persistent environment which is used to build irssi**
 
 ``` console
 $ nix-build $NIXPKGS --run-env -A irssi --add-root
@@ -107,7 +107,7 @@ $ nix-build $NIXPKGS --run-env -A irssi --add-root
 
 ## Tracking upstream changes and avoiding extra rebuilding
 
-You have forked the relevant nix repository, but you will want to track changes in the upstream nix repo too. You can add a remote, and a corresponding branch for this.
+You have forked the nixpkgs repository, but you will want to track changes in the upstream nixpkgs repo too. You can add a remote and a corresponding branch for this:
 
 ``` console
 $ git remote add upstream https://github.com/NixOS/nixpkgs.git
@@ -121,7 +121,7 @@ $ git checkout -b upstream-master upstream/master
 $ git pull
 ```
 
-This will put you into a branch with all the latest changes. Hydra, the build farm, regularly creates binaries, but, since people are constantly contributing to the nix repositories, it is usually the case that there are changes in the master branch which have not yet made it into the binary channel. To take advantage of available binaries you can switch to the revision which produced the binaries in your current system and apply your changes from there. You can use \`nixos-version\` to see the relevant short revision hash:
+This will put you into a branch with all the latest changes. <a href="Hydra" class="wikilink" title="Hydra">Hydra</a>, the build farm, regularly creates binaries, but since people are constantly contributing to the Nix repositories, it is usually the case that there are changes in the master branch which have not yet made it into the binary channel. To take advantage of available binaries, you can switch to the revision which produced the binaries in your current system, and apply your changes from there. You can use nixos-version to see the relevant short revision hash:
 
 ``` console
 $ nixos-version 
@@ -136,7 +136,7 @@ $ nixos-version
 ${NixOS release}_${NixOS revision}-${nixpkgs revision}
 ```
 
-This string shows the Nixos release number (13.07pre4871) followed by the nixos revision used to produce your current system (18de9f6) followed by the nixpkgs revision (3c35dae).
+This string shows the NixOS release number (13.07pre4871) followed by the NixOS revision used to produce your current system (18de9f6) followed by the nixpkgs revision (3c35dae).
 
 ``` console
 $ git branch
@@ -147,7 +147,7 @@ $ git checkout -b my-new-pkg
 Switched to a new branch 'my-new-pkg'
 ```
 
-After making some changes you can commit them into your local repo:
+After making some changes, you can commit them into your local repo:
 
 ``` console
 $ git add foo
@@ -160,16 +160,16 @@ Then you push your changes to your fork:
 $ git push origin my-new-pkg
 ```
 
-You can use this to open a pull request on github.
+You can use this to open a pull request on GitHub.
 
-If some time has passed since you have created your fork, you will want to merge your changes with upstream and test that it still works.
+If some time has passed since you have created your fork, you will want to merge your changes with upstream and test that it still works:
 
 ``` console
 $ git fetch upstream
 $ git merge upstream
 ```
 
-If your merge then fails because someone else has made the same change (for example, someone else also packaged a library you have just packed for the program you want to get into nixpkgs), then you can do this:
+If your merge fails because someone else has made the same change (for example, someone else also packaged a library you have just packed for the program that you want to get into nixpkgs), then you can do this:
 
 ``` console
 $ git rebase -i HEAD~10
@@ -184,18 +184,18 @@ $ git checkout master
 $ git log --stat
 ```
 
-and pick the commit where the library was added. Finally cherry-pick that commit into your branch:
+And pick the commit where the library was added. Finally cherry-pick that commit into your branch:
 
 ``` console
 $ git checkout my-new-pkg
 $ git cherry-pick 5d97886a6a545fb20495e0837cc50fa63d2a80e1
 ```
 
-Afterwards do your usual tests and if needed also make modifications to the library but keep in mind that this might break the other use-case of that library and if in doubt check that as well.
+Afterwards, do your usual tests, and if needed also make modifications to the library. Keep in mind that this might break the other use-case of that library, and if in doubt, check that as well.
 
 ## Using nix-shell for package development
 
-nix-shell is a command which drops you into the build environment for a package. This is convenient for writing and debugging nix expressions. Nix-shell requires nix-1.6.x although running nix-build --run-env produces a similar environment.
+nix-shell is a command which drops you into the build environment for a package. This is convenient for writing and debugging Nix expressions. Nix-shell requires nix-1.6.x although running nix-build --run-env produces a similar environment.
 
 ``` bash
 $ mkdir -p ~/tmpdev/bc-build  &&  cd ~/tmpdev/bc-build
@@ -215,22 +215,22 @@ You would have seen the dependencies downloading, but the *bc-build* directory r
 $ nix derivation show $(nix-instantiate .)
 ```
 
-However, most of the time (for instance when using **stdenv** ) the [default builder](https://github.com/NixOS/nixpkgs/blob/master/pkgs/stdenv/generic/default-builder.sh) invokes first **source \$stdenv/setup** to load the appropriate environment variables, and then **genericBuild()**. This is a shell function defined by [stdenv](https://github.com/NixOS/nixpkgs/blob/master/pkgs/stdenv/generic/setup.sh) that you can review like this...
+However, most of the time (for instance when using **stdenv** ) the [default builder](https://github.com/NixOS/nixpkgs/blob/master/pkgs/stdenv/generic/default-builder.sh) invokes first **source \$stdenv/setup** to load the appropriate environment variables, and then **genericBuild()**. This is a shell function defined by [stdenv](https://github.com/NixOS/nixpkgs/blob/master/pkgs/stdenv/generic/setup.sh) that you can review like this:
 
 ``` bash
 $ typeset -f genericBuild | less
 ```
 
-which shows when custom variables **\$buildCommandPath** or **\$buildCommand** are defined, those are evaluated exclusively. Otherwise, if no custom **\$phases** variable is set, the standard build phase order is used as shown here...
+Which shows when custom variables **\$buildCommandPath** or **\$buildCommand** are defined, those are evaluated exclusively. Otherwise, if no custom **\$phases** variable is set, the standard build phase order is used as shown here:
 
 ``` bash
 $ typeset -f genericBuild | grep 'phases='
 phases="$prePhases unpackPhase patchPhase $preConfigurePhases configurePhase $preBuildPhases buildPhase checkPhase $preInstallPhases installPhase fixupPhase installCheckPhase $preDistPhases distPhase $postPhases";
 ```
 
-The phases can be defined either as a string to be eval'ed or as a shell function, [this is how](https://github.com/NixOS/nixpkgs/blob/5a0b79f955d6c2dc21239f1b0d956ef8dc89a57e/pkgs/stdenv/generic/setup.sh#L818) Nix invokes it.
+The phases can be defined either as a string to be eval'ed or as a shell function, [this](https://github.com/NixOS/nixpkgs/blob/5a0b79f955d6c2dc21239f1b0d956ef8dc89a57e/pkgs/stdenv/generic/setup.sh#L818) is how Nix invokes it.
 
-So to observe a full build, you can do...
+So to observe a full build, you can do:
 
 ``` bash
 $ export out=~/tmpdev/bc-build/out
@@ -317,7 +317,7 @@ If the phase has been defined as a function, to list a particular function type:
 typeset -f unpackPhase
 ```
 
-Otherwise, if it was a string, simply echo the variable related to it
+Otherwise, if it was a string, simply echo the variable related to it:
 
 ``` bash
 echo "$unpackPhase"
@@ -384,7 +384,7 @@ unpackPhase ()
 }
 ```
 
-you can also modify the configureFlags prefix:
+You can also modify the configureFlags prefix:
 
 ``` bash
 export configureFlags="--prefix=$out --with-readline"
@@ -437,13 +437,13 @@ pkgs.callPackage (
 ) { }
 ```
 
-## nix channels
+## Nix channels
 
-nix channels can be used in parallel with your new local repositories, see its <a href="install/remove_software#nix-channels" class="wikilink" title=" nix-channel-documentation"> nix-channel-documentation</a>
+<a href="Channel_branches" class="wikilink" title="Nix channels">Nix channels</a> can be used in parallel with your new local repositories.
 
-## Testing Package Updates with nixpkgs-review
+## Testing package updates with nixpkgs-review
 
-You can also use [nixpkgs-review](https://github.com/Mic92/nixpkgs-review) to compile, review and merge packages and its dependencies. It claims to be faster than nox and provides a nix-shell where you can test the package.
+You can also use [nixpkgs-review](https://github.com/Mic92/nixpkgs-review) to compile, review, and merge packages and its dependencies. It claims to be faster than nox and provides a nix-shell where you can test the package.
 
 First make sure it is available in your shell:
 

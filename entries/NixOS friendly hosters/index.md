@@ -34,6 +34,10 @@
 <td><p>NixOS is offered as a supported OS template on KVM VPS plans. See the <a href="https://www.hostinger.com/support/1583571-what-are-the-available-operating-systems-for-vps-at-hostinger/">list of available VPS operating systems</a></p></td>
 </tr>
 <tr>
+<td><p><a href="https://greybull.cloud/vps/nixos">Greybull</a></p></td>
+<td><p>Current version of NixOS is offered as a template on VPS plans.</p></td>
+</tr>
+<tr>
 <td colspan="2"><h2>
 <p>Support NixOS via custom ISO</p>
 </h2></td>

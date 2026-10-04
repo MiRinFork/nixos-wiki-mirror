@@ -11,19 +11,19 @@
 When you make changes to your system, Nix creates a new system <a href="generation" class="wikilink" title="generation">generation</a>. All of the changes to the system since the previous generation are stored there. Old generations can add up and will not be removed automatically by default. You can see your saved system generations with:
 
 ``` shell-session
-  # nix-env --profile /nix/var/nix/profiles/system --list-generations
+# nix-env --profile /nix/var/nix/profiles/system --list-generations
 ```
 
 To keep just your current generation and the two older than it:
 
 ``` shell-session
-  # nix-env --profile … --delete-generations +3
+  # nix-env --profile /nix/var/nix/profiles/system --delete-generations +3
 ```
 
 To remove all but your current generation:
 
 ``` shell-session
-  # nix-env --profile … --delete-generations old
+  # nix-env --profile /nix/var/nix/profiles/system --delete-generations old
 ```
 
 Apart from the system profile in `/nix/var/nix/profiles/system`, every user has profiles for their user environment and channels. The operations above may be repeated for those profiles. By default, they are located at `~/.nix-profile` and `~/.nix-defexpr/channels`. For more information on profile locations, see [Nix Manual - nix-env - Files](https://nix.dev/manual/nix/stable/command-ref/nix-env#files).

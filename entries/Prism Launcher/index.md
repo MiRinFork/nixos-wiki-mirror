@@ -28,7 +28,7 @@ home.packages = with pkgs; [ prismlauncher ];
 
 #### Basic
 
-Configuration of the launcher itself can be done in the settings window of the launcher. Currently, there is no way to configure Prism Launcher declaratively.
+Configuration of the launcher itself can be done in the settings window of the launcher.
 
 #### Advanced
 
@@ -62,6 +62,12 @@ All options are defined in [the derivation](https://github.com/NixOS/nixpkgs/blo
 - `jdks` (default: `[ pkgs.jdk21 pkgs.jdk17 pkgs.jdk8 ]`) Java runtimes that will be added to `PRISMLAUNCHER_JAVA_PATHS` and will be available to Prism Launcher
 - `msaClientID` (default: `null`) Client ID used for Microsoft Authentication. Prism Launcher's official ID will be used if set to null.
 - `textToSpeechSupport` (default `stdenv.hostPlatform.isLinux`) Turn on/off support for text-to-speech on Linux. This option is not needed on macOS
+
+#### Declarative configuration
+
+To manage PrismLauncher declaratively, you can use [Prismix](https://codeberg.org/OliMoli/prismix), which also solves a couple of annoyances like the recurring Java pop-up.
+
+However, please note that it is still in early development and lacks several features.
 
 ## References
 

@@ -44,30 +44,54 @@ Previously, this page advised to set the flags
 
 to trigger an update of the nixpkgs input. However, that flag will only be passed to nixos-rebuild, where it was deprecated. Follow [this issue](https://github.com/NixOS/nixpkgs/issues/349734) for details and resolutions.
 
+#### Home Manager
+
+To enable unattended automatic updates for <a href="Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> packages on a flake-enabled host, use option:
+
 ## Monitoring
 
 Check that automatic system upgrades run successfully. Force an automatic system upgrade by running:
 
-``` bash
+``` console
 # systemctl start nixos-upgrade
 ```
 
 Check the upgrade log with:
 
-``` bash
+``` console
 # systemctl status nixos-upgrade.service
 ```
 
-Or, to see the full log:
+Or, to see the log:
 
-``` bash
+``` console
 # journalctl -u nixos-upgrade.service
 ```
 
 To see the status of the upgrade timer, run:
 
-``` bash
+``` console
 # systemctl status nixos-upgrade.timer
+```
+
+### Home Manager
+
+Force upgrade by running:
+
+``` console
+# systemctl --user start home-manager-auto-upgrade.service
+```
+
+To see the full log:
+
+``` console
+# journalctl --user -u home-manager-auto-upgrade.service -f
+```
+
+To see the status of the upgrade timer, run:
+
+``` console
+# systemctl --user status home-manager-auto-upgrade.timer
 ```
 
 ## Troubleshooting
