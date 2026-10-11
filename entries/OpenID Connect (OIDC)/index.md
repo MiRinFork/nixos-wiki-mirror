@@ -24,9 +24,10 @@ This is a list of some of the open source IdP available in nixos. If listed, the
 | [Zitadel](https://zitadel.com/) | `services.zitadel` | Go | <a href="Zitadel" class="wikilink" title="Zitadel">Zitadel</a> | ✅ | ✅ | ✅ | ❌ |
 | [Kanidm](https://kanidm.com/) | `services.kanidm` | Rust |  | ✅ | ✅ | ✅ | ✅ |
 | [Dex](https://dexidp.io/) | `services.dex` | Go |  | ❌\* | ❌\* | ✅ | ❌ |
-| [Tinyauth](https://tinyauth.app/) | `services.tinyauth` | Go |  | ✅ | ❌ | ❌ | ❌ |
+| [Tinyauth](https://tinyauth.app/) | `services.tinyauth` | Go |  | ✅ | ❌ | ✅ | ❌ |
 | [Rauthy](https://sebadob.github.io/rauthy/) |  | Rust |  | ❌ | ✅ | ❌ | ✅ |
 | [Authentik](https://goauthentik.io/) | [nix-community/authentik-nix](https://github.com/nix-community/authentik-nix) | Go |  | ✅ | ✅ | ✅ | ✅ |
+| [PockedID](https://pocket-id.org/) | `services.pocket-id` | Go | <a href="Pocket_ID" class="wikilink" title="Pocket ID">Pocket ID</a> | ❌ | ✅ | ✅ | ❌ |
 
 TODO: Complete unknowns❓
 

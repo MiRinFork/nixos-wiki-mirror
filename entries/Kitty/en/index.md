@@ -10,8 +10,8 @@
 
 To temporarily use Kitty in a shell environment, you can run:
 
-``` bash
-nix-shell -p kitty
+``` console
+$ nix-shell -p kitty
 ```
 
 This will provide a shell with Kitty available without adding it to your system configuration.
@@ -34,12 +34,12 @@ home.packages = with pkgs; [
 
 Then, rebuild your system or apply your Home Manager configuration:
 
-``` bash
-# For system-wide installation
-sudo nixos-rebuild switch
+``` console
+# # For system-wide installation
+# nixos-rebuild switch
 
-# For Home Manager
-home-manager switch
+$ # For Home Manager
+$ home-manager switch
 ```
 
 ## Configuration

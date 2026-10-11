@@ -59,6 +59,20 @@ Autoconnect=true
 
 Replace the values in `EAP-Identity`, `EAP-PEAP-ServerDomainMask`, `EAP-PEAP-Phase2-Identity` and `EAP-PEAP-Phase2-Password` according to your university presets which can be acquired at [cat.eduroam.org](https://cat.eduroam.org). After entering your university name there the site will offer you a download link to a Python script which contains most of the required default values. The script also contains a certificate string which can be copied into the file `/var/lib/iwd/ca.pem`.
 
+Certificates must be put in the service's state directory, `/var/lib/iwd`, or they will not be found. A minimal configuration using TLS authentication - certificates rather than username and password - could look like;
+
+``` ini
+[IPv6]
+Enabled=true
+
+[Security]
+EAP-Method=TLS
+EAP-Identity=username@domain
+EAP-TLS-CACert=/var/lib/iwd/certs/ca.pem
+EAP-TLS-ClientCert=/var/lib/iwd/certs/certificate.pem
+EAP-TLS-ClientKey=/var/lib/iwd/certs/private.key
+```
+
 ### iwd as backend for NetworkManager
 
 If iwd is present, it can be used as a backend for <a href="NetworkManager" class="wikilink" title="NetworkManager">NetworkManager</a> through the following snippet.

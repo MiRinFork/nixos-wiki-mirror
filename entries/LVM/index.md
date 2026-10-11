@@ -12,13 +12,13 @@ Physical volume (PV)
 Unix block device node reserved for use by LVM. Examples: a disk partition, a whole disk (i.e. without a partition table), a meta device, or a loopback file.
 
 Volume group (VG)  
-Group of PVs for allocating PEs to LVs.
+Group of PVs that allocates PEs to LVs.
 
 Logical volume (LV)  
 "Virtual partition" composed of PEs inside a VG.
 
 Physical extent (PE)  
-The smallest contiguous <a href="wikipedia:Extent_(file_systems)" class="wikilink" title="extent">extent</a> (default 4 MiB) in the physical volume that can be allocated to an LV.
+Smallest contiguous <a href="wikipedia:Extent_(file_systems)" class="wikilink" title="extent">extent</a> (default 4 MiB) in a PV. Can be allocated to any LV within a VG.
 
 ### Create an LV
 

@@ -8,13 +8,17 @@
 
 Add following line to your configuration to enable ONLYOFFICE
 
+### Install missing corefonts
+
+By default, NixOS doesn't ship with any of the Microsoft fonts OOTB, to get the Microsoft corefonts, add the following to your NixOS config:
+
 ## Troubleshooting
 
-### Install and use missing corefonts
+### OnlyOffice can't see or use any system fonts
 
-According to one [upstream bug](https://github.com/ONLYOFFICE/DocumentServer/issues/1859) ONLYOFFICE is unable to locate <a href="Fonts" class="wikilink" title="font">font</a> files on NixOS.
+According to one [upstream bug](https://github.com/ONLYOFFICE/DocumentServer/issues/1859) ONLYOFFICE DesktopEditors is unable to locate <a href="Fonts" class="wikilink" title="font">font</a> files on NixOS.
 
-Currently, the best workaround to add all fonts on your NixOS system is given as follows:
+Currently, the best workaround to first apply the fix mentioned in <a href="Fixes_for_non-Nix_applications#Flatpak,_Distrobox,_Appimage_and_other_non-Nix_applications_can&#39;t_find_system_fonts/icons/themes" class="wikilink" title="Fixes for non-Nix applications#Flatpak, Distrobox, Appimage and other non-Nix applications can&#39;t find system fonts/icons/themes">Fixes for non-Nix applications#Flatpak, Distrobox, Appimage and other non-Nix applications can't find system fonts/icons/themes</a>, then, as ONLYOFFICE DeskopEditors is currently packaged with FHSEnv and bwrap as of NixOS 26.05, pass the `/usr/share/fonts` directory inside the bubblewrap/FHSEnv sandbox:
 
 ``` nixos
 # onlyoffice-font-fix.nix
@@ -34,7 +38,7 @@ Currently, the best workaround to add all fonts on your NixOS system is given as
           extraBwrapArgs = (prev.onlyoffice-desktopeditors.passthru.args.extraBwrapArgs or [ ]) ++ [
             # Bind mount host system fonts into the FHS container's /usr/share/fonts:
             "--ro-bind"
-            "/run/current-system/sw/share/X11/fonts"
+            "/usr/share/fonts"
             "/usr/share/fonts"
           ];
         }

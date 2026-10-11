@@ -2,17 +2,19 @@
 
 <!-- Source page: Plymouth -->
 
-<languages/> [Plymouth](https://www.freedesktop.org/wiki/Software/Plymouth) is a project from Fedora and now listed among the [freedesktop.org's official resources](https://www.freedesktop.org/wiki/Software/#graphicsdriverswindowsystemsandsupportinglibraries) providing a flicker-free graphical boot process. It relies on [kernel mode setting](https://wiki.archlinux.org/title/Kernel_mode_setting) (KMS) to set the native resolution of the display as early as possible, then provides an eye-candy splash screen leading all the way up to the login manager.
+<languages/> <translate> \[<tvar name=1><https://www.freedesktop.org/wiki/Software/Plymouth></tvar> Plymouth\] is a project from Fedora and now listed among the \[<tvar name=2><https://www.freedesktop.org/wiki/Software/#graphicsdriverswindowsystemsandsupportinglibraries></tvar> freedesktop.org's official resources\] providing a flicker-free graphical boot process. It relies on \[<tvar name=3><https://wiki.archlinux.org/title/Kernel_mode_setting></tvar> kernel mode setting\] (KMS) to set the native resolution of the display as early as possible, then provides an eye-candy splash screen leading all the way up to the login manager.
 
 ## Preparation
 
 *Plymouth* primarily uses KMS to display graphics, but on UEFI systems it can utilize the EFI framebuffer.
 
-If you have neither KMS nor a framebuffer, *Plymouth* will fall back to text-mode.[^1]
+If you have neither KMS nor a framebuffer, *Plymouth* will fall back to text-mode.<tvar name=1>[^1]</tvar>
 
 ## Installation
 
 ### Basic Config
+
+</translate>
 
 ``` nix
 {
@@ -38,6 +40,8 @@ If you have neither KMS nor a framebuffer, *Plymouth* will fall back to text-mod
 }
 ```
 
+<translate>
+
 ## Configuration
 
 ### Changing the theme
@@ -55,7 +59,7 @@ Plymouth comes with a selection of themes:
 9.  **Text**: "Text mode theme with tricolor progress bar"
 10. **Details**: "Verbose fallback theme"
 
-NixOS sets the default theme to **bgrt**[^2]. You can change the theme with \`boot.plymouth.theme\`:
+NixOS sets the default theme to **bgrt**<tvar name=1>[^2]</tvar>. You can change the theme with \`boot.plymouth.theme\`: </translate>
 
 ``` nix
 {
@@ -68,13 +72,17 @@ NixOS sets the default theme to **bgrt**[^2]. You can change the theme with \`bo
 }
 ```
 
+<translate>
+
 ### Install new themes
 
-As an example, you can use a boot animation from [adi1090x's collection](https://github.com/adi1090x/plymouth-themes) like so:
+As an example, you can use a boot animation from \[<tvar name=1><https://github.com/adi1090x/plymouth-themes></tvar> adi1090x's collection\] like so: </translate>
+
+<translate>
 
 ### HiDPI
 
-Edit the configuration file:
+Edit the configuration file: </translate>
 
 ``` nix
 {
@@ -90,6 +98,8 @@ Edit the configuration file:
 }
 ```
 
+<translate>
+
 ## Tips and tricks
 
 ### Show boot messages
@@ -104,7 +114,9 @@ If you are using LUKS encryption the password prompt may fall back to text mode.
 
 ## See Also
 
-- [Arch Wiki](https://wiki.archlinux.org/title/Plymouth)
+- \[<tvar name=1><https://wiki.archlinux.org/title/Plymouth></tvar> Arch Wiki\]
+
+</translate>
 
 <a href="Category:Booting" class="wikilink" title="Category:Booting">Category:Booting</a>
 

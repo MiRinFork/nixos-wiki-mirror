@@ -34,6 +34,12 @@ For instance, to expose a TCP port only to your local IPv4 and IPv6 subnets, add
 
 This will add the two specified rules to the `input-allow` chain in the `nixos-fw` table. You should, of course, replace the port and subnets with your own.
 
+### Firewalld
+
+To use [firewalld](https://firewalld.org/) as a frontend to either iptables/nftables, set the option to true. By default, nftables is used as the backend to firewalld, and therefore the option must also be set to true.
+
+NixOS defines a custom firewalld zone "nixos-fw-default" (enabled by default), which allows traffic configured via the and options. If <a href="NetworkManager" class="wikilink" title="NetworkManager">NetworkManager</a> is being used, connection profiles can be configured to utilize a specific firewalld zone via the [connection.zone](https://networkmanager.dev/docs/api/latest/nm-settings-nmcli.html) setting in [nmcli](https://networkmanager.dev/docs/api/latest/nmcli.html). On laptops that may connect public WiFi networks, it may be preferable to set the default firewalld zone to "drop" to block all inbound connections, and then configure trusted/private NetworkManager connection profiles to use the "nixos-fw-default" zone.
+
 ## Tips and tricks
 
 ### Log all dropped/rejected network packets
@@ -42,6 +48,6 @@ On a vanilla NixOS install, the [`networking.firewall.logRefusedPackets = true;`
 
 ### Temporary firewall rules
 
-For temporary changes to the firewall rules, you can install the [`nixos-firewall-tool`](https://search.nixos.org/packages?query=nixos-firewall-tool) package, which is a [thin wrapper](https://github.com/NixOS/nixpkgs/blob/7eee17a8a5868ecf596bbb8c8beb527253ea8f4d/pkgs/by-name/ni/nixos-firewall-tool/nixos-firewall-tool.sh) around `iptables` and `nftables`.
+For temporary changes to the firewall rules, you can install the [`nixos-firewall-tool`](https://search.nixos.org/packages?query=nixos-firewall-tool) package, which is a [thin wrapper](https://github.com/NixOS/nixpkgs/blob/7eee17a8a5868ecf596bbb8c8beb527253ea8f4d/pkgs/by-name/ni/nixos-firewall-tool/nixos-firewall-tool.sh) around `iptables` and `nftables`. This tool is installed by default if option is set to "iptables" or "nftables".
 
 <a href="Category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="Category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a>

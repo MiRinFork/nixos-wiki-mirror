@@ -68,9 +68,9 @@ You can use several online tools to test your mail server configuration:
 - [mail-tester.com](https://www.mail-tester.com): Send a mail to this service and get a rating about the "spaminess" of your mail server.
 - Send a mail to the echo server `echo@univie.ac.at`. You should receive a response containing your message in several seconds.
 
-### Unsecure setup for testing environments
+### Insecure setup for testing environments
 
-The following minimal configuration example is unsecure and for testing purpose only. It will run the Stalwart mail server on `localhost`, listening on port `143` (IMAP) and `587` (Submission). Users `alice@localhost.localdomain` and `bob@localhost.localdomain` are configured with the password `Dev-Mail-Test-2026!`.
+The following minimal configuration example is insecure and for testing purpose only. It will run the Stalwart mail server on `localhost`, listening on port `143` (IMAP) and `587` (Submission). Users `alice@localhost.localdomain` and `bob@localhost.localdomain` are configured with the password `Dev-Mail-Test-2026!`.
 
 ## See also
 

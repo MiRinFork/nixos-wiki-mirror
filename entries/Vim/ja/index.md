@@ -18,25 +18,23 @@
 
 ### ベーシックインストール
 
-\<syntaxhighlight lang="nix\>
-
-` programs.vim.enable = true;`
+\<syntaxhighlight lang="nix\> programs.vim.enable = true;
 
 </syntaxhighlight>
 
 もしくは
 
 ``` nix
-  programs.vim = {
-    enable = true;
-    package = pkgs.vim-full;
-  };
+programs.vim = {
+  enable = true;
+  package = pkgs.vim-full;
+};
 ```
 
 もしくは
 
 ``` nix
-  environment.systemPackages = with pkgs; [ vim-full ];
+environment.systemPackages = with pkgs; [ vim-full ];
 ```
 
 <span id="Using_Home_Manager"></span>
@@ -45,16 +43,16 @@
 
 Vimは<a href="Special:MyLanguage/Home_Manager" class="wikilink" title="Home Manager">Home Managerを</a>使用して簡単にセットアップ出来ます。以下は最低限の一例です：
 
-\<syntaxhighlight lang="nix\>
+\<syntaxhighlight lang="nix\> programs.vim = {
 
-` programs.vim = {`  
-`   enable = true;`  
-`   plugins = with pkgs.vimPlugins; [ vim-airline ];`  
-`   settings = { ignorecase = true; };`  
-`   extraConfig = ''`  
-`     set mouse=a`  
-`   '';`  
-` };`
+` enable = true;`  
+` plugins = with pkgs.vimPlugins; [ vim-airline ];`  
+` settings = { ignorecase = true; };`  
+` extraConfig = ''`  
+`   set mouse=a`  
+` '';`
+
+};
 
 </syntaxhighlight>
 
@@ -130,7 +128,7 @@ unstableでは：
   programs.vim = {
     enable = true;
     defaultEditor = true;
-    package = (pkgs.vim-full.override {  }).customize{
+    package = (pkgs.vim-full.override { }).customize{
       name = "vim";
       # 例として、Nixファイルのシンタックスハイライト表示用のプラグインをインストールする
       vimrcConfig.packages.myplugins = with pkgs.vimPlugins; {
@@ -177,10 +175,9 @@ unstableでは：
 
 ``` nix
 {    
-  imports =    
-    [
-      ./vim.nix
-    ];
+  imports = [
+    ./vim.nix
+  ];
   # ...
 }
 ```
@@ -336,7 +333,7 @@ vimrcConfig.pathogen.pluginNames = [ "vim-addon-nix" "youcompleteme" ];
 </div>
 
 ``` nix
-vimrcConfig.plug.plugins = with pkgs.vimPlugins; [vim-addon-nix youcompleteme];
+vimrcConfig.plug.plugins = with pkgs.vimPlugins; [ vim-addon-nix youcompleteme ];
 ```
 
 <div lang="en" dir="ltr" class="mw-content-ltr">

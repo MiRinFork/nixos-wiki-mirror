@@ -2,19 +2,25 @@
 
 <!-- Source page: Visual Studio Code -->
 
+<translate> </translate>
+
 <translate> **Visual Studio Code** is a cross-platform text editor developed by Microsoft, built on the Electron framework.
 
-For the free distribution of the VS Code codebase (without MS branding, telemetry, and [extension marketplace](https://marketplace.visualstudio.com/) replaced by [Open VSX](https://open-vsx.org/)) see <a href="VSCodium" class="wikilink" title="VSCodium">VSCodium</a>.
+For the free distribution of the VS Code codebase (without MS branding, telemetry, and \[<tvar name=1><https://marketplace.visualstudio.com/></tvar> extension marketplace\] replaced by \[<tvar name=2><https://open-vsx.org/></tvar> Open VSX\]) see <tvar name=3><a href="Special:MyLanguage/VSCodium" class="wikilink" title="VSCodium">VSCodium</a></tvar>.
 
 ## Installation
 
 ### NixOS
 
+</translate>
+
 ``` nix
 environment.systemPackages = with pkgs; [ vscode ];
 ```
 
-Extensions can be managed using :
+<translate> Extensions can be managed using :
+
+</translate>
 
 ``` nix
 environment.systemPackages = with pkgs; [
@@ -36,21 +42,27 @@ environment.systemPackages = with pkgs; [
 ];
 ```
 
-Some examples here: \[<https://github.com/search?type=code&q=language:Nix+&#x22;extensionFromVscodeMarketplace%22>; GitHub Search - type:code language:Nix "extensionFromVscodeMarketplace"\]
+<translate> Some examples here: \[<tvar name=1><https://github.com/search?type=code&q=language:Nix+&#x22;extensionFromVscodeMarketplace%22>;</tvar> GitHub Search - type:code language:Nix "extensionFromVscodeMarketplace"\]
+
+<translate>
 
 ### nix-vscode-extensions
 
-`extensionsFromVscodeMarketplace` is a manual way to fetch extensions. However, to keep updated from upstream, [nix-community/nix-vscode-extensions](https://github.com/nix-community/nix-vscode-extensions) provides the Nix expressions for the majority of available extensions from Open VSX and VSCode Marketplace. A GitHub Action updates the extensions daily.
+`extensionsFromVscodeMarketplace` is a manual way to fetch extensions. However, to keep updated from upstream, \[<tvar name=1><https://github.com/nix-community/nix-vscode-extensions></tvar> nix-community/nix-vscode-extensions\] provides the Nix expressions for the majority of available extensions from Open VSX and VSCode Marketplace. A GitHub Action updates the extensions daily.
 
-To use nix-vscode-extensions, first add an overlay:
+To use nix-vscode-extensions, first add an overlay: </translate>
 
-Now extensions may be specified using `pkgs.nix-vscode-extensions.open-vsx` or `pkgs.nix-vscode-extensions.vscode-marketplace`.
+<translate> Now extensions may be specified using `pkgs.nix-vscode-extensions.open-vsx` or `pkgs.nix-vscode-extensions.vscode-marketplace`. </translate>
+
+<translate>
 
 ### nix4vscode
 
-Similarly, [nix-community/nix4vscode](https://github.com/nix-community/nix4vscode) provides a Nix overlay for VSCode Marketplace and Open VSX extensions.
+Similarly, \[<tvar name=1><https://github.com/nix-community/nix4vscode></tvar> nix-community/nix4vscode\] provides a Nix overlay for VSCode Marketplace and Open VSX extensions.
 
 ### Home Manager
+
+</translate>
 
 ``` nix
 programs.vscode = {
@@ -63,26 +75,38 @@ programs.vscode = {
 };
 ```
 
-- See for more options: [Home Manager Manual: Options - programs.vscode](https://nix-community.github.io/home-manager/options.xhtml#opt-programs.vscode.enable)
-- Search for extensions with configurations: [NixOS Search: vscode-extensions](https://search.nixos.org/packages?type=packages&query=vscode-extensions)
+<translate>
+
+- See for more options: \[<tvar name=1><https://nix-community.github.io/home-manager/options.xhtml#opt-programs.vscode.enable></tvar> Home Manager Manual: Options - programs.vscode\]
+- Search for extensions with configurations: \[<tvar name=2><https://search.nixos.org/packages?type=packages&query=vscode-extensions></tvar> NixOS Search: vscode-extensions\]
 
 ### Nix-env
+
+</translate>
 
 ``` console
 $ nix-env -iA nixos.vscode
 ```
 
+<translate>
+
 ## Use VS Code extensions without additional configuration
 
-With , the editor launches inside a <a href="wikipedia:Filesystem_Hierarchy_Standard" class="wikilink" title="FHS">FHS</a> compliant chroot environment using . This reintroduces directories such as `/bin`, `/lib`, and `/usr`, which allows for extensions which ship pre-compiled binaries to work with little to no additional nixification.
+With , the editor launches inside a <tvar name=FHS><a href="wikipedia:Filesystem_Hierarchy_Standard" class="wikilink" title="FHS">FHS</a></tvar> compliant chroot environment using . This reintroduces directories such as `/bin`, `/lib`, and `/usr`, which allows for extensions which ship pre-compiled binaries to work with little to no additional nixification.
 
 ### NixOS
+
+</translate>
 
 ``` nix
 environment.systemPackages = with pkgs; [ vscode.fhs ];
 ```
 
+<translate>
+
 ### Home Manager
+
+</translate>
 
 ``` nix
 programs.vscode = {
@@ -91,7 +115,7 @@ programs.vscode = {
 };
 ```
 
-Adding extension-specific dependencies, these will be added to the FHS environment:
+<translate> Adding extension-specific dependencies, these will be added to the FHS environment: </translate>
 
 ``` nix
 # needed for rust lang server and rust-analyzer extension
@@ -105,11 +129,13 @@ programs.vscode.package = pkgs.vscode.fhsWithPackages (
 );
 ```
 
+<translate>
+
 ## Insiders Build
 
 If you need to test a recent code change, you can run the insiders build. It is designed to run alongside the main build, with a separate `code-insiders` command and a different config path, so you can leave your main VS Code instance installed/running.
 
-The following derivation builds a package with the latest insiders build (on NixOS in `environment.systemPackages`, or on Home Manager in `home.packages`) :
+The following derivation builds a package with the latest insiders build (on NixOS in `environment.systemPackages`, or on Home Manager in `home.packages`) : </translate>
 
 ``` nix
 (pkgs.vscode.override { isInsiders = true; }).overrideAttrs (oldAttrs: rec {
@@ -119,12 +145,11 @@ The following derivation builds a package with the latest insiders build (on Nix
   });
   version = "latest";
 
-  <!--T:25-->
-buildInputs = oldAttrs.buildInputs ++ [ pkgs.krb5 ];
+  buildInputs = oldAttrs.buildInputs ++ [ pkgs.krb5 ];
 });
 ```
 
-*[credits: @jnoortheen](https://discourse.nixos.org/t/how-to-install-latest-vscode-insiders/7895/4)*
+<translate> *\[<tvar name=1><https://discourse.nixos.org/t/how-to-install-latest-vscode-insiders/7895/4></tvar> credits: @jnoortheen\]*
 
 ### Updating insiders placeholder `sha256`
 
@@ -138,7 +163,7 @@ Put an arbitrary placeholder value in the `sha256` field, try to build and you'l
 
 #### For `sha256:`
 
-Example:
+Example: </translate>
 
     //-- ...
            error: hash mismatch in file downloaded from 'https://code.visualstudio.com/sha/download?build=insider&os=linux-x64':
@@ -146,13 +171,13 @@ Example:
              got:       sha256:16fzxqs6ql4p2apq9aw7l10h4ag1r7jwlfvknk5rd2zmkscwhn6z
     //-- ...
 
-Copy the "got" value (while stripping out the prepended "`sha256:`"), and paste it in your placeholder `sha256` value
+<translate> Copy the "got" value (while stripping out the prepended "`sha256:`"), and paste it in your placeholder `sha256` value
 
 Resulting: "`16fzxqs6ql4p2apq9aw7l10h4ag1r7jwlfvknk5rd2zmkscwhn6z`"
 
 ##### For `sha256-`
 
-Example:
+Example: </translate>
 
     //-- ...
             error: hash mismatch in fixed-output derivation '/nix/store/path':
@@ -160,9 +185,9 @@ Example:
                 got:    sha256-aQvTtZdPU2F1UjkFxiLs4A+60A4qc9bXKwKriNsCDPg=
     //-- ...
 
-Copy the "got" value (while stripping out the prepended "`sha256-`")
+<translate> Copy the "got" value (while stripping out the prepended "`sha256-`")
 
-Then, run the following python script:
+Then, run the following python script: </translate>
 
 ``` python
 import base64
@@ -170,15 +195,15 @@ text = b'aQvTtZdPU2F1UjkFxiLs4A+60A4qc9bXKwKriNsCDPg=' # Replace the string in b
 print(base64.decodebytes(text).hex())
 ```
 
-Its output should be pasted in your placeholder `sha256` value
+<translate> Its output should be pasted in your placeholder `sha256` value
 
 ## Creating development environments using nix-shell
 
-Instead of using configuration.nix to add packages (e.g. Python or NodeJS) for developing code on VSCode, you can instead use nix-shell. This will allow you to seamlessly create development environments with the correct packages for your project, without rebuilding and restarting NixOS. See <a href="Development_environment_with_nix-shell" class="wikilink" title=" this page"> this page</a> for further instructions in building nix-shell development environments.
+Instead of using configuration.nix to add packages (e.g. Python or NodeJS) for developing code on VSCode, you can instead use nix-shell. This will allow you to seamlessly create development environments with the correct packages for your project, without rebuilding and restarting NixOS. See <a href="&lt;tvar_name=1&gt;Special:MyLanguage/Development_environment_with_nix-shell&lt;/tvar&gt;" class="wikilink" title="this page">this page</a> for further instructions in building nix-shell development environments.
 
 ### Automatically switch nix shells when switching projects
 
-You can do this by using [nix-direnv](https://github.com/nix-community/nix-direnv) and [the VSCode extension direnv](https://marketplace.visualstudio.com/items?itemName=mkhl.direnv) for integration. View the nix-direnv github page linked for a guide on setting it up.
+You can do this by using \[<tvar name=1><https://github.com/nix-community/nix-direnv></tvar> nix-direnv\] and \[<tvar name=2><https://marketplace.visualstudio.com/items?itemName=mkhl.direnv></tvar> the VSCode extension direnv\] for integration. View the nix-direnv github page linked for a guide on setting it up.
 
 ### Alternative for manually switching shells
 
@@ -188,19 +213,23 @@ The extension [nix-env-selector](https://marketplace.visualstudio.com/items?item
 
 To make sure VSCode runs on Wayland native instead of Xwayland, you can make it use Ozone Wayland by setting the environment variable `NIXOS_OZONE_WL` with `NIXOS_OZONE_WL=1`
 
-See <a href="Wayland#Electron_and_Chromium" class="wikilink" title="Wayland#Electron and Chromium">Wayland#Electron and Chromium</a>
+See <a href="&lt;tvar_name=1&gt;Special:MyLanguage/Wayland#Electron_and_Chromium&lt;/tvar&gt;" class="wikilink" title="this">this</a>.
 
 ## Updating extension versions
 
-The Nixpkgs vscode extensions directory contains [a script](https://github.com/NixOS/nixpkgs/blob/master/pkgs/applications/editors/vscode/extensions/update_installed_exts.sh) which use `code --list-extensions` and lookup the latest versions of those extensions to outputs a nix expression with a single `extensions` attribute of the same type as `extensionsFromVscodeMarketplace` inputs.
+The Nixpkgs vscode extensions directory contains \[<tvar name=1><https://github.com/NixOS/nixpkgs/blob/master/pkgs/applications/editors/vscode/extensions/update_installed_exts.sh></tvar> a script\] which use `code --list-extensions` and lookup the latest versions of those extensions to outputs a nix expression with a single `extensions` attribute of the same type as `extensionsFromVscodeMarketplace` inputs.
 
-To run it in your current directory:
+To run it in your current directory: </translate>
 
 ``` console
 $ curl -fsSL https://raw.githubusercontent.com/NixOS/nixpkgs/master/pkgs/applications/editors/vscode/extensions/update_installed_exts.sh | sh
 ```
 
+<translate>
+
 ### Example output
+
+</translate>
 
 ``` console
 $ curl -fsSL https://raw.githubusercontent.com/NixOS/nixpkgs/master/pkgs/applications/editors/vscode/extensions/update_installed_exts.sh | sh
@@ -221,27 +250,27 @@ $ curl -fsSL https://raw.githubusercontent.com/NixOS/nixpkgs/master/pkgs/applica
 }
 ```
 
+<translate>
+
 ## Remote SSH
 
 The remote-ssh extension works by connecting to a remote host and downloading scripts and pre-built binaries to . When first launching remote-ssh for a NixOS host, the connection will fail due to the provided node.js not having been built for a NixOS system (the dynamic libraries aren't in the same place).
 
 ### Any client to NixOS host
 
-**tl;dr Use [nix-vscode-server](https://github.com/msteen/nixos-vscode-server) or [nix-ld](https://github.com/Mic92/nix-ld) on host machines.**
+**tl;dr Use \[<tvar name=1><https://github.com/msteen/nixos-vscode-server></tvar> nix-vscode-server\] or \[<tvar name=2><https://github.com/Mic92/nix-ld></tvar> nix-ld\] on host machines.**
 
 #### nix-vscode-server
 
-Note that nix-vscode-server works as of 8/21/21 but is occasionally broken (See <https://github.com/msteen/nixos-vscode-server/pull/3>, <https://github.com/msteen/nixos-vscode-server/pull/4>, <https://github.com/msteen/nixos-vscode-server/pull/5>). Here's a workaround: Install the `nodejs-16_x` package on the NixOS host, and then run the following nix-shell script:
+Note that nix-vscode-server works as of 8/21/21 but is occasionally broken (See \[<tvar name=1><https://github.com/msteen/nixos-vscode-server/pull/3></tvar>\], \[<tvar name=2><https://github.com/msteen/nixos-vscode-server/pull/4></tvar>\], \[<tvar name=3><https://github.com/msteen/nixos-vscode-server/pull/5></tvar>\]). Here's a workaround: Install the `nodejs-16_x` package on the NixOS host, and then run the following nix-shell script: </translate>
 
 ``` haskell
 #! /usr/bin/env nix-shell
 #! nix-shell --pure -i runghc -p "haskellPackages.ghcWithPackages (pkgs: [ pkgs.turtle ])"
 
-<!--T:55-->
 {-# LANGUAGE OverloadedStrings #-}
 import Turtle
 
-<!--T:56-->
 main = sh $ do
   homedir <- home
   subdir <- ls $ homedir </> ".vscode-server/bin/"
@@ -256,13 +285,13 @@ main = sh $ do
       echo ("Already fixed " <> repr subdir)
 ```
 
-If instead you'd prefer to fix the binaries manually and have to do so every time that you upgrade your VS Code version, then you can install the `nodejs-16_x` package on the NixOS host and replace the VS Code provided version. This workaround is described here: <https://github.com/microsoft/vscode-remote-release/issues/648#issuecomment-503148523>. Note that NodeJS needs to be updated according to VS Code upstream requirements (NodeJS 16 required from 4/2022).
+<translate> If instead you'd prefer to fix the binaries manually and have to do so every time that you upgrade your VS Code version, then you can install the `nodejs-16_x` package on the NixOS host and replace the VS Code provided version. This workaround is described \[<tvar name=1><https://github.com/microsoft/vscode-remote-release/issues/648#issuecomment-503148523></tvar> here\]. Note that NodeJS needs to be updated according to VS Code upstream requirements (NodeJS 16 required from 4/2022).
 
 #### nix-ld
 
-Add the following settings to `configuration.nix` on the NixOS host
+Add the following settings to `configuration.nix` on the NixOS host </translate>
 
-Then run `nixos-rebuild switch` to enable `nix-ld`. Unlike the `nix-vscode-server` solution, the `nix-ld` solution also enables VSCode extensions even if they include non-Nix binaries.
+<translate> Then run `nixos-rebuild switch` to enable `nix-ld`. Unlike the `nix-vscode-server` solution, the `nix-ld` solution also enables VSCode extensions even if they include non-Nix binaries.
 
 ### Nix-sourced VS Code to NixOS host
 
@@ -270,44 +299,48 @@ If vscode-remote is installed from nix (vscode-extensions.ms-vscode-remote as ab
 
 ## Remote WSL
 
-Similar to SSH hosts, both `nix-vscode-server` and `nix-ld` solution allows a VSCode Windows client to connect a [NixOS-WSL](https://github.com/nix-community/NixOS-WSL) host. However, by default the VSCode Windows client uses `wsl.exe --exec` to start the code server, which bypasses NixOS environment variables required by `nix-ld`, resulting in failures.
+Similar to SSH hosts, both `nix-vscode-server` and `nix-ld` solution allows a VSCode Windows client to connect a \[<tvar name=1><https://github.com/nix-community/NixOS-WSL></tvar> NixOS-WSL\] host. However, by default the VSCode Windows client uses `wsl.exe --exec` to start the code server, which bypasses NixOS environment variables required by `nix-ld`, resulting in failures.
 
-As a workaround, search for the following text in all files under the directory `$HOME\.vscode\extensions\`
+As a workaround, search for the following text in all files under the directory `$HOME\.vscode\extensions\` </translate>
 
-Replace it with
+<translate> Replace it with </translate>
 
-Then restart VS Code and your VS Code client should be able to connect to NixOS host
+<translate> Then restart VS Code and your VS Code client should be able to connect to NixOS host
 
-See <https://github.com/nix-community/NixOS-WSL/issues/222> for the discussion about `wsl --exec` issue on NixOS-WSL. See <https://github.com/microsoft/vscode-remote-release/issues/8305#issuecomment-1661396267> about the workaround.
+See \[<tvar name=1><https://github.com/nix-community/NixOS-WSL/issues/222></tvar> this\] for the discussion about `wsl --exec` issue on NixOS-WSL. See \[<tvar name=2><https://github.com/microsoft/vscode-remote-release/issues/8305#issuecomment-1661396267></tvar> this\] about the workaround.
 
 ## Troubleshooting
 
 ### Writing login information to the keychain failed
 
-If you get an error similar to the following, enable a <a href="Secret_Service" class="wikilink" title="Secret Service">Secret Service</a> provider.
+If you get an error similar to the following, enable a <a href="&lt;tvar_name=secret_service&gt;Special:MyLanguage/Secret_Service&lt;/tvar&gt;" class="wikilink" title="Secret Service">Secret Service</a> provider. </translate>
 
     Writing login information to the keychain failed with error 'The name org.freedesktop.secret was not provided by any .service files'.
 
+<translate>
+
 ### Server did not start successfully
+
+</translate>
 
 > Server did not start successfully. Full server log at /home/user/.vscode-server/.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.log  
 >   
 > server log:  
 > /home/user/.vscode-server/bin/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/bin/code-server: line 12: /home/user/.vscode-server/bin/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/node: No such file or directory
 
-"No such file or directory" means that libc is not found, see
+<translate> "No such file or directory" means that libc is not found, see </translate>
 
 ``` console
 $ ldd ~/.vscode-server/bin/*/node
 ```
 
-try to run the node binary on the server
+<translate> try to run the node binary on the server </translate>
 
 ``` console
 $ ~/.vscode-server/bin/*/node
 ```
 
-if this fails, install node version 16, and try to patch the node binary
+<translate> if this fails, install node version 16, and try to patch the node binary </translate>
 
 ``` console
 $ nix-env -iA nixos.nodejs-16_x
@@ -328,16 +361,16 @@ else
 fi
 ```
 
+<translate>
+
 ### Timeout
 
-If you're using fish or other shell, set this in the user settings JSON on the client machine:
+If you're using fish or other shell, set this in the user settings JSON on the client machine: </translate>
 
 ``` json
 "remote.SSH.useLocalServer": false
 ```
 
-See <https://github.com/microsoft/vscode-remote-release/issues/2509> and <https://github.com/nix-community/nixos-vscode-server/issues/18>
-
-</translate>
+<translate> See \[<tvar name=1><https://github.com/microsoft/vscode-remote-release/issues/2509></tvar>\] and \[<tvar name=2><https://github.com/nix-community/nixos-vscode-server/issues/18></tvar>\] </translate>
 
 <a href="Category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="Category:IDE" class="wikilink" title="Category:IDE">Category:IDE</a>

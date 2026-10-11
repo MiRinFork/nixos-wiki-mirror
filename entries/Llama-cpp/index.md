@@ -100,9 +100,36 @@ This ends up improving performance, but the model still needs to fit in RAM.
 
 For example, `Qwen3.6-35B-A3B` has 35B param count, but only 3B are active.
 
+### How do I choose a quantization?
+
+Quantization is a compression technique that reduces the numerical precision of a model's weights and activations.
+
+LLM models are matrices of numbers, normally stored as FP16, a 16-bit float. Quantization changes this format into smaller formats, for example: INT4, a 4-bit integer.
+
+As a result of this compression:
+
+- Less RAM is required
+- Less storage is required
+- Less energy is required
+- Faster inference is possible
+
+<img src="Quantization.png" title="List of quantizations in huggingface" width="475" height="475" alt="List of quantizations in huggingface" /> But is there a penalty? Yes, there can be a loss of intelligence and accuracy. According to the publishers of these quantized models, the accuracy lost is negligible.
+
+As a general rule of thumb:
+
+- Q8_0 loses only 1% of accuracy
+- Q6 loses 3% of accuracy
+- Q4 loses ~4-6% of accuracy
+
+When choosing a quantization, you have to evaluate your hardware and needs. A good default if you don't know what to choose is `Q4_K_M` or `UD-Q4_K_XL` quantization.
+
+**When navigating hugging face models**, quantization will appear on **GGUF models**, on the right side of the page.
+
+Sometimes, AI Labs won't release GGUF models, but fear not. In huggingface, on the model page, on the right side panel, you'll see a link to "Quantizations". If you click there, you'll see all the different quantized models, usually, by other AI Labs, and most of the time, you'll find someone added support for GGUF.
+
 ### Performance
 
-Performance is **bottle-necked by memory bandwidth**. You can keep an eye for new developments and breakthroughs. But otherwise, it's hard to squeeze more performance from a model.
+Performance is **bottle-necked by memory bandwidth**. You can keep an eye for new developments and breakthroughs. But otherwise, it's the best metric to calculate how well it will run on your machine.
 
 Don't confuse GPU's memory bandwidth with GPU's memory (RAM).
 
@@ -171,18 +198,32 @@ Or alternatively, you can **enable the NixOS service** for llama-cpp, which runs
     modelsPreset = {
       # Requires 8GB VRAM 
       "LFM2.5-8B-A1B" = {
+        # Extract from the model URL on HuggingFace
         hf-repo = "unsloth/LFM2.5-8B-A1B-GGUF";
-        hf-file = "LFM2.5-8B-A1B-UD-Q4_K_XL.gguf";
+
+        # Click on a quantization (e.g Q4_K_M) on HuggingFace to see the file name
+        hf-file = "LFM2.5-8B-A1B-UD-Q4_K_XL.gguf";  
+        
+        # Display name on llama UI
         alias = "unsloth/LFM2.5-8B-A1B-GGUF";
+
+        # Optimization parameters
         temp = "0.2";
         repeat-penalty = "1.05";
         top-k = "80";
       };
       # Requires 56GB VRAM 
       "Qwen3-Coder-Next" = {
+        # Extract from the model URL on HuggingFace
         hf-repo = "unsloth/Qwen3-Coder-Next-GGUF";
+
+        # Click on a quantization (e.g Q4_K_M) on HuggingFace to see the file name
         hf-file = "Qwen3-Coder-Next-UD-Q4_K_XL.gguf";
-        alias = "unsloth/Qwen3-Coder-Next";
+
+        # Display name on llama UI
+        alias = "unsloth/Qwen3-Coder-Next";  # display name
+
+        # Optimization parameters
         temp = "1.0";
         top-p = "0.95";
         top-k = "40";
@@ -195,6 +236,8 @@ Or alternatively, you can **enable the NixOS service** for llama-cpp, which runs
 And do a switch to the new configuration
 
     sudo nixos-rebuild switch
+
+Nix maps the settings directly to `llama-server` settings. You can find all the server parameters on [ggml-org/llama.cpp/server](https://github.com/ggml-org/llama.cpp/tree/master/tools/server#common-params)
 
 ### Web UI
 
@@ -233,7 +276,7 @@ Since [RFC42](https://github.com/NixOS/rfcs/blob/master/rfcs/0042-config-option.
       "Qwen3-Coder-Next" = {
         hf-repo = "unsloth/Qwen3-Coder-Next-GGUF";
         hf-file = "Qwen3-Coder-Next-UD-Q4_K_XL.gguf";
-        alias = "unsloth/Qwen3-Coder-Next";
+        alias = "unsloth/Qwen3-Coder-Next";  # display name
         temp = "1.0";
         top-p = "0.95";
         top-k = "40";

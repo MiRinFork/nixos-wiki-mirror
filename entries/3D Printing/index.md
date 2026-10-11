@@ -17,7 +17,7 @@ users.users.klipper = {
 
 users.groups.klipper = {};
 
-networking.firewall.allowedTCPPorts = [ 80 7125 ];
+networking.firewall.allowedTCPPorts = [ 80 ];
 
 systemd.tmpfiles.settings = {
   "klipper" = {
@@ -161,5 +161,16 @@ Clone into the Klipper [repository](https://github.com/Klipper3d/klipper) and go
 ```
 
 Now, inside the Klipper directory, you can run `make menuconfig` and `make` like you normally would.
+
+## Troubleshooting
+
+### HTTP 413 when uploading files larger than 20MB
+
+Add the configuration below to your NixOS configuration. Uncomment or comment the correct line depending on your interface.
+
+``` nix
+services.mainsail.nginx.extraConfig = "client_max_body_size 1024M;";
+#services.fluidd.nginx.extraConfig = "client_max_body_size 1024M;";
+```
 
 <a href="Category:Guide" class="wikilink" title="Category:Guide">Category:Guide</a> <a href="Category:Web_Applications" class="wikilink" title="Category:Web Applications">Category:Web Applications</a>

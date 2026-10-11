@@ -51,3 +51,11 @@ services.radicle = {
   };
 };
 ```
+
+### Mirroring Nixpkgs
+
+Replicating ("mirroring") a copy of Nixpkgs on the Radicle network is discussed in multiple places. Consider the following incomplete list of references:
+
+- [Topic on discourse.nixos.org](https://discourse.nixos.org/t/could-somebody-setup-an-authorative-mirror-of-nixpkgs-on-radicle/63999)
+- [Issue in github.com/NixOS/infra](https://github.com/NixOS/infra/issues/678)
+- [Topic on radicle.zulipchat.com](https://radicle.zulipchat.com/#narrow/channel/438104-Nix/topic/Nixpkgs.20mirror/with/567708138)

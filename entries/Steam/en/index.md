@@ -285,6 +285,8 @@ To "reset" your driver to radv when both radv and amdvlk are installed, set eith
 
 The setcap issue at SteamVR start can be fixed with: `sudo setcap CAP_SYS_NICE+ep ~/.local/share/Steam/steamapps/common/SteamVR/bin/linux64/vrcompositor-launcher`
 
+The <a href="Special:MyLanguage/Steam_Frame" class="wikilink" title="Steam Frame">Steam Frame</a> headset is discovered through these Remote Play ports. See <a href="Special:MyLanguage/Steam_Frame" class="wikilink" title="Steam Frame">Steam Frame</a>.
+
 ### Gamescope fails to launch when used within Steam
 
 Gamescope may fail to start due to missing Xorg libraries. ([\#214275](https://github.com/NixOS/nixpkgs/issues/214275)) To resolve this override the steam package to add them:

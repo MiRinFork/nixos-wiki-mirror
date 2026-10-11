@@ -489,6 +489,12 @@ The setcap issue at SteamVR start can be fixed with: `sudo setcap CAP_SYS_NICE+e
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
+The <a href="Special:MyLanguage/Steam_Frame" class="wikilink" title="Steam Frame">Steam Frame</a> headset is discovered through these Remote Play ports. See <a href="Special:MyLanguage/Steam_Frame" class="wikilink" title="Steam Frame">Steam Frame</a>.
+
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
 ### Gamescope fails to launch when used within Steam
 
 </div>

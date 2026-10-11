@@ -4,7 +4,7 @@
 
 ## Using the Android SDK
 
-NixOS uses the androidenv package for building android SDKs and manually creating emulators without the use of Android Studio. Example android sdk is `androidenv.androidPkgs.androidsdk`. They also include all of the SDK tools such as sdkmanager and avdmanager needed to create emulators.
+The `androidenv` feature of Nixpkgs can be used for composing Android SDKs and manually creating emulators without the use of Android Studio. A fully composed Android SDK is provided at the attribute path `roidenv.androidPkgs.androidsdk`.[^1] The may be used to compose a custom Android SDK with, for example, different platform versions, ABIs and NDK versions.
 
 The first link provides a guide for creating a custom android SDK, using a predefined SDK, and how to nixify an emulator. The second link is an extra guide that might have some helpful tips for improving your workflow.
 
@@ -117,11 +117,11 @@ There are two main methods for newer devices:
 - `adb push` and `adb pull`: see above.
 - via <a href="MTP" class="wikilink" title="MTP">MTP</a>, see <a href="MTP" class="wikilink" title="the corresponding page">the corresponding page</a>
 
-## Android Development
+## App development
 
 ### Android Studio
 
-To develop apps using [Android Studio](https://developer.android.com/studio/), install it to your system.
+To develop apps using [Android Studio](https://developer.android.com/studio/), <a href="Adding_programs_to_PATH" class="wikilink" title="install">install</a> the package `android-studio`.
 
 ``` nix
 environment.systemPackages = [
@@ -129,13 +129,9 @@ environment.systemPackages = [
 ];
 ```
 
-By default, Android Studio has a FHS environment and by using `pkgs.android-studio-full` you get the predefined Android SDK composition including (as of nixos-unstable on 2024-11-02) platforms 28-34, an emulator, many system images and the NDK.
+By default, Android Studio is launched in a FHS environment so unpatched SDKs installed via Android Studio's SDK manager work.
 
-Notice: to install Android Studio, you have to indicate accepting the EULA. If you don't, the rebuild fails and prints the EULA. The simplest way to acknowledge it is to add this line to your config:
-
-``` nix
-nixpkgs.config.android_sdk.accept_license = true;
-```
+By using the `android-studio-full` package instead you get Nixpkgs's predefined Android SDK composition including (as of nixos-unstable on 2024-11-02) platforms 28-34, an emulator, many system images and the NDK.[^2]
 
 To use the Android Emulator, you need to enable KVM virtualization (in your BIOS) and make sure your user has permission to use KVM (add yourself to the `kvm` group).
 
@@ -273,4 +269,12 @@ Run `nix-shell -p usbutils --run "lsusb"` on your terminal to get the list of US
 4.  [LineageOS build setup using terranix and hcloud](https://github.com/mrVanDalo/LineagoOS-build), based on the [shell.nix to build LineageOS](https://gist.github.com/Nadrieril/d006c0d9784ba7eff0b092796d78eb2a). Useful if you are in a rush and don't have to much CPU power on your hand.
 5.  [Archlinux Wiki to Android_Debug_Bridge](https://wiki.archlinux.org/title/Android_Debug_Bridge)
 
+## References
+
+<references/>
+
 <a href="Category:Development" class="wikilink" title="Category:Development">Category:Development</a>
+
+[^1]:
+
+[^2]:

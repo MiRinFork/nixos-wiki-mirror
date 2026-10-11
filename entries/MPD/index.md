@@ -11,9 +11,8 @@ Home-manager has a module for MPD which runs it as a systemd user service, givin
 ``` nix
 services.mpd = {
   enable = true;
-  settings = {
-    music_directory = "/path/to/music";
-  };
+  musicDirectory = "/path/to/music";
+
   # Optional:
   network.listenAddress = "any"; # if you want to allow non-localhost connections
   network.startWhenNeeded = true; # systemd feature: only start MPD service upon connection to its socket

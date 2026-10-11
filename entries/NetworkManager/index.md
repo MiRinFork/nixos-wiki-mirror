@@ -66,4 +66,8 @@ Please see <a href="Power_Management" class="wikilink" title="Power Management">
 
 See <a href="Networking#Link_aggregation" class="wikilink" title="Networking#Link aggregation">Networking#Link aggregation</a>.
 
+### Firewall Zones
+
+For firewall rules that differ per NetworkManager connection profile, see <a href="Firewall#Firewalld" class="wikilink" title="Firewall#Firewalld">Firewall#Firewalld</a>.
+
 <a href="Category:Networking" class="wikilink" title="Category:Networking">Category:Networking</a> <a href="Category:Desktop" class="wikilink" title="Category:Desktop">Category:Desktop</a> <a href="Category:GNOME" class="wikilink" title="Category:GNOME">Category:GNOME</a> <a href="Category:KDE" class="wikilink" title="Category:KDE">Category:KDE</a> <a href="Category:DNS" class="wikilink" title="Category:DNS">Category:DNS</a>

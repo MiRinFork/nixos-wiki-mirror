@@ -7,7 +7,11 @@
   
 *另见: <a href="Special:MyLanguage/Vim" class="wikilink" title="Vim">Vim</a>*
 
+<div class="mw-translate-fuzzy">
+
 [Neovim](https://neovim.io/)[^1] 是一款高度可扩展的开源文本编辑器，旨在改进和现代化流行的 <a href="Special:MyLanguage/Vim" class="wikilink" title="Vim">Vim</a>[^2] 编辑器。它被设计为 Vim 的无缝衔接替代品，在保持与大多数 Vim 插件和配置的兼容性的同时，提供额外的功能和改进。Neovim 注重可扩展性、易用性和性能。
+
+</div>
 
 它引入了强大的插件架构，支持异步插件执行，这可以显著提升某些操作的性能。它还内置了终端模拟器，允许用户直接在编辑器中运行 shell 命令。该项目注重代码质量和可维护性，拥有简洁且文档完善的代码库，方便开发者贡献代码。
 
@@ -18,6 +22,10 @@
 #### Shell
 
 要在不修改系统配置的情况下临时在 shell 环境中使用 Neovim，您可以运行：
+
+``` console
+$ nix-shell -p neovim
+```
 
 这样就能在当前 shell 中使用 Neovim 编辑器了。之后，您可以通过输入 `nvim` 来启动 Neovim。
 
@@ -41,33 +49,77 @@
 
 #### 进阶
 
+<div class="mw-translate-fuzzy">
+
 ## 小技巧
 
-<span id="Package_Variations"></span>
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+#### Nix configuration frameworks
+
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+[Nixvim](https://github.com/nix-community/nixvim) and [nvf](https://github.com/NotAShelf/nvf) provide a framework for declaratively configuring neovim with <a href="Nix_(language)" class="wikilink" title="Nix">Nix</a>. They support, among the other things, plugin configuration, as well as mixing in plain Lua config snippets. Linux and Darwin platforms are supported using standalone Nix, <a href="Special:MyLanguage/NixOS" class="wikilink" title="NixOS">NixOS</a> or <a href="Special:MyLanguage/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> modules.
+
+</div>
+
+<span id="Package_variations"></span>
+
+<div class="mw-translate-fuzzy">
 
 #### 包的变体
 
+</div>
+
+<div class="mw-translate-fuzzy">
+
 请查看 [Neovim Nightly Overlay](https://github.com/nix-community/neovim-nightly-overlay)[^3] 以安装最新的 Neovim nightly 版本。
+
+</div>
 
 您可以通过以下命令运行主版本：
 
-<span id="Plugin_Management"></span>
+``` console
+$ nix run "github:nix-community/neovim-nightly-overlay"
+```
+
+<span id="Plugin_management"></span>
+
+<div class="mw-translate-fuzzy">
 
 #### 插件管理
 
-<span id="Frameworks"></span>
+</div>
+
+<span id="Pre-made_distributions"></span>
+
+<div class="mw-translate-fuzzy">
 
 #### 框架
 
+</div>
+
 如果您不想手动配置系统，NixOS 提供了多种预定义配置和社区支持的选项。以下列举其中一些：
+
+<div class="mw-translate-fuzzy">
 
 - [LazyVim](https://www.lazyvim.org/)[^4]
 - [AstroNvim](https://astronvim.com/)[^5]
 - [NVChad](https://nvchad.com/)[^6]
 
+</div>
+
 默认情况下，LazyVim 会阻止加载非 LazyVim 管理的插件。这包括所有通过 Nix 安装的插件。如果您想同时使用 Nix 和 LazyVim 安装插件，请将以下内容添加到您的 LazyVim 配置中：
 
+<div class="mw-translate-fuzzy">
+
 [源码](https://github.com/folke/lazy.nvim/issues/402#issuecomment-2084997594)
+
+</div>
 
 <span id="FHS_wrapper"></span>
 
@@ -75,7 +127,11 @@
 
 您可以创建自定义的 Neovim FHS 包装器
 
+<div class="mw-translate-fuzzy">
+
 该 FHS 封装示例基于 nixpkgs 中的一个贡献代码[^7]。 有关包含使用类似 FHS 环境设置 `mason.nvim` 的扩展配置，请参阅此 [NixOS/nixpkgs 问题评论](https://github.com/NixOS/nixpkgs/issues/281219#issuecomment-2284713258)。
+
+</div>
 
 ## 故障排除
 
@@ -85,7 +141,11 @@
 
 在您的`~/.local/state/nvim/lsp.log`文件中，您会看到以下错误：
 
+<div class="mw-translate-fuzzy">
+
 这个问题可以在 Stack Overflow 上找到解决方案[^8]。
+
+</div>
 
 <span id="See_also"></span>
 
@@ -93,11 +153,10 @@
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
-- <a href="Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> – For declarative Neovim configuration at the user level: [Neovim module in Home Manager](https://nix-community.github.io/home-manager/options.html#opt-programs.neovim.enable)
+- <a href="Special:MyLanguage/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> – For declarative Neovim configuration at the user level: [Neovim module in Home Manager](https://nix-community.github.io/home-manager/options.html#opt-programs.neovim.enable)
 - [Official Documentation](https://neovim.io/doc/) – Official Neovim documentation.
 - [NixOS options for Neovim](https://search.nixos.org/options?channel=unstable&query=programs.neovim) – System-level Neovim configuration.
 - [Neovim discussions on NixOS Discourse](https://discourse.nixos.org/search?q=neovim) – Community tips, troubleshooting, and use cases.
-- [Neovim Overlay on Nixpkgs](https://github.com/nix-community/neovim-overlay) – For nightly builds and additional Neovim packages.
 
 </div>
 

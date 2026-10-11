@@ -45,6 +45,23 @@ services.syncthing = {
 networking.firewall.allowedTCPPorts = [ 8384 ];
 ```
 
+#### System service for one user
+
+To run syncthing as system-wide service that automatically starts on boot, possibly in multiple instances for multiple users, without them requiring to log in (or use <a href="Systemd/User_Services#Enabling_the_user_management_service_and_user_process_lingering" class="wikilink" title="lingering">lingering</a>):
+
+``` nixos
+services.syncthing = {
+  enable = true;
+  openDefaultPorts = true;
+  systemService = false;
+};
+systemd.targets.multi-user.wants = [ "syncthing@meinusername.service" ];
+```
+
+#### systemd user-service
+
+To run syncthing as your user, you can also use a <a href="Systemd/User_Services" class="wikilink" title="systemd user-service">systemd user-service</a>.
+
 ## Configuration
 
 #### Basic

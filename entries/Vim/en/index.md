@@ -8,41 +8,39 @@
 
 ### Basic Install
 
-\<syntaxhighlight lang="nix\>
-
-` programs.vim.enable = true;`
+\<syntaxhighlight lang="nix\> programs.vim.enable = true;
 
 </syntaxhighlight>
 
 or
 
 ``` nix
-  programs.vim = {
-    enable = true;
-    package = pkgs.vim-full;
-  };
+programs.vim = {
+  enable = true;
+  package = pkgs.vim-full;
+};
 ```
 
 or
 
 ``` nix
-  environment.systemPackages = with pkgs; [ vim-full ];
+environment.systemPackages = with pkgs; [ vim-full ];
 ```
 
 ### Using Home Manager
 
 Vim can easily be set up using <a href="Special:MyLanguage/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a>. Here's a minimal example:
 
-\<syntaxhighlight lang="nix\>
+\<syntaxhighlight lang="nix\> programs.vim = {
 
-` programs.vim = {`  
-`   enable = true;`  
-`   plugins = with pkgs.vimPlugins; [ vim-airline ];`  
-`   settings = { ignorecase = true; };`  
-`   extraConfig = ''`  
-`     set mouse=a`  
-`   '';`  
-` };`
+` enable = true;`  
+` plugins = with pkgs.vimPlugins; [ vim-airline ];`  
+` settings = { ignorecase = true; };`  
+` extraConfig = ''`  
+`   set mouse=a`  
+` '';`
+
+};
 
 </syntaxhighlight>
 
@@ -98,7 +96,7 @@ On unstable:
   programs.vim = {
     enable = true;
     defaultEditor = true;
-    package = (pkgs.vim-full.override {  }).customize{
+    package = (pkgs.vim-full.override { }).customize{
       name = "vim";
       # Install plugins for example for syntax highlighting of nix files
       vimrcConfig.packages.myplugins = with pkgs.vimPlugins; {
@@ -145,10 +143,9 @@ import these in your `configuration.nix` and
 
 ``` nix
 {    
-  imports =    
-    [
-      ./vim.nix
-    ];
+  imports = [
+    ./vim.nix
+  ];
   # ...
 }
 ```
@@ -238,7 +235,7 @@ vimrcConfig.pathogen.pluginNames = [ "vim-addon-nix" "youcompleteme" ];
 ### Using Vim-Plug as manager
 
 ``` nix
-vimrcConfig.plug.plugins = with pkgs.vimPlugins; [vim-addon-nix youcompleteme];
+vimrcConfig.plug.plugins = with pkgs.vimPlugins; [ vim-addon-nix youcompleteme ];
 ```
 
 ### Adding new plugins

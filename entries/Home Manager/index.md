@@ -82,7 +82,7 @@ Here is the skeleton of how to add Home Manager as a module to your system(s) vi
             home-manager = {
               useGlobalPkgs = true;
               useUserPackages = true;
-              extraSpecialArgs = { inherit inputs; } #If you want access to inputs in your home.nix
+              extraSpecialArgs = { inherit inputs; }; #If you want access to inputs in your home.nix
               users.<USERNAME> = ./home.nix; # replace <USERNAME> with your actual username
             };
           }

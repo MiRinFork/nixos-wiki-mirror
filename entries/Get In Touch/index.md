@@ -109,6 +109,10 @@ There are some regional Telegram groups dedicated to NixOS:
 - [@nixosbr](https://t.me/nixosbr) - Portuguese
 - [@nixosita](https://t.me/nixosita) - Italian
 
+**Signal**
+
+- [Nix / NixOS (unofficial)](https://signal.group/#CjQKIOJMxvGvEgIsYgjVrhCDDvNaMWg5u6QvbxTZVvFLXxP9EhCZ62ghyNi1mUZJIinAlpqi) - English only group. Admin contacts users for bot checks upon request to join.
+
 ## References
 
 <a href="Category:Community" class="wikilink" title="Category:Community">Category:Community</a>

@@ -12,25 +12,23 @@
 
 ### 基础安装
 
-\<syntaxhighlight lang="nix\>
-
-` programs.vim.enable = true;`
+\<syntaxhighlight lang="nix\> programs.vim.enable = true;
 
 </syntaxhighlight>
 
 或者
 
 ``` nix
-  programs.vim = {
-    enable = true;
-    package = pkgs.vim-full;
-  };
+programs.vim = {
+  enable = true;
+  package = pkgs.vim-full;
+};
 ```
 
 或者
 
 ``` nix
-  environment.systemPackages = with pkgs; [ vim-full ];
+environment.systemPackages = with pkgs; [ vim-full ];
 ```
 
 <span id="Using_Home_Manager"></span>
@@ -39,16 +37,16 @@
 
 使用 <a href="Special:MyLanguage/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> 可以轻松设置 Vim。这是一个简单的例子：
 
-\<syntaxhighlight lang="nix\>
+\<syntaxhighlight lang="nix\> programs.vim = {
 
-` programs.vim = {`  
-`   enable = true;`  
-`   plugins = with pkgs.vimPlugins; [ vim-airline ];`  
-`   settings = { ignorecase = true; };`  
-`   extraConfig = ''`  
-`     set mouse=a`  
-`   '';`  
-` };`
+` enable = true;`  
+` plugins = with pkgs.vimPlugins; [ vim-airline ];`  
+` settings = { ignorecase = true; };`  
+` extraConfig = ''`  
+`   set mouse=a`  
+` '';`
+
+};
 
 </syntaxhighlight>
 
@@ -110,7 +108,7 @@ unstable 分支：
   programs.vim = {
     enable = true;
     defaultEditor = true;
-    package = (pkgs.vim-full.override {  }).customize{
+    package = (pkgs.vim-full.override { }).customize{
       name = "vim";
       # 安装插件，例如用于 nix 文件的语法高亮
       vimrcConfig.packages.myplugins = with pkgs.vimPlugins; {
@@ -157,10 +155,9 @@ unstable 分支：
 
 ``` nix
 {    
-  imports =    
-    [
-      ./vim.nix
-    ];
+  imports = [
+    ./vim.nix
+  ];
   # ...
 }
 ```
@@ -264,7 +261,7 @@ vimrcConfig.pathogen.pluginNames = [ "vim-addon-nix" "youcompleteme" ];
 ### 使用 Vim-Plug 作为管理器
 
 ``` nix
-vimrcConfig.plug.plugins = with pkgs.vimPlugins; [vim-addon-nix youcompleteme];
+vimrcConfig.plug.plugins = with pkgs.vimPlugins; [ vim-addon-nix youcompleteme ];
 ```
 
 <span id="Adding_new_plugins"></span>

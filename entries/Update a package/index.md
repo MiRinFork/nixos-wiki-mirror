@@ -35,6 +35,7 @@ git clone https://github.com/your_username/nixpkgs.git \
     --filter=blob:none # Prevents downloading the entire history, which saves a couple Gb
 cd nixpkgs/
 git remote add upstream https://github.com/NixOS/nixpkgs.git
+git config remote.upstream.partialclonefilter blob:none
 git gc --aggressive # nixpkgs is a large repository; this brings down the disk usage by another Gb or so
 ```
 

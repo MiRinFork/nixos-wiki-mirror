@@ -312,6 +312,12 @@ hardware.graphics = {
 
 SteamVR 启动时的 setcap 问题可以通过以下方法解决： `sudo setcap CAP_SYS_NICE+ep ~/.local/share/Steam/steamapps/common/SteamVR/bin/linux64/vrcompositor-launcher`
 
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+The <a href="Special:MyLanguage/Steam_Frame" class="wikilink" title="Steam Frame">Steam Frame</a> headset is discovered through these Remote Play ports. See <a href="Special:MyLanguage/Steam_Frame" class="wikilink" title="Steam Frame">Steam Frame</a>.
+
+</div>
+
 <span id="Gamescope_fails_to_launch_when_used_within_Steam"></span>
 
 ### 与 Steam 使用时 Gamescope 无法启动

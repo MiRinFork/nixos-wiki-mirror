@@ -5,7 +5,7 @@
 [nixpkgs-update](https://github.com/nix-community/nixpkgs-update) is used by <a href="r-ryantm" class="wikilink" title="r-ryantm">r-ryantm</a> for automated updates (through creating [update pull requests](https://github.com/NixOS/nixpkgs/issues?q=is%3Apr%20author%3Ar-ryantm)).  
 It uses package repository information from Repology.org (though that requires other projects to detect the update), the GitHub releases API, and, if available, the package `passthru.updateScript`. For more information, see the [official documentation](https://nix-community.github.io/nixpkgs-update/).
 
-If you're wondering why your package isn't receiving automated updates, it can be useful to check the [r-ryantm logs](https://r.ryantm.com/log/).
+If you're wondering why your package isn't receiving automated updates, it can be useful to check the [nixpkgs-update logs](https://nixpkgs-update-logs.nixos.org/).
 
 ## Disabling nixpkgs-update for individual packages
 

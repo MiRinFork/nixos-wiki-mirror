@@ -20,8 +20,8 @@ To temporarily use Kitty in a shell environment, you can run:
 
 </div>
 
-``` bash
-nix-shell -p kitty
+``` console
+$ nix-shell -p kitty
 ```
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
@@ -56,12 +56,12 @@ Then, rebuild your system or apply your Home Manager configuration:
 
 </div>
 
-``` bash
-# For system-wide installation
-sudo nixos-rebuild switch
+``` console
+# # For system-wide installation
+# nixos-rebuild switch
 
-# For Home Manager
-home-manager switch
+$ # For Home Manager
+$ home-manager switch
 ```
 
 ## Configuration

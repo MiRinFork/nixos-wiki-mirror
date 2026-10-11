@@ -12,25 +12,23 @@
 
 ### Начальная Установка
 
-\<syntaxhighlight lang="nix\>
-
-` programs.vim.enable = true;`
+\<syntaxhighlight lang="nix\> programs.vim.enable = true;
 
 </syntaxhighlight>
 
 или
 
 ``` nix
-  programs.vim = {
-    enable = true;
-    package = pkgs.vim-full;
-  };
+programs.vim = {
+  enable = true;
+  package = pkgs.vim-full;
+};
 ```
 
 или
 
 ``` nix
-  environment.systemPackages = with pkgs; [ vim-full ];
+environment.systemPackages = with pkgs; [ vim-full ];
 ```
 
 <span id="Using_Home_Manager"></span>
@@ -43,16 +41,16 @@ Vim can easily be set up using <a href="Special:MyLanguage/Home_Manager" class="
 
 </div>
 
-\<syntaxhighlight lang="nix\>
+\<syntaxhighlight lang="nix\> programs.vim = {
 
-` programs.vim = {`  
-`   enable = true;`  
-`   plugins = with pkgs.vimPlugins; [ vim-airline ];`  
-`   settings = { ignorecase = true; };`  
-`   extraConfig = ''`  
-`     set mouse=a`  
-`   '';`  
-` };`
+` enable = true;`  
+` plugins = with pkgs.vimPlugins; [ vim-airline ];`  
+` settings = { ignorecase = true; };`  
+` extraConfig = ''`  
+`   set mouse=a`  
+` '';`
+
+};
 
 </syntaxhighlight>
 
@@ -130,7 +128,7 @@ On unstable ветке:
   programs.vim = {
     enable = true;
     defaultEditor = true;
-    package = (pkgs.vim-full.override {  }).customize{
+    package = (pkgs.vim-full.override { }).customize{
       name = "vim";
       <div lang="en" dir="ltr" class="mw-content-ltr">
 # Install plugins for example for syntax highlighting of nix files
@@ -183,10 +181,9 @@ On unstable ветке:
 
 ``` nix
 {    
-  imports =    
-    [
-      ./vim.nix
-    ];
+  imports = [
+    ./vim.nix
+  ];
   # ...
 }
 ```
@@ -328,7 +325,7 @@ vimrcConfig.pathogen.pluginNames = [ "vim-addon-nix" "youcompleteme" ];
 ### Использование Vim-plug в качестве менеджера плагинов
 
 ``` nix
-vimrcConfig.plug.plugins = with pkgs.vimPlugins; [vim-addon-nix youcompleteme];
+vimrcConfig.plug.plugins = with pkgs.vimPlugins; [ vim-addon-nix youcompleteme ];
 ```
 
 <span id="Adding_new_plugins"></span>

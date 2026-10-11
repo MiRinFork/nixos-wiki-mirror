@@ -10,8 +10,8 @@
 
 要在 shell 环境中临时使用 Kitty，可以执行：
 
-``` bash
-nix-shell -p kitty
+``` console
+$ nix-shell -p kitty
 ```
 
 这将提供一个可用 Kitty 的 shell，而无需将其添加到系统配置中。
@@ -34,12 +34,12 @@ home.packages = with pkgs; [
 
 然后，重建系统或应用 Home Manager 配置：
 
-``` bash
-# For system-wide installation
-sudo nixos-rebuild switch
+``` console
+# # For system-wide installation
+# nixos-rebuild switch
 
-# For Home Manager
-home-manager switch
+$ # For Home Manager
+$ home-manager switch
 ```
 
 ## Configuration

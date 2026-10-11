@@ -33,19 +33,19 @@ When using <a href="KDE" class="wikilink" title="KDE">KDE</a> via , KDE Wallet i
 
 ### KeePassXC
 
-KeePassXC's Secret Service integration can be enabled by going into the **Tools \> Settings**, opening the *Secret Service Integration* tab and enabling it.
+KeePassXC's Secret Service integration can be enabled by going into **Tools \> Settings**, opening the *Secret Service Integration* tab and enabling it.
 
-This can be configured automatically by <a href="Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> configuration:
+This can also be configured automatically using <a href="Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> with the following configuration:
 
-If not using the one needs to configure for Secret Service integration by opening their settings **Database \> Database Settings...**, opening the *Secret Service Integration* tab and selecting a group for Secret Service entries.
+Databases need to be configured for Secret Service integration by opening **Database \> Database Settings...**, opening the *Secret Service Integration* tab and selecting a group for Secret Service entries.
 
-If you see a warning like above, you need to find out which other service is currently registered:
+If you see a warning like above, you should look for the other service to disable it. Here is a command to look for it:
 
 ``` shell
 busctl --user status org.freedesktop.secrets
 ```
 
-If it's the Gnome Keyring Daemon, then it can be disabled by this configuration below:
+If it's the GNOME Keyring daemon, it can be disabled using the following NixOS configuration module:
 
 ### pass-secret-service
 

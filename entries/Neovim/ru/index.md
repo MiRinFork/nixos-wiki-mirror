@@ -37,6 +37,10 @@ To temporarily use Neovim in a shell environment without modifying your system c
 
 </div>
 
+``` console
+$ nix-shell -p neovim
+```
+
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
 This makes the Neovim editor available in your current shell. You can then launch Neovim by typing `nvim`.
@@ -79,9 +83,25 @@ After rebuilding your system with `nixos-rebuild switch` or `home-manager switch
 
 </div>
 
-<span id="Package_Variations"></span>
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+#### Nix configuration frameworks
+
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+[Nixvim](https://github.com/nix-community/nixvim) and [nvf](https://github.com/NotAShelf/nvf) provide a framework for declaratively configuring neovim with <a href="Nix_(language)" class="wikilink" title="Nix">Nix</a>. They support, among the other things, plugin configuration, as well as mixing in plain Lua config snippets. Linux and Darwin platforms are supported using standalone Nix, <a href="Special:MyLanguage/NixOS" class="wikilink" title="NixOS">NixOS</a> or <a href="Special:MyLanguage/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> modules.
+
+</div>
+
+<span id="Package_variations"></span>
+
+<div class="mw-translate-fuzzy">
 
 #### Варианты Пакета
+
+</div>
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
@@ -95,13 +115,21 @@ You can run the master version via the following command:
 
 </div>
 
-<span id="Plugin_Management"></span>
+``` console
+$ nix run "github:nix-community/neovim-nightly-overlay"
+```
+
+<span id="Plugin_management"></span>
+
+<div class="mw-translate-fuzzy">
 
 #### Управление Плагинами
 
+</div>
+
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
-#### Frameworks
+#### Pre-made distributions
 
 </div>
 
@@ -181,11 +209,10 @@ A solution for this issue can be found on Stack Overflow[^8].
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
-- <a href="Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> – For declarative Neovim configuration at the user level: [Neovim module in Home Manager](https://nix-community.github.io/home-manager/options.html#opt-programs.neovim.enable)
+- <a href="Special:MyLanguage/Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> – For declarative Neovim configuration at the user level: [Neovim module in Home Manager](https://nix-community.github.io/home-manager/options.html#opt-programs.neovim.enable)
 - [Official Documentation](https://neovim.io/doc/) – Official Neovim documentation.
 - [NixOS options for Neovim](https://search.nixos.org/options?channel=unstable&query=programs.neovim) – System-level Neovim configuration.
 - [Neovim discussions on NixOS Discourse](https://discourse.nixos.org/search?q=neovim) – Community tips, troubleshooting, and use cases.
-- [Neovim Overlay on Nixpkgs](https://github.com/nix-community/neovim-overlay) – For nightly builds and additional Neovim packages.
 
 </div>
 

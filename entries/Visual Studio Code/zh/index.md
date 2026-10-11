@@ -4,11 +4,19 @@
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
 **Visual Studio Code** is a cross-platform text editor developed by Microsoft, built on the Electron framework.
 
 </div>
 
+<div class="mw-translate-fuzzy">
+
 对于 VS Code 代码库的自由分发（不含微软品牌、遥测，以及由 [Open VSX](https://open-vsx.org/) 替代的 [扩展市场](https://marketplace.visualstudio.com/)），请参阅 <a href="VSCodium" class="wikilink" title="VSCodium">VSCodium</a>。
+
+</div>
 
 <span id="Installation"></span>
 
@@ -27,6 +35,8 @@ Extensions can be managed using :
 </div>
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
+
+</div>
 
 ``` nix
 environment.systemPackages = with pkgs; [
@@ -48,8 +58,6 @@ environment.systemPackages = with pkgs; [
 ];
 ```
 
-</div>
-
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
 Some examples here: \[<https://github.com/search?type=code&q=language:Nix+&#x22;extensionFromVscodeMarketplace%22>; GitHub Search - type:code language:Nix "extensionFromVscodeMarketplace"\]
@@ -58,15 +66,33 @@ Some examples here: \[<https://github.com/search?type=code&q=language:Nix+&#x22;
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
+### nix-vscode-extensions
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+`extensionsFromVscodeMarketplace` is a manual way to fetch extensions. However, to keep updated from upstream, [nix-community/nix-vscode-extensions](https://github.com/nix-community/nix-vscode-extensions) provides the Nix expressions for the majority of available extensions from Open VSX and VSCode Marketplace. A GitHub Action updates the extensions daily.
+
 </div>
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
-`extensionsFromVscodeMarketplace` is a manual way to fetch extensions. However, to keep updated from upstream, [nix-community/nix-vscode-extensions](https://github.com/nix-community/nix-vscode-extensions) provides the Nix expressions for the majority of available extensions from Open VSX and VSCode Marketplace. A GitHub Action updates the extensions daily. Similarly, [nix-community/nix4vscode](https://github.com/nix-community/nix4vscode) provides a Nix overlay for VSCode Marketplace and Open VSX extensions.
+To use nix-vscode-extensions, first add an overlay:
 
 </div>
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
+
+Now extensions may be specified using `pkgs.nix-vscode-extensions.open-vsx` or `pkgs.nix-vscode-extensions.vscode-marketplace`.
+
+</div>
+
+### nix4vscode
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+Similarly, [nix-community/nix4vscode](https://github.com/nix-community/nix4vscode) provides a Nix overlay for VSCode Marketplace and Open VSX extensions.
+
+</div>
 
 ### Home Manager
 
@@ -81,8 +107,6 @@ programs.vscode = {
 };
 ```
 
-</div>
-
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
 - See for more options: [Home Manager Manual: Options - programs.vscode](https://nix-community.github.io/home-manager/options.xhtml#opt-programs.vscode.enable)
@@ -94,15 +118,19 @@ programs.vscode = {
 
 ### Nix-env
 
-``` console
-nix-env -iA nixos.vscode
-```
-
 </div>
+
+``` console
+$ nix-env -iA nixos.vscode
+```
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
 ## Use VS Code extensions without additional configuration
+
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
 
 With , the editor launches inside a <a href="wikipedia:Filesystem_Hierarchy_Standard" class="wikilink" title="FHS">FHS</a> compliant chroot environment using . This reintroduces directories such as `/bin`, `/lib`, and `/usr`, which allows for extensions which ship pre-compiled binaries to work with little to no additional nixification.
 
@@ -112,17 +140,11 @@ With , the editor launches inside a <a href="wikipedia:Filesystem_Hierarchy_Stan
 
 </div>
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
 ### NixOS
 
 ``` nix
 environment.systemPackages = with pkgs; [ vscode.fhs ];
 ```
-
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
 
 ### Home Manager
 
@@ -133,11 +155,11 @@ programs.vscode = {
 };
 ```
 
-</div>
-
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
 Adding extension-specific dependencies, these will be added to the FHS environment:
+
+</div>
 
 ``` nix
 # needed for rust lang server and rust-analyzer extension
@@ -151,11 +173,13 @@ programs.vscode.package = pkgs.vscode.fhsWithPackages (
 );
 ```
 
-</div>
-
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
 ## Insiders Build
+
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
 
 If you need to test a recent code change, you can run the insiders build. It is designed to run alongside the main build, with a separate `code-insiders` command and a different config path, so you can leave your main VS Code instance installed/running.
 
@@ -167,8 +191,6 @@ The following derivation builds a package with the latest insiders build (on Nix
 
 </div>
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
 ``` nix
 (pkgs.vscode.override { isInsiders = true; }).overrideAttrs (oldAttrs: rec {
   src = (builtins.fetchTarball {
@@ -176,14 +198,10 @@ The following derivation builds a package with the latest insiders build (on Nix
     sha256 = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
   });
   version = "latest";
-</div>
 
-  <div lang="en" dir="ltr" class="mw-content-ltr">
-buildInputs = oldAttrs.buildInputs ++ [ pkgs.krb5 ];
+  buildInputs = oldAttrs.buildInputs ++ [ pkgs.krb5 ];
 });
 ```
-
-</div>
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
@@ -194,6 +212,10 @@ buildInputs = oldAttrs.buildInputs ++ [ pkgs.krb5 ];
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
 ### Updating insiders placeholder `sha256`
+
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
 
 You will need to update the placeholder `sha256` value for each new Insiders build.
 
@@ -221,15 +243,19 @@ Put an arbitrary placeholder value in the `sha256` field, try to build and you'l
 
 #### For `sha256:`
 
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
 Example:
+
+</div>
 
     //-- ...
            error: hash mismatch in file downloaded from 'https://code.visualstudio.com/sha/download?build=insider&os=linux-x64':
              specified: sha256:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
              got:       sha256:16fzxqs6ql4p2apq9aw7l10h4ag1r7jwlfvknk5rd2zmkscwhn6z
     //-- ...
-
-</div>
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
@@ -247,15 +273,19 @@ Resulting: "`16fzxqs6ql4p2apq9aw7l10h4ag1r7jwlfvknk5rd2zmkscwhn6z`"
 
 ##### For `sha256-`
 
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
 Example:
+
+</div>
 
     //-- ...
             error: hash mismatch in fixed-output derivation '/nix/store/path':
              specified: sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
                 got:    sha256-aQvTtZdPU2F1UjkFxiLs4A+60A4qc9bXKwKriNsCDPg=
     //-- ...
-
-</div>
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
@@ -269,15 +299,11 @@ Then, run the following python script:
 
 </div>
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
 ``` python
 import base64
 text = b'aQvTtZdPU2F1UjkFxiLs4A+60A4qc9bXKwKriNsCDPg=' # Replace the string in between ' with the according hash
 print(base64.decodebytes(text).hex())
 ```
-
-</div>
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
@@ -289,13 +315,21 @@ Its output should be pasted in your placeholder `sha256` value
 
 ## Creating development environments using nix-shell
 
-Instead of using configuration.nix to add packages (e.g. Python or NodeJS) for developing code on VSCode, you can instead use nix-shell. This will allow you to seamlessly create development environments with the correct packages for your project, without rebuilding and restarting NixOS. See <a href="Development_environment_with_nix-shell" class="wikilink" title=" this page"> this page</a> for further instructions in building nix-shell development environments.
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
+
+Instead of using configuration.nix to add packages (e.g. Python or NodeJS) for developing code on VSCode, you can instead use nix-shell. This will allow you to seamlessly create development environments with the correct packages for your project, without rebuilding and restarting NixOS. See <a href="Special:MyLanguage/Development_environment_with_nix-shell" class="wikilink" title="this page">this page</a> for further instructions in building nix-shell development environments.
 
 </div>
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
 ### Automatically switch nix shells when switching projects
+
+</div>
+
+<div lang="en" dir="ltr" class="mw-content-ltr">
 
 You can do this by using [nix-direnv](https://github.com/nix-community/nix-direnv) and [the VSCode extension direnv](https://marketplace.visualstudio.com/items?itemName=mkhl.direnv) for integration. View the nix-direnv github page linked for a guide on setting it up.
 
@@ -305,15 +339,15 @@ You can do this by using [nix-direnv](https://github.com/nix-community/nix-diren
 
 ### Alternative for manually switching shells
 
-The extension [nix-env-selector](https://marketplace.visualstudio.com/items?itemName=arrterian.nix-env-selector) will make switching between different nix-shell environments within VSCode so you can switch between different coding projects easily and manually. It has a guide for setting up nix-shell environments for VSCode.
-
 </div>
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
-## Wayland
+The extension [nix-env-selector](https://marketplace.visualstudio.com/items?itemName=arrterian.nix-env-selector) will make switching between different nix-shell environments within VSCode so you can switch between different coding projects easily and manually. It has a guide for setting up nix-shell environments for VSCode.
 
 </div>
+
+## Wayland
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
@@ -323,7 +357,7 @@ To make sure VSCode runs on Wayland native instead of Xwayland, you can make it 
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
-See <a href="Wayland#Electron_and_Chromium" class="wikilink" title="Wayland#Electron and Chromium">Wayland#Electron and Chromium</a>
+See <a href="Special:MyLanguage/Wayland#Electron_and_Chromium" class="wikilink" title="this">this</a>.
 
 </div>
 
@@ -343,18 +377,20 @@ The Nixpkgs vscode extensions directory contains [a script](https://github.com/N
 
 To run it in your current directory:
 
-``` console
-curl -fsSL https://raw.githubusercontent.com/NixOS/nixpkgs/master/pkgs/applications/editors/vscode/extensions/update_installed_exts.sh | sh
-```
-
 </div>
+
+``` console
+$ curl -fsSL https://raw.githubusercontent.com/NixOS/nixpkgs/master/pkgs/applications/editors/vscode/extensions/update_installed_exts.sh | sh
+```
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
 ### Example output
 
+</div>
+
 ``` console
-curl -fsSL https://raw.githubusercontent.com/NixOS/nixpkgs/master/pkgs/applications/editors/vscode/extensions/update_installed_exts.sh | sh
+$ curl -fsSL https://raw.githubusercontent.com/NixOS/nixpkgs/master/pkgs/applications/editors/vscode/extensions/update_installed_exts.sh | sh
 { extensions = [
   {
     name = "project-manager";
@@ -371,8 +407,6 @@ curl -fsSL https://raw.githubusercontent.com/NixOS/nixpkgs/master/pkgs/applicati
 ];
 }
 ```
-
-</div>
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
@@ -398,27 +432,21 @@ The remote-ssh extension works by connecting to a remote host and downloading sc
 
 </div>
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
 #### nix-vscode-server
 
-</div>
-
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
-Note that nix-vscode-server works as of 8/21/21 but is occasionally broken (See <https://github.com/msteen/nixos-vscode-server/pull/3>, <https://github.com/msteen/nixos-vscode-server/pull/4>, <https://github.com/msteen/nixos-vscode-server/pull/5>). Here's a workaround: Install the `nodejs-16_x` package on the NixOS host, and then run the following nix-shell script:
+Note that nix-vscode-server works as of 8/21/21 but is occasionally broken (See [1](https://github.com/msteen/nixos-vscode-server/pull/3), [2](https://github.com/msteen/nixos-vscode-server/pull/4), [3](https://github.com/msteen/nixos-vscode-server/pull/5)). Here's a workaround: Install the `nodejs-16_x` package on the NixOS host, and then run the following nix-shell script:
+
+</div>
 
 ``` haskell
 #! /usr/bin/env nix-shell
 #! nix-shell --pure -i runghc -p "haskellPackages.ghcWithPackages (pkgs: [ pkgs.turtle ])"
-</div>
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
 {-# LANGUAGE OverloadedStrings #-}
 import Turtle
-</div>
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
 main = sh $ do
   homedir <- home
   subdir <- ls $ homedir </> ".vscode-server/bin/"
@@ -433,27 +461,17 @@ main = sh $ do
       echo ("Already fixed " <> repr subdir)
 ```
 
-</div>
-
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
-If instead you'd prefer to fix the binaries manually and have to do so every time that you upgrade your VS Code version, then you can install the `nodejs-16_x` package on the NixOS host and replace the VS Code provided version. This workaround is described here: <https://github.com/microsoft/vscode-remote-release/issues/648#issuecomment-503148523>. Note that NodeJS needs to be updated according to VS Code upstream requirements (NodeJS 16 required from 4/2022).
+If instead you'd prefer to fix the binaries manually and have to do so every time that you upgrade your VS Code version, then you can install the `nodejs-16_x` package on the NixOS host and replace the VS Code provided version. This workaround is described [here](https://github.com/microsoft/vscode-remote-release/issues/648#issuecomment-503148523). Note that NodeJS needs to be updated according to VS Code upstream requirements (NodeJS 16 required from 4/2022).
 
 </div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
 
 #### nix-ld
-
-</div>
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
 Add the following settings to `configuration.nix` on the NixOS host
-
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
 
 </div>
 
@@ -495,15 +513,7 @@ As a workaround, search for the following text in all files under the directory 
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
 Replace it with
-
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
 
 </div>
 
@@ -515,15 +525,13 @@ Then restart VS Code and your VS Code client should be able to connect to NixOS 
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
-See <https://github.com/nix-community/NixOS-WSL/issues/222> for the discussion about `wsl --exec` issue on NixOS-WSL. See <https://github.com/microsoft/vscode-remote-release/issues/8305#issuecomment-1661396267> about the workaround.
+See [this](https://github.com/nix-community/NixOS-WSL/issues/222) for the discussion about `wsl --exec` issue on NixOS-WSL. See [this](https://github.com/microsoft/vscode-remote-release/issues/8305#issuecomment-1661396267) about the workaround.
 
 </div>
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
+<span id="Troubleshooting"></span>
 
-## Troubleshooting
-
-</div>
+## 故障排除
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
@@ -533,15 +541,11 @@ See <https://github.com/nix-community/NixOS-WSL/issues/222> for the discussion a
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
-If you get an error similar to the following, enable a <a href="Secret_Service" class="wikilink" title="Secret Service">Secret Service</a> provider.
+If you get an error similar to the following, enable a <a href="Special:MyLanguage/Secret_Service" class="wikilink" title="Secret Service">Secret Service</a> provider.
 
 </div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
 
     Writing login information to the keychain failed with error 'The name org.freedesktop.secret was not provided by any .service files'.
-
-</div>
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
@@ -549,14 +553,10 @@ If you get an error similar to the following, enable a <a href="Secret_Service" 
 
 </div>
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
 > Server did not start successfully. Full server log at /home/user/.vscode-server/.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.log  
 >   
 > server log:  
 > /home/user/.vscode-server/bin/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/bin/code-server: line 12: /home/user/.vscode-server/bin/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/node: No such file or directory
-
-</div>
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
@@ -564,11 +564,9 @@ If you get an error similar to the following, enable a <a href="Secret_Service" 
 
 </div>
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-    ldd ~/.vscode-server/bin/*/node
-
-</div>
+``` console
+$ ldd ~/.vscode-server/bin/*/node
+```
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
@@ -576,11 +574,9 @@ try to run the node binary on the server
 
 </div>
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-    ~/.vscode-server/bin/*/node
-
-</div>
+``` console
+$ ~/.vscode-server/bin/*/node
+```
 
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
@@ -588,13 +584,9 @@ if this fails, install node version 16, and try to patch the node binary
 
 </div>
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-    nix-env -iA nixos.nodejs-16_x
-
-</div>
-
-<div lang="en" dir="ltr" class="mw-content-ltr">
+``` console
+$ nix-env -iA nixos.nodejs-16_x
+```
 
 ``` bash
 #! /bin/sh
@@ -611,8 +603,6 @@ else
 fi
 ```
 
-</div>
-
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
 ### Timeout
@@ -625,17 +615,13 @@ If you're using fish or other shell, set this in the user settings JSON on the c
 
 </div>
 
-<div lang="en" dir="ltr" class="mw-content-ltr">
-
-``` bash
+``` json
 "remote.SSH.useLocalServer": false
 ```
 
-</div>
-
 <div lang="en" dir="ltr" class="mw-content-ltr">
 
-See <https://github.com/microsoft/vscode-remote-release/issues/2509> and <https://github.com/nix-community/nixos-vscode-server/issues/18>
+See [4](https://github.com/microsoft/vscode-remote-release/issues/2509) and [5](https://github.com/nix-community/nixos-vscode-server/issues/18)
 
 </div>
 

@@ -130,4 +130,8 @@ The procedure depends on how you configure internet:
 
     You might need to wait a one or two minutes as `systemd-timesyncd` may try to load other ntp servers, timeout, and then try the new NTP server.
 
+## See also
+
+- <a href="Ntpd-rs" class="wikilink" title="Ntpd-rs">Ntpd-rs</a>, a Rust implementation of NTP with NTS (Network Time Security) protocol support.
+
 <a href="Category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="Category:Cookbook" class="wikilink" title="Category:Cookbook">Category:Cookbook</a>
