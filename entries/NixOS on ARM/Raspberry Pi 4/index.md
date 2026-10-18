@@ -69,6 +69,23 @@ The Pi 4 profile imports the following options, all disabled by default. Each pa
 
 The exact option definitions are in the [Pi 4 profile directory](https://github.com/NixOS/nixos-hardware/tree/master/raspberry-pi/4). Some options apply only to the Pi 4B and exclude Compute Module variants.
 
+An example to disable the red power LED[1](https://forums.raspberrypi.com/viewtopic.php?t=339341) once the system has booted is as follows:
+
+``` nix
+hardware.raspberry-pi.configtxt.settings = {
+    all = {
+      dtparam = [
+        "pwr_led_activelow=off"
+      ];
+      dtoverlay = [
+        #"vc4-kms-v3d"
+        #"vc4-fkms-v3d"
+        #"rpivid-v4l2"
+      ];
+    };
+  };
+```
+
 ### Device-tree overlay limitation
 
 These optional modules use `hardware.deviceTree.overlays`, while `hardware.raspberry-pi.configtxt.settings` uses a separate firmware-time mechanism. The mechanisms can conflict. See <a href="NixOS_on_ARM/Raspberry_Pi#Kernels_and_device_trees" class="wikilink" title="Kernels and device trees">Kernels and device trees</a>. [nixos-hardware issue \#1946](https://github.com/NixOS/nixos-hardware/issues/1946) tracks the migration.

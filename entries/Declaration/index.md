@@ -8,7 +8,7 @@ See also [the manual](https://nixos.org/nixos/manual/index.html#sec-option-decla
 
 # Option attributes
 
-Options are declared with the `mkOption` function which is provided by the Nix package collection library (`pkgs.lib` attribute set). An option declaration may contain the following attributes:
+Options are declared with the [`mkOption`](https://noogle.dev/f/lib/mkOption/) function which is provided by the Nix package collection library (`pkgs.lib` attribute set). An option declaration may contain the following attributes:
 
 - `name` `(string)`: This attribute is by default set to the location of the option. The name is used in error messages and in the generated manual.
 - `default` `('t)`: The value used when no definitions are provided.
@@ -25,15 +25,17 @@ An option can be declared in multiple modules, with one condition which is that 
 
 The evaluation is done with the following piece of code where `opt` is the option declaration. You can find this piece of code inside [`lib/modules.nix`](https://github.com/NixOS/nixpkgs/blob/eb7a17a1cfc158b87e6d349f1fcc550761d122b9/lib/modules.nix#L154-L186).
 
-          merged =
-            if defsFinal == [] then
-              throw "The option `${showOption loc}' is used but not defined."
-            else
-              fold (def: res:
-                if opt.type.check def.value then res
-                else throw "The option value `${showOption loc}' in `${def.file}' is not a ${opt.type.name}.")
-                (opt.type.merge loc defsFinal) defsFinal;
-          value = (opt.apply or id) merged; 
+``` nix
+      merged =
+        if defsFinal == [] then
+          throw "The option `${showOption loc}' is used but not defined."
+        else
+          fold (def: res:
+            if opt.type.check def.value then res
+            else throw "The option value `${showOption loc}' in `${def.file}' is not a ${opt.type.name}.")
+            (opt.type.merge loc defsFinal) defsFinal;
+      value = (opt.apply or id) merged; 
+```
 
 The `apply` function is replaced by the identity function and the `merge` function is replaced by the [`mergeDefaultOption`](https://github.com/NixOS/nixpkgs/blob/785eaf2cea3c57daef96bb209f44589e3f48a7ff/lib/options.nix#L34-L43) function if they are not defined.
 
@@ -41,13 +43,15 @@ The `apply` function is replaced by the identity function and the `merge` functi
 
 Types are used to ensure the correctness of definitions and to provide a way to merge the definitions. All common types are available in [`lib/types.nix`](https://github.com/NixOS/nixpkgs/blob/master/lib/types.nix). To declare a type you have to write something like:
 
-    with lib;
-    services.fooBar.option = mkOption {
-      type = with types; uniq str;
-      description = "
-        ...
-      ";
-    };
+``` nix
+with lib;
+services.fooBar.option = mkOption {
+  type = with types; uniq str;
+  description = "
+    ...
+  ";
+};
+```
 
 The `check` function provided by the type can be a source of strictness, but this is rare because most of the time checked option definitions are fully used by the merge function.
 

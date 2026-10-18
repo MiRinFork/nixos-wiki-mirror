@@ -4,11 +4,11 @@
 
 ## Fix for crash while running under GNOME
 
-As of NixOS 26.05, there is an issue with Kdenlive (version 26.04 as of time of writing) while running under GNOME, where Kdenlive will crash whenever a filepicker dialog is supposed to be opened along the lines of "<bdi>Settings schema 'org.gtk.Settings.FileChooser' is not installed</bdi>."
+As of NixOS 26.05, there is an issue with Kdenlive (version 26.04 as of time of writing) while running under <a href="GNOME" class="wikilink" title="GNOME">GNOME</a>, where Kdenlive will crash whenever a file picker dialog is opened, logging an error message of "<bdi>Settings schema 'org.gtk.Settings.FileChooser' is not installed</bdi>".
 
-[This has been reported on Github](https://github.com/NixOS/nixpkgs/issues/469503), with no fix at time of writing this article. However, you can work around this crash by using a nixpkgs overlay.
+[This has been reported on Github](https://github.com/NixOS/nixpkgs/issues/469503), with no fix at the time of writing this article. However, you can work around this crash by using a nixpkgs overlay.
 
-To work around this issue, add/append the following to you Nix/NixOS configuration file accordingly:
+To fix this crash, add the following to your configuration file:
 
 ``` nixos
 # kdenlive-fix.nix

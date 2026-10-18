@@ -216,6 +216,45 @@ networking.firewall = {
 
 [The original package request has good discussions as well](https://github.com/NixOS/nixpkgs/issues/17879)
 
+### wayvnc
+
+A wayvnc + vncviewer combination works well with wlroots-based compositors.
+
+#### Examples
+
+Connecting to a logged-in **labwc** host with VNC over an SSH tunnel:
+
+`ssh -f -L 5901:localhost:5901 user@address 'pkill wayvnc; export WLR_BACKENDS=headless && export WLR_LIBINPUT_NO_DEVICES=1 && export WAYLAND_DISPLAY=wayland-0 && wayvnc -v localhost 5901' && sleep 3 && vncviewer localhost:5901 -MenuKey=Home -FullScreen=0`
+
+Improved performance by using VNC over a WireGuard tunnel (where the tunnel is running on a 172.16.1.0/24 subnet) to a **sway** session:
+
+`ssh -f user@172.16.1.1 'pkill wayvnc; export WLR_BACKENDS=headless && export WLR_LIBINPUT_NO_DEVICES=1 && export WAYLAND_DISPLAY=wayland-1 && wayvnc -v 172.16.1.1 5902' && sleep 3 && vncviewer 172.16.1.1:5902 -MenuKey=Home -FullScreen=0`
+
+Note that `WAYLAND_DISPLAY` will likely be `wayland-0` for labwc, and `wayland-1` for sway. The latter (vncviewer) part of each command can be split off into a separate looped script to prompt the user for reconnections. For example:
+
+``` bash
+#!/bin/bash
+
+while true; do
+echo -e "\nvncviewer 172.16.1.1:5902 -MenuKey=Home -FullScreen=0"
+echo
+
+echo -n "[Enter] to connect again. Any other input to exit: "
+read choice
+echo
+
+case $choice in
+     "")
+     vncviewer 172.16.1.1:5902 -MenuKey=Home -FullScreen=0
+     ;;
+     *)
+     echo "Exited."
+     break
+     ;;
+esac
+done
+```
+
 ## RDP
 
 ### XRDP

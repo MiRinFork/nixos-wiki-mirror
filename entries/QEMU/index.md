@@ -12,7 +12,10 @@ To install the main QEMU program system-wide, add the following to your `configu
 
 ``` nix
 environment.systemPackages = [
+  # All architectures
   pkgs.qemu
+  # Only x86_64 and aarch64
+  # pkgs.qemu_kvm
 ];
 ```
 

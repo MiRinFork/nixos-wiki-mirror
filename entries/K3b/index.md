@@ -51,7 +51,7 @@ services.udev.extraRules = ''
 
 `MODE="0660"` sets read/write permissions to the device for the owner and `cdrom` group
 
-**<u>For the udev rules to apply, your computer needs to be reboot.</u>**
+**<u>For the udev rules to apply, your computer needs to reboot.</u>**
 
 ## Post-Installation
 

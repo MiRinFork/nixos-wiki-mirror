@@ -31,7 +31,9 @@ cache.example.org-1:OpYa6vJWzsPVKR3gAuOq5KV3+/4ydCpoZ4yF3KVa09E=
 
 ### Auto-signing
 
-To automatically sign store paths after building, you need to configure the Nix option with the path of the private key. Here is how you do it on NixOS: And here on non-NixOS:
+To automatically sign store paths after building, you need to configure the Nix option with the absolute path of the private key. Don't use \`~\` in the path, it'll work for many things (nixos-rebuild, etc) but not other things (nix run, etc).
+
+Here is how you do it on NixOS: And here on non-NixOS:
 
 ### Signing already-built store paths
 

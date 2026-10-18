@@ -15,7 +15,7 @@ services.vernissage = {
     settings.baseAddress = "https://vernissage.example.com";
   };
   web.enable = true;
-}
+};
 ```
 
 ## Configuration
@@ -39,7 +39,7 @@ services.vernissage.api.settings = {
   s3SecretAccessKey._secret = pkgs.writeText "vernissage-s3-secret" ''
     KEY-SECRET
   '';
-}
+};
 ```
 
 ### WebPush
@@ -134,18 +134,46 @@ services.garage = {
 #### Setup
 
 1.  Follow the upstream [Quick Start guide](https://garagehq.deuxfleurs.fr/documentation/quick-start/#creating-a-cluster-layout) to setup your node(s), the S3 bucket and a keypair.
-2.  Enable exposition as a website with `sudo garage -c /etc/garage.toml bucket website --allow vernissage`
-3.  Optionally set a bucket quota through `sudo garage -c /etc/garage.toml bucket set-quotas --max-size 25GiB vernissage`
+2.  Enable exposition as a website with `garage bucket website --allow vernissage`
+3.  Optionally set a bucket quota through `garage bucket set-quotas --max-size 25GiB vernissage`
 
 #### Reverse proxy configuration (until anonymous HTTP access is possible)
 
 Until support for anonymous HTTP access is there ([upstream PR](https://git.deuxfleurs.fr/Deuxfleurs/garage/pulls/1306)) you need configure your reverse proxy to redirect unauthenticated file requests to <a href="Garage" class="wikilink" title="Garage">Garage</a>’s web backend.
 
 ``` nix
-services.nginx.virtualHosts."s3.garage.example.com".locations."~ \/vernissage\/(.*\.jpg)" = {
-proxyPass = "http://127.0.0.1:3902/$1";
+services.nginx.appendHttpConfig = lib.mkAfter ''
+  map "$http_content_type:$http_accept" $vernissage_machine {
+    default "127.0.0.1:4200";
+    ~*json  "127.0.0.1:8080";
+  }
+  # Choose the right endpoint for Garage
+  map $request_method $garage_endpoint {
+    default "127.0.0.1:3900$request_uri";
+    GET     "127.0.0.1:3902/$key$is_args$args";
+    HEAD    "127.0.0.1:3902/$key$is_args$args";
+  }
+'';
+
+locations."~ ^/vernissage/(?<key>.+\\.jpg)$" = {
+  recommendedProxySettings = false;
+  proxyPass = "http://$garage_endpoint";
   extraConfig = ''
-    proxy_set_header Host "vernissage.web.garage.example.com"
+    set $host_header $http_host;
+    if ($request_method ~ ^(GET|HEAD)$ ) {
+      set $host_header "vernissage.web.garage.example.com";
+    }
+    proxy_set_header Host $host_header;
+
+    # Disable buffering to a temporary file.
+    proxy_max_temp_file_size 0;
+
+    # Set remaining recommended proxy settings
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Forwarded-Server $hostname;
   '';
 };
 ```

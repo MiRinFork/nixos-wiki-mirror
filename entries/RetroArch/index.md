@@ -16,7 +16,7 @@ A RetroArch installation can be customized via different packages:
 
 Using `retroarch.withCores`:
 
-One can browse the available cores [here](https://github.com/NixOS/nixpkgs/tree/master/pkgs/applications/emulators/libretro)
+One can browse the available cores \[<https://search.nixos.org/packages?query=libretro>.\* here\].
 
 ## Troubleshooting
 

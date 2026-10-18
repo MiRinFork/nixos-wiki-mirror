@@ -42,6 +42,14 @@ nmcli -f NAME,TYPE,ACTIVE c s | grep eduroam
 sudo journalctl -u NetworkManager -f
 ```
 
+## Re-Exporting Certificate Bundles for use on Android
+
+If your institution uses TLS authentication and you have an Android device that is not supported by the relevant BYOD enrollment application, you can provision certificates on a different device that is supported, and copy them over manually. However, as Android does not support recent ciphers in PKCS#12 certificate bundles[^2] , they must be re-exported using legacy ciphers. This can be done with Openssl using the private key and certificate components;
+
+``` console
+openssl pkcs12 -export -legacy -out bundle.p12 -inkey private.key -in certificate.pem
+```
+
 ## See also
 
 - <a href="wpa_supplicant#eduroam" class="wikilink" title="wpa_supplicant#eduroam">wpa_supplicant#eduroam</a>
@@ -61,3 +69,5 @@ sudo journalctl -u NetworkManager -f
 <a href="Category:Networking" class="wikilink" title="Category:Networking">Category:Networking</a>
 
 [^1]: <https://eduroam.org/what-is-eduroam/>
+
+[^2]: <https://stackoverflow.com/a/74523684>

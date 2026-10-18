@@ -2,7 +2,7 @@
 
 <!-- Source page: Error handling -->
 
-This page is a collection of facilities and tools from nix, nixpkgs and NixOS for error handling and debugging. You can use them to convey configuration errors to users or to debug nix expressions trough interactive or print debugging.
+This page is a collection of facilities and tools from <a href="Nix_(package_manager)" class="wikilink" title="nix">nix</a>, <a href="nixpkgs" class="wikilink" title="nixpkgs">nixpkgs</a> and <a href="NixOS" class="wikilink" title="NixOS">NixOS</a> for error handling and debugging. You can use them to convey configuration errors to users or to debug nix expressions trough interactive or print debugging.
 
 In most cases you will want to stick to the highest level abstraction: `config.warnings` or `lib.warn` and its relatives.
 
@@ -11,10 +11,10 @@ In most cases you will want to stick to the highest level abstraction: `config.w
 # in any nix code:
 lib.warn "This is a sample warning message."
 {
-    config.warnings = (
-      # Some NixOS module: throw error, if services.foo.bar == true
-      lib.optionals config.services.foo.bar "This is also a sample warning message, but invoked differently."
-    );
+  config.warnings = (
+    # Some NixOS module: throw error, if services.foo.bar == true
+    lib.optionals config.services.foo.bar "This is also a sample warning message, but invoked differently."
+  );
 }
 ```
 
@@ -41,7 +41,7 @@ a = builtins.trace "trace message" {
 };
 ```
 
-Commonly, assert is combined with throw to generate meaningful error messages: `assert condition || throw "message";`. This pattern is essentially how `lib.assertMsg` works (see Sec. nixpkgs). [^1]
+Commonly, assert is combined with throw to generate meaningful error messages: `assert condition || throw "message";`. This pattern is essentially how [`lib.assertMsg`](https://noogle.dev/f/lib/assertMsg/) works (see Sec. nixpkgs). [^1]
 
 ## nixpkgs
 
@@ -72,9 +72,9 @@ To summarise debugging approaches discussed in this article, you can use `break`
 
 To find the location where variables get defined, you can use the following tools:
 
-For bare nix code, use `builtins.unsafeGetAttrPos` ([example](https://github.com/NixOS/nix/blob/b17c4290cf61d8a0386817b87231762c175097c5/tests/lang/eval-okay-getattrpos.nix)) which returns the line and column of where an attribute is defined. It is undocumented and considered bad practice.
+For bare nix code, use [`builtins.unsafeGetAttrPos`](https://noogle.dev/f/builtins/unsafeGetAttrPos/) ([example](https://github.com/NixOS/nix/blob/b17c4290cf61d8a0386817b87231762c175097c5/tests/lang/eval-okay-getattrpos.nix)) which returns the line and column of where an attribute is defined. It is undocumented and considered bad practice.
 
-(soon to come [github PR](https://github.com/NixOS/nixpkgs/pull/249243)): For NixOS options unsafeGetAttrPos doesn't work, but the module system itself records that information: to find the location of `config.networking.hostName`, use `:p options.networking.hostName.declarationPositions`.
+For NixOS options `unsafeGetAttrPos` doesn't work, but the module system itself records that information: to find the location of , use `:p options.networking.hostName.declarationPositions`.
 
 ## References
 

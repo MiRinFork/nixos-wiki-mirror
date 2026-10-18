@@ -418,8 +418,8 @@ it is not possible to just override `cargoHash`, instead cargoDeps has to be ove
 
 ``` nix
 final: prev: {
-  rnix-lsp = prev.rnix-lsp.overrideAttrs (oldAttrs: rec {
-    version = "master";
+  rnix-lsp = prev.rnix-lsp.overrideAttrs rec {
+    version = "0-unstable-2021-07-18";
   
     src = prev.fetchFromGitHub {
       owner = "nix-community";
@@ -428,12 +428,11 @@ final: prev: {
       hash = "sha256-w0hpyFXxltmOpbBKNQ2tfKRWELQzStc/ho1EcNyYaWc=";
     };
   
-    cargoDeps = oldAttrs.cargoDeps.overrideAttrs (lib.const {
-      name = "rnix-lsp-vendor.tar.gz";
+    cargoDeps = prev.rustPlatform.fetchCargoVendor {
       inherit src;
       outputHash = "sha256-6ZaaWYajmgPXQ5sbeRQWzsbaf0Re3F7mTPOU3xqY02g=";
-    });
-  });
+    };
+  };
 }
 ```
 

@@ -42,8 +42,6 @@ It aims to be a drop-in replacement of the original GNU diffutils commands
 
 To do a systemwide replacement of gnu utils with uutils you can use system.replaceDependencies.
 
-*Warning: as of February 2026 this seems to break nixos-rebuild, as uutils mv uses an interactive prompt where coreutils don't ([uutils/coreutils#11321](https://github.com/uutils/coreutils/issues/11321))*
-
 It should be noted that the name of the dependency is hardcoded in the binaries, therefore the name of the replacing dependency needs to have exactly the same length as the name of the source dependency. To do this declaratively this snippet should be added to your configs:
 
 This is of course still quite a hacky solution, as the name of the resulting binaries will simply be padded with the char '\_'. A better solution might be found in the future.

@@ -256,6 +256,21 @@ Undervoltage can cause storage errors, USB resets, display failures, or unexpect
 
 `Starting kernel ...` is normally the last message printed by U-Boot. If the system continues to boot without visible kernel messages, check the kernel `console=` parameters. Add `console=tty0` for display output or configure the serial console used by the board.
 
+### YouTube playback issues
+
+As of 2026, the entire Raspberry Pi line-up has limited hardware video decoding support[1](https://mayaposch.wordpress.com/2024/04/08/the-tragicomedy-of-linux-raspberry-pi-and-hardware-accelerated-video-on-non-x86-platforms/)[2](https://www.tomshardware.com/raspberry-pi/tested-os-update-solves-raspberry-pis-age-old-youtube-frame-rate-problem)[3](https://forums.raspberrypi.com/viewtopic.php?t=357870). Chromium browser extensions such as h264ify or enhanced-h264ify can be used as practical workarounds.[4](https://www.reddit.com/r/raspberry_pi/comments/r7kpk8/will_we_ever_get_full_gpu_rendering_on_rpi_gpu/) These can be declaratively added[5](https://wiki.nixos.org/wiki/Chromium#Natively_Supported_Policies) as per the following example in `configuration.nix`:
+
+``` nixos
+  programs.chromium = {
+    enable = true;
+    extensions = [
+      "ddkjiahejlhfcafbddmgiahcphecmpfh;https://clients2.google.com/service/update2/crx" # uBlock Origin Lite
+      "omkfmpieigblcllmkgbflkikinpkodlk;https://clients2.google.com/service/update2/crx" # enhanced-h264ify
+      # "aleakchihdccplidncghkekgioiakgal;https://clients2.google.com/service/update2/crx" # h264ify
+    ];
+  };
+```
+
 ## Alternative implementations
 
 The [nvmd/nixos-raspberrypi](https://github.com/nvmd/nixos-raspberrypi) project is a separate community implementation for Zero 2 W and Raspberry Pi 3, 4, and 5. It publishes images and a binary cache. Its direct firmware-to-kernel boot path uses matched kernel and firmware bundles. Pi 5-specific modules include separate VC4 and RP1 display paths. Its module API and bootloader are not part of Nixpkgs or `nixos-hardware`.
