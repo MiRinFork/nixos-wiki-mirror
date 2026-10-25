@@ -43,7 +43,7 @@ The driver installer the Steam client offers for this adapter is the Windows dri
 
 6 GHz is disabled under the world regulatory domain (country `00`). only installs `regulatory.db`; it does not select a country. Without one, the phy does not list 5945–6425 MHz. `cfg80211` is a module, so a kernel command-line parameter is applied too early. Set the country in modprobe config (replace `DE`):After rebooting into the new kernel, plug the adapter into a USB 3 port and confirm the driver bound:`lsusb -d 28de:2432` should show a Realtek "802.11ax WLAN Adapter", and the kernel log should show `rtw89_8852cu` loading `rtw89/rtw8852c_fw-2.bin`. A line about 2.4 GHz preferring a USB 2 port is a stock hint about USB 3 interference on that band. It does not mean the 6 GHz link failed. With a country code set, the phy lists 6 GHz and the interface can scan.
 
-Users must also be added to the `networkmanager` group for Steam to manage the wireless adapter.
+If your configuration does not pull them in by default, `networkmanager` must be installed and the `iw` utility must be in your path. Users must also be added to the `networkmanager` group for Steam to manage the wireless adapter.
 
 ## Troubleshooting
 

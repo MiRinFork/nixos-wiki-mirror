@@ -36,6 +36,26 @@ After the installation, you can set an admin user yourself via the following com
 sudo paperless-manage createsuperuser
 ```
 
+## Maintenance
+
+Paperless-ngx comes with some [management commands](https://docs.paperless-ngx.com/administration/#management-commands) that can be used for various maintenance tasks. On NixOS you can invoke these commands with `paperless-manage` in the following way:
+
+#### Export / Backup
+
+Creating backups of your data (incl. settings and database) can be configured and automated with [services.paperless.exporter](https://search.nixos.org/options?channel=unstable&query=services.paperless.exporter&type=options). If needed you can also manually trigger an export with `document_exporter`for example:
+
+    sudo -u paperless paperless-manage document_exporter /var/lib/paperless/export <arguments>
+
+#### Import
+
+The `document_importer` takes your previously created export and imports it into paperless:
+
+    sudo -u paperless paperless-manage document_importer /path/to/export <arguments>
+
+#### More commands
+
+Check [official documentation](https://docs.paperless-ngx.com/administration/#management-commands) for more management commands and further explanation.
+
 ## FAQ
 
 ### Why is Paperless being rebuilt from source, even if there is a version in the package cache?

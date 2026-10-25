@@ -42,6 +42,7 @@
 {{Configuration_Collection/line|@davidak's NixOS + home-manager config|https://codeberg.org/davidak/nixos-config}}
 {{Configuration_Collection/line|@davidtwco NixOS & home-manager config|https://github.com/davidtwco/veritas}}
 {{Configuration_Collection/line|@dieracdelta's NixOS + home-manager config|https://github.com/DieracDelta/flakes}}
+{{Configuration_Collection/line|@DPDmancul's literate flake config (NixOS + home-manager)|https://gitlab.com/DPDmancul/dotfiles}}
 {{Configuration_Collection/line|@drupol flake configs (NixOS + Home-Manager)|https://github.com/drupol/nixos-x260}}
 {{Configuration_Collection/line|@eisfunke's NixOS + home-manager + flake config|https://git.eisfunke.com/config/nixos}}
 {{Configuration_Collection/line|@FedericoSchonborn's NixOS + Nix on Droid + Home Manager config|https://codeberg.org/FedericoSchonborn/nixfiles}}

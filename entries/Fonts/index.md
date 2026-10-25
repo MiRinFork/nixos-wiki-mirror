@@ -137,7 +137,60 @@ Then `typst fonts` finds the installed fonts in the nix-shell. </translate>
 
 - <https://wiki.archlinux.org/title/Metric-compatible_fonts>
 
-<translate>== Troubleshooting == </translate>
+<translate>== Troubleshooting ==
+
+### Indic fonts like Bengali have rendering issues
+
+As of NixOS 26.05, Indic fonts, particularly Bengali, have severe rendering issue due to the fonts NixOS ships by default, coupled with the default fallback fonts upstream \`fontconfig\` defines. This issue has been covered in the following Github issue: <bdi>[nixos/modules/config/fonts: Bengali fonts have rendering issues with default font packages](https://github.com/NixOS/nixpkgs/issues/578274)</bdi>
+
+As a workaround, you can add the following to your \`configuration.nix\`:
+
+``` nixos
+fonts = {
+    enableDefaultPackages = false; # Pulls in GNU Freefonts which overrides Noto Sans
+    packages = [
+      # Install Noto fonts, covers Indic scripts like Bengali
+      pkgs.noto-fonts
+      
+      # Add any additional fonts you might want
+      # pkgs.noto-fonts-cjk-sans
+      # pkgs.noto-fonts-cjk-serif
+      # pkgs.noto-fonts-color-emoji
+      # pkgs.noto-fonts-monochrome-emoji
+    ];
+
+    fontconfig = {
+        # Overrides to set Noto fonts as the default unless overriden per-appllication
+        # also makes fontconfig choose them as default fallbacks
+      
+        defaultFonts = {
+        serif = [
+          "Noto Serif"
+          "Noto Serif Bengali" # Or any language(s) you prefer
+          # Any additional fonts you might want as fallback/defaults
+          # "Noto Serif CJK SC" "Noto Color Emoji"
+        ];
+        sansSerif = [
+          "Noto Sans"
+          "Noto Sans Bengali" # Or any language(s) you prefer
+          # Any additional fonts you might want as fallback/defaults
+          # "Noto Sans CJK SC" "Noto Color Emoji"
+        ];
+        monospace = [
+          "Noto Sans Mono"
+          # Any additional fonts you might want as fallback/defaults
+          # "Noto Sans Mono CJK SC" "Noto Color Emoji"
+        ];
+        emoji = [
+          # Any additional fonts you might want as fallback/defaults
+          # "Noto Color Emoji" "Noto Emoji"
+        ];
+      };
+    };
+};
+```
+
+</translate>
 
 <translate>=== What font names can be used in `fonts.fontconfig.defaultFonts.monospace`? === </translate>
 

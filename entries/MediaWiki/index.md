@@ -2,7 +2,7 @@
 
 <!-- Source page: MediaWiki -->
 
-[](https://mediawiki.org/) (<a href="wikipedia:en:{{PAGENAME}}" class="wikilink" title="wikipedia:en:{{PAGENAME}}">wikipedia:en:{{PAGENAME}}</a>) is available as a <a href="module" class="wikilink" title="module">module</a>.
+[](https://mediawiki.org/)<a href="category:PHP" class="wikilink" title="category:PHP">category:PHP</a> (<a href="wikipedia:en:{{PAGENAME}}" class="wikilink" title="wikipedia:en:{{PAGENAME}}">wikipedia:en:{{PAGENAME}}</a>) is available as a <a href="module" class="wikilink" title="module">module</a>.
 
 ## Configuration Examples
 

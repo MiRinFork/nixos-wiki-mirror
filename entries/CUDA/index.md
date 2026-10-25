@@ -35,7 +35,7 @@ let
 in
 (pkgs.buildFHSEnv {
   name = "cuda-env";
-  targetPkgs = pkgs: with pkgs; [ 
+  targetPkgs = pkgs: with pkgs; [
     git
     gitRepo
     gnupg
@@ -51,7 +51,7 @@ in
     nvidiaPackage
     libGLU libGL
     xorg.libXi xorg.libXmu freeglut
-    xorg.libXext xorg.libX11 xorg.libXv xorg.libXrandr zlib 
+    xorg.libXext xorg.libX11 xorg.libXv xorg.libXrandr zlib
     ncurses5
     stdenv.cc
     binutils
@@ -84,7 +84,7 @@ pkgs.mkShell {
      cudatoolkit nvidiaPackage
      libGLU libGL
      xorg.libXi xorg.libXmu freeglut
-     xorg.libXext xorg.libX11 xorg.libXv xorg.libXrandr zlib 
+     xorg.libXext xorg.libX11 xorg.libXv xorg.libXrandr zlib
      ncurses5 stdenv.cc binutils
    ];
    shellHook = ''
@@ -92,7 +92,7 @@ pkgs.mkShell {
       # export LD_LIBRARY_PATH=${nvidiaPackage}/lib:${pkgs.ncurses}/lib
       export EXTRA_LDFLAGS="-L/lib -L${nvidiaPackage}/lib"
       export EXTRA_CCFLAGS="-I/usr/include"
-   '';          
+   '';
 }
 ```
 
@@ -157,19 +157,43 @@ pkgs.mkShell {
 
 ## Setting up CUDA Binary Cache
 
-The binary cache contains pre-built CUDA packages. By adding it to your system, Nix will fetch these packages instead of building them, saving valuable time and processing power.
+CUDA binary caches provide pre-built CUDA packages. When a matching store path is available, Nix can download it instead of building the package locally, saving time and processing power.
 
 For more information, refer to the <a href="Binary_Cache#Using_a_binary_cache_Using_a_binary_cache" class="wikilink" title="Using a binary cache">Using a binary cache</a> page.
 
-### NixOS
+### NixOS CUDA cache
+
+#### NixOS
 
 Add the cache to `substituters` and `trusted-public-keys` inside your system configuration:
 
-### Non-NixOS
+#### Non-NixOS
 
 You have to add `substituters` and `trusted-public-keys` to `/etc/nix/nix.conf`:
 
 If your user is in `trusted-users`, you can also add the cache in your home directory:
+
+### Flox binary cache
+
+NVIDIA CUDA packages are generally <a href="Unfree_software" class="wikilink" title="unfree">unfree</a>, so `cache.nixos.org` does not normally provide pre-built store paths for them. The same constraint applies to CUDA-enabled packages whose closures depend on proprietary NVIDIA software. This includes packages such as PyTorch and MAGMA, which, because of their large transitive closures, typically require considerable time and resources to build.
+
+Flox is [one of the providers](https://discourse.nixos.org/t/nix-flox-nvidia-opening-up-cuda-redistribution-on-nix/69189) that NVIDIA works with to redistribute CUDA libraries and runtime packages. Flox also distributes PyTorch, MAGMA, and other CUDA-enabled packages whose Nix store closures include proprietary NVIDIA software. This agreement allows Flox to publish pre-built store paths that are not normally available from `cache.nixos.org`.
+
+Flox builds the [release-cuda jobset](https://github.com/nixos/nixpkgs/blob/master/pkgs/top-level/release-cuda.nix) and pushes the store paths to its public binary cache.
+
+| Cache URL | [`https://cache.flox.dev`](https://cache.flox.dev) |
+|----|----|
+| Public key | `flox-cache-public-1:7F4OyH7ZCnFhcze3fJdfyXYLQw/aV7GEed86nQ7IsOs=` |
+
+Which store paths are available in the cache depends on which Nixpkgs revisions Flox builds against. Flox currently evaluates and builds CUDA packages against revisions from its own Nixpkgs fork at [github.com/flox/nixpkgs](https://github.com/flox/nixpkgs). This repo tracks the upstream `nixos-unstable` branch across four Flox-maintained branches (`unstable`, `staging`, `stable`, and `lts`). These branch names describe *Flox's* Nixpkgs update schedules, *not* the stability of the software they reference. In general, Flox's `unstable` branch tracks upstream `nixos-unstable` most closely, sampling and updating on a daily schedule.
+
+Notably, Flox does not currently build against Nixpkgs <a href="Channel_branches" class="wikilink" title="release channels">release channels</a>, so users who pin to revisions from these channels are unlikely to get a cache hit from the Flox binary cache. Because different Nixpkgs revisions can produce different store paths for the same package, using a Nixpkgs revision that Flox builds against significantly increases the likelihood of a cache hit.
+
+#### NixOS
+
+#### Non-NixOS
+
+For more on configuring Nix to use the Flox binary cache, maximizing the likelihood of CUDA cache hits, and controlling which builds query the cache, see [CUDA packages in the Flox Catalog and binary cache](https://flox.dev/docs/concepts/cuda-catalog-and-cache) in Flox's documentation.
 
 ## Enabling CUDA In Packages
 

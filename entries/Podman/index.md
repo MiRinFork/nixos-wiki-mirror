@@ -121,7 +121,7 @@ For user-scoped registries you can do using <a href="Home_Manager" class="wikili
 
 Rootless Podman containers can be run using Home Manager's `services.podman` module
 
-Create a user to run the rootless container: Allow the new user to use Home Manager: Set up Home Manager configuration for the new user, e.g. in your `flakes.nix`: Set up the container using Home Manager's `services.podman` module. Ensure `${config.home.homeDirectory}/www` exists beforehand
+Create a user to run the rootless container: Allow the new user to use Home Manager: Set up Home Manager configuration for the new user, e.g. in your `flake.nix`: Set up the container using Home Manager's `services.podman` module. Ensure `${config.home.homeDirectory}/www` exists beforehand
 
 #### Limitations and quirks
 

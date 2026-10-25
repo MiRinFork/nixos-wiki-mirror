@@ -39,6 +39,14 @@ Tell Pipewire about the sink used by Snapcast.
 
 There is a new direct connection of Pipewire with Snapcast in the making. However, as of March 16, 2026, the version of Pipewire in Nixpkgs (1.4.X) does not support this new feature yet (available starting with Pipewire version 1.6.0).
 
+## Client Control
+
+To enable the TCP JSON-RPC for client control, use the following option.
+
+``` nix
+services.snapserver.settings.tcp-control.enabled = true;
+```
+
 ## Playback
 
 To have local audio synced up with remote clients it needs to be routed through a local snapclient instance.
@@ -56,5 +64,9 @@ To have local audio synced up with remote clients it needs to be routed through 
     };
   };
 ```
+
+## References
+
+More options here: [NixOS Search: services.snapserver](https://search.nixos.org/options?query=services.snapserver&type=options)
 
 <a href="Category:Audio" class="wikilink" title="Category:Audio">Category:Audio</a>

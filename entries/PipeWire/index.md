@@ -192,6 +192,52 @@ This is especially convenient if the user has a multi-channel (8+, or something 
   };
 ```
 
+### Combined sinks
+
+A combined sink (to output audio to multiple devices) can be created as shown in the [Pipewire docs](https://docs.pipewire.org/page_module_combine_stream.html). The following example creates a sink that combines *all* audio outputs:
+
+``` nixos
+services.pipewire = {
+    extraConfig.pipewire."virtual-combine-all-sinks" = {
+      "context.modules" = [
+        {   
+          name = "libpipewire-module-combine-stream";
+          args = {
+            "combine.mode" = "sink";
+            "node.name" = "virtual_combine_all_sinks";
+            "node.description" = "All sinks (virtual)";
+            "combine.latency-compensate" = false;
+            "combine.props" = {
+              "audio.position" = [ "FL" "FR" ];
+            };
+            "stream.props" = {
+            };
+            "stream.rules" = [
+              {
+                matches = [
+                  # any of the items in matches needs to match, if one does,
+                  # actions are emitted.
+                  {
+                    # all keys must match the value. ! negates. ~ starts regex.
+                    #node.name = "~alsa_input.*"
+                    "media.class" = "Audio/Sink";
+                  }
+                ];
+                actions = {
+                  create-stream = {
+                    #combine.audio.position = [ FL FR ]
+                    #audio.position = [ FL FR ]
+                  };
+                };
+              }
+            ];
+          };
+        }
+      ];
+    };
+  };
+```
+
 ### Linking nodes
 
 The config does not currently cover linking nodes together, but this can be fixed with a script. Soundcard names and ports should be replaced with the ones from the user's configuration:

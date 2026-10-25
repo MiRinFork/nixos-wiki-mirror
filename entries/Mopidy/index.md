@@ -4,7 +4,7 @@
 
 Mopidy is an MPD-compatible music server written in Python.
 
-On NixOS, Mopidy is configured via the `services.mopidy` options.
+On NixOS, Mopidy is configured via the `services.mopidy` [options](https://search.nixos.org/options?query=services.mopidy).
 
 ## Extensions
 

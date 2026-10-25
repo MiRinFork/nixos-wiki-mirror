@@ -2,7 +2,7 @@
 
 <!-- Source page: Dokuwiki -->
 
-[DokuWiki](https://www.dokuwiki.org) is a web application and simple Wiki software for creating documentation and editable pages in markdown language. Compared to other Wikis, it is more minimal and only depends on PHP and file access without any need for databases. It stores all information in plain text files to be available even without the DokuWiki software (e.g. to read directly from backup).
+[DokuWiki](https://www.dokuwiki.org)<a href="category:PHP" class="wikilink" title="category:PHP">category:PHP</a> is a web application and simple Wiki software for creating documentation and editable pages in markdown language. Compared to other Wikis, it is more minimal and only depends on PHP and file access without any need for databases. It stores all information in plain text files to be available even without the DokuWiki software (e.g. to read directly from backup).
 
 ## Installation
 

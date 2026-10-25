@@ -83,10 +83,6 @@ All RISC-V platforms are experimental for the time being.
 
 There is a dedicated room for the upstream effort on Matrix, [matrix:r/riscv:nixos.org](https://matrix.to/#/#riscv:nixos.org).
 
-### Awaiting upstream RISC-V support
-
-- [LuaJIT](https://github.com/LuaJIT/LuaJIT/issues/628)
-
 ## Resources
 
 - <https://wiki.riscv.org/display/HOME/Language+Runtimes>

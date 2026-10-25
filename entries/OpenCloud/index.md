@@ -256,3 +256,15 @@ This snippet is the one I used :
           options = [ "bind" ];
         };
 ```
+
+### Troubleshooting
+
+#### Search not working after upgrade
+
+OpenCloud may no longer find any files after upgrading to a new version that includes an update to the search service. In this case, the search index must be rebuilt.
+
+To [manually perform a full re-index](https://docs.opencloud.eu/docs/dev/server/services/search/information#manually-trigger-re-indexing-a-space) of your existing files, OpenCloud will look for your `jwt_secret` which usually gets created automatically in your opencloud.yaml configuration file. OpenCloud will assume the [location of this file](https://docs.opencloud.eu/docs/dev/server/configuration/config-system#configuration-locations) in `$HOME/.opencloud/config``/` for non-container installations. However, the [NixOS module](https://search.nixos.org/options?channel=unstable&query=services.opencloud&type=options) sets this to `/etc/opencloud/` so we will need to point it's location with:
+
+    sudo OC_CONFIG_DIR=/etc/opencloud opencloud search index   --all-spaces --force-rescan --insecure
+
+OpenCloud's search functionality should now work again, once the search index got rebuild.

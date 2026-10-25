@@ -6,7 +6,7 @@
 
 ## Enable in your terminal
 
-Atuin can be enabled using home-manager. Documentation for all settings can be found at <https://docs.atuin.sh/configuration/config/> .
+Atuin can be enabled using home-manager. Documentation for all settings can be found at <https://docs.atuin.sh/latest/configuration/config/>.
 
 ### Disable up-arrow / Ctrl+R keybindings
 

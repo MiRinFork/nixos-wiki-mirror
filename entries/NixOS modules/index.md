@@ -2,7 +2,7 @@
 
 <!-- Source page: NixOS modules -->
 
-NixOS produces a full system configuration by combining smaller, more isolated and reusable components: **Modules**. A module is a file containing a Nix expression with a specific structure. It *declares* options for other modules to *define* (give a value). It processes them and defines options declared in other modules.[^1]
+NixOS produces a full system configuration by combining smaller, more isolated and reusable components: **Modules**. A module is a file containing a Nix expression with a specific structure. It *declares* options for other modules to *define* (i.e. give a value to). It processes them and defines options declared in other modules.[^1]
 
 For example, is a module. Most other modules are in .
 
@@ -54,11 +54,12 @@ There is a shorthand for modules without any option declarations:
 }
 ```
 
-Note that despite the name, `imports = [./module.nix]` should not be confused with the Nix [builtins](https://nixos.org/manual/nix/stable/language/builtins.html#builtins-import) function `import module.nix`.
+The `imports` module option should not be confused with the `import` Nix [builtins](https://nixos.org/manual/nix/stable/language/builtins.html#builtins-import) function:
 
-`imports` expects a path to a file containing a NixOS module structured as described here. `import` can load arbitrary Nix expression from provided file with no expectation of structure. (no expected structure). See [this post](https://discourse.nixos.org/t/import-list-in-configuration-nix-vs-import-function/11372/8) for more details.
+- `imports` expects a path to a file containing a NixOS module structured as described here;
+- `import` can load arbitrary Nix expression from provided file with no expected structure.[^2]
 
-Note: `imports` provides the same behavior as the obsolete `require`. There is no reason to use `require` anymore, however it may still linger in some legacy code.
+Note: `imports` provides the same behavior as the obsolete `require`.
 
 ### Function
 
@@ -235,7 +236,7 @@ options = {
 }
 ```
 
-They are created with , a function in `lib`.[^2][^3]
+They are created with , a function in `lib`.[^3][^4]
 
 #### Examples
 
@@ -322,7 +323,7 @@ They are created with , a function in `lib`.[^2][^3]
 
 ## Rationale
 
-Modules were introduced to allow extending NixOS without modifying its source code.[^4] They also allow splitting up `configuration.nix`, making the system configuration easier to maintain and to reuse.
+Modules were introduced to allow extending NixOS without modifying its source code.[^5] They also allow splitting up `configuration.nix`, making the system configuration easier to maintain and to reuse.
 
 ## Example
 
@@ -431,7 +432,7 @@ Some external modules provide extra functionality to the NixOS module system. Yo
 
 ### Disabling modules
 
-In some cases, you may wish to override or disable modules previously imported, for example by NixOS. This can be achieved using the top-level attribute `disabledModules`[^5]. It prevents that module, as well as any module it imports itself, from being imported into the current config scope. This means that neither the options it declares nor the configuration it might set are actually imported. This can be particularly useful to override or debug the implementation of a certain module, for example to use a module from an unstable NixOS channel while using the stable version of every other module in the system.
+In some cases, you may wish to override or disable modules previously imported, for example by NixOS. This can be achieved using the top-level attribute `disabledModules`[^6]. It prevents that module, as well as any module it imports itself, from being imported into the current config scope. This means that neither the options it declares nor the configuration it might set are actually imported. This can be particularly useful to override or debug the implementation of a certain module, for example to use a module from an unstable NixOS channel while using the stable version of every other module in the system.
 
 To disable a given module, you must refer to it based on either:
 
@@ -512,7 +513,7 @@ More examples are available in the ["Replace modules" section of the NixOS manua
 
 ## Under the hood
 
-The following was taken from a comment by Infinisil on reddit [^6].
+The following was taken from a comment by Infinisil on reddit [^7].
 
 A NixOS system is described by a single system derivation. builds this derivation with and then switches to that system with .
 
@@ -629,12 +630,14 @@ Of course, it doesn't have to <a href="nixos-rebuild" class="wikilink" title="ni
 
 [^1]:
 
-[^2]:
+[^2]: <https://discourse.nixos.org/t/import-list-in-configuration-nix-vs-import-function/11372/8>
 
 [^3]:
 
-[^4]: [\[Nix-dev\] NixOS: New scheme](https://nixos.org/nix-dev/2008-November/001467.html)
+[^4]:
 
-[^5]: ["Replace Modules" section, NixOS manual](https://github.com/NixOS/nixpkgs/blob/master/nixos/doc/manual/development/replace-modules.section.md)
+[^5]: [\[Nix-dev\] NixOS: New scheme](https://nixos.org/nix-dev/2008-November/001467.html)
 
-[^6]: Infinisil, <https://www.reddit.com/r/NixOS/comments/gdnzhy/question_how_nixos_options_works_underthehood/>
+[^6]: ["Replace Modules" section, NixOS manual](https://github.com/NixOS/nixpkgs/blob/master/nixos/doc/manual/development/replace-modules.section.md)
+
+[^7]: Infinisil, <https://www.reddit.com/r/NixOS/comments/gdnzhy/question_how_nixos_options_works_underthehood/>

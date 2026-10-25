@@ -10,7 +10,7 @@ To install Immich, add the following to your NixOS configuration:
 
 To access Immich from other devices via network, add the following as well:
 
-To change Immich’s default log verbosity, you can set the [`IMMICH_LOG_LEVEL`](https://docs.immich.app/install/environment-variables#general) environment variable: More options are available:
+To change Immich’s default log verbosity, you can set the [`IMMICH_LOG_LEVEL`](https://docs.immich.app/install/environment-variables#general) environment variable: Or using the settings module like so: More options are available:
 
 ## Tips and Tricks
 

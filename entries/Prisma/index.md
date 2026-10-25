@@ -8,7 +8,7 @@
 - Built-in tools for managing migrations (Prisma Migrate) and inspecting your data visually (Prisma Studio).
 - Support for multiple databases (e.g., PostgreSQL, MySQL, SQLite) with a focus on developer productivity and code safety.
 
-To use Prisma in your Node.js application you must install the `prisma` and `prisma-engines` packages and set some environment variables.
+To use Prisma in your Node.js application you must install the `prisma` and `prisma-engines` packages and set some environment variables. Naturally the `prisma` version in your Node.js application should match the version of the `prisma` packages in NixOS.
 
 ### Shell.nix example
 
@@ -24,7 +24,6 @@ pkgs.mkShell {
     export PKG_CONFIG_PATH="${pkgs.openssl.dev}/lib/pkgconfig"
     export PRISMA_SCHEMA_ENGINE_BINARY="${pkgs.prisma-engines}/bin/schema-engine"
     export PRISMA_QUERY_ENGINE_BINARY="${pkgs.prisma-engines}/bin/query-engine"
-    export PRISMA_QUERY_ENGINE_LIBRARY="${pkgs.prisma-engines}/lib/libquery_engine.node"
     export PRISMA_FMT_BINARY="${pkgs.prisma-engines}/bin/prisma-fmt"
   '';
 }
@@ -50,7 +49,6 @@ pkgs.mkShell {
         export PKG_CONFIG_PATH="${pkgs.openssl.dev}/lib/pkgconfig";
         export PRISMA_SCHEMA_ENGINE_BINARY="${pkgs.prisma-engines}/bin/schema-engine"
         export PRISMA_QUERY_ENGINE_BINARY="${pkgs.prisma-engines}/bin/query-engine"
-        export PRISMA_QUERY_ENGINE_LIBRARY="${pkgs.prisma-engines}/lib/libquery_engine.node"
         export PRISMA_FMT_BINARY="${pkgs.prisma-engines}/bin/prisma-fmt"
       '';
     };

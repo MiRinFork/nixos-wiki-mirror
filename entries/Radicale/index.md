@@ -17,7 +17,7 @@ The `settings` is standard Radicale configuration, see <https://radicale.org/v3.
 
 ## Authentication
 
-The default authentication mode is `None` which just allows all usernames and passwords. The other option is to use an Apache htpasswd file for authentication.
+The default authentication mode is `denyall`. You can change it to `none` which just allows all usernames and passwords. The other option is to use an Apache htpasswd file for authentication.
 
 ``` nix
 services.radicale = {

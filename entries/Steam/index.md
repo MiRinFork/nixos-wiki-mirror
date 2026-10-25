@@ -311,6 +311,8 @@ The <a href="&lt;tvar_name=1&gt;Special:MyLanguage/Steam_Frame&lt;/tvar&gt;" cla
 
 ### Gamescope fails to launch when used within Steam
 
+Gamescope runs into an error when it starts with the wrong GPU, to fix this determine the Vulkan ID with: `vulkaninfo --summary` and add `--prefer-vk-device `**`$vendorID`**`:`**`$deviceID`** from the output of the previous command.
+
 Gamescope may fail to start due to missing Xorg libraries. (<tvar name=issue>[\#214275](https://github.com/NixOS/nixpkgs/issues/214275)</tvar>) To resolve this override the steam package to add them: </translate>
 
 ``` nix

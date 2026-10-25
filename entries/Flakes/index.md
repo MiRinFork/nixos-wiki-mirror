@@ -307,10 +307,7 @@ Flakes force you to specify a program for each supported architecture. An exampl
   
   outputs = { self, nixpkgs }: let
       systems = [ "x86_64-linux" "aarch64-linux" ];
-      forAllSystems = f: builtins.listToAttrs (map (system: {
-        name = system;
-        value = f system;
-      }) systems);
+      forAllSystems = f: nixpkgs.lib.genAttrs systems (name: f name);
     in {
       packages = forAllSystems (system: let
         pkgs = nixpkgs.legacyPackages.${system};
