@@ -37,7 +37,7 @@ Here's a `flake.nix` example to build a node package from the current directory.
 ``` nix
 {
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    nixpkgs.url = "https://channels.nixos.org/nixos-unstable/nixexprs.tar.zst";
   };
 
   outputs = {

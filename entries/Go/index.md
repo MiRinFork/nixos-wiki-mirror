@@ -14,7 +14,7 @@ nixpkgs includes a library function called **buildGoModule** ([implementation](h
 
 To build for a specific version of Go, you may need to find the appropriate `pkgs.buildGoXXXModule` function to use.
 
-This function may not be present in the version of nixpkgs that you're using, for example, `buildGo122Module` is not available in `github:NixOS/nixpkgs/nixos-23.05`, but is available in `github:NixOS/nixpkgs/nixos-unstable`.
+This function may not be present in the version of nixpkgs that you're using, for example, `buildGo122Module` is not available in [`https://channels.nixos.org/nixos-23.05/nixexprs.tar.xz`](https://channels.nixos.org/nixos-23.05/nixexprs.tar.xz), but is available in [`https://channels.nixos.org/nixos-24.11/nixexprs.tar.xz`](https://channels.nixos.org/nixos-24.11/nixexprs.tar.xz).
 
 #### Subpackages
 
@@ -35,7 +35,7 @@ Running `nix shell` will create a shell, where you can execute the `ziti` binary
   description = "OpenZiti";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs.url = "https://channels.nixos.org/nixos-unstable/nixexprs.tar.zst";
   };
 
   outputs = { self, nixpkgs }:
@@ -52,7 +52,7 @@ Running `nix shell` will create a shell, where you can execute the `ziti` binary
     in
     {
       packages = forAllSystems ({ pkgs }: {
-        default = pkgs.buildGo122Module rec {
+        default = pkgs.buildGoModule rec {
           pname = "openziti";
           version = "1.0.0";
           subPackages = [ "ziti" ];

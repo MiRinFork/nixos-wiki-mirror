@@ -19,7 +19,7 @@ See some examples of it being used.
   description = "A very basic OpenSCAD devshell";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs.url = "https://channels.nixos.org/nixos-unstable/nixexprs.tar.zst";
   };
 
   outputs =

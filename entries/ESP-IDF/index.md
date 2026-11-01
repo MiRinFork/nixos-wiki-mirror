@@ -16,7 +16,7 @@ or in your flake files like this:
 
 ``` nix
 {
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+  inputs.nixpkgs.url = "https://channels.nixos.org/nixos-unstable/nixexprs.tar.zst";
   inputs.espidf.url = "github:hnaderi/espidf-nix";
 
   outputs =

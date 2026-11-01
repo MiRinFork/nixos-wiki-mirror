@@ -184,7 +184,7 @@ binary caches as a service. Free for public caches, subscription for private tok
 simplify your CI setup with stateless build agents. Free for open source, per-user subscription for private repositories.
 
 \[<tvar name=3><https://garnix.io></tvar> Garnix\]  
-nix CI, caching (open beta) and cloud hosting (private alpha) based on Nix as a service. Currently free, but offers commerical plans.
+<s>nix CI, caching (open beta) and cloud hosting (private alpha) based on Nix as a service. Currently free, but offers commerical plans.</s> Shut down July 2026 [1](https://garnix.io/blog/shutting-down/)
 
 \[<tvar name=4><https://nixbuild.net/></tvar> nixbuild.net\]  
 remote Nix builders as a service for x86_64 and AArch64. Pay-per-use.

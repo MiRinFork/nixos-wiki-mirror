@@ -8,11 +8,12 @@
 
 You can use the [slippi-nix](https://github.com/lytedev/slippi-nix) flake to declaratively install and configure Slippi with Nix, or get the AppImage directly from [Slippi's website](https://slippi.gg/).
 
-If you are using the <a href="Appimage" class="wikilink" title="Appimage">Appimage</a>, to run Slippi Online or Slippi Playback you will need `libcurl.so.4` to be in your <a href="Appimage#Run" class="wikilink" title="appimage-run">appimage-run</a> packages. This can be easily added through a package like `curlMinimal`.
+If you are using the <a href="Appimage" class="wikilink" title="Appimage">Appimage</a>, to run Slippi Online or Slippi Playback you will need `libcurl.so.4` and `libgpg-error.so.0` to be in your <a href="Appimage#Run" class="wikilink" title="appimage-run">appimage-run</a> packages. This can be easily added as demonstrated below.
 
 ``` nix
-  programs.appimage.package = pkgs.appimage-run.override { extraPkgs = pkgs: [
-    pkgs.curlMinimal.out
+  programs.appimage.package = pkgs.appimage-run.override { extraPkgs = pkgs: with pkgs; [
+    curlMinimal.out
+    libgpg-error.out
   ];};
 ```
 
@@ -25,14 +26,15 @@ The configuration to setup Appimage support and specifically the Slippi Appimage
     binfmt = true;
   };
   programs.appimage.package = pkgs.appimage-run.override {
-    extraPkgs = pkgs: [
-      pkgs.curlMinimal.out
+    extraPkgs = pkgs: with pkgs; [
+      curlMinimal.out
+      libgpg-error.out
     ];
   };
 }
 ```
 
-Which is just the snippet from <a href="Appimage#Configuration" class="wikilink" title="Appimage#Configuration">Appimage#Configuration</a> with the needed library added to the `appimage-run` package.
+Which is just the snippet from <a href="Appimage#Configuration" class="wikilink" title="Appimage#Configuration">Appimage#Configuration</a> with the needed libraries added to the `appimage-run` package.
 
 Even when using the Appimage, you can still use [slippi-nix](https://github.com/lytedev/slippi-nix)'s optional `default` nixosModule to automatically setup the udev rules needed to optimize GameCube adapters, assuming you have a <a href="NixOS_system_configuration#Defining_NixOS_as_a_flake" class="wikilink" title="flake-based configuration">flake-based configuration</a>.
 

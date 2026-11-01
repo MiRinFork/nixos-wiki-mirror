@@ -680,7 +680,7 @@ We package the application by calling the `loadPyproject` function from `pyproje
         in
         # Pass attributes to buildPythonPackage.
         # Here is a good spot to add on any missing or custom attributes.
-        python.pkgs.buildPythonPackage (attrs // {
+        python3Packages.buildPythonPackage (attrs // {
           env.CUSTOM_ENVVAR = "hello";
         });
     };

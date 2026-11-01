@@ -137,6 +137,18 @@ Switch to that configuration, then run:
 
 That is a very dirty command, and I don't know if it persists across reboots.
 
+### Calendar events from KOrganizer aren't shown in the clock widget
+
+Install the packages akonadi-calendar and kdepim-addons:
+
+``` nix
+  environment.systemPackages = with pkgs.kdePackages; [ korganizer kdepim-addons akonadi-calendar ];
+```
+
+After installation with `nixos-rebuild switch`, restart the Plasma shell with `systemctl --user restart plasma-plasmashell`.
+
+Click on the widget, then "Configure digital clock", "Calendar" and then mark the checkbox "Calendar events"
+
 ## Tips and tricks
 
 ### Plasma-Manager

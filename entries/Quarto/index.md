@@ -46,7 +46,7 @@ similarly a \`flake.nix\` file with \`nix develop\`:
 {
   description = "Minimal Quarto and SymPy environment";
   inputs = {
-    nixpkgs.url = "github:Nixos/nixpkgs/nixos-unstable";
+    nixpkgs.url = "https://channels.nixos.org/nixos-unstable/nixexprs.tar.zst";
   };
   outputs = { self, nixpkgs }:
     let

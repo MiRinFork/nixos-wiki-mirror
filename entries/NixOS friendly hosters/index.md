@@ -26,16 +26,16 @@
 <td><p>A non-profit association providing free as in freedom VPS services for its members. NixOS is available in the registration form and administration interface. See <a href="https://kb.vpsfree.org/manuals/distributions/nixos">NixOS at kb.vpsfree.org</a> for more information. See <a href="https://github.com/vpsfreecz/example-nixops-deployment">nixops example</a> on howto setup a server using nix 2.7 and nixops 2.0.</p></td>
 </tr>
 <tr>
-<td><p><a href="https://crocuda.com">crocuda_vps</a></p></td>
-<td><p>Instant NixOs virtual machine delivery with multiple rotating privacy Ipv6. No registration form. You just need a key. Order from your terminal at -&gt; `ssh crocuda.com`.</p></td>
-</tr>
-<tr>
 <td><p><a href="https://www.hostinger.com/vps/nixos-hosting">Hostinger VPS</a></p></td>
 <td><p>NixOS is offered as a supported OS template on KVM VPS plans. See the <a href="https://www.hostinger.com/support/1583571-what-are-the-available-operating-systems-for-vps-at-hostinger/">list of available VPS operating systems</a></p></td>
 </tr>
 <tr>
 <td><p><a href="https://greybull.cloud/vps/nixos">Greybull</a></p></td>
 <td><p>Current version of NixOS is offered as a template on VPS plans.</p></td>
+</tr>
+<tr>
+<td><p><a href="https://fyrastack.com/">Fyra Stack</a></p></td>
+<td><p>Open Source Chicago Hosting Provider offering NixOS on all VPS plans.</p></td>
 </tr>
 <tr>
 <td colspan="2"><h2>

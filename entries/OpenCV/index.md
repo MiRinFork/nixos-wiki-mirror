@@ -47,7 +47,7 @@ pkgs.mkShell {
   description = "Python development environment with OpenCV";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs.url = "https://channels.nixos.org/nixos-unstable/nixexprs.tar.zst";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
@@ -106,7 +106,7 @@ pkgs.mkShell {
 
 ``` nix
 {
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+  inputs.nixpkgs.url = "https://channels.nixos.org/nixos-unstable/nixexprs.tar.zst";
 
   outputs = { self, nixpkgs }:
     let
@@ -145,7 +145,7 @@ The opencv-rust package does not include the C++ bindings, thereby requiring it 
 ``` nix
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs.url = "https://channels.nixos.org/nixos-unstable/nixexprs.tar.zst";
   };
 
   outputs = { self, nixpkgs }:
@@ -179,7 +179,7 @@ You may also want to override the base package. You can do this easily with this
 ``` nixos
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs.url = "https://channels.nixos.org/nixos-unstable/nixexprs.tar.zst";
   };
 
   outputs = { self, nixpkgs }:

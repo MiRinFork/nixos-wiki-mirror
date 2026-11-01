@@ -32,7 +32,7 @@ if you use the experimental flake, instead of doing the above stuff, can put the
 ``` nix
 {
   description = "Build image";
-  inputs.nixpkgs.url = "github:nixos/nixpkgs/nixos-22.11";
+  inputs.nixpkgs.url = "https://channels.nixos.org/nixos-22.11/nixexprs.tar.xz";
   outputs = { self, nixpkgs }: rec {
     nixosConfigurations.rpi2 = nixpkgs.lib.nixosSystem {
       modules = [

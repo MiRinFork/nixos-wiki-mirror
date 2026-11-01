@@ -77,8 +77,6 @@ For the rare cases where we have to dig into the /nix/store it is more practical
 
 Also, since the initial part is all of the same length, visually parsing a list of packages is easier.
 
-If you still wonder why, run `ls -1 /nix/store | sort -R -t - -k 2 | less` in your shell. *(? unclear)*
-
 This is what might happen if you don't garbage collect frequently, or if you are testing compilation variants: </translate>
 
     q0yi2nr8i60gm2zap46ryysydd2nhzhp-automake-1.11.1/

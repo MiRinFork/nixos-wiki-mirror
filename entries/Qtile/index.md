@@ -111,7 +111,7 @@ To run a bleeding-edge version of Qtile with the flake, add the Qtile repository
 {
   description = "A very basic flake";
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
+    nixpkgs.url = "https://channels.nixos.org/nixos-unstable/nixexprs.tar.zst";
 
     qtile-flake = {
       url = "github:qtile/qtile";

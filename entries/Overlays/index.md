@@ -202,7 +202,7 @@ Assume you want the original version of sl, not the fork that nixpkgs ships. Fir
 final: prev:
 {
   sl = prev.sl.overrideAttrs (old: {
-    src = prev.fetchFromGitHub {
+    src = final.fetchFromGitHub {
       owner = "mtoyoda";
       repo = "sl";
       rev = "923e7d7ebc5c1f009755bdeb789ac25658ccce03";
@@ -227,7 +227,7 @@ final: prev:
 {
   sl = prev.sl.overrideAttrs (old: {
     patches = (old.patches or []) ++ [
-      (prev.fetchpatch {
+      (final.fetchpatch {
         url = "https://github.com/charlieLehman/sl/commit/e20abbd7e1ee26af53f34451a8f7ad79b27a4c0a.patch";
         hash = "07sx98d422589gxr8wflfpkdd0k44kbagxl3b51i56ky2wfix7rc";
       })
@@ -263,7 +263,7 @@ final: prev: {
     mutter = gprev.mutter.overrideAttrs (oldAttrs: {
       patches = oldAttrs.patches ++ [
         # https://salsa.debian.org/gnome-team/mutter/-/blob/ubuntu/master/debian/patches/x11-Add-support-for-fractional-scaling-using-Randr.patch
-        (prev.fetchpatch {
+        (final.fetchpatch {
           url = "https://salsa.debian.org/gnome-team/mutter/-/raw/91d9bdafd5d624fe1f40f4be48663014830eee78/debian/patches/x11-Add-support-for-fractional-scaling-using-Randr.patch";
           hash = "m6PKjVxhGVuzsMBVA82UyJ6Cb1s6SMI0eRooa+F2MY8=";
         })
@@ -272,12 +272,12 @@ final: prev: {
     gnome-control-center = gprev.gnome-control-center.overrideAttrs (oldAttrs: {
       patches = oldAttrs.patches ++ [
         # https://salsa.debian.org/gnome-team/gnome-control-center/-/blob/ubuntu/master/debian/patches/ubuntu/display-Support-UI-scaled-logical-monitor-mode.patch
-        (prev.fetchpatch {
+        (final.fetchpatch {
           url = "https://salsa.debian.org/gnome-team/gnome-control-center/-/raw/f185f33fb200cc963c062c7a82920a085f696978/debian/patches/ubuntu/display-Support-UI-scaled-logical-monitor-mode.patch";
           hash = "XBMD0chaV6GGg3R9/rQnsBejXspomVZz/a4Bvv/AHCA=";
         })
         # https://salsa.debian.org/gnome-team/gnome-control-center/-/blob/ubuntu/master/debian/patches/ubuntu/display-Allow-fractional-scaling-to-be-enabled.patch
-        (prev.fetchpatch {
+        (final.fetchpatch {
           url = "https://salsa.debian.org/gnome-team/gnome-control-center/-/raw/f185f33fb200cc963c062c7a82920a085f696978/debian/patches/ubuntu/display-Allow-fractional-scaling-to-be-enabled.patch";
           hash = "Pm6PTmsL2bW9JAHD1u0oUEqD1PCIErOlcuqlwvP593I=";
         })
@@ -294,7 +294,7 @@ Here is an example of adding plugins to `vimPlugins`.
 ``` nix
 final: prev: {
   vimPlugins = prev.vimPlugins.extend (final': prev': {
-    indent-blankline-nvim-lua = prev.callPackage ../packages/indent-blankline-nvim-lua { };
+    indent-blankline-nvim-lua = prev'.callPackage ../packages/indent-blankline-nvim-lua { };
   });
 }
 ```
@@ -309,7 +309,7 @@ Here's an example of overriding the source of `obs-studio-plugins.obs-background
         obs-backgroundremoval =
           prev.obs-studio-plugins.obs-backgroundremoval.overrideAttrs (old: {
             version = "0.5.17";
-            src = prev.fetchFromGitHub {
+            src = final.fetchFromGitHub {
               owner = "royshil";
               repo = "obs-backgroundremoval";
               rev = "v0.5.17";
@@ -336,40 +336,27 @@ Perl packages require some extra care prevent the error `undefined variable 'per
 
 ### Python Packages Overlay
 
-Here is an example of Python packages overlay. The trick is to also override python itself with `packageOverrides`.
-
-Github issue with the snippet below: <a href="https://github.com/NixOS/nixpkgs/issues/26487#issuecomment-307363295" class="wikilink" title="https://github.com/NixOS/nixpkgs/issues/26487#issuecomment-307363295">https://github.com/NixOS/nixpkgs/issues/26487#issuecomment-307363295</a>
+Here is an example of Python packages overlay based off of code from the reference.
 
 ``` nix
 final: prev:
-# Within the overlay we use a recursive set, though I think we can use `final` as well.
 {
-  # nix-shell -p python.pkgs.my_stuff
-  python = prev.python.override {
-    # Careful, we're using a different final and prev here!
-    packageOverrides = pyfinal: pyprev: {
-      my_stuff = pyprev.buildPythonPackage rec {
-        pname = "pyaes";
-        version = "1.6.0";
-        src = pyprev.fetchPypi {
-          inherit pname version;
-          hash = "0bp9bjqy1n6ij1zb86wz9lqa1dhla8qr1d7w2kxyn7jbj56sbmcw";
-        };
-      };
-    };
-  };
-  # nix-shell -p pythonPackages.my_stuff
-  pythonPackages = final.python.pkgs;
+  # python3Packages is preferred for overrides as it is spliced.
+  python3Packages = prev.python3Packages.overrideScope (finalPy: prevPy: {
+    my_package = finalPy.buildPythonPackage (finalAttrs: {
+      pname = "pyaes";
+      version = "1.6.0";
 
-  # nix-shell -p my_stuff
-  my_stuff = final.pythonPackages.buildPythonPackage rec {
-    pname = "pyaes";
-    version = "1.6.0";
-    src = pythonPackages.fetchPypi {
-      inherit pname version;
-      hash = "0bp9bjqy1n6ij1zb86wz9lqa1dhla8qr1d7w2kxyn7jbj56sbmcw";
-    };
-  };
+      src = finalPy.fetchPypi {
+        inherit (finalAttrs) pname version;
+        hash = "sha256-nNWlTZFLHuv7FPy0kDFSFLagME2fG7R+kNHY4LFc6S4=";
+      };
+    });
+
+    # It is preferred to use python3Packages, but this can
+    # be overriden for convinence.
+    python3 = final.python3Packages.python;
+  });
 }
 ```
 
@@ -387,22 +374,22 @@ final: prev:
       rprojroot = prev.rPackages.buildRPackage rec {
         name = "rprojroot-${version}";
         version = "2.0.2";
-        src = prev.fetchurl {
+        src = final.fetchurl {
           url =
             "https://github.com/r-lib/rprojroot/archive/refs/tags/v2.0.2.tar.gz";
           hash = "1i0s1f7hla91yw1fdx0rn7c18dp6jwmg2mlww8dix1kk7qbxfjww";
         };
-        nativeBuildInputs = [ prev.R ];
+        nativeBuildInputs = [ final.R ];
       };
 
       here = prev.rPackages.buildRPackage rec {
         name = "here-${version}";
         version = "1.0.1";
-        src = prev.fetchurl {
+        src = final.fetchurl {
           url = "https://github.com/r-lib/here/archive/refs/tags/v1.0.1.tar.gz";
           hash = "0ky6sq6n8px3b70s10hy99sccf3vcjjpdhamql5dr7i9igsf8nqy";
         };
-        nativeBuildInputs = [ prev.R final.rPackages.rprojroot ];
+        nativeBuildInputs = [ final.R final.rPackages.rprojroot ];
         propagatedBuildInputs = [ final.rPackages.rprojroot ];
       };
     };
@@ -421,14 +408,14 @@ final: prev: {
   rnix-lsp = prev.rnix-lsp.overrideAttrs rec {
     version = "0-unstable-2021-07-18";
   
-    src = prev.fetchFromGitHub {
+    src = final.fetchFromGitHub {
       owner = "nix-community";
       repo = "rnix-lsp";
       rev = "1fdd7cf9bf56b8ad2dddcfd27354dae8aef2b453";
       hash = "sha256-w0hpyFXxltmOpbBKNQ2tfKRWELQzStc/ho1EcNyYaWc=";
     };
   
-    cargoDeps = prev.rustPlatform.fetchCargoVendor {
+    cargoDeps = final.rustPlatform.fetchCargoVendor {
       inherit src;
       outputHash = "sha256-6ZaaWYajmgPXQ5sbeRQWzsbaf0Re3F7mTPOU3xqY02g=";
     };

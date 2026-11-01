@@ -54,13 +54,13 @@ Navidrome plugins packaged in Nixpkgs can be installed declaratively with the op
       lyrics-plugin
     ];
 
-    # The lyrics plugin bundle is named lyrics-plugin.ndp.
-    settings.LyricsPriority = ".ttml,.yaml,.yml,.elrc,.srt,lyrics-plugin,embedded,.lrc,.txt";
+    # Uses the plugin when there are no local lyrics
+    settings.LyricsPriority = ".ttml,.yaml,.yml,.elrc,.lrc,.srt,.txt,embedded,nd-lyrics";
   };
 }
 ```
 
-Available packages are exposed under `pkgs.navidromePlugins`. The NixOS module validates the selected packages, builds a Navidrome package containing their `.ndp` bundles, and manages the plugin folder automatically. The Nix attribute name can differ from the installed bundle name; use the attribute names shown above in .
+Available packages are exposed under `pkgs.pkgsCross.wasi32.navidromePlugins`. The NixOS module validates the selected packages, builds a Navidrome package containing their `.ndp` bundles, and manages the plugin folder automatically. The Nix attribute name can differ from the installed bundle name; use the attribute names shown above in .
 
 Installing a plugin makes it available to Navidrome. Enable it, grant its requested permissions, and configure plugin-specific settings in the Navidrome web interface under `Settings → Plugins`. Do not set `services.navidrome.settings.Plugins.Folder`, because the NixOS module manages that value.
 

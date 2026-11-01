@@ -86,7 +86,7 @@ To see what is the latest channel available, see <tvar name="1"><https://channel
 
 ## For flake based configurations
 
-Because <a href="&lt;tvar_name=&quot;1&quot;&gt;Flakes&lt;/tvar&gt;" class="wikilink" title="Flakes">Flakes</a> do not use channels and instead rely on explicitly defined inputs, updating a configuration involves modifying the system’s `flake.nix` to reference the desired versions of inputs. For example: </translate>
+Because <a href="&lt;tvar_name=&quot;1&quot;&gt;Flakes&lt;/tvar&gt;" class="wikilink" title="Flakes">Flakes</a> do not use system-wide channels and instead rely on explicitly defined inputs, updating a configuration involves modifying the system’s `flake.nix` to reference the desired versions of inputs. For example: </translate>
 
 <translate> Once the input URLs have been updated, refresh the flake lockfile with: </translate>
 

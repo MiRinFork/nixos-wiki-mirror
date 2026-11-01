@@ -27,7 +27,7 @@ Create file `system.nix`:
 
 ``` nix
 let
-  nixpkgs = builtins.getFlake "github:nixos/nixpkgs/nixos-25.11";
+  nixpkgs = builtins.getFlake "https://channels.nixos.org/nixos-26.05/nixexprs.tar.zst";
 
   sys = nixpkgs.lib.nixosSystem {
     system = "x86_64-linux";

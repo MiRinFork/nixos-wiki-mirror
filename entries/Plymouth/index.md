@@ -25,7 +25,6 @@ If you have neither KMS nor a framebuffer, *Plymouth* will fall back to text-mod
 
     # Enable "Silent boot"
     consoleLogLevel = 3;
-    initrd.verbose = false;
     kernelParams = [
       "quiet"
       "rd.udev.log_level=3"

@@ -14,4 +14,6 @@ It is possible to configure certain presets of LibreWolf using the <a href="Home
 
 This example configures LibreWolf to enable WebGL, remember cookies and history by disabling privacy and security defaults. This compromises the privacy concept of LibreWolf and is therefore not recommended to use.
 
+LibreWolf exclusive preferences are not possible to apply using `programs.librewolf.policies` policies.
+
 <a href="Category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="Category:Privacy" class="wikilink" title="Category:Privacy">Category:Privacy</a> <a href="Category:Web_Browser" class="wikilink" title="Category:Web Browser">Category:Web Browser</a>

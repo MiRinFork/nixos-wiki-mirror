@@ -14,7 +14,7 @@ Flakes also allow for locking references and versions, which can then be queried
 
 Minimally, a flake file contains a description of the flake, a set of input dependencies and an output. You can generate a very basic flake file after <a href="#Setup" class="wikilink" title="#Setup">#Setup</a> using `nix flake init`. This will populate the current directory with a file called flake.nix that will contain something akin to: </translate>
 
-<translate> In the example above, you can see the description, the input specified as a GitHub repository with a specific branch (here `nixos/nixpkgs` on the `nixos-unstable` branch), and an output that makes use of the input. The output simply specifies that the flake contains one package for the x86_64 architecture called `hello`. Even if your flake's output wouldn't use its input (however, in practice, that is highly unlikely), the output still needs to be a Nix function.
+<translate> In the example above, you can see the description, the input specified as a URL to a tarball, and an output that makes use of the input. The output simply specifies that the flake contains one package for the x86_64 architecture called `hello`. Even if your flake's output wouldn't use its input (however, in practice, that is highly unlikely), the output still needs to be a Nix function.
 
 ### Nix configuration
 

@@ -383,7 +383,7 @@ in {
 ``` nix
 {
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-22.05";
+    nixpkgs.url = "https://channels.nixos.org/nixos-26.05/nixexprs.tar.zst";
     winresizer-vim = {
       url = "github:simeji/winresizer";
       flake = false;

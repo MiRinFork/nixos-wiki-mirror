@@ -150,7 +150,6 @@ It is however a bit long to find all these libraries, so you may want to just co
       freeglut
       libjpeg
       libpng
-      libpng12
       libsamplerate
       libmikmod
       libtheora

@@ -27,7 +27,7 @@ Lean4 is available as a package, both on the packages [26.05 channel](https://se
   description = "Minimal Lean 4 flake.";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
+    nixpkgs.url = "https://channels.nixos.org/nixos-26.05/nixexprs.tar.zst";
   };
 
   outputs = { self, nixpkgs }@inputs:

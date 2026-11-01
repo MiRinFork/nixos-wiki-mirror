@@ -86,7 +86,7 @@ Here is flake with which an image with better periphery support (at least - USB)
 {
   description = "Build image for OrangePi Zero 2";
   inputs = {
-    nixpkgs.url = github:nixos/nixpkgs/nixos-22.11;
+    nixpkgs.url = "https://channels.nixos.org/nixos-22.11/nixexprs.tar.xz";
   };
   outputs = { self, nixpkgs }: let
     system = "aarch64-linux";

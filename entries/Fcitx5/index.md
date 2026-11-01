@@ -22,6 +22,22 @@ It would be easier to edit the Fcitx5 profile through GUI tools (i.e. ) [as reco
 
 </translate> <translate>
 
+#### Disabling fcitx5-configtool
+
+To disable fcitx5-configtool (which pulls in a number of KDE packages), you can use the following <a href="Overlays" class="wikilink" title="overlay">overlay</a>:
+
+``` nix
+(final: prev: {
+  qt6Packages = prev.qt6Packages.overrideScope (
+    qfinal: qprev: {
+      fcitx5-with-addons = qprev.fcitx5-with-addons.override {
+        withConfigtool = false;
+      };
+    }
+  );
+})
+```
+
 ## Troubleshooting
 
 ### Add-ons Not Detected

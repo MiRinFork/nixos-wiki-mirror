@@ -60,7 +60,7 @@ The \`flake.nix\` file in the repo should be of the form:
 
 ` {`  
 `   inputs = {`  
-`     nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";`  
+`     nixpkgs.url = "`[`https://channels.nixos.org/nixos-26.05/nixexprs.tar.zst`](https://channels.nixos.org/nixos-26.05/nixexprs.tar.zst)`";`  
 `   };`  
 ` `  
 `   outputs = { nixpkgs, ... }: {`  
@@ -249,7 +249,7 @@ The tutorial assumes you already have an account on Hetzner Cloud, and no prior 
 {
   inputs = {
     nixpkgs = {
-      url = "github:NixOS/nixpkgs/nixos-24.11";
+      url = "https://channels.nixos.org/nixos-26.05/nixexprs.tar.zst";
     };
 
     disko = {

@@ -36,7 +36,7 @@ to install the TCC:
 ``` nix
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-22.11";
+    nixpkgs.url = "https://channels.nixos.org/nixos-22.11/nixexprs.tar.xz";
     tuxedo-nixos = {
       url = "github:blitz/tuxedo-nixos";
       inputs.nixpkgs.follows = "nixpkgs";

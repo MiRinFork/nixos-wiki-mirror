@@ -13,7 +13,7 @@ Create a folder with a name of your choosing. In it create a flake.nix file with
   description = "Banana Pi M5 NixOS Build Environment";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs.url = "https://channels.nixos.org/nixos-unstable/nixexprs.tar.zst";
   };
 
   outputs = { nixpkgs, ... }: let

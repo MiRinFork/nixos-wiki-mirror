@@ -11,7 +11,7 @@ To do this, start the script with multiple shebang (`#!`) lines.
 The first shebang line is always `#! /usr/bin/env nix-shell`.  
 The second shebang line declares the script language and the script dependencies.
 
-As of Nix 2.19.0 you can also use the new CLI `nix shell` and flakes to define shebangs. See [docs](https://nixos.org/manual/nix/stable/command-ref/new-cli/nix.html?highlight=shebang#shebang-interpreter).
+As of Nix 2.19.0 you can also use the new CLI `nix shell` and flakes to define shebangs. See <a href="Nix-shell_shebang#New_CLI_alternatives" class="wikilink" title="New CLI alternatives">New CLI alternatives</a> section.
 
 ## Examples
 
@@ -184,17 +184,26 @@ To pin nixpkgs to a specific version, add a third shebang line:
 echo hello world
 ```
 
-## Flake
+## New CLI alternatives
 
-It is also possible to make it work for flake like in:
+It is also possible to make it work with the new <a href="Nix_(command)" class="wikilink" title="Nix command (nix3)">Nix command (nix3)</a>, like so:
 
 ``` bash
-#!/usr/bin/env -S nix shell nixpkgs#bash nixpkgs#hello nixpkgs#cowsay --command bash
+#! /usr/bin/env nix
+#! nix nixpkgs#bash nixpkgs#hello nixpkgs#cowsay --command bash
 
 hello | cowsay
 ```
 
-The [doc](https://nix.dev/manual/nix/2.19/command-ref/new-cli/nix3-shell) mentions that it should be possible to run more complex commands using multiple lines, but it does not work for me as reported [here](https://github.com/NixOS/nixpkgs/issues/280033).
+Alternatively, using a single line (using `env -S`):
+
+``` bash
+#! /usr/bin/env -S nix shell nixpkgs#bash nixpkgs#hello nixpkgs#cowsay --command bash
+
+hello | cowsay
+```
+
+See this [Nix manual page](https://nix.dev/manual/nix/2.19/command-ref/new-cli/nix3-shell#use-as-a--interpreter) for more details on nix3 shebangs.
 
 ## Performance
 
