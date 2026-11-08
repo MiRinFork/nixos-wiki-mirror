@@ -12,12 +12,15 @@ The LLVM compiler infrastructure project is a "collection of modular and reusabl
 LLVM/clang when compiled from source won't find headers/libraries/startup files without compiler wrapper. However it is possible to use the following `shell.nix` to get started and provide the missing flags to the compiler manually
 
 ``` nix
-with import <nixpkgs> {};
 let
+  pkgs = import <nixpkgs> {};
+
+  inherit (pkgs) stdenv;
+
   gccForLibs = stdenv.cc.cc;
 in stdenv.mkDerivation {
   name = "llvm-env";
-  buildInputs = [
+  buildInputs = with pkgs; [
     bashInteractive
     python3
     ninja
@@ -26,12 +29,11 @@ in stdenv.mkDerivation {
   ];
 
   # where to find libgcc
-  NIX_LDFLAGS="-L${gccForLibs}/lib/gcc/${targetPlatform.config}/${gccForLibs.version}";
+  NIX_LDFLAGS="-L${gccForLibs}/lib/gcc/${stdenv.targetPlatform.config}/${gccForLibs.version}";
   # teach clang about C startup file locations
-  CFLAGS="-B${gccForLibs}/lib/gcc/${targetPlatform.config}/${gccForLibs.version} -B ${stdenv.cc.libc}/lib";
+  CFLAGS="-B${gccForLibs}/lib/gcc/${stdenv.targetPlatform.config}/${gccForLibs.version} -B ${stdenv.cc.libc}/lib";
 
   cmakeFlags = [
-    "-DGCC_INSTALL_PREFIX=${gcc}"
     "-DC_INCLUDE_DIRS=${stdenv.cc.libc.dev}/include"
     "-GNinja"
     # Debug for debug builds

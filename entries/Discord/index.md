@@ -8,17 +8,17 @@ Discord is an instant messaging and VoIP application with lots of functionality.
 
 ### Official Clients
 
-Nixpkgs provides all three of Discord's release channels: `pkgs.discord`, `pkgs.discord-ptb`, and `pkgs.discord-canary`. Add any of these packages in `environment.systemPackages` or `users.users.`<name>`.packages`.
+Nixpkgs provides all three of Discord's release channels: , , and . Add any of these packages in or `users.users.`<name>`.packages`
 
 ### Unofficial Clients
 
 Nixpkgs also provides a vast variety of community developed/modded Discord clients, which can usually serve as drop-in replacements for the official discord client with an extended set of features.
 
-**Legcord[^1]** is a lightweight alternative desktop client featuring built-in modding extensibility via Vencord and Equicord. Provided via `pkgs.legcord`.
+**Legcord[^1]** is a lightweight alternative desktop client featuring built-in modding extensibility via Vencord and Equicord. Provided via .
 
-**GoofCord[^2]** is a security oriented fork of Legcord. Provided via `pkgs.goofcord`.
+**GoofCord[^2]** is a security oriented fork of Legcord. Provided via .
 
-**BetterDiscord[^3]** enhances Discord desktop app with new features. Installer provided via `pkgs.betterdiscordctl`, but users may prefer to instead run it one-off via cli:
+**BetterDiscord[^3]** enhances Discord desktop app with new features. Installer provided via , but users may prefer to instead run it one-off via cli:
 
 ``` console
 $ nix-shell -p betterdiscordctl --command 'betterdiscordctl install' # nix-legacy
@@ -28,23 +28,37 @@ $ nix-shell -p betterdiscordctl --command 'betterdiscordctl self-upgrade' # nix-
 $ nix run nixpkgs#betterdiscordctl -- self-upgrade # nix3
 ```
 
-**OpenAsar[^4]** is an open-source alternative to Discord's `app.asar`. Provided via `pkgs.openasar` without usable client. Users should instead prefer to override the official discord package and add `withOpenASAR = true`:
+**OpenAsar[^4]** is an open-source alternative to Discord's `app.asar`. Provided via without usable client. Users should instead prefer to override the official discord package and add `withOpenASAR = true`:
 
-**Vencord[^5]**, the cutest Discord client mod. Provided via `pkgs.vencord`. Standalone can be installed by overriding the official Discord package via `withVencord = true`:
+``` nix
+(discord.override {
+  withOpenASAR = true;
+  #withVencord = true; # complementary
+})
+```
 
-**Vesktop[^6]** is a customizable and privacy friendly desktop app by the developers of Discord's cutest client mod. Provided via `pkgs.vesktop`. Can be configured in <a href="Home_Manager" class="wikilink" title="Home Manager">Home Manager</a>:
+**Vencord[^5]**, the cutest Discord client mod. Provided via . Standalone can be installed by overriding the official Discord package via `withVencord = true`:
 
-**Equicord[^7]**, other cutest Discord client mod. Provided via `pkgs.equicord`.
+``` nix
+(discord.override {
+  #withOpenASAR = true; # complementary
+  withVencord = true;
+})
+```
 
-**Equibop[^8]**, a Vesktop fork by Equicord developers. Provided via `pkgs.equibop`.
+**Vesktop[^6]** is a customizable and privacy friendly desktop app by the developers of Discord's cutest client mod. Provided via . Can be configured in <a href="Home_Manager" class="wikilink" title="Home Manager">Home Manager</a>:
 
-**Dissent[^9]** is a simple, practical Discord client prioritizing speed over feature completeness. Provided via `pkgs.dissent`.
+**Equicord[^7]**, other cutest Discord client mod. Provided via .
 
-**Discordo[^10]** is a TUI Discord client provided via `pkgs.discordo`. *Development in progress, possible crashes and breaking changes.*
+**Equibop[^8]**, a Vesktop fork by Equicord developers. Provided via .
 
-**Webcord[^11]** is a Discord and [Spacebar](https://spacebar.chat/) client implemented without using official Discord API. Provided via `pkgs.webcord`.
+**Dissent[^9]** is a simple, practical Discord client prioritizing speed over feature completeness. Provided via .
 
-**Ripcord[^12]** is an unfree client for Discord and [Slack](https://slack.com/intl/) with a traditional compact interface for power users. Provided via `pkgs.ripcord`.
+**Discordo[^10]** is a TUI Discord client provided via . *Development in progress, possible crashes and breaking changes.*
+
+**Webcord[^11]** is a Discord and [Spacebar](https://spacebar.chat/) client implemented without using official Discord API. Provided via .
+
+**Ripcord[^12]** is an unfree client for Discord and [Slack](https://slack.com/intl/) with a traditional compact interface for power users. Provided via .
 
 ## Troubleshooting
 
@@ -54,7 +68,7 @@ Since December 2024, Discord Canary supports screen sharing on Wayland. Alternat
 
 ### Notifications-related crash
 
-Discord will crash if there is no compatible notification daemon running. This issue is only prevalent in custom desktop environments, such as <a href="Sway" class="wikilink" title="Sway">Sway</a> or <a href="Hyprland" class="wikilink" title="Hyprland">Hyprland</a>. Comprehensive documentation usually exists for most window managers/compositors and can be found on their respective wikis. Nixpkgs provides a few standalone notification daemons such as `pkgs.dunst` and `pkgs.mako`. You may optionally use a notification daemon from a larger DE, such as `pkgs.lxqt.lxqt-notificationd`, however it is unclear how effective these will be outside of their normal environment.
+Discord will crash if there is no compatible notification daemon running. This issue is only prevalent in custom desktop environments, such as <a href="Sway" class="wikilink" title="Sway">Sway</a> or <a href="Hyprland" class="wikilink" title="Hyprland">Hyprland</a>. Comprehensive documentation usually exists for most window managers/compositors and can be found on their respective wikis. Nixpkgs provides a few standalone notification daemons such as and . You may optionally use a notification daemon from a larger DE, such as , however it is unclear how effective these will be outside of their normal environment.
 
 ### Start-up crash
 
@@ -72,7 +86,7 @@ The Krisp noise suppression option will not work on NixOS because the Discord bi
 
 One way to enable Krisp noise suppression is by patching the `discord_krisp.node` binary to bypass its DRM verification. Below is a Nix configuration that creates a Python script that patches the binary by modifying specific bytes to bypass the license check:
 
-``` nixos
+``` nix
 { pkgs, ... }:
 let
   krisp-patcher =
@@ -117,7 +131,9 @@ Once you restart Discord and join a VC, you should see a sound wave icon to the 
 TTS is disabled by default; you may enable it via an override:
 
 ``` nix
-(pkgs.discord.override { withTTS = true; })
+(pkgs.discord.override {
+  withTTS = true;
+})
 ```
 
 ### Discord RPC not functioning

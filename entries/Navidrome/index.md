@@ -87,3 +87,5 @@ services.navidrome = {
   settings.EnableSharing = true;
 };
 ```
+
+<a href="Category:Server" class="wikilink" title="Category:Server">Category:Server</a>

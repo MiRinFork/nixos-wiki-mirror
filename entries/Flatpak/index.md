@@ -6,59 +6,47 @@
 
 This article extends the documentation in the [NixOS manual](https://nixos.org/manual/nixos/stable/#module-services-flatpak).
 
-## Installation
+Flatpak on NixOS can be used either in a declarative or imperative way. The imperative way is better suited for beginners, If you're just starting out with NixOS, and/or don't want to deal with advanced configuration, refer to the <a href="Flatpak#Imperative_installation" class="wikilink" title="Imperative installation">Imperative installation</a> section.
 
-### Global
+## Declarative installation
 
-Using this configuration, `flatpak` will be installed and ready to use globally for all users:
+To manage Flatpak declaratively, you can either use [nix-flatpak](https://github.com/gmodena/nix-flatpak) or [declarative-flatpak](https://github.com/in-a-dil-emma/declarative-flatpak). In the event of a Nix rollback, both modules will reinstall the previously declared Flatpak packages
 
-### Per-User
+### [nix-flatpak](https://github.com/gmodena/nix-flatpak)
 
-If you'd rather make Flatpak available to a specific user, add `flatpak` to that user's packages
+A convergent approach to Flatpak management where refs are managed in place. It supports flakes or <a href="Home_Manager" class="wikilink" title="home-manager">home-manager</a>, but doesn't support installation without flakes. Flatpak packages are not cached in the Nix store.
 
-### Window Managers / Compositors Patches
+#### Installation
 
-After adding the desired solution to your configuration file, Flatpak will be installed, but it is not always added to your path directly, e.g. when you are using Sway.
+Add nix-flatpak to your flake inputs and import the module. Below is an example flake.nix After adding nix-flatpak to your flake inputs and importing the module, packages can be installed declaratively;
 
-To manually add it to the path while using the <a href="Greetd" class="wikilink" title="Greetd">Greetd</a> login manager and <a href="Sway" class="wikilink" title="Sway">Sway</a>, create a `.profile` file with an override for your `XDG_DATA_DIRS` path, e.g.: This is also required when installing `flatpak` on a per-user basis.
+#### Managing remotes
 
-### With Impermanence
+nix-flatpak will add the flathub remote by default. You may also declare your own additional remotes. Doing so will override the default configuration, so you will need to also declare flathub as a remote if you wish to use it.
 
-If you're using <a href="Impermanence" class="wikilink" title="Impermanence">Impermanence</a>, you'll need to make sure you persist the directories that flatpak will be using
+##### Installing a .flatpak file declaratively
 
-- `/var/lib/flatpak` (for system configuration, repositories, etc.)
-- `~/.var/app` (for app data)
-- `~/.local/share/flatpak` (for user-specific configuration)
+Add the file you want to install as a flake input. Orca slicer nightly will be used as an example:In your configuration.nix, add the .flatpak file from your inputs to your packages:
 
-The directories in your home (starting with `~`) will need to be persisted for every user who will use flatpak
+#### Managing permissions
 
-## Usage
+Instead of using software like [Flatseal](https://flathub.org/en/apps/com.github.tchx84.Flatseal) or using `flatpak override` one can also manage flatpak permissions in a declarative manner. Below is an example forcing the Adwaita dark theme globally and enabling GPU acceleration for orca slicer.
 
-### Declarative
-
-To manage Flatpak declaratively, you can either use [nix-flatpak](https://github.com/gmodena/nix-flatpak) or [declarative-flatpak](https://github.com/in-a-dil-emma/declarative-flatpak)
-
-In the event of a Nix rollback, both modules will reinstall the previously declared Flatpak packages
-
-#### [nix-flatpak](https://github.com/gmodena/nix-flatpak)
-
-A convergent approach to Flatpak management where refs are managed in place
-
-Flatpak packages are not cached in the Nix store
-
-It supports flakes or <a href="Home_Manager" class="wikilink" title="home-manager">home-manager</a>, but doesn't support non-flakes only
-
-<small>For more details, see [nix-flatpak/discussions/168](https://github.com/gmodena/nix-flatpak/discussions/168)</small>
-
-#### [declarative-flatpak](https://github.com/in-a-dil-emma/declarative-flatpak)
+### [declarative-flatpak](https://github.com/in-a-dil-emma/declarative-flatpak)
 
 A congruent approach to Flatpak management where changes are designed to be atomic, ensuring that either they succeed or nothing happens. This module uses a temporary installation and then overwrites the current one.
 
 It supports non-flake, flakes, and <a href="Home_Manager" class="wikilink" title="home-manager">home-manager</a>
 
-<small>For more details, see [declarative-flatpak/issues/44](https://github.com/in-a-dil-emma/declarative-flatpak/issues/44)</small>
+## Imperative installation
 
-### Imperative
+### Global
+
+Using this configuration, `flatpak` will be installed and ready to use globally for all users.
+
+### Per-User
+
+If you'd rather make Flatpak available to a specific user, add `flatpak` to that user's packages
 
 #### Terminal User Interface
 
@@ -77,8 +65,6 @@ $ flatpak run com.github.tchx84.Flatseal
 #### Graphical User Interface
 
 To install Flatpaks graphically, you can use [the GNOME Software Application](https://apps.gnome.org/en-GB/Software/) ([`gnome-software` in nixpkgs](https://search.nixos.org/packages?show=gnome-software))
-
-<small>**Note**: installing Flatpaks through it is imperative</small>
 
 #### Configure Repositories Globally
 
@@ -119,11 +105,27 @@ $ flatpak run com.adrienplazas.Metronome
 
 To support emulation with Qemu, <a href="QEMU#Run_binaries_of_different_architecture" class="wikilink" title="following Binfmt configuration">following Binfmt configuration</a> is required.
 
+### Using Flatpak with Impermanence
+
+If you're using <a href="Impermanence" class="wikilink" title="Impermanence">Impermanence</a>, you'll need to make sure you persist the directories that flatpak will be using
+
+- `/var/lib/flatpak` (for system configuration, repositories, etc.)
+- `~/.var/app` (for app data)
+- `~/.local/share/flatpak` (for user-specific configuration)
+
+The directories in your home (starting with `~`) will need to be persisted for every user who will use flatpak
+
 ## Troubleshooting
 
 ### Missing themes and cursors
 
 If you have issues with cursors or themes in general, take a look at <a href="Fonts#Flatpak_applications_can&#39;t_find_system_fonts" class="wikilink" title="Fonts#Flatpak_applications_can&#39;t_find_system_fonts">Fonts#Flatpak_applications_can't_find_system_fonts</a>
+
+### Window Managers / Compositors Patches
+
+After adding the desired solution to your configuration file, Flatpak will be installed, but it is not always added to your path directly, e.g. when you are using Sway.
+
+To manually add it to the path while using the <a href="Greetd" class="wikilink" title="Greetd">Greetd</a> login manager and <a href="Sway" class="wikilink" title="Sway">Sway</a>, create a `.profile` file with an override for your `XDG_DATA_DIRS` path, e.g.: This is also required when installing `flatpak` on a per-user basis.
 
 ### Uninstalling an application and wiping its data
 

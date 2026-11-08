@@ -40,12 +40,8 @@ It aims to be a drop-in replacement of the original GNU diffutils commands
 
 ## Installation
 
-To do a systemwide replacement of gnu utils with uutils you can use system.replaceDependencies.
+To use uutils as your system coreutils, just add it to PATH with high priority.
 
-It should be noted that the name of the dependency is hardcoded in the binaries, therefore the name of the replacing dependency needs to have exactly the same length as the name of the source dependency. To do this declaratively this snippet should be added to your configs:
-
-This is of course still quite a hacky solution, as the name of the resulting binaries will simply be padded with the char '\_'. A better solution might be found in the future.
-
-<small>For details, see [NixOS - Discourse: "How to use uutils-coreutils instead of the builtin coreutils?" (8904) - Comment 36](https://discourse.nixos.org/t/how-to-use-uutils-coreutils-instead-of-the-builtin-coreutils/8904/36?u=malix)</small>
+Attempting to replace all with a hacky replaceDependencies solution is not recommended or will be supported.
 
 <a href="Category:CLI_Applications" class="wikilink" title="Category:CLI Applications">Category:CLI Applications</a> <a href="Category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="Category:Rust" class="wikilink" title="Category:Rust">Category:Rust</a>

@@ -24,4 +24,4 @@ Following snippet runs a Euro-Office-Documentserver instance on localhost. For i
 - <a href="Nextcloud#Collabora_Online" class="wikilink" title="Collabora Online">Collabora Online</a>, part of the Nextcloud web-based office suite, based on a LibreOffice engine.
 - <a href="LibreOffice" class="wikilink" title="LibreOffice">LibreOffice</a>, a multi-platform office suite. It consists of programs for word processing (Writer); creating and editing spreadsheets (Calc), slideshows (Impress), diagrams and drawings (Draw); working with databases (Base); and composing mathematical formulae (Math).
 
-<a href="Category:Web_Applications" class="wikilink" title="Category:Web Applications">Category:Web Applications</a>
+<a href="Category:Web_Applications" class="wikilink" title="Category:Web Applications">Category:Web Applications</a> <a href="Category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a>

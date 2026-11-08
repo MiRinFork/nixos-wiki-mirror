@@ -19,21 +19,6 @@ The `settings` is standard Radicale configuration, see <https://radicale.org/v3.
 
 The default authentication mode is `denyall`. You can change it to `none` which just allows all usernames and passwords. The other option is to use an Apache htpasswd file for authentication.
 
-``` nix
-services.radicale = {
-  enable = true;
-  settings = {
-    server.hosts = [ "0.0.0.0:5232" ];
-    auth = {
-      type = "htpasswd";
-      htpasswd_filename = "/path/to/htpasswd/file/radicale_users";
-      # hash function used for passwords. May be `plain` if you don't want to hash the passwords
-      htpasswd_encryption = "bcrypt";
-    };
-  };
-};
-```
-
 ## Web Proxy examples
 
 Caddy configured to proxy radicale in a subdirectory

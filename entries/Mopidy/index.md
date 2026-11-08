@@ -2,7 +2,7 @@
 
 <!-- Source page: Mopidy -->
 
-Mopidy is an MPD-compatible music server written in Python.
+[Mopidy](https://mopidy.com/) is an MPD-compatible music server written in Python.
 
 On NixOS, Mopidy is configured via the `services.mopidy` [options](https://search.nixos.org/options?query=services.mopidy).
 
@@ -30,4 +30,4 @@ in {
 }
 ```
 
-<a href="Category:Server" class="wikilink" title="Category:Server">Category:Server</a>
+<a href="Category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="Category:Python" class="wikilink" title="Category:Python">Category:Python</a>

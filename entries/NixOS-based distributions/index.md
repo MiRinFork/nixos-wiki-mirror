@@ -24,6 +24,15 @@ This table lists a non-exhaustive selection of Linux distributions based on NixO
 </thead>
 <tbody>
 <tr>
+<td><p><a href="https://www.aboraos.org">Abora OS</a></p></td>
+<td><p><a href="https://github.com/AnimatedGTVR/Abora-OS">https://github.com/AnimatedGTVR/Abora-OS</a></p></td>
+<td><ul>
+<li>Based on NixOS</li>
+</ul></td>
+<td><p>Released</p></td>
+<td><p>A NixOS-based Linux distribution focused on making NixOS easier to use and customize. Includes a custom installer, ANIX system management tools, multiple desktop environments, and simplified system configuration and updates.</p></td>
+</tr>
+<tr>
 <td><p><a href="https://asterinas.github.io/">Asterinas NixOS</a></p></td>
 <td><p><a href="https://github.com/asterinas/asterinas">https://github.com/asterinas/asterinas</a></p></td>
 <td><ul>

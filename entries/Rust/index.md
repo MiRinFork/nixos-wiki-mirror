@@ -327,7 +327,7 @@ pkgs.callPackage (
     depsBuildBuild = [
       hello
     ];
-    # compilers & linkers & dependecy finding programs
+    # compilers & linkers & dependency finding programs
     nativeBuildInputs = [
       my-rust
       pkg-config

@@ -104,8 +104,6 @@ services.ustreamer = {
   device = "/dev/v4l/by-id/YOUR_DEVICE_HERE";
   extraArgs = [
     "-r 1280x720"
-    "--encoder=HW"
-    "--persistent"
   ];
   listenAddress = "0.0.0.0:8080";
 };

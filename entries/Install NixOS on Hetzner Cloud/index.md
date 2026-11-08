@@ -85,7 +85,7 @@ Also note the user \`username\` which is configured to be part of the \`wheel\` 
 ` `  
 ` {`  
 `   nix.settings = {`  
-`     experimental-features = "nix-command flakes";`  
+`     experimental-features = ["nix-command" "flakes"];`  
 `   };`  
 `   `  
 `   environment.systemPackages = [`  

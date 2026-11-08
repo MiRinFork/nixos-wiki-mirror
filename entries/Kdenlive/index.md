@@ -2,6 +2,8 @@
 
 <!-- Source page: Kdenlive -->
 
+[Kdenlive](https://kdenlive.org) is a video editor.
+
 ## Fix for crash while running under GNOME
 
 As of NixOS 26.05, there is an issue with Kdenlive (version 26.04 as of time of writing) while running under <a href="GNOME" class="wikilink" title="GNOME">GNOME</a>, where Kdenlive will crash whenever a file picker dialog is opened, logging an error message of "<bdi>Settings schema 'org.gtk.Settings.FileChooser' is not installed</bdi>".
@@ -42,3 +44,5 @@ To fix this crash, add the following to your configuration file:
   ];
 }
 ```
+
+<a href="Category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a>

@@ -19,6 +19,7 @@ Games can be run by different applications. Some are able to include libraries f
 | <a href="RetroArch" class="wikilink" title="RetroArch">RetroArch</a> | Retro games emulation |  |  |
 | <a href="Wine" class="wikilink" title="Wine">Wine</a> & <a href="Bottles" class="wikilink" title="Bottles">Bottles</a> | Windows emulation and software management |  | `wineWow64Packages` `winetricks` `bottles` |
 | Dosbox | DOS emulation |  | `dosbox` |
+| ScummVM | runs hundreds of adventure and rpg games |  | `scummvm` or as a core in retroarch |
 |  |  |  |  |
 
 ## List of games in Nixpkgs
@@ -33,8 +34,9 @@ Below are some of the games available in Nixpkgs. To search for a specific game,
 | [Cataclysm: Dark Days Ahead](https://cataclysmdda.org/) | Survival, Rogue-like | Post-apocalyptic survival game. | [available](https://github.com/NixOS/nixpkgs/blob/master/pkgs/games/cataclysm-dda/default.nix) |
 | [Chromium B.S.U.](https://chromium-bsu.sourceforge.io/) | Arcade, Space Shooter | Fast paced, arcade-style, top-scrolling space shooter. | available |
 | [Dungeon Crawl](https://crawl.develz.org/) | Rogue-like, Adventure, Turn-based | Open-source, single-player, role-playing roguelike game. | available |
-| [Dwarf Fortress](https://www.bay12games.com/dwarves/) | Simulation, Management, Rogue-like, Sandbox | Single-player fantasy game with a randomly generated adventure world. | available |
+| [Dwarf Fortress](https://www.bay12games.com/dwarves/) | Population Simulation, Management, Rogue-like, Sandbox, RPG | Decided what up to 200 dwarfs should do and build in a complex fantasy world. | available |
 | [Endless Sky](https://endless-sky.github.io/) | Space simulation, RPG | Explore a universe with different factions and ships. | [available](https://github.com/NixOS/nixpkgs/blob/master/pkgs/games/endless-sky/default.nix) |
+| [Exult (Ultima 7)](https://exult.sourceforge.io/) | RPG | Ultima 7, Ultima 7 Serpent Isle, Ultima 6 Remake | available |
 | [FreeCiv](https://freeciv.org/) | Strategy, Turn-based | Civilization-building strategy game. | [available](https://github.com/NixOS/nixpkgs/blob/master/pkgs/games/freeciv/default.nix) |
 | [FreeDink](https://www.gnu.org/software/freedink/) | Adventure, RPG | Free, portable and enhanced version of the Dink Smallwood game engine. | available |
 | [FreeDoom](https://freedoom.github.io/) | FPS | Free alternative to the Doom series. | ***unavailable*** |

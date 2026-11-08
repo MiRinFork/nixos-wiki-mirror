@@ -6,6 +6,15 @@
 
 Scanner support is provided by the [SANE](http://www.sane-project.org) library. To enable scanner support, amend your system configuration like so: Users in the `scanner` group will gain access to the scanner, or the `lp` group if it’s also a printer. To add yourself to these groups, amend your system configuration as follows:
 
+This environment is only set for login sessions. Your own systemd services that use SANE (e.g. a scan script) will not find backends added via `hardware.sane.extraBackends` or `hardware.sane.brscan4`/`brscan5` unless you set it explicitly, as the built-in `saned` service does:
+
+``` nix
+systemd.services.my-scan-service.environment = {
+  SANE_CONFIG_DIR = "/etc/sane-config";
+  LD_LIBRARY_PATH = "/etc/sane-libs";
+};
+```
+
 ## Testing scanner support
 
 To determine if your scanner is supported by SANE:
@@ -110,20 +119,9 @@ Many scanners require firmware blobs which can be downloaded from the website of
 
 ### Brother
 
-Brother currently provides four different scanner backends for various generations of its scanners. The newest (brscan4) is supported as a loadable submodule in NixOS. It can be activated by importing the appropriate file into `/etc/nixos/configuration.nix`:
+Brother currently provides four different scanner backends for various generations of its scanners. The two newest, brscan4 and brscan5, are available as NixOS options (`hardware.sane.brscan4` and `hardware.sane.brscan5`); no extra import is needed. Check Brother's driver download page for your model to see which one it uses.
 
-``` nix
-{
-  ...
-  imports = [
-    <nixpkgs/nixos/modules/services/hardware/sane_extra_backends/brscan4.nix>
-    ./hardware-configuration.nix
-  ];
-  ...
-}
-```
-
-Then just add a scanner in the sane module:
+Add a network scanner like this:
 
 ``` nix
 {
@@ -144,6 +142,23 @@ Then just add a scanner in the sane module:
 ```
 
 In some cases, configuration changes may not take effect until after a reboot.
+
+#### Scan button on network devices (without brscan-skey)
+
+On Brother network devices, the "Scan to PC" button does not work via polling (see <a href="#Using_the_scanner_button" class="wikilink" title="scanbd">scanbd</a> below). Instead, a computer registers itself on the device, and the device notifies it when someone presses *Scan* and selects that computer. Brother's proprietary `brscan-skey` implements this, but a small script of your own can replace it (protocol notes: [jmesmon/brother2](https://github.com/jmesmon/brother2/blob/master/PROTO)):
+
+- **Register** via SNMP v1 set, community `internal`, OID `1.3.6.1.4.1.2435.2.3.9.2.11.1.1.0`, one string per scan function:
+
+  
+`TYPE=BR;BUTTON=SCAN;USER="MyPC";FUNC=FILE;HOST=`<host-ip>`:54925;APPNUM=5;DURATION=360;`
+
+FUNC/APPNUM pairs: IMAGE/1, EMAIL/2, OCR/3, FILE/5. `USER` is the name shown on the device. The registration expires after `DURATION` seconds, so renew it periodically (e.g. every 5 minutes).
+
+- **Button press:** the device sends a UDP packet to port 54925 of the registered host, e.g. `\x02\x00u0TYPE=BR;BUTTON=SCAN;USER="MyPC";FUNC=IMAGE;...;REGID=17174;SEQ=3;`. Every event arrives twice with the same `SEQ`; no reply is needed. Remember to open UDP port 54925 in the firewall.
+- **Scanning:** right after the button press the device is busy for a few seconds and `scanimage` fails with `open of device ... failed: Invalid argument`, so retry for a few seconds.
+- With the `brother4` backend and the document feeder as source, an empty feeder makes the device scan from the flatbed on its own.
+
+Tested with an MFC-7360N and `hardware.sane.brscan4`, using a small Python listener as a systemd service that scans with `scanimage --batch` and `img2pdf` into the Paperless-ngx consume directory. Remember the SANE environment for such services (see the tip at the top of this page).
 
 ## GIMP support
 
@@ -202,9 +217,19 @@ Currently (2017-08-16) the SANE backend does not support overriding according to
 }
 ```
 
+### Sharing a scanner with macOS/iOS (AirSane)
+
+`saned` shares scanners with other SANE clients only. To make a scanner usable from macOS (Preview, Image Capture), iOS apps or Mopria clients without drivers, run [AirSane](https://github.com/SimulPiscator/AirSane) on the machine the scanner is attached to (locally or via the network). It exposes SANE scanners via eSCL ("AirScan"), announces them through Avahi and has a small web interface. It is not in nixpkgs; notes for packaging it yourself:
+
+- It builds with `cmake` and `pkg-config` against `sane-backends libjpeg libpng avahi libusb1`.
+- Upstream's install step writes to `/lib/systemd` and `/etc`; install only the `airsaned` binary and define the systemd service in Nix.
+- Give the service the SANE environment (see the tip at the top of this page).
+- Use `--ignore-list` to hide `escl:.*`, `airscan:.*` and `net:.*` devices. Otherwise the same scanner shows up several times, and AirSane may find itself through the `airscan`/`escl` backends.
+- The default port 8090 is often already in use; change it with `--listen-port`. Check the announcement with `avahi-browse -rt _uscan._tcp`.
+
 ## Using the scanner button
 
-Many scanners feature a hardware button which makes for very convenient operation, especially in combination with an automated document processing system like `paperless`. NixOS includes the scanner button daemon `scanbd` which can be used for this purpose; however, its setup isn't terribly user friendly.
+Many scanners feature a hardware button which makes for very convenient operation, especially in combination with an automated document processing system like `paperless`. NixOS includes the scanner button daemon `scanbd` which can be used for this purpose; however, its setup isn't terribly user friendly. For Brother network scanners, see <a href="#Scan_button_on_network_devices_(without_brscan-skey)" class="wikilink" title="the Brother section">the Brother section</a> instead.
 
 Basic `scanbd` configuration requires us to provide:
 

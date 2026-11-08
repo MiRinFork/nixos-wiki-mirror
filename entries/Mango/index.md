@@ -6,9 +6,9 @@
 
 ## Installation
 
-As of August 2026, the mango module is not present by default in NixOS and <a href="Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> and needs to be imported using <a href="Flakes" class="wikilink" title="Flakes">Flakes</a>.
+If you don't want to configure mango using nix, you can just add mango to your systemPackages:
 
-Here is an example flake:
+If you would like to configure mango declaratively using nix and home-manager, you should install the [official flake](https://mangowm.github.io/docs/installation#nixos). Add it to your inputs:
 
 ## Configuration
 

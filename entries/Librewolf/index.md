@@ -12,7 +12,9 @@ To install LibreWolf system wide add the following line to your system configura
 
 It is possible to configure certain presets of LibreWolf using the <a href="Home_Manager" class="wikilink" title="Home Manager">Home Manager</a> module.
 
-This example configures LibreWolf to enable WebGL, remember cookies and history by disabling privacy and security defaults. This compromises the privacy concept of LibreWolf and is therefore not recommended to use.
+This example configures LibreWolf to enable WebGL, disable resistFingerprinting and install uBlock Origin and Noscript.
+
+For more advanced configuration, refer to the <a href="Firefox" class="wikilink" title="Firefox">Firefox</a> page.
 
 LibreWolf exclusive preferences are not possible to apply using `programs.librewolf.policies` policies.
 

@@ -2,7 +2,7 @@
 
 <!-- Source page: Telegram -->
 
-Telegram is a cloud-based mobile and desktop messaging app with a focus on security.
+[Telegram Desktop](https://desktop.telegram.org/) is a cloud-based mobile and desktop messaging app with a focus on security.
 
 ## Installation
 

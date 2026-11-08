@@ -24,7 +24,7 @@ Save the following code into a shell.nix file alongside the SecureW2 script and 
       gnutar # Needed to extract emebedded archive
       libx11 # for GUI
       openssl # Required during Python import
-      simpleTpmPk11 # Unknown use
+      simple-tpm-pk11 # Unknown use
       which # Used by shell script to find programs
       xdg-utils # Used by Python script to open links
       xwininfo # Unknown use
@@ -32,6 +32,8 @@ Save the following code into a shell.nix file alongside the SecureW2 script and 
   runScript = ./SecureW2_JoinNow.run;
 }).env
 ```
+
+Additionally, you may need to set `networking.wireless.enableHardening = false` in your configuration.
 
 ## References
 

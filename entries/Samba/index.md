@@ -402,4 +402,4 @@ As workaround, set `guest account = user`, where `user` is your username
 - [Samba in the Arch Linux Wiki](https://wiki.archlinux.org/title/Samba)
 - [smb.conf man page](https://www.samba.org/samba/docs/current/man-html/smb.conf.5.html)
 
-<a href="Category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="Category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a>
+<a href="Category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="Category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="Category:Outdated_articles" class="wikilink" title="Category:Outdated articles">Category:Outdated articles</a>

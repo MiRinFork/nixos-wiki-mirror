@@ -2,7 +2,7 @@
 
 <!-- Source page: Quarto -->
 
-Quarto is an open-source technical publishing system that allows you to render markdown and code chunks into technical documents. It supports several kinds of formats including HTML, PDF, and word documents.
+[Quarto](https://quarto.org/) is an open-source technical publishing system that allows you to render markdown and code chunks into technical documents. It supports several kinds of formats including HTML, PDF, and word documents.
 
 The quarto package from nixpkgs by itself will render `qmd` markdown without any extra requirements. However in order to render R, Python, or other code chunks, you will need to include those tools.
 
@@ -198,3 +198,5 @@ pkgs.vscodium.overrideAttrs (old: {
   '';
 })
 ```
+
+<a href="Category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a> <a href="Category:Scientific_applications" class="wikilink" title="Category:Scientific applications">Category:Scientific applications</a>

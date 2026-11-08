@@ -38,7 +38,27 @@ Alternatively, if you have Chromium installed, you can use the `programs.captive
 
 ## dnscrypt-proxy2
 
-### Basic configuration
+### Basic configuration using upstream defaults
+
+``` nixos
+{
+  services.dnscrypt-proxy = {
+    enable = true;
+    # defaults from
+    # https://github.com/DNSCrypt/dnscrypt-proxy/blob/master/dnscrypt-proxy/example-dnscrypt-proxy.toml
+    upstreamDefaults = true;
+    settings = {
+      ipv6_servers = true;
+      block_ipv6 = false;
+      require_dnssec = true;
+      require_nolog = false;
+      require_nofilter = true;
+    };
+  };
+}
+```
+
+### Customize resolvers
 
 ``` nixos
 let

@@ -2,7 +2,7 @@
 
 <!-- Source page: OpenSCAD -->
 
-OpenSCAD is a software for creating solid 3D CAD objects.
+[OpenSCAD](https://openscad.org/) is a software for creating solid 3D CAD objects.
 
 ## OpenSCAD development environments with Nix
 
@@ -75,3 +75,5 @@ nix-instantiate --eval --expr '(import <nixpkgs> {}).openscadPackages.bosl2.libN
 ```
 
 Or if none of that works, you can always check the package's source code.
+
+<a href="Category:Applications" class="wikilink" title="Category:Applications">Category:Applications</a>

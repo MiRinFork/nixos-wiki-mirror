@@ -7,9 +7,10 @@
 you can enable the matter server with the following configuration
 
 ``` nixos
-services.matter-server = {
+services.matterjs-server = {
   enable = true;
-  # logLevel = "debug";
-  extraArgs = [];
+  extraArgs = [
+    # "--vendorid=4939" # Home Assistant's vendor ID, if you're switching from deprecated services.matter-server
+  ];
 };
 ```

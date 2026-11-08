@@ -31,7 +31,7 @@ In <a href="GNOME" class="wikilink" title="Gnome">Gnome</a>, the the fingerprint
 
 In <a href="KDE" class="wikilink" title="KDE Plasma">KDE Plasma</a>, the fingerprints can be configured through the Settings application.
 
-1.  Open System Monitor
+1.  Open System Settings
 2.  On the menu on the left, scroll down to *Users* and enter it
 3.  Select your user
 4.  Enter *Configure Fingerprint Authentication* and follow the instructions to add your fingerprints

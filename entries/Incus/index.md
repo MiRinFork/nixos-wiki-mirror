@@ -149,7 +149,7 @@ $ incus launch --vm images:nixos/unstable nixos -c security.secureboot=false
 NixOS images are available at <https://images.linuxcontainers.org/> providing VM and Container images for both stable and unstable NixOS.
 
 ``` shell-session
-[root@nixos:/etc/nixos]# incus image list images:nixos
+[root@nixos:/etc/nixos]# incus image list images: nixos
 +-------------------------------+--------------+--------+---------------------------------------+--------------+-----------------+-----------+----------------------+
 |             ALIAS             | FINGERPRINT  | PUBLIC |              DESCRIPTION              | ARCHITECTURE |      TYPE       |   SIZE    |     UPLOAD DATE      |
 +-------------------------------+--------------+--------+---------------------------------------+--------------+-----------------+-----------+----------------------+

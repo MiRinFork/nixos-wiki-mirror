@@ -32,3 +32,5 @@ Save this to both servers to the path in keyFiles.
 - <https://nohup.no/posts/knot-dns-on-nixos/>
 - <https://git.darmstadt.ccc.de/ffda/infra/nixos-config/-/tree/610ac16c150ed8b8f65ec6cd9150c2856e24d22d/config/roles/dns>
 - <https://www.knot-dns.cz/docs/latest/html/>
+
+<a href="Category:Server" class="wikilink" title="Category:Server">Category:Server</a> <a href="Category:Networking" class="wikilink" title="Category:Networking">Category:Networking</a> <a href="Category:DNS" class="wikilink" title="Category:DNS">Category:DNS</a>

@@ -4,7 +4,7 @@
 
 eThe Web eID project enables usage of European Union electronic identity (eID) smart cards for secure authentication and digital signing of documents on the web using public-key cryptography.
 
-Check [1](https://web-eid.eu/%7Cweb-eid.eu) for more details and an example application.
+Check [1](https://web-eid.eu/) for more details and an example application.
 
 The application consists of the "Web eID" browser extension (available for Chrom{e,ium} and Firefox), and a native messaging host / application running on the system, which takes care of communication with the smart card.
 

@@ -58,12 +58,14 @@ environment.systemPackages = [
 
 ### Using the Virtual Camera
 
-The virtual camera requires the `v4l2loopback` <a href="Linux_kernel#Custom_kernel_modules" class="wikilink" title="kernel module">kernel module</a> to be installed, a loopback device configured, and polkit enabled so OBS can access the virtual device.
+The virtual camera requires the `v4l2loopback` <a href="Linux_kernel#Custom_kernel_modules" class="wikilink" title="kernel module">kernel module</a> to be installed, a loopback device configured, polkit enabled so OBS can access the virtual device and the relevant users to be added to the `video` group.
 
 This can be done in NixOS with:
 
 ``` nixos
 programs.obs-studio.enableVirtualCamera = true;
+
+users.users.<username>.extraGroups = ["video"]; # replace <username> with your username
 ```
 
 Or by setting the kernel options manually, this is useful if you need to add an additional loopback device as shown below:
@@ -79,6 +81,8 @@ Or by setting the kernel options manually, this is useful if you need to add an 
     options v4l2loopback devices=1 video_nr=1 card_label="OBS Cam" exclusive_caps=1
   '';
   security.polkit.enable = true;
+
+  users.users.<username>.extraGroups = ["video"];
 }
 ```
 

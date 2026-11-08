@@ -6,7 +6,7 @@
 
 # Installing OpenTabletDriver
 
-Install OpenTabletDriver, it's daemon and GUI by:
+Install OpenTabletDriver, its daemon and GUI by:
 
 # Troubleshooting
 

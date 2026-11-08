@@ -113,7 +113,7 @@ For example, `nixpkgs-unstable`'s version `26.11pre1081052.f45c6f04c2f0` is an u
 
 If you have already downloaded that channel, you can evaluating `lib.version` (e.g. with `nix-instantiate /path/to/nixpkgs -A lib.version --eval`) to find the exact channel version it corresponds to, which can be used to manually fetch it from [releases.nixos.org](https://releases.nixos.org) if needed later.
 
-If you don't already have a download of the exact channel version you want, you can still try to determine it yourself using a git checkout of the nixpkgs repo. For this, you will need to start from a specific commit that was used by a Hydra job. If you already have a commit but don't know if it corresponds to a Hydra job, you will probably need to try and manually find a close commit in the listing of the corresponding jobset. Once you have that commit you can determine the `N` of the version string:
+If you don't already have a download of the exact channel version you want, you can still try to determine it yourself using Hydra and/or a git checkout of the nixpkgs repo. For this, you will need to start from a specific commit that was used by a Hydra job. If you already have a commit but don't know if it corresponds to a Hydra job, you will probably need to try and manually find a close commit in the listing of the corresponding jobset, **where the <a href="Channel_branches#Hydra_Build" class="wikilink" title="corresponding release job">corresponding release job</a> succeeded**. If you have the Hydra release job available, it will indicate the full name of the channel release, including the `N` component of the version string. If you can't easily lookup the Hydra job, you can determine `N` using git:
 
 | Channel name | Command |
 |----|----|
@@ -124,7 +124,7 @@ Find the value of N for a given commit C depending on the channel
 
 Once you have gathered all this information, you can use it to form the version string using the earlier information.
 
-For example, if you want to find the `nixos-26.05` version that corresponds to [commit 7fc6f2c20af0](https://github.com/NixOS/nixpkgs/commit/7fc6f2c20af0) ([Hydra job 1829619](https://hydra.nixos.org/eval/1829619)), you would compute `N` using `git rev-list $(git merge-base master 7fc6f2c20af0)..7fc6f2c20af0 | wc -l`, which would give you a value of `N = 10882`, allowing you to determine that its exact version string is `26.05.10882.7fc6f2c20af0` (and indeed, [its artifact page](https://releases.nixos.org/nixos/26.05/nixos-26.05.10882.7fc6f2c20af0) does prove we're right!).
+For example, if you want to find the `nixos-26.05` version that corresponds to [commit 7fc6f2c20af0](https://github.com/NixOS/nixpkgs/commit/7fc6f2c20af0) ([Hydra job 1829619](https://hydra.nixos.org/eval/1829619), [release job build 347459016](https://hydra.nixos.org/build/347459016)), you would compute `N` using `git rev-list $(git merge-base master 7fc6f2c20af0)..7fc6f2c20af0 | wc -l`, which would give you a value of `N = 10882`, allowing you to determine that its exact version string is `26.05.10882.7fc6f2c20af0` (and indeed, both \[<https://hydra.nixos.org/build/347459016#>:~:text=nixos%2D26%2E05%2E10882%2E7fc6f2c20af0 its release job\] and [its artifact page](https://releases.nixos.org/nixos/26.05/nixos-26.05.10882.7fc6f2c20af0) prove we're right!).
 
 ### Check build status
 
